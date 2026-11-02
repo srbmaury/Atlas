@@ -232,6 +232,47 @@
     font-weight: 700;
     padding: 0;
 }
+.home-composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+.voice-input-button {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid var(--outline);
+    border-radius: 50%;
+    background: var(--panel);
+    color: var(--muted);
+}
+.voice-input-button:hover:not(:disabled) {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+.voice-input-button.is-listening {
+    border-color: #dc2626;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+.voice-input-status {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.home-prompt-panel .voice-input-status {
+    display: block;
+    margin-top: 8px;
+}
+.home-source-routing-note {
+    margin: 9px 0 0 24px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.4;
+}
 .home-send {
     background: var(--forest);
     color: #fff;

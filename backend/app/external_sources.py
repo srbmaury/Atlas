@@ -347,7 +347,7 @@ def requested_result_limit(query, default=30, max_limit=None):
     match = re.search(
         r'\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\b'
         r'.{0,70}\b(?:pull\s*requests?|prs?|events?|appointments?|meetings?|'
-        r'files?|documents?|emails?|messages?|results?|items?)\b',
+        r'files?|documents?|emails?|messages?|projects?|repositories?|repos?|results?|items?)\b',
         query,
         re.I,
     )
@@ -421,7 +421,24 @@ def source_search(provider, token, query):
         if github_wants_repositories(query):
             user = http_json('https://api.github.com/user', token, provider)
             login = user.get('login', '')
-            items = github_search_all_pages(token, github_repository_query(query, login))
+            limit = requested_result_limit(query, default=30, max_limit=100)
+            if re.search(r'\b(?:my|mine)\b', query, re.I):
+                data = http_json(
+                    'https://api.github.com/user/repos',
+                    token,
+                    provider,
+                    {
+                        'type': 'owner',
+                        'sort': 'pushed',
+                        'direction': 'desc',
+                        'per_page': limit,
+                    },
+                )
+                items = data if isinstance(data, list) else []
+            else:
+                items = github_search_all_pages(
+                    token, github_repository_query(query, login), per_page=limit, max_pages=1
+                )
             return [
                 {
                     'provider': provider,
@@ -433,11 +450,15 @@ def source_search(provider, token, query):
                             x.get('description') or '',
                             'Language: ' + x['language'] if x.get('language') else '',
                             'Topics: ' + ', '.join(x.get('topics', [])) if x.get('topics') else '',
+                            'Last push: ' + x['pushed_at'] if x.get('pushed_at') else '',
+                            'Last updated: ' + x['updated_at'] if x.get('updated_at') else '',
                             'Stars: ' + str(x.get('stargazers_count', 0)),
+                            'Forks: ' + str(x.get('forks_count', 0)),
                         )
                         if part
                     ),
                     'url': x.get('html_url'),
+                    'date': x.get('pushed_at') or x.get('updated_at'),
                 }
                 for x in items
             ]
@@ -551,16 +572,28 @@ def source_search(provider, token, query):
         raise HTTPException(
             422, 'Slack search denied. Confirm search:read scope and workspace permissions.'
         )
-    return [
-        {
-            'provider': provider,
-            'id': x.get('ts', ''),
-            'title': '#' + x.get('channel', {}).get('name', 'channel'),
-            'excerpt': (x.get('text') or '')[:8000],
-            'url': x.get('permalink'),
-        }
-        for x in d.get('messages', {}).get('matches', [])
-    ]
+    results = []
+    for item in d.get('messages', {}).get('matches', []):
+        text = item.get('text') or ''
+        channel = (item.get('channel') or {}).get('name') or ''
+        if channel and not re.fullmatch(r'[A-Z0-9]{8,}', channel):
+            title = '#' + channel
+        else:
+            # Some Slack search responses supply a channel ID where the human
+            # name should be. Use the message's opening line instead of showing
+            # an opaque identifier in Atlas.
+            first_line = ' '.join(text.split()).split('. ', 1)[0].strip()
+            title = first_line[:120] or 'Slack message'
+        results.append(
+            {
+                'provider': provider,
+                'id': item.get('ts', ''),
+                'title': title,
+                'excerpt': text[:8000],
+                'url': item.get('permalink'),
+            }
+        )
+    return results
 
 
 def notion_rich_text(values):

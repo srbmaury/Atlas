@@ -115,6 +115,33 @@ QUERY_STOPWORDS = {
     'documents',
     'uploaded',
     'upload',
+    # Writing and answer-format instructions should not become source-search
+    # terms. Keep topic words and drop the request wrapper.
+    'write',
+    'writes',
+    'writing',
+    'wrote',
+    'create',
+    'draft',
+    'compose',
+    'generate',
+    'answer',
+    'response',
+    'explain',
+    'describe',
+    'using',
+    'use',
+    'only',
+    'selected',
+    'concise',
+    'brief',
+    'short',
+    'paragraph',
+    'paragraphs',
+    'sentence',
+    'sentences',
+    'words',
+    'lines',
 }
 
 GITHUB_QUERY_STOPWORDS = {
@@ -202,54 +229,6 @@ def natural_search_terms(question, *, extra_stopwords=()):
 def gmail_query_for_question(scope, question):
     terms = natural_search_terms(question)
     return ' '.join([scope.strip(), *terms]).strip()
-
-
-def is_credit_card_offer_question(question):
-    terms = set(natural_search_terms(question))
-    has_card_context = 'card' in terms or 'cards' in terms
-    has_credit_context = 'credit' in terms or bool(
-        re.search(r'\bcredit\s+cards?\b', question, re.I)
-    )
-    offer_terms = {
-        'offer',
-        'offers',
-        'deal',
-        'deals',
-        'promotion',
-        'promotions',
-        'promo',
-        'cashback',
-        'reward',
-        'rewards',
-        'discount',
-        'discounts',
-        'waive',
-        'waived',
-        'waiver',
-        'bonus',
-        'bonuses',
-        'perk',
-        'perks',
-    }
-    return has_card_context and has_credit_context and bool(terms & offer_terms)
-
-
-def filter_credit_card_offer_evidence(question, evidence):
-    """Keep only records with both card context and a concrete offer signal."""
-    if not is_credit_card_offer_question(question):
-        return evidence
-    offer_pattern = re.compile(
-        r'\b(?:offers?|deals?|promotions?|promos?|cash\s*back|rewards?|discounts?|'
-        r'waiv(?:e|ed|er)|bonuses?|perks?)\b',
-        re.I,
-    )
-    card_pattern = re.compile(r'\b(?:credit\s+)?cards?\b', re.I)
-    return [
-        item
-        for item in evidence
-        if card_pattern.search(f'{item.title}\n{item.excerpt}')
-        and offer_pattern.search(f'{item.title}\n{item.excerpt}')
-    ]
 
 
 def drive_query_for_question(question):

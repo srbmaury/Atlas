@@ -77,6 +77,7 @@ class Document(Base):
     status = Column(String, default='queued', index=True)
     error = Column(Text)
     pages = Column(Integer, default=0)
+    ocr_pages = Column(JSON, default=list)
     chunk_count = Column(Integer, default=0)
     created = Column(Float, default=time.time)
     lease = Column(Float, default=0)

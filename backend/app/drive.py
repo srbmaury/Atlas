@@ -7,6 +7,7 @@ import os
 import re
 import secrets
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 from urllib.parse import urlencode
 
@@ -284,8 +285,7 @@ def extract_drive_binary(body, mime):
 
 
 def drive_evidence(token, items):
-    results = []
-    for item in items[:5]:
+    def read_item(item):
         mime = item.get('mimeType', '')
         try:
             if mime == 'application/vnd.google-apps.document':
@@ -315,14 +315,20 @@ def drive_evidence(token, items):
                 )
                 body = extract_drive_binary(binary, mime)
             else:
-                continue
+                return None
             excerpt = (
                 (body or '').strip() or item.get('excerpt') or item.get('title') or 'Drive file'
             )
-            results.append({**item, 'excerpt': str(excerpt)[:1500]})
+            return {**item, 'excerpt': str(excerpt)[:1500]}
         except (HTTPException, ValueError, pdfium.PdfiumError):
             log.warning('Skipping inaccessible or unreadable Drive file %s', item['id'])
-    return results
+            return None
+
+    selected = items[:5]
+    if not selected:
+        return []
+    with ThreadPoolExecutor(max_workers=min(len(selected), 4)) as executor:
+        return [result for result in executor.map(read_item, selected) if result]
 
 
 class DriveSearch(BaseModel):

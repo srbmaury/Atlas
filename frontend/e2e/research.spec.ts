@@ -34,7 +34,9 @@ test.beforeEach(async({page})=>{
       const data=route.request().postDataJSON();
       const scope=[...(data.include_documents?['documents']:[]),...(data.include_gmail?['gmail']:[]),...(data.providers||[])];
       const sources=(data.providers||[]).includes('github')?[{chunk_id:'pr-1',document_id:'',name:'A very long GitHub pull request title without a file extension',page:0,location_type:'github',provider:'github',url:'https://github.com/example/repo/pull/1',text:'First source line.\nSecond source line.\n\nOriginal: https://example.com/record?q=ok.'}]:[];
-      const result={answer:'The answer is grounded in the selected sources. [1]',sources,mode:'connected',scope};
+      const result={answer:'The answer is grounded in the selected sources. [1]',sources,mode:'connected',scope,coverage_note:'Some claims were omitted because the selected passages did not support them.',
+        retrieval:{passages_considered:sources.length,passages_used:sources.length,sources:scope.map(provider=>({provider,status:'searched',found:provider==='github'?sources.length:0,considered:provider==='github'?sources.length:0,used:provider==='github'?sources.length:0}))},
+        citation_audit:{claims:[{claim:'The answer is grounded in the selected sources.',citations:[1],overlap:0.2,status:'needs_review'}],needs_review:1,note:'Heuristic checks only.'}};
       const body=[
         {type:'status',text:'Searching selected sources…'},
         {type:'delta',text:result.answer},
@@ -154,10 +156,25 @@ test('source passage keeps paragraphs and makes URLs clickable',async({page})=>{
   await page.getByRole('button',{name:/Open source 1: A very long GitHub pull request title/}).click();
   const dialog=page.getByRole('dialog',{name:'Source passage'});
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator('.document-plain p')).toHaveCount(2);
+  await expect(dialog.locator('.document-plain p')).toHaveText('First source line. Second source line.');
+  await expect(dialog.locator('.document-field')).toContainText('Original');
   const link=dialog.getByRole('link',{name:'https://example.com/record?q=ok'});
   await expect(link).toHaveAttribute('href','https://example.com/record?q=ok');
   await expect(link).toHaveAttribute('target','_blank');
+});
+
+test('answer shows readable source previews, evidence review, and follow-up prompts',async({page})=>{
+  await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await page.getByRole('checkbox',{name:'GitHub'}).check();
+  await page.getByRole('textbox',{name:'Your question'}).fill('Summarize this pull request');
+  await page.getByRole('button',{name:'Send question'}).click();
+  await expect(page.locator('.citation-preview')).toContainText('First source line.');
+  await expect(page.getByText('Some claims may need a closer look.')).toBeVisible();
+  await expect(page.getByText('Some claims were omitted because the selected passages did not support them.')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Explain this evidence'})).toBeVisible();
+  await page.getByText('Sources and evidence').click();
+  await expect(page.locator('.answer-trace')).toContainText('1 matches');
+  await expect(page.locator('.answer-trace')).toContainText('need review');
 });
 
 test('select all toggles, and calendar prompts stay scoped to calendar',async({page})=>{

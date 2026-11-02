@@ -1,10 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { requestedConnectedSource } from '../lib/query-routing.ts';
+import { normalizeResearchScope } from '../lib/query-routing.ts';
 
-test('personal and explicit GitHub PR questions route to GitHub', () => {
-    assert.equal(requestedConnectedSource('my pull requests'), 'github');
-    assert.equal(requestedConnectedSource('List open pull requests from my GitHub'), 'github');
-    assert.equal(requestedConnectedSource('Show my PRs'), 'github');
-    assert.equal(requestedConnectedSource('What does pull request mean?'), null);
+test('research scope preserves the selected sources without interpreting prompt text', () => {
+    assert.deepEqual(
+        normalizeResearchScope({
+            includeDocuments: false,
+            includeGmail: true,
+            providers: ['calendar', 'drive'],
+        }),
+        { includeDocuments: false, includeGmail: true, providers: ['calendar', 'drive'] },
+    );
+});
+
+test('research scope removes duplicate and unsupported providers', () => {
+    assert.deepEqual(
+        normalizeResearchScope({
+            includeDocuments: true,
+            includeGmail: false,
+            providers: ['github', 'github', 'unsupported'],
+        }),
+        { includeDocuments: true, includeGmail: false, providers: ['github'] },
+    );
 });

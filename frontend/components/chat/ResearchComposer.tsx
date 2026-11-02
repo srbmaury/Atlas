@@ -1,5 +1,6 @@
 'use client';
-import { ArrowUp, LoaderCircle, Plus } from 'lucide-react';
+import { ArrowUp, LoaderCircle, Mic, MicOff, Plus } from 'lucide-react';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface ResearchComposerProps {
     query: string;
@@ -13,6 +14,12 @@ interface ResearchComposerProps {
 }
 
 export function ResearchComposer({ query, onChange, onSubmit, onUpload, uploading, busy, hasAskSources, hasMessages }: ResearchComposerProps) {
+    const voice = useVoiceInput();
+
+    function addTranscript(transcript: string) {
+        onChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
+    }
+
     return (
         <form
             className="composer research-composer-v2"
@@ -39,9 +46,25 @@ export function ResearchComposer({ query, onChange, onSubmit, onUpload, uploadin
                     }
                 }}
             />
+            <button
+                className={`voice-input-button ${voice.listening ? 'is-listening' : ''}`}
+                type="button"
+                aria-label={voice.listening ? 'Stop voice input' : voice.supported ? 'Start voice input' : 'Voice input not supported in this browser'}
+                aria-pressed={voice.listening}
+                title={voice.supported ? 'Use voice input' : 'Voice input is not supported in this browser'}
+                disabled={busy}
+                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+            >
+                {voice.listening ? <MicOff /> : <Mic />}
+            </button>
             <button className="send" aria-label="Send question" disabled={busy || !query.trim() || !hasAskSources}>
                 {busy ? <LoaderCircle className="spin" /> : <ArrowUp />}
             </button>
+            {(voice.listening || voice.error) && (
+                <span className="voice-input-status" role={voice.error ? 'alert' : 'status'}>
+                    {voice.error || 'Listening…'}
+                </span>
+            )}
         </form>
     );
 }

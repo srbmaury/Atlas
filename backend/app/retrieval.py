@@ -2,6 +2,7 @@ import math
 import re
 from collections import Counter
 from difflib import SequenceMatcher
+from functools import lru_cache
 
 from sqlalchemy import text
 
@@ -100,7 +101,7 @@ def diversify_ranked_chunks(ranked, limit, per_document=3):
     return chosen
 
 
-def source(chunk, name):
+def source(chunk, name, ocr=False):
     return {
         'chunk_id': chunk.id,
         'document_id': chunk.document_id,
@@ -110,6 +111,7 @@ def source(chunk, name):
         'location_type': 'page' if name.lower().endswith('.pdf') else 'section',
         'provider': 'documents',
         'source_id': chunk.id,
+        'ocr': ocr,
     }
 
 
@@ -146,6 +148,7 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
                 base = base.filter(Chunk.document_id.in_(named))
         semantic = []
         semantic_scores = {}
+        lexical = []
         if engine.dialect.name == 'postgresql':
             search = "plainto_tsquery('english', :query)"
             lexical = (
@@ -155,32 +158,62 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
                 .limit(60)
                 .all()
             )
-            if enabled():
-                vector = embed([query])[0]
-                semantic = (
-                    base.filter(
-                        Chunk.embedding_model == embedding_model_id(),
-                        Chunk.embedding.isnot(None),
-                        Chunk.embedding.cosine_distance(vector) < 0.8,
-                    )
-                    .order_by(Chunk.embedding.cosine_distance(vector))
-                    .limit(60)
-                    .all()
+            semantic_candidates = []
+        elif engine.dialect.name == 'sqlite' and _sqlite_fts_available():
+            raw_terms = re.findall(r'\w+', query.lower())
+            terms = list(
+                dict.fromkeys(
+                    term
+                    for raw_term in raw_terms
+                    if raw_term not in STOP and not raw_term.isdigit()
+                    for term in (raw_term, *tokens(raw_term))
                 )
-                semantic_scores = {c.id: cosine_similarity(vector, c.embedding) for c in semantic}
+            )
+            match_query = ' OR '.join(f'"{term}"' for term in terms)
+            if match_query:
+                rows = db.execute(
+                    text(
+                        'SELECT chunk_id, bm25(chunks_fts) AS rank FROM chunks_fts '
+                        'WHERE chunks_fts MATCH :query AND workspace_id = :workspace_id '
+                        'ORDER BY rank LIMIT 200'
+                    ),
+                    {'query': match_query, 'workspace_id': workspace_id},
+                ).all()
+                fts_ids = [row.chunk_id for row in rows]
+                by_id = (
+                    {c.id: c for c in base.filter(Chunk.id.in_(fts_ids)).all()} if fts_ids else {}
+                )
+                lexical = [by_id[row.chunk_id] for row in rows[:60] if row.chunk_id in by_id]
+                semantic_candidates = [by_id[chunk_id] for chunk_id in fts_ids if chunk_id in by_id]
+            else:
+                semantic_candidates = []
         else:
             chunks = base.all()
             lexical = [c for c, _ in bm25(query, chunks)]
-            if enabled():
-                vector = embed([query])[0]
-                ranked = []
-                for c in chunks:
-                    if c.embedding is not None and c.embedding_model == embedding_model_id():
-                        similarity = cosine_similarity(vector, c.embedding)
-                        if similarity > 0.2:
-                            ranked.append((c, similarity))
-                semantic = [c for c, _ in sorted(ranked, key=lambda x: x[1], reverse=True)[:60]]
-                semantic_scores = {c.id: score for c, score in ranked}
+            semantic_candidates = chunks
+        if engine.dialect.name == 'postgresql' and enabled():
+            vector = embed([query])[0]
+            semantic = (
+                base.filter(
+                    Chunk.embedding_model == embedding_model_id(),
+                    Chunk.embedding.isnot(None),
+                    Chunk.embedding.cosine_distance(vector) < 0.8,
+                )
+                .order_by(Chunk.embedding.cosine_distance(vector))
+                .limit(60)
+                .all()
+            )
+            semantic_scores = {c.id: cosine_similarity(vector, c.embedding) for c in semantic}
+        elif engine.dialect.name != 'postgresql' and enabled():
+            vector = embed([query])[0]
+            ranked = []
+            for c in semantic_candidates:
+                if c.embedding is not None and c.embedding_model == embedding_model_id():
+                    similarity = cosine_similarity(vector, c.embedding)
+                    if similarity > 0.2:
+                        ranked.append((c, similarity))
+            semantic = [c for c, _ in sorted(ranked, key=lambda x: x[1], reverse=True)[:60]]
+            semantic_scores = {c.id: score for c, score in ranked}
         # Weight exact lexical matches more strongly for precise facts; semantic ranks
         # still recover paraphrases and vocabulary that does not overlap the query.
         scores, candidates = {}, {}
@@ -189,9 +222,10 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
                 scores[c.id] = scores.get(c.id, 0) + weight / (60 + rank + 1)
                 candidates[c.id] = c
         terms = set(tokens(query))
-        names = {
-            d.id: d.name for d in db.query(Document).filter(Document.workspace_id == workspace_id)
+        documents = {
+            d.id: d for d in db.query(Document).filter(Document.workspace_id == workspace_id)
         }
+        names = {document_id: doc.name for document_id, doc in documents.items()}
         ranked = [
             c
             for c in candidates.values()
@@ -205,4 +239,21 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
             reverse=True,
         )
         selected = diversify_ranked_chunks(ranked, limit)
-        return [source(c, names[c.document_id]) for c in selected]
+        return [
+            source(
+                c,
+                names[c.document_id],
+                c.page in (documents[c.document_id].ocr_pages or []),
+            )
+            for c in selected
+        ]
+
+
+@lru_cache(maxsize=1)
+def _sqlite_fts_available():
+    try:
+        with engine.connect() as connection:
+            connection.execute(text('SELECT 1 FROM chunks_fts LIMIT 0'))
+        return True
+    except Exception:
+        return False

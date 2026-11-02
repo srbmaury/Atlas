@@ -13,7 +13,7 @@ interface ChatMessagesProps {
     prompts: string[];
     onPrompt: (text: string) => void;
     initials: string;
-    renderAnswer: (answer: Answer) => ReactNode;
+    renderAnswer: (answer: Answer, onPrompt: (prompt: string) => void) => ReactNode;
     answerProgress: string;
     onStop: () => void;
     threadRef: RefObject<HTMLDivElement | null>;
@@ -74,7 +74,7 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
                                     {m.result?.scope?.length ? ` · ${m.result.scope.map((source) => SOURCE_LABELS[source as keyof typeof SOURCE_LABELS] ?? source).join(' + ')}` : ''}
                                 </span>
                             </div>
-                            {m.result ? renderAnswer(m.result) : <p>{m.content}</p>}
+                            {m.result ? renderAnswer(m.result, onPrompt) : <p>{m.content}</p>}
                         </div>
                     </div>
                 ),

@@ -36,3 +36,34 @@ def test_matches_filename_terms_separated_by_underscores():
 def test_canonical_url_safely_handles_bad_values():
     assert canonical_url('file:///etc/hosts') == ''
     assert canonical_url('https://EXAMPLE.com/a#fragment') == 'https://example.com/a'
+
+
+def test_repository_activity_ranks_by_last_push_not_prompt_overlap():
+    rows = [
+        Evidence(
+            'github',
+            'older',
+            'older-project',
+            'Last push: 2023-04-01T00:00:00Z',
+            date='2023-04-01T00:00:00Z',
+        ),
+        Evidence(
+            'github',
+            'newer',
+            'newer-project',
+            'Last push: 2025-02-01T00:00:00Z',
+            date='2025-02-01T00:00:00Z',
+        ),
+    ]
+
+    result = prepare_evidence('Which of my GitHub repos is most active?', rows)
+
+    assert [row.source_id for row in result] == ['newer', 'older']
+
+
+def test_repository_listing_keeps_github_repos_without_prompt_word_overlap():
+    rows = [item('github', 'r1', 'owner/project-one', 'A data tooling project')]
+
+    result = prepare_evidence('List at least 10 of my projects from GitHub', rows)
+
+    assert [row.source_id for row in result] == ['r1']

@@ -1,0 +1,201 @@
+'use client';
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus } from 'lucide-react';
+import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider } from '../../lib/types';
+import type { DriveConnectionStatus } from '../../lib/types';
+import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
+import { prompts } from '../../utils/utils';
+import { ConversationHistory } from './ConversationHistory';
+import { ConversationTranscript } from './ConversationTranscript';
+import { ResearchComposer } from './ResearchComposer';
+import { ResearchSourceSelector } from './ResearchSourceSelector';
+
+type Setter<T> = Dispatch<SetStateAction<T>>;
+
+interface ResearchWorkspaceProps {
+    title: string;
+    userMode: string;
+    readyCount: number;
+    includeDocuments: boolean;
+    setIncludeDocuments: Setter<boolean>;
+    gmailStatus: GmailStatus | null;
+    connectedGmail: boolean;
+    setConnectedGmail: Setter<boolean>;
+    connectedGmailQuery: string;
+    setConnectedGmailQuery: Setter<string>;
+    driveStatus: DriveConnectionStatus | null;
+    sourceStatuses: ConnectedSourceStatus[];
+    connectedProviders: ResearchProvider[];
+    setConnectedProviders: Setter<ResearchProvider[]>;
+    selectedCount: number;
+    onOpenScope: () => void;
+    onManageSources: () => void;
+    historyOpen: boolean;
+    onToggleHistory: () => void;
+    copied: boolean;
+    canCopy: boolean;
+    onCopy: () => void;
+    busy: boolean;
+    onNewChat: () => void;
+    chats: ChatSummary[];
+    chatId: string | null;
+    onRefreshChats: () => void;
+    onOpenChat: (id: string) => void;
+    onRenameChat: (chat: ChatSummary) => void;
+    onDeleteChat: (chat: ChatSummary) => void;
+    messages: Message[];
+    uploadButton: ReactNode;
+    onAsk: (question?: string) => void;
+    initials: string;
+    renderAnswer: (answer: Answer, onPrompt: (prompt: string) => void) => ReactNode;
+    answerProgress: string;
+    onStop: () => void;
+    threadRef: RefObject<HTMLDivElement | null>;
+    endRef: RefObject<HTMLDivElement | null>;
+    query: string;
+    setQuery: Setter<string>;
+    onUpload: () => void;
+    uploading: boolean;
+    hasAskSources: boolean;
+}
+
+export function ResearchWorkspace(props: ResearchWorkspaceProps) {
+    const allSelected =
+        props.includeDocuments &&
+        (!props.gmailStatus?.connected || props.connectedGmail) &&
+        [...(props.driveStatus?.connected ? ['drive' as const] : []), ...props.sourceStatuses.filter((item) => item.connected).map((item) => item.provider)].every((provider) =>
+            props.connectedProviders.includes(provider),
+        );
+
+    return (
+        <section>
+            <div className="crumb">
+                Ask Atlas<span>›</span>
+                <span className="crumb-title">{props.title}</span>
+            </div>
+            <div className="heading-row">
+                <div className="research-heading">
+                    <span className="eyebrow">RESEARCH ASSISTANT</span>
+                    <h1 title={props.title}>{props.title}</h1>
+                    <p className="subtitle">Answers grounded in your documents, with evidence you can inspect.</p>
+                </div>
+                <div className="actions">
+                    <button className="btn" onClick={props.onToggleHistory}>
+                        <MessageSquare size={15} />
+                        {props.historyOpen ? 'Hide history' : 'History'}
+                    </button>
+                    <button className="btn hide-small" disabled={!props.canCopy} onClick={props.onCopy}>
+                        {props.copied ? <Check /> : <Copy />}
+                        {props.copied ? 'Copied' : 'Copy chat'}
+                    </button>
+                    <button className="btn primary" disabled={props.busy} onClick={props.onNewChat}>
+                        <Plus />
+                        <span>New chat</span>
+                    </button>
+                </div>
+            </div>
+            <div className="filters">
+                <button className="filter" onClick={props.onOpenScope}>
+                    <FileText />
+                    {props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}
+                    <ChevronDown />
+                </button>
+                <span className="research-mode">
+                    <i />
+                    {props.userMode === 'ai' ? 'AI research' : 'Source search'} · {props.readyCount} ready documents
+                </span>
+            </div>
+            <ResearchSourceSelector
+                includeDocuments={props.includeDocuments}
+                onIncludeDocuments={props.setIncludeDocuments}
+                gmailStatus={props.gmailStatus}
+                connectedGmail={props.connectedGmail}
+                onIncludeGmail={props.setConnectedGmail}
+                driveStatus={props.driveStatus}
+                sourceStatuses={props.sourceStatuses}
+                connectedProviders={props.connectedProviders}
+                onSelectAll={(select) => {
+                    props.setIncludeDocuments(select);
+                    props.setConnectedGmail(select && !!props.gmailStatus?.connected);
+                    props.setConnectedProviders(
+                        select
+                            ? RESEARCH_PROVIDERS.filter((provider) =>
+                                  provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
+                              )
+                            : [],
+                    );
+                }}
+                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
+                onManage={props.onManageSources}
+            />
+            {props.connectedGmail && (
+                <div className="unified-gmail-scope">
+                    <label>
+                        Gmail search scope <input aria-label="Gmail search scope" value={props.connectedGmailQuery} onChange={(event) => props.setConnectedGmailQuery(event.target.value)} />
+                    </label>
+                </div>
+            )}
+            {props.userMode !== 'ai' && (
+                <div className="feedback" role="status">
+                    <CircleHelp />
+                    <span>
+                        <strong>Source search only.</strong> Atlas can find relevant passages, but it cannot write synthesized answers until an AI provider is configured. Set{' '}
+                        <code>AI_PROVIDER=openai</code> with <code>OPENAI_API_KEY</code>, or use <code>AI_PROVIDER=ollama</code>, then restart the API.
+                    </span>
+                </div>
+            )}
+            <div className={`chat-workspace ${props.historyOpen ? 'history-visible' : ''}`}>
+                <ConversationHistory
+                    chats={props.chats}
+                    chatId={props.chatId}
+                    busy={props.busy}
+                    onRefresh={props.onRefreshChats}
+                    onNewChat={props.onNewChat}
+                    onOpenChat={props.onOpenChat}
+                    onRenameChat={props.onRenameChat}
+                    onDeleteChat={props.onDeleteChat}
+                />
+                <div className="research">
+                    <div className="chat-pane">
+                        <ConversationTranscript
+                            messages={props.messages}
+                            busy={props.busy}
+                            readyCount={props.readyCount}
+                            uploadButton={props.uploadButton}
+                            prompts={prompts}
+                            onPrompt={props.onAsk}
+                            initials={props.initials}
+                            renderAnswer={props.renderAnswer}
+                            answerProgress={props.answerProgress}
+                            onStop={props.onStop}
+                            threadRef={props.threadRef}
+                            endRef={props.endRef}
+                        />
+                        {!!props.messages.length && (
+                            <div className="prompt-row">
+                                {['What are the key risks?', 'What should be built first?', 'Summarize the next steps'].map((prompt) => (
+                                    <button key={prompt} disabled={props.busy || !props.hasAskSources} onClick={() => props.onAsk(prompt)}>
+                                        {prompt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <ResearchComposer
+                            query={props.query}
+                            onChange={props.setQuery}
+                            onSubmit={() => props.onAsk()}
+                            onUpload={props.onUpload}
+                            uploading={props.uploading}
+                            busy={props.busy}
+                            hasAskSources={props.hasAskSources}
+                            hasMessages={!!props.messages.length}
+                        />
+                        <p id="research-composer-help" className="caption composer-caption">
+                            {props.messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}

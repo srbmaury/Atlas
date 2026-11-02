@@ -110,11 +110,11 @@ def test_calendar_tomorrow_bounds_cover_one_kolkata_day():
 def test_calendar_list_result_respects_requested_count_and_orders_citations():
     from types import SimpleNamespace
 
-    from app.main import calendar_event_list_result
+    from app.main import connected_source_listing_result
     from app.sources import Evidence
 
     question = 'list next 10 events from my calendar'
-    body = SimpleNamespace(providers=['calendar'])
+    body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
     evidence = [
         Evidence(
             'calendar',
@@ -137,23 +137,22 @@ def test_calendar_list_result_respects_requested_count_and_orders_citations():
         ],
     ]
 
-    result = calendar_event_list_result(question, body, evidence, {})
+    result = connected_source_listing_result(question, body, evidence, {})
 
     assert result['mode'] == 'source_results'
     assert len(result['sources']) == 10
     assert [source['name'] for source in result['sources']] == [f'Event {i}' for i in range(10)]
-    assert len([line for line in result['answer'].splitlines() if line[:1].isdigit()]) == 10
-    assert 'upcoming events' in result['answer']
+    assert len([line for line in result['answer'].splitlines() if line.startswith('- **')]) == 10
     assert 'Old event' not in result['answer']
 
 
 def test_calendar_matching_event_search_does_not_claim_every_event_is_upcoming():
     from types import SimpleNamespace
 
-    from app.main import calendar_event_list_result
+    from app.main import connected_source_listing_result
     from app.sources import Evidence
 
-    body = SimpleNamespace(providers=['calendar'])
+    body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
     evidence = [
         Evidence(
             'calendar', 'past', 'Earlier flight', 'Details', None, '2025-07-29T20:00:00+05:30'
@@ -163,17 +162,18 @@ def test_calendar_matching_event_search_does_not_claim_every_event_is_upcoming()
         ),
     ]
 
-    result = calendar_event_list_result('Find flight 6E 501 on my calendar', body, evidence, {})
+    result = connected_source_listing_result(
+        'Find flight 6E 501 on my calendar', body, evidence, {}
+    )
 
-    assert 'matching events' in result['answer']
-    assert 'upcoming events' not in result['answer']
+    assert 'matching items' in result['answer']
     assert len(result['sources']) == 2
 
 
 def test_calendar_singular_next_event_returns_one_future_event():
     from types import SimpleNamespace
 
-    from app.main import calendar_event_list_result
+    from app.main import connected_source_listing_result
     from app.sources import Evidence
 
     body = SimpleNamespace(providers=['calendar'])
@@ -197,13 +197,13 @@ def test_calendar_singular_next_event_returns_one_future_event():
         ),
     ]
 
-    result = calendar_event_list_result(
+    result = connected_source_listing_result(
         'What is the next event in my calendar?', body, evidence, {}
     )
 
     assert len(result['sources']) == 1
     assert result['sources'][0]['name'] == 'First future event'
-    assert result['answer'].startswith('Here is 1 upcoming event ')
+    assert result['answer'].startswith('Found 1 matching item in Google Calendar:')
 
 
 def test_connected_source_listing_cites_drive_and_gmail_titles():
@@ -236,6 +236,53 @@ def test_connected_source_listing_cites_drive_and_gmail_titles():
     ]
     assert result['sources'][0]['url'] == 'https://drive.google.com/file/d/drive-1'
     assert '[1]' in result['answer'] and '[2]' in result['answer']
+
+
+def test_retrieval_trace_uses_narrowed_result_scope_for_source_listings():
+    from types import SimpleNamespace
+
+    from app.main import attach_retrieval_trace
+    from app.sources import Evidence
+
+    body = SimpleNamespace(include_documents=True, include_gmail=False, providers=['slack'])
+    evidence = [
+        Evidence('documents', 'doc-1', 'Notes', 'Document match'),
+        Evidence('slack', 'slack-1', '#research', 'Slack match'),
+    ]
+    result = {
+        'answer': 'Found a matching Slack item [1].',
+        'sources': [{'provider': 'slack', 'name': '#research'}],
+        'mode': 'source_results',
+        'scope': ['slack'],
+    }
+
+    attach_retrieval_trace(
+        result,
+        body,
+        evidence,
+        {'found': {'documents': 1, 'slack': 1}, 'failed': []},
+    )
+
+    assert result['retrieval']['passages_considered'] == 1
+    assert result['retrieval']['passages_used'] == 1
+    assert result['retrieval']['sources'] == [
+        {'provider': 'slack', 'status': 'searched', 'found': 1, 'considered': 1, 'used': 1}
+    ]
+
+
+def test_deforestation_questions_are_not_reduced_to_source_title_listings():
+    from types import SimpleNamespace
+
+    from app.main import connected_source_listing_result
+    from app.sources import Evidence
+
+    body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['slack'])
+    evidence = [
+        Evidence('slack', 'slack-1', '#research', 'Agriculture and logging cause forest loss.')
+    ]
+
+    for question in ('causes of deforestation', 'List 3 to 5 causes of deforestation'):
+        assert connected_source_listing_result(question, body, evidence, {}) is None
 
 
 def test_outlook_search_normalizes_mail(monkeypatch):

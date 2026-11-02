@@ -1,19 +1,23 @@
 """Fetch and store public HTML pages as regular Atlas documents.
 
 Security: reject local/private IPs, credentials, unsafe schemes, redirects,
-large responses, and non-HTML content. The deployer must ALSO enforce outbound
-network controls: DNS rebinds can bypass application-level preflight checks.
+large responses, and non-HTML content. Connect to a previously validated IP
+address while retaining the original hostname for HTTP Host and TLS SNI, so a
+second DNS lookup cannot rebind the request to a private address.
 """
 
+from __future__ import annotations
+
 import hashlib
+import http.client
 import ipaddress
-import os
+import json
 import re
 import socket
+import ssl
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
-import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -29,7 +33,7 @@ class UrlRequest(BaseModel):
     url: str = Field(min_length=10, max_length=2048)
 
 
-def validate_public_url(raw: str) -> str:
+def _validated_public_url(raw: str) -> tuple[str, list[str]]:
     value = raw.strip()
     parts = urlsplit(value)
     if parts.scheme not in ('https', 'http') or not parts.hostname:
@@ -47,17 +51,49 @@ def validate_public_url(raw: str) -> str:
         raise ValueError('Invalid hostname.')
     if hostname in ('localhost',) or hostname.endswith(('.localhost', '.local', '.internal')):
         raise ValueError('Local network addresses are not allowed.')
+    addresses = resolve_public_addresses(hostname, port or (443 if parts.scheme == 'https' else 80))
+    return value, addresses
+
+
+def validate_public_url(raw: str) -> str:
+    return _validated_public_url(raw)[0]
+
+
+def resolve_public_addresses(hostname: str, port: int) -> list[str]:
     try:
-        addresses = socket.getaddrinfo(
-            hostname, port or (443 if parts.scheme == 'https' else 80), type=socket.SOCK_STREAM
-        )
+        addresses = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
     except (socket.gaierror, UnicodeError, OSError) as exc:
         raise ValueError('URL hostname could not be resolved.') from exc
-    if not addresses or any(
-        not ipaddress.ip_address(address[4][0]).is_global for address in addresses
-    ):
-        raise ValueError('URL must resolve only to public IP addresses.')
-    return value
+    unique = list(dict.fromkeys(address[4][0] for address in addresses))
+    try:
+        if not unique or any(not ipaddress.ip_address(address).is_global for address in unique):
+            raise ValueError('URL must resolve only to public IP addresses.')
+    except ValueError as exc:
+        if str(exc) == 'URL must resolve only to public IP addresses.':
+            raise
+        raise ValueError('URL hostname could not be resolved.') from exc
+    return unique
+
+
+class PinnedHTTPConnection(http.client.HTTPConnection):
+    """Connect to the already-validated address, avoiding a second DNS lookup."""
+
+    def __init__(self, hostname: str, address: str, port: int, timeout: float):
+        super().__init__(hostname, port=port, timeout=timeout)
+        self.address = address
+
+    def connect(self):
+        self.sock = socket.create_connection((self.address, self.port), self.timeout)
+
+
+class PinnedHTTPSConnection(PinnedHTTPConnection):
+    def connect(self):
+        sock = socket.create_connection((self.address, self.port), self.timeout)
+        try:
+            self.sock = ssl.create_default_context().wrap_socket(sock, server_hostname=self.host)
+        except Exception:
+            sock.close()
+            raise
 
 
 class PageText(HTMLParser):
@@ -100,39 +136,151 @@ def extract_html(html: str) -> tuple[str, str]:
     return title or 'Web page', body
 
 
-def fetch_page(url: str) -> tuple[str, str]:
-    # Fail before DNS resolution when the required network policy is absent.
-    if os.getenv('ATLAS_WEB_EGRESS_PROTECTED', '').lower() != 'true':
-        raise ValueError(
-            'Web import requires an outbound firewall blocking non-public IP ranges (ATLAS_WEB_EGRESS_PROTECTED=true).'
-        )
-    url = validate_public_url(url)
+def extract_chatgpt_share(html: str) -> tuple[str, str] | None:
+    """Extract public conversation turns from ChatGPT's server-rendered share data."""
+    chunks = re.findall(r'streamController\.enqueue\(("(?:\\.|[^"\\])*")\)', html)
+    serialized = next(
+        (
+            json.loads(chunk)
+            for chunk in chunks
+            if json.loads(chunk).lstrip().startswith('[')
+        ),
+        None,
+    )
+    if not serialized:
+        return None
     try:
-        with httpx.Client(
-            timeout=httpx.Timeout(15.0),
-            follow_redirects=False,
-            trust_env=False,
-            headers={'User-Agent': 'Atlas-Research/1.0', 'Accept': 'text/html'},
-        ) as client:
-            with client.stream('GET', url) as response:
-                if response.is_redirect:
-                    raise ValueError('Redirects are not supported; paste the final public URL.')
-                response.raise_for_status()
-                media_type = response.headers.get('content-type', '').lower().split(';')[0].strip()
-                if media_type not in ('text/html', 'application/xhtml+xml'):
-                    raise ValueError('The URL must return an HTML page.')
-                chunks, size = [], 0
-                for chunk in response.iter_bytes():
-                    size += len(chunk)
-                    if size > MAX_HTML_BYTES:
-                        raise ValueError('Page exceeds the HTML size limit.')
-                    chunks.append(chunk)
-                encoding = response.encoding or 'utf-8'
-        title, body = extract_html(b''.join(chunks).decode(encoding, errors='replace'))
+        values = json.loads(serialized)
+    except (TypeError, ValueError):
+        return None
+    memo, active = {}, set()
+
+    def resolve(value, depth=0):
+        if depth > 80:
+            return None
+        if type(value) is int:
+            if value < 0 or value >= len(values):
+                return None
+            if value in memo:
+                return memo[value]
+            if value in active:
+                return None
+            active.add(value)
+            resolved = resolve(values[value], depth + 1)
+            active.remove(value)
+            memo[value] = resolved
+            return resolved
+        if isinstance(value, dict):
+            result = {}
+            for key, child in value.items():
+                resolved_key = key
+                if key.startswith('_') and key[1:].isdigit():
+                    index = int(key[1:])
+                    if index < len(values) and isinstance(values[index], str):
+                        resolved_key = values[index]
+                result[resolved_key] = resolve(child, depth + 1)
+            return result
+        if isinstance(value, list):
+            return [resolve(child, depth + 1) for child in value]
+        return value
+
+    try:
+        decoded = resolve(values[0])
+        routes = decoded.get('loaderData', {}).values()
+        server_data = next(
+            route['serverResponse']['data']
+            for route in routes
+            if isinstance(route, dict)
+            and isinstance(route.get('serverResponse'), dict)
+            and isinstance(route['serverResponse'].get('data'), dict)
+        )
+        mapping = server_data.get('mapping', {})
+        turns, seen = [], set()
+
+        def visit(node_id):
+            if node_id in seen:
+                return
+            seen.add(node_id)
+            node = mapping.get(node_id, {})
+            message = node.get('message') or {}
+            role = (message.get('author') or {}).get('role')
+            if role in ('user', 'assistant'):
+                parts = (message.get('content') or {}).get('parts') or []
+                text = '\n'.join(part for part in parts if isinstance(part, str)).strip()
+                if text:
+                    turns.append(f'{role.title()}: {text}')
+            for child in node.get('children') or []:
+                visit(child)
+
+        root = mapping.get('client-created-root', {})
+        for child in root.get('children') or []:
+            visit(child)
+        body = '\n\n'.join(turns)[:MAX_TEXT_CHARS]
+        title = str(server_data.get('title') or 'Shared ChatGPT conversation')[:180]
+        return (title, body) if len(body) >= 40 else None
+    except (AttributeError, KeyError, StopIteration, TypeError, ValueError):
+        return None
+
+
+def fetch_page(url: str) -> tuple[str, str]:
+    url, addresses = _validated_public_url(url)
+    parts = urlsplit(url)
+    hostname = parts.hostname.rstrip('.').lower()
+    port = parts.port or (443 if parts.scheme == 'https' else 80)
+    target = parts.path or '/'
+    if parts.query:
+        target += '?' + parts.query
+    connection_type = PinnedHTTPSConnection if parts.scheme == 'https' else PinnedHTTPConnection
+    try:
+        response = None
+        last_error = None
+        for address in addresses:
+            connection = connection_type(hostname, address, port, timeout=15.0)
+            try:
+                connection.request(
+                    'GET',
+                    target,
+                    headers={
+                        'Host': hostname,
+                        'User-Agent': 'Atlas-Research/1.0',
+                        'Accept': 'text/html,application/xhtml+xml',
+                        'Accept-Encoding': 'identity',
+                        'Connection': 'close',
+                    },
+                )
+                response = connection.getresponse()
+                break
+            except OSError as exc:
+                last_error = exc
+                connection.close()
+        if response is None:
+            raise last_error or OSError('No public address was reachable.')
+        try:
+            if response.status in (301, 302, 303, 307, 308):
+                raise ValueError('Redirects are not supported; paste the final public URL.')
+            if not 200 <= response.status < 300:
+                raise ValueError('Could not fetch the requested public webpage.')
+            media_type = response.getheader('content-type', '').lower().split(';')[0].strip()
+            if media_type not in ('text/html', 'application/xhtml+xml'):
+                raise ValueError('The URL must return an HTML page.')
+            data = response.read(MAX_HTML_BYTES + 1)
+            if len(data) > MAX_HTML_BYTES:
+                raise ValueError('Page exceeds the HTML size limit.')
+            encoding = 'utf-8'
+            content_type = response.getheader('content-type', '')
+            match = re.search(r'charset=([\w-]+)', content_type, re.I)
+            if match:
+                encoding = match.group(1)
+        finally:
+            response.close()
+        html = data.decode(encoding, errors='replace')
+        title, body = extract_html(html)
+        if hostname == 'chatgpt.com' and re.match(r'^/share/[^/]+/?$', parts.path):
+            title, body = extract_chatgpt_share(html) or (title, body)
         if len(body.strip()) < 40:
             raise ValueError('Page has insufficient readable text.')
         return title, body
-    except httpx.HTTPError as exc:
+    except (OSError, http.client.HTTPException, ssl.SSLError, UnicodeError) as exc:
         raise ValueError('Could not fetch the requested public webpage.') from exc
 
 

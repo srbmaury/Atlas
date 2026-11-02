@@ -1,7 +1,8 @@
 'use client';
 import { type ReactNode } from 'react';
-import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload } from 'lucide-react';
+import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff } from 'lucide-react';
 import type { Doc, ChatSummary } from '../../lib/types';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { FileBadge } from '../ui/WorkspacePrimitives';
 
 interface HomeViewProps {
@@ -9,11 +10,11 @@ interface HomeViewProps {
     onQueryChange: (value: string) => void;
     onAsk: () => void;
     hasAskSources: boolean;
-    includeDocuments: boolean;
-    readyCount: number;
+    sourceLabels: string[];
     busy: boolean;
     chats: ChatSummary[];
     docs: Doc[];
+    onChooseSources: () => void;
     onOpenSources: () => void;
     onOpenConversations: () => void;
     onOpenConversation: (id: string) => void;
@@ -35,11 +36,11 @@ export function HomeView({
     onQueryChange,
     onAsk,
     hasAskSources,
-    includeDocuments,
-    readyCount,
+    sourceLabels,
     busy,
     chats,
     docs,
+    onChooseSources,
     onOpenSources,
     onOpenConversations,
     onOpenConversation,
@@ -55,6 +56,12 @@ export function HomeView({
     onBrowse,
     formatSize,
 }: HomeViewProps) {
+    const voice = useVoiceInput();
+
+    function addTranscript(transcript: string) {
+        onQueryChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
+    }
+
     return (
         <section className="atlas-home">
             <div className="home-hero home-hero-focused">
@@ -91,15 +98,35 @@ export function HomeView({
                     <div className="home-prompt-bottom">
                         <div className="home-scope-summary">
                             <FileText size={15} />
-                            {includeDocuments ? `${readyCount} ready documents` : 'No documents selected'} <span>·</span>{' '}
-                            <button type="button" onClick={onOpenSources}>
-                                Manage sources <ArrowUpRight size={13} />
+                            <span aria-label="Sources included in this question">Selected for search: {sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}</span>
+                            <span>·</span>{' '}
+                            <button type="button" onClick={onChooseSources}>
+                                Choose sources <ArrowUpRight size={13} />
                             </button>
                         </div>
-                        <button className="home-send" aria-label="Ask Atlas" disabled={busy || !query.trim() || !hasAskSources}>
-                            {busy ? <LoaderCircle size={18} className="spin" /> : <ArrowUp size={18} />}
-                        </button>
+                        <div className="home-composer-actions">
+                            <button
+                                type="button"
+                                className={`voice-input-button ${voice.listening ? 'is-listening' : ''}`}
+                                aria-label={voice.listening ? 'Stop voice input' : voice.supported ? 'Start voice input' : 'Voice input not supported in this browser'}
+                                aria-pressed={voice.listening}
+                                title={voice.supported ? 'Use voice input' : 'Voice input is not supported in this browser'}
+                                disabled={busy}
+                                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                            >
+                                {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
+                            </button>
+                            <button className="home-send" aria-label="Ask Atlas" disabled={busy || !query.trim() || !hasAskSources}>
+                                {busy ? <LoaderCircle size={18} className="spin" /> : <ArrowUp size={18} />}
+                            </button>
+                        </div>
                     </div>
+                    {(voice.listening || voice.error) && (
+                        <div className="voice-input-status" role={voice.error ? 'alert' : 'status'}>
+                            {voice.error || 'Listening…'}
+                        </div>
+                    )}
+                    <p className="home-source-routing-note">Calendar and GitHub questions may automatically use that source.</p>
                 </form>
             </div>
             <div className="home-section-header">

@@ -281,13 +281,13 @@ def test_docx_tables_and_sections(client):
 
 
 def test_upload_limits(client, monkeypatch):
-    from app import main
+    from app.routes import documents as document_routes
 
     w = wid(client)
     upload(client, w)
     drain()
     upload(client, w, 'new.md', 'New evidence changes the budget to 80000.')
-    monkeypatch.setattr(main, 'MAX_FILE_BYTES', 10)
+    monkeypatch.setattr(document_routes, 'MAX_FILE_BYTES', 10)
     result = upload(client, w, 'too-large.md', 'x' * 11)
     assert 'error' in result and 'id' not in result
     files = list((config.DATA / 'files').iterdir())
@@ -425,10 +425,10 @@ def test_chunked_upload_offsets_completion_duplicates_and_access(client):
 
 
 def test_staged_upload_validation_and_cancellation(client, monkeypatch):
-    from app import main
+    from app.routes import documents as document_routes
 
     w = wid(client)
-    monkeypatch.setattr(main, 'MAX_FILE_BYTES', 100)
+    monkeypatch.setattr(document_routes, 'MAX_FILE_BYTES', 100)
     path = f'/api/workspaces/{w}/uploads'
     assert client.post(path, json={'name': 'big.pdf', 'size': 101}).status_code == 413
     assert client.post(path, json={'name': 'bad.exe', 'size': 10}).status_code == 422
@@ -710,6 +710,32 @@ def test_slack_search_keeps_long_message_text_for_relevant_evidence(monkeypatch)
     assert 'forest fires' in result[0]['excerpt']
 
 
+def test_slack_search_uses_message_text_when_channel_label_is_an_id(monkeypatch):
+    from app import external_sources
+
+    monkeypatch.setattr(
+        external_sources,
+        'http_json',
+        lambda *args, **kwargs: {
+            'ok': True,
+            'messages': {
+                'matches': [
+                    {
+                        'ts': '1',
+                        'channel': {'name': 'U0CDTS8H4Q2'},
+                        'text': 'Causes include agricultural expansion. More context follows.',
+                        'permalink': 'https://slack.test/message',
+                    }
+                ]
+            },
+        },
+    )
+
+    result = external_sources.source_search('slack', 'token', 'causes deforestation')
+
+    assert result[0]['title'] == 'Causes include agricultural expansion'
+
+
 def test_connected_payload_keeps_relevant_late_slack_details_and_ranks_them_first():
     from app.connected_synthesis import bounded_payload
     from app.sources import Evidence
@@ -756,7 +782,7 @@ def test_connected_synthesis_fits_local_model_and_preserves_citations():
         calls.append(payload)
         if len(calls) == 1:
             raise ValueError('Model response was truncated; try a narrower question.')
-        return 'Supported by [1] and [2].'
+        return 'An important fact is in the document [1]. Other fact is present in email [2].'
 
     answer, payload = synthesize_connected(
         'What changed?', evidence, 'ollama', '', 'ignored', None, fake_ollama
@@ -766,7 +792,7 @@ def test_connected_synthesis_fits_local_model_and_preserves_citations():
     assert sum(len(x['text']) for x in calls[0]['sources']) <= 16000
     assert [x['source_id'] for x in payload] == list(range(1, len(payload) + 1))
     assert {x['provider'] for x in payload} == {'documents', 'gmail'}
-    assert answer == 'Supported by [1] and [2].'
+    assert answer == 'An important fact is in the document [1]. Other fact is present in email [2].'
 
 
 def test_connected_synthesis_includes_broad_repository_inventory():
@@ -923,8 +949,13 @@ def test_connected_chat_stream_returns_explicit_no_evidence_result(client):
     assert response.status_code == 200
     events = [__import__('json').loads(line) for line in response.text.splitlines() if line]
     assert events[0]['type'] == 'status'
+    assert 'Documents' in events[0]['text']
     assert events[-1]['type'] == 'done'
     assert events[-1]['result']['mode'] == 'insufficient_evidence'
+    assert events[-1]['result']['retrieval']['passages_considered'] == 0
+    assert events[-1]['result']['retrieval']['sources'] == [
+        {'provider': 'documents', 'status': 'searched', 'found': 0, 'considered': 0, 'used': 0}
+    ]
 
 
 def test_connected_chat_stream_keeps_local_excerpt_mode_without_model(client, monkeypatch):
@@ -978,6 +1009,9 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
     result = events[-1]['result']
     assert result['mode'] == 'insufficient_evidence'
     assert result['scope'] == ['slack']
+    assert result['retrieval']['sources'] == [
+        {'provider': 'slack', 'status': 'searched', 'found': 0, 'considered': 0, 'used': 0}
+    ]
     assert 'No matching results were found in Slack' in result['answer']
 
 
@@ -1271,6 +1305,7 @@ def test_github_search_query_preserves_filters_and_simplifies_questions():
         requested_result_limit('What are three of my recently updated open GitHub pull requests?')
         == 3
     )
+    assert requested_result_limit('List at least 10 of my projects from GitHub') == 10
     assert (
         slack_search_query('What decisions about Hackathon did the team discuss in Slack?')
         == 'Hackathon'

@@ -36,7 +36,8 @@ def test_missing_citations_never_turn_into_retrieval_dump():
                 responses=SimpleNamespace(
                     create=lambda **kwargs: [
                         SimpleNamespace(
-                            type='response.output_text.delta', delta='Pristina is the capital.'
+                            type='response.output_text.delta',
+                            delta='Pristina is a large port on Mars.',
                         )
                     ]
                 )
@@ -50,6 +51,72 @@ def test_missing_citations_never_turn_into_retrieval_dump():
     assert result['mode'] == 'citation_check_failed'
     assert result['sources'] == []
     assert 'I found' not in result['answer']
+
+
+def test_supported_writing_draft_gets_citations_from_matching_passages():
+    draft = (
+        'Agricultural expansion and timber logging are causes of deforestation. '
+        'Mining and forest fires also remove forest cover.'
+    )
+    source = evidence(
+        'Forest causes',
+        'Agricultural expansion, timber logging, mining and forest fires drive deforestation and remove forest cover.',
+    )
+
+    events = list(
+        stream_connected(
+            'Write a paragraph about deforestation',
+            [source],
+            'openai',
+            'key',
+            'model',
+            lambda: SimpleNamespace(
+                responses=SimpleNamespace(
+                    create=lambda **kwargs: [
+                        SimpleNamespace(type='response.output_text.delta', delta=draft)
+                    ]
+                )
+            ),
+            '',
+            '',
+        )
+    )
+
+    result = events[-1]
+    assert result['mode'] == 'connected'
+    assert result['answer'] == (
+        'Agricultural expansion and timber logging are causes of deforestation. [1]\n'
+        'Mining and forest fires also remove forest cover. [1]'
+    )
+    assert result['sources'][0]['source_id'] == 1
+
+
+def test_partial_answer_keeps_supported_claims_and_marks_omitted_claims():
+    draft = 'Agricultural expansion and logging drive deforestation [1]. The trees were exactly 500 years old [1].'
+    source = evidence('Forest causes', 'Agricultural expansion and logging drive deforestation.')
+    events = list(
+        stream_connected(
+            'Write a paragraph about deforestation',
+            [source],
+            'openai',
+            'key',
+            'model',
+            lambda: SimpleNamespace(
+                responses=SimpleNamespace(
+                    create=lambda **kwargs: [
+                        SimpleNamespace(type='response.output_text.delta', delta=draft)
+                    ]
+                )
+            ),
+            '',
+            '',
+        )
+    )
+
+    result = events[-1]
+    assert result['mode'] == 'connected'
+    assert result['answer'] == 'Agricultural expansion and logging drive deforestation [1].'
+    assert 'Some claims were omitted' in result['coverage_note']
 
 
 def test_valid_cited_answer_remains_synthesis():

@@ -7,27 +7,7 @@ import { SourceConnectionDialog } from './sources/SourceConnectionDialog';
 import { GmailWorkspaceView } from './sources/gmail/GmailWorkspaceView';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import {
-    Check,
-    ChevronDown,
-    CircleHelp,
-    FileText,
-    FolderOpen,
-    Layers3,
-    Plus,
-    Search,
-    Upload,
-    X,
-    LoaderCircle,
-    MessageSquare,
-    Moon,
-    Sun,
-    PanelLeftOpen,
-    Menu,
-    Copy,
-    CheckCircle2,
-    AlertCircle,
-} from 'lucide-react';
+import { FolderOpen, Layers3, Plus, Search, Upload, X, LoaderCircle, Moon, Sun, PanelLeftOpen, Menu, Check, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import type { User, Workspace, Doc, Source, Answer, ChatSummary, DocumentPreview } from '../lib/types';
 
@@ -38,12 +18,9 @@ import { useGmailWorkspace } from '../hooks/useGmailWorkspace';
 import { useConnectedSourcesController } from '../hooks/useConnectedSourcesController';
 
 import '../app/rebuild.css';
-import { ConversationTranscript } from './chat/ConversationTranscript';
-import { ResearchComposer } from './chat/ResearchComposer';
 import { ResearchAnswer } from './chat/ResearchAnswer';
 import { EvidenceInspector } from './chat/EvidenceInspector';
-import { ConversationHistory } from './chat/ConversationHistory';
-import { ResearchSourceSelector } from './chat/ResearchSourceSelector';
+import { ResearchWorkspace } from './chat/ResearchWorkspace';
 
 import { WorkspaceSearchDialog } from './layout/WorkspaceSearchDialog';
 import { WorkspaceManagerDialog } from './layout/WorkspaceManagerDialog';
@@ -59,8 +36,8 @@ import { AuthView } from './auth/AuthView';
 import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitives';
 import { flushSync } from 'react-dom';
 
-import { prettyBytes, prompts } from '../utils/utils';
-import { RESEARCH_PROVIDERS } from '../lib/providers';
+import { prettyBytes } from '../utils/utils';
+import { PROVIDER_LABELS } from '../lib/providers';
 
 export function AtlasWorkspace() {
     const { theme, toggleTheme } = useAtlasTheme();
@@ -198,7 +175,7 @@ export function AtlasWorkspace() {
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
     }, [messages.length, busy, tab]);
 
-    function newChat() {
+    function newChat(preserveSourceSelection = false) {
         if (busy) return;
         activeChat.current = null;
         setChatId(null);
@@ -207,9 +184,11 @@ export function AtlasWorkspace() {
         setMessages([]);
         setQuery('');
         setSource(null);
-        setIncludeDocuments(true);
-        setConnectedGmail(false);
-        setConnectedProviders([]);
+        if (!preserveSourceSelection) {
+            setIncludeDocuments(true);
+            setConnectedGmail(false);
+            setConnectedProviders([]);
+        }
         navigate('chat');
     }
 
@@ -269,6 +248,11 @@ export function AtlasWorkspace() {
 
     const ready = docs.filter((d) => d.status === 'ready');
     const hasAskSources = (includeDocuments && ready.length > 0) || connectedGmail || connectedProviders.length > 0;
+    const homeSourceLabels = [
+        ...(includeDocuments ? [selected.length ? `Documents (${selected.length} selected)` : `Documents (all ${ready.length} ready)`] : []),
+        ...(connectedGmail ? ['Gmail'] : []),
+        ...connectedProviders.map((provider) => PROVIDER_LABELS[provider]),
+    ];
     const filtered = docs.filter((d) => d.name.toLowerCase().includes(filter.toLowerCase()));
     const workspace = workspaces.find((w) => w.id === workspaceId);
 
@@ -292,8 +276,8 @@ export function AtlasWorkspace() {
               .join(' · ')
         : '';
 
-    function renderAnswer(result: Answer) {
-        return <ResearchAnswer result={result} onOpenSource={setSource} />;
+    function renderAnswer(result: Answer, onPrompt: (prompt: string) => void) {
+        return <ResearchAnswer result={result} onOpenSource={(item, context) => setSource(context ? { ...item, highlight_context: context } : item)} onPrompt={onPrompt} />;
     }
 
     const { authenticate, addWorkspace, removeWorkspace, signOut } = createSessionActions({
@@ -351,7 +335,6 @@ export function AtlasWorkspace() {
         busy,
         hasAskSources,
         user,
-        sourceStatuses,
         includeDocuments,
         connectedGmail,
         connectedProviders,
@@ -530,11 +513,11 @@ export function AtlasWorkspace() {
                             onQueryChange={setQuery}
                             onAsk={() => void ask(query, true)}
                             hasAskSources={hasAskSources}
-                            includeDocuments={includeDocuments}
-                            readyCount={ready.length}
+                            sourceLabels={homeSourceLabels}
                             busy={busy}
                             chats={chats}
                             docs={docs}
+                            onChooseSources={() => newChat(true)}
                             onOpenSources={() => navigate('sources')}
                             onOpenConversations={() => {
                                 navigate('chat');
@@ -559,140 +542,52 @@ export function AtlasWorkspace() {
                         />
                     )}
                     {workspaceId && tab === 'chat' && (
-                        <section>
-                            <div className="crumb">
-                                Ask Atlas<span>›</span>
-                                <span className="crumb-title">{title}</span>
-                            </div>
-                            <div className="heading-row">
-                                <div className="research-heading">
-                                    <span className="eyebrow">RESEARCH ASSISTANT</span>
-                                    <h1 title={title}>{title}</h1>
-                                    <p className="subtitle">Answers grounded in your documents, with evidence you can inspect.</p>
-                                </div>
-                                <div className="actions">
-                                    <button className="btn" onClick={() => setHistoryOpen((v) => !v)}>
-                                        <MessageSquare size={15} />
-                                        {historyOpen ? 'Hide history' : 'History'}
-                                    </button>
-                                    <button className="btn hide-small" disabled={!messages.length} onClick={() => void copyConversation()}>
-                                        {copied ? <Check /> : <Copy />}
-                                        {copied ? 'Copied' : 'Copy chat'}
-                                    </button>
-                                    <button className="btn primary" disabled={busy} onClick={newChat}>
-                                        <Plus />
-                                        <span>New chat</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="filters">
-                                <button className="filter" onClick={() => setScopeOpen(true)}>
-                                    <FileText />
-                                    {selected.length ? `${selected.length} selected documents` : 'All documents'}
-                                    <ChevronDown />
-                                </button>
-                                <span className="research-mode">
-                                    <i />
-                                    {user.mode === 'ai' ? 'AI research' : 'Source search'} · {ready.length} ready documents
-                                </span>
-                            </div>
-                            <ResearchSourceSelector
-                                includeDocuments={includeDocuments}
-                                onIncludeDocuments={setIncludeDocuments}
-                                gmailStatus={gmailStatus}
-                                connectedGmail={connectedGmail}
-                                onIncludeGmail={setConnectedGmail}
-                                driveStatus={driveStatus}
-                                sourceStatuses={sourceStatuses}
-                                connectedProviders={connectedProviders}
-                                onSelectAll={(select) => {
-                                    if (!select) {
-                                        setIncludeDocuments(false);
-                                        setConnectedGmail(false);
-                                        setConnectedProviders([]);
-                                        return;
-                                    }
-                                    setIncludeDocuments(true);
-                                    if (gmailStatus?.connected) setConnectedGmail(true);
-                                    setConnectedProviders(
-                                        RESEARCH_PROVIDERS.filter((provider) =>
-                                            provider === 'drive' ? driveStatus?.connected : sourceStatuses.some((item) => item.provider === provider && item.connected),
-                                        ),
-                                    );
-                                }}
-                                onToggleProvider={(provider, enabled) => setConnectedProviders((old) => (enabled ? [...old, provider] : old.filter((x) => x !== provider)))}
-                                onManage={() => navigate('sources')}
-                            />
-                            {connectedGmail && (
-                                <div className="unified-gmail-scope">
-                                    <label>
-                                        Gmail search scope <input aria-label="Gmail search scope" value={connectedGmailQuery} onChange={(e) => setConnectedGmailQuery(e.target.value)} />
-                                    </label>
-                                </div>
-                            )}
-
-                            {user.mode !== 'ai' && (
-                                <div className="feedback" role="status">
-                                    <CircleHelp />
-                                    <span>
-                                        <strong>Source search only.</strong> Atlas can find relevant passages, but it cannot write synthesized answers until an AI provider is configured. Set{' '}
-                                        <code>AI_PROVIDER=openai</code> with <code>OPENAI_API_KEY</code>, or use <code>AI_PROVIDER=ollama</code>, then restart the API.
-                                    </span>
-                                </div>
-                            )}
-                            <div className={`chat-workspace ${historyOpen ? 'history-visible' : ''}`}>
-                                <ConversationHistory
-                                    chats={chats}
-                                    chatId={chatId}
-                                    busy={busy}
-                                    onRefresh={() => void refreshChats()}
-                                    onNewChat={newChat}
-                                    onOpenChat={(id) => void loadChat(id)}
-                                    onRenameChat={(item) => void renameChat(item)}
-                                    onDeleteChat={(item) => void deleteChat(item)}
-                                />
-                                <div className="research">
-                                    <div className="chat-pane">
-                                        <ConversationTranscript
-                                            messages={messages}
-                                            busy={busy}
-                                            readyCount={ready.length}
-                                            uploadButton={uploadButton}
-                                            prompts={prompts}
-                                            onPrompt={(p) => void ask(p)}
-                                            initials={initials}
-                                            renderAnswer={renderAnswer}
-                                            answerProgress={answerProgress}
-                                            onStop={() => askController.current?.abort()}
-                                            threadRef={chatThread}
-                                            endRef={chatEnd}
-                                        />
-                                        {messages.length > 0 && (
-                                            <div className="prompt-row">
-                                                {['What are the key risks?', 'What should be built first?', 'Summarize the next steps'].map((p) => (
-                                                    <button key={p} disabled={busy || !hasAskSources} onClick={() => void ask(p)}>
-                                                        {p}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <ResearchComposer
-                                            query={query}
-                                            onChange={setQuery}
-                                            onSubmit={() => void ask()}
-                                            onUpload={() => input.current?.click()}
-                                            uploading={uploading}
-                                            busy={busy}
-                                            hasAskSources={hasAskSources}
-                                            hasMessages={messages.length > 0}
-                                        />
-                                        <p id="research-composer-help" className="caption composer-caption">
-                                            {messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                        <ResearchWorkspace
+                            title={title}
+                            userMode={user.mode}
+                            readyCount={ready.length}
+                            includeDocuments={includeDocuments}
+                            setIncludeDocuments={setIncludeDocuments}
+                            gmailStatus={gmailStatus}
+                            connectedGmail={connectedGmail}
+                            setConnectedGmail={setConnectedGmail}
+                            connectedGmailQuery={connectedGmailQuery}
+                            setConnectedGmailQuery={setConnectedGmailQuery}
+                            driveStatus={driveStatus}
+                            sourceStatuses={sourceStatuses}
+                            connectedProviders={connectedProviders}
+                            setConnectedProviders={setConnectedProviders}
+                            selectedCount={selected.length}
+                            onOpenScope={() => setScopeOpen(true)}
+                            onManageSources={() => navigate('sources')}
+                            historyOpen={historyOpen}
+                            onToggleHistory={() => setHistoryOpen((open) => !open)}
+                            copied={copied}
+                            canCopy={messages.length > 0}
+                            onCopy={() => void copyConversation()}
+                            busy={busy}
+                            onNewChat={() => newChat()}
+                            chats={chats}
+                            chatId={chatId}
+                            onRefreshChats={() => void refreshChats()}
+                            onOpenChat={(id) => void loadChat(id)}
+                            onRenameChat={(item) => void renameChat(item)}
+                            onDeleteChat={(item) => void deleteChat(item)}
+                            messages={messages}
+                            uploadButton={uploadButton}
+                            onAsk={(question) => void ask(question)}
+                            initials={initials}
+                            renderAnswer={renderAnswer}
+                            answerProgress={answerProgress}
+                            onStop={() => askController.current?.abort()}
+                            threadRef={chatThread}
+                            endRef={chatEnd}
+                            query={query}
+                            setQuery={setQuery}
+                            onUpload={() => input.current?.click()}
+                            uploading={uploading}
+                            hasAskSources={hasAskSources}
+                        />
                     )}
                     {workspaceId && tab === 'documents' && (
                         <DocumentsView

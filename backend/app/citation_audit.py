@@ -24,30 +24,49 @@ def audit_citations(answer: str, sources: list[dict], *, threshold: float = 0.35
         ids = [int(n) for n in REFERENCE.findall(statement)]
         claim = REFERENCE.sub('', statement).strip()
         valid = [n for n in ids if 1 <= n <= len(sources)]
-        evidence = ' '.join(str(sources[n - 1].get('text', '')) for n in valid)
         claim_terms = set(tokens(claim))
-        evidence_terms = set(tokens(evidence))
-        overlap = len(claim_terms & evidence_terms) / len(claim_terms) if claim_terms else 0
         numbers = set(NUMBER.findall(claim))
-        evidence_numbers = set(NUMBER.findall(evidence))
-        # Check for a conspicuous negation mismatch, but do not interpret it as proof.
-        negation_mismatch = bool(NEGATIONS & set(re.findall(r"\b[\w']+\b", claim.lower()))) != bool(
-            NEGATIONS & set(re.findall(r"\b[\w']+\b", evidence.lower()))
+        claim_negations = bool(NEGATIONS & set(re.findall(r"\b[\w']+\b", claim.lower())))
+        cited_texts = [str(sources[n - 1].get('text', '')) for n in valid]
+        overlaps = []
+        evidence_numbers = set()
+        negation_mismatches = []
+        for evidence in cited_texts:
+            evidence_terms = set(tokens(evidence))
+            overlaps.append(
+                len(claim_terms & evidence_terms) / len(claim_terms) if claim_terms else 0
+            )
+            evidence_numbers.update(NUMBER.findall(evidence))
+            evidence_negations = bool(NEGATIONS & set(re.findall(r"\b[\w']+\b", evidence.lower())))
+            negation_mismatches.append(claim_negations != evidence_negations)
+        # Multiple citations should support a claim collectively, while a single
+        # passage's lexical match remains independently visible in the score.
+        combined_terms = set(tokens(' '.join(cited_texts)))
+        combined_overlap = (
+            len(claim_terms & combined_terms) / len(claim_terms) if claim_terms else 0
         )
+        overlap = max(overlaps, default=combined_overlap)
+        if len(valid) > 1:
+            overlap = max(overlap, combined_overlap)
         if not ids:
             status = 'missing_citation'
         elif len(valid) != len(ids):
             status = 'invalid_citation'
         elif numbers - evidence_numbers:
             status = 'number_mismatch'
-        elif negation_mismatch:
+        elif negation_mismatches and all(negation_mismatches):
             status = 'possible_negation_mismatch'
         elif not claim_terms or overlap < threshold:
             status = 'needs_review'
         else:
             status = 'lexically_supported'
         findings.append(
-            {'claim': claim[:500], 'citations': ids, 'overlap': round(overlap, 3), 'status': status}
+            {
+                'claim': claim[:500],
+                'citations': ids,
+                'overlap': round(overlap, 3),
+                'status': status,
+            }
         )
     return {
         'claims': findings,

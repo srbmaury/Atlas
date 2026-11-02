@@ -4,10 +4,11 @@ Never infer a relationship just because two records share a keyword.
 These utilities preserve original source IDs and URLs for citation integrity.
 """
 
+import re
+from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
-from .research_queries import natural_search_terms
-from .retrieval import minimum_query_overlap, tokens
+from .retrieval import tokens
 
 
 def keywords(text):
@@ -53,31 +54,104 @@ def score(item, question):
     return 3 * len(query & title) + len(query & body)
 
 
+def is_listing_question(question):
+    """Recognize record-list requests across providers without provider-specific terms."""
+    words = set(tokens(question))
+    asks_to_list = bool(
+        re.search(r'\b(?:list|show|find|get|name|search)\b', question, re.I)
+        or re.search(
+            r'\b(?:what|which)\b.{0,50}\b(?:next|upcoming|active|recent|latest|newest)\b',
+            question,
+            re.I,
+        )
+    )
+    record_terms = {
+        'file',
+        'document',
+        'email',
+        'message',
+        'conversation',
+        'page',
+        'ticket',
+        'issue',
+        'item',
+        'result',
+        'project',
+        'repo',
+        'repository',
+        'event',
+        'appointment',
+        'meeting',
+        'flight',
+        'request',
+        'pr',
+    }
+    return asks_to_list and bool(words & record_terms)
+
+
+def is_recency_question(question):
+    return bool(
+        re.search(
+            r'\b(?:active|activity|recent|latest|newest|pushed|push|updated|newly|next|upcoming|soon)\b',
+            question,
+            re.I,
+        )
+    )
+
+
+def activity_timestamp(item):
+    value = getattr(item, 'date', None)
+    if not value:
+        return float('-inf')
+    try:
+        parsed = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.timestamp()
+    except ValueError:
+        return float('-inf')
+
+
 def prepare_evidence(question, items, *, limit=60, per_provider=20):
-    """Deduplicate exact references and rank by topical relevance with source diversity."""
-    query_terms = set(tokens(' '.join(natural_search_terms(question))))
-    required_overlap = minimum_query_overlap(' '.join(query_terms)) if query_terms else 0
-    unique = []
+    """Deduplicate and rank each provider's search results independently.
+
+    Each adapter has already searched its own source using that provider's
+    query semantics. Applying one lexical overlap threshold to the combined
+    results can discard valid evidence when providers use different wording.
+    Rank candidates within each provider, then interleave providers so one
+    source cannot crowd all other selected sources out of the model context.
+    """
+    recent = is_recency_question(question)
+    groups = {}
     seen = set()
     for item in items:
         key = fingerprint(item)
         if key in seen:
             continue
         seen.add(key)
-        if query_terms:
-            item_terms = set(tokens(f'{item.title}\n{item.excerpt}'))
-            if len(query_terms & item_terms) < required_overlap:
-                continue
-        unique.append(item)
-    ranked = sorted(enumerate(unique), key=lambda row: (-score(row[1], question), row[0]))
-    by_provider = {}
+        groups.setdefault(item.provider, []).append(item)
+
+    for candidates in groups.values():
+        if recent:
+            candidates.sort(key=lambda item: (-activity_timestamp(item), -score(item, question)))
+        else:
+            candidates.sort(key=lambda item: -score(item, question))
+
     selected = []
-    for _, item in ranked:
-        n = by_provider.get(item.provider, 0)
-        if n >= per_provider:
-            continue
-        selected.append(item)
-        by_provider[item.provider] = n + 1
-        if len(selected) >= limit:
+    provider_order = list(groups)
+    positions = {provider: 0 for provider in provider_order}
+    while len(selected) < limit:
+        added = False
+        for provider in provider_order:
+            candidates = groups[provider]
+            index = positions[provider]
+            if index >= min(len(candidates), per_provider):
+                continue
+            selected.append(candidates[index])
+            positions[provider] += 1
+            added = True
+            if len(selected) >= limit:
+                break
+        if not added:
             break
     return selected

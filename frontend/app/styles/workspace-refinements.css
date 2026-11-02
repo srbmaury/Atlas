@@ -137,11 +137,23 @@
     padding-top: 12px;
 }
 .atlas-v3 .research-composer-v2 {
+    position: relative;
     min-height: 64px;
     border-radius: 15px;
     transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease;
+}
+.atlas-v3 .research-composer-v2 .voice-input-status {
+    position: absolute;
+    right: 12px;
+    bottom: calc(100% + 7px);
+    max-width: min(360px, calc(100vw - 32px));
+    padding: 6px 10px;
+    border: 1px solid var(--outline);
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 .atlas-v3 .research-composer-v2 textarea {
     min-height: 38px;
@@ -155,6 +167,169 @@
     font-size: 14px;
     line-height: 1.8;
     overflow-wrap: anywhere;
+}
+.atlas-v3 .evidence-inspector .drawer-header {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+}
+.atlas-v3 .evidence-inspector-heading {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.atlas-v3 .evidence-inspector-heading h2 {
+    margin: 4px 0 8px;
+    overflow-wrap: anywhere;
+}
+.atlas-v3 .evidence-source-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: var(--sub);
+    font-size: 12px;
+}
+.atlas-v3 .evidence-source-meta > * {
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    padding: 3px 8px;
+}
+.atlas-v3 .evidence-inspector-passage .document-plain p {
+    margin: 0 0 16px;
+}
+.atlas-v3 .evidence-inspector-passage .document-plain p:last-child {
+    margin-bottom: 0;
+}
+.atlas-v3 .evidence-inspector-passage .document-kicker {
+    margin: 18px 0 5px;
+    color: var(--sub);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    line-height: 1.4;
+}
+.atlas-v3 .evidence-inspector-passage .document-section-heading {
+    margin: 0 0 10px;
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+}
+.atlas-v3 .evidence-inspector-passage .document-field {
+    display: grid;
+    grid-template-columns: minmax(105px, 0.55fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--outline);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.atlas-v3 .evidence-inspector-passage .document-field strong {
+    color: var(--sub);
+    font-weight: 600;
+}
+.atlas-v3 .evidence-inspector-passage .document-field span {
+    overflow-wrap: anywhere;
+}
+.atlas-v3 .evidence-inspector-passage .document-plain ul {
+    margin: 6px 0 16px;
+    padding-left: 22px;
+}
+.atlas-v3 .evidence-inspector-passage .document-plain li {
+    padding-left: 3px;
+    margin: 5px 0;
+}
+.atlas-v3 .evidence-inspector .drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex: 0 0 auto;
+    background: var(--panel);
+}
+.atlas-v3 .evidence-page-navigation {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.atlas-v3 .evidence-page-navigation .btn {
+    min-height: 36px;
+    justify-content: center;
+    padding: 6px 9px;
+    font-size: 12px;
+}
+.atlas-v3 .evidence-page-navigation .btn:last-child {
+    justify-self: end;
+}
+.atlas-v3 .evidence-page-navigation svg {
+    width: 15px;
+    height: 15px;
+}
+.atlas-v3 .evidence-page-navigation > span {
+    color: var(--sub);
+    font-size: 12px;
+    white-space: nowrap;
+}
+.atlas-v3 .cited-sentence {
+    margin: 18px 0;
+    padding: 14px 16px;
+    border-left: 3px solid var(--brand);
+    border-radius: 0 10px 10px 0;
+    background: var(--evidence);
+}
+.atlas-v3 .cited-sentence > .caption {
+    display: block;
+    margin-bottom: 9px;
+    font-weight: 650;
+}
+.atlas-v3 .cited-sentence .document-plain p:last-child,
+.atlas-v3 .cited-sentence .document-markdown p:last-child {
+    margin-bottom: 0;
+}
+.atlas-v3 .evidence-inspector mark {
+    border-radius: 3px;
+    padding: 0 2px;
+    color: inherit;
+    background: color-mix(in srgb, var(--brand) 22%, transparent);
+    box-decoration-break: clone;
+}
+.atlas-v3 .nearby-passage {
+    margin: 14px 0;
+    border: 1px solid var(--outline);
+    border-radius: 9px;
+    padding: 12px 14px;
+}
+.atlas-v3 .nearby-passage summary {
+    color: var(--brand);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+.atlas-v3 .nearby-passage[open] summary {
+    margin-bottom: 12px;
+}
+.atlas-v3 .extraction-warning {
+    border: 1px solid #e8c98a;
+    border-radius: 8px;
+    padding: 9px 11px;
+    color: var(--ink);
+    background: color-mix(in srgb, #e8c98a 16%, var(--panel));
+    font-size: 12px;
+    line-height: 1.5;
+}
+.atlas-v3 .pdf-page-context {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline);
+}
+.atlas-v3 .pdf-page-context h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+}
+.atlas-v3 .evidence-inspector .drawer-footer {
+    flex: 0 0 auto;
+    background: var(--panel);
 }
 .atlas-v3 .document-table tbody tr:hover {
     background: var(--hover);
@@ -192,6 +367,52 @@
     }
     .atlas-v3 .research-composer-v2 {
         min-height: 60px;
+    }
+}
+@media (max-width: 520px) {
+    .atlas-v3 .evidence-inspector .dialog-heading {
+        padding: 9px 14px;
+    }
+    .atlas-v3 .evidence-inspector .drawer-header {
+        align-items: flex-start;
+        gap: 9px;
+        padding: 11px 14px;
+    }
+    .atlas-v3 .evidence-inspector .drawer-header .file {
+        flex: 0 0 auto;
+        margin-top: 3px;
+    }
+    .atlas-v3 .evidence-inspector-heading h2 {
+        margin: 3px 0 6px;
+        font-size: 14px;
+        line-height: 1.25;
+    }
+    .atlas-v3 .evidence-inspector .drawer-body {
+        min-height: 0;
+        padding: 14px;
+    }
+    .atlas-v3 .evidence-page-navigation {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 5px;
+    }
+    .atlas-v3 .evidence-page-navigation .btn {
+        gap: 4px;
+        padding: 6px;
+        font-size: 11px;
+    }
+    .atlas-v3 .evidence-page-navigation > span {
+        font-size: 11px;
+    }
+    .atlas-v3 .evidence-inspector .drawer-footer {
+        flex-wrap: wrap;
+        justify-content: stretch;
+        gap: 8px;
+        padding: 10px 14px;
+    }
+    .atlas-v3 .evidence-inspector .drawer-footer .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+        min-height: 40px;
     }
 }
 @media (prefers-reduced-motion: reduce) {

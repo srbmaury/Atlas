@@ -15,7 +15,7 @@ from .structured_text import extract_structured
 SUPPORTED = {'.pdf', '.docx', '.txt', '.md', '.csv', '.json', '.html', '.htm'}
 
 
-def extract(path, name, heartbeat=None):
+def extract(path, name, heartbeat=None, ocr_pages=None):
     ext = Path(name).suffix.lower()
     if ext == '.pdf':
         try:
@@ -54,6 +54,8 @@ def extract(path, name, heartbeat=None):
                                 bitmap.close()
                         finally:
                             ocr_page.close()
+                        if value.strip() and ocr_pages is not None:
+                            ocr_pages.append(i + 1)
                     except (ImportError, OSError, RuntimeError, TimeoutError) as exc:
                         raise ValueError(
                             'OCR is unavailable. Install Tesseract and the Python OCR dependencies.'
@@ -136,7 +138,8 @@ def ingest(document_id, generation, heartbeat):
         if not doc:
             return
         name, workspace_id = doc.name, doc.workspace_id
-    pages = extract(DATA / 'files' / document_id, name, heartbeat)
+    ocr_pages = []
+    pages = extract(DATA / 'files' / document_id, name, heartbeat, ocr_pages)
     parts = [(page, value) for page, text in pages for value in split_text(text)]
     if not parts:
         raise ValueError('No readable text was found.')
@@ -167,4 +170,5 @@ def ingest(document_id, generation, heartbeat):
         db.query(Chunk).filter_by(document_id=document_id).delete()
         db.add_all(chunks)
         doc.status, doc.error, doc.pages, doc.chunk_count = 'ready', None, len(pages), len(chunks)
+        doc.ocr_pages = ocr_pages
         db.commit()

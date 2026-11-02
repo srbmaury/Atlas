@@ -25,6 +25,120 @@
 }
 
 /* Cross-source research */
+.answer-trace {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 18px 0;
+    padding: 13px 16px;
+    background: var(--panel);
+    color: var(--text);
+}
+.answer-trace summary {
+    cursor: pointer;
+    font-weight: 650;
+}
+.answer-trace summary span {
+    color: var(--sub);
+    font-size: 12px;
+    font-weight: 400;
+    margin-left: 7px;
+}
+.answer-trace[open] summary {
+    margin-bottom: 14px;
+}
+.answer-trace-flow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    color: var(--sub);
+    font-size: 12px;
+}
+.answer-trace-flow span {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+}
+.answer-trace-flow i {
+    font-style: normal;
+}
+.answer-trace-caption {
+    color: var(--sub);
+    font-size: 12px;
+    margin: 10px 0;
+}
+.answer-trace-sources {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+}
+.answer-trace-sources li {
+    display: grid;
+    grid-template-columns: minmax(90px, 0.7fr) minmax(180px, 1.5fr) auto;
+    gap: 9px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+}
+.answer-trace-failed {
+    color: var(--danger, #b42318);
+}
+.answer-trace-review {
+    border-left: 3px solid #d97706;
+    padding: 8px 12px;
+    margin: 12px 0;
+    background: color-mix(in srgb, #d97706 8%, var(--panel));
+    font-size: 12px;
+}
+.answer-trace-review p {
+    margin: 7px 0;
+}
+.answer-trace-citations {
+    display: flex;
+    gap: 4px;
+}
+.citation-preview {
+    display: block;
+    color: var(--sub);
+    font-weight: 400;
+    line-height: 1.45;
+    margin-top: 5px;
+}
+.answer-evidence-review {
+    border-left: 3px solid #d97706;
+    padding: 8px 12px;
+    color: var(--sub);
+    font-size: 13px;
+}
+.answer-followups {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+.answer-followups > span {
+    color: var(--sub);
+    font-size: 12px;
+}
+.answer-followups button {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--text);
+    padding: 6px 10px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+}
+@media (max-width: 600px) {
+    .answer-trace-sources li {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
 .connected-page {
     max-width: 940px;
 }
