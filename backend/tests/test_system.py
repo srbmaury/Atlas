@@ -25,7 +25,7 @@ def client():
         yield c
 
 
-def wid(c):
+def workspaceId(c):
     return c.get('/api/workspaces').json()[0]['id']
 
 
@@ -49,7 +49,7 @@ def drain():
 
 
 def test_upload_retrieve_deduplicate_delete(client):
-    w = wid(client)
+    w = workspaceId(client)
     d = upload(client, w)
     assert d['status'] == 'queued'
     duplicate = upload(client, w)
@@ -72,7 +72,7 @@ def test_upload_retrieve_deduplicate_delete(client):
 
 
 def test_accounts_and_workspace_isolation(client):
-    w = wid(client)
+    w = workspaceId(client)
     d = upload(client, w)
     drain()
     with TestClient(app) as other:
@@ -88,7 +88,7 @@ def test_accounts_and_workspace_isolation(client):
         ]:
             assert other.get(f'/api/workspaces/{w}{suffix}').status_code == 404
         assert other.delete(f'/api/workspaces/{w}/documents/{d["id"]}').status_code == 404
-        other_w = wid(other)
+        other_w = workspaceId(other)
         assert (
             other.post(
                 f'/api/workspaces/{other_w}/chat',
@@ -103,7 +103,7 @@ def test_accounts_and_workspace_isolation(client):
 
 
 def test_processing_failure_retry_and_lease_recovery(client):
-    w = wid(client)
+    w = workspaceId(client)
     d = upload(client, w, 'broken.pdf', 'not a PDF')
     drain()
     docs = client.get(f'/api/workspaces/{w}/documents').json()
@@ -124,7 +124,7 @@ def test_processing_failure_retry_and_lease_recovery(client):
 
 
 def test_scoped_search_and_unanswerable(client):
-    w = wid(client)
+    w = workspaceId(client)
     first = upload(client, w, 'finance.md', 'The finance budget is 75000 rupees.')
     second = upload(client, w, 'travel.md', 'Travel reimbursement requires manager approval.')
     drain()
@@ -140,7 +140,7 @@ def test_scoped_search_and_unanswerable(client):
 
 
 def test_validation_and_password_login(client):
-    w = wid(client)
+    w = workspaceId(client)
     bad = upload(client, w, 'virus.exe', 'text')
     assert 'error' in bad and 'id' not in bad
     assert 'error' in upload(client, w, 'empty.txt', '')
@@ -223,7 +223,7 @@ def test_pdf_page_sources_and_blank_page_rejection(client):
     page[NameObject('/Contents')] = writer._add_object(stream)
     out = io.BytesIO()
     writer.write(out)
-    w = wid(client)
+    w = workspaceId(client)
     response = client.post(
         f'/api/workspaces/{w}/documents',
         files={'files': ('text.pdf', out.getvalue(), 'application/pdf')},
@@ -263,7 +263,7 @@ def test_docx_tables_and_sections(client):
     table.cell(0, 1).text = '45000'
     out = io.BytesIO()
     doc.save(out)
-    w = wid(client)
+    w = workspaceId(client)
     client.post(
         f'/api/workspaces/{w}/documents',
         files={
@@ -283,7 +283,7 @@ def test_docx_tables_and_sections(client):
 def test_upload_limits(client, monkeypatch):
     from app.routes import documents as document_routes
 
-    w = wid(client)
+    w = workspaceId(client)
     upload(client, w)
     drain()
     upload(client, w, 'new.md', 'New evidence changes the budget to 80000.')
@@ -299,7 +299,7 @@ def test_upload_limits(client, monkeypatch):
 def test_hybrid_semantic_retrieval(client, monkeypatch):
     from app import retrieval
 
-    w = wid(client)
+    w = workspaceId(client)
     d = upload(client, w, 'retention.md', 'Customer churn fell by ten percent.')
     drain()
     vector = [1.0] + [0.0] * 1535
@@ -318,7 +318,7 @@ def test_hybrid_semantic_retrieval(client, monkeypatch):
 def test_stale_job_cannot_publish_after_reindex(client):
     from app.ingest import ingest
 
-    w = wid(client)
+    w = workspaceId(client)
     upload(client, w)
     job_id, generation = claim(Document)
     with Session() as db:
@@ -334,7 +334,7 @@ def test_stale_job_cannot_publish_after_reindex(client):
 
 
 def test_local_chat_is_question_specific_and_topic_changes_do_not_reuse_history(client):
-    w = wid(client)
+    w = workspaceId(client)
     text = (
         '# Pilot brief\nThe monthly infrastructure budget is INR 75000. '
         'The Atlas pilot launches on 15 December 2026. '
@@ -380,7 +380,7 @@ def test_explicit_followup_retains_context_without_contaminating_new_topics():
 
 
 def test_chunked_upload_offsets_completion_duplicates_and_access(client):
-    w = wid(client)
+    w = workspaceId(client)
     data = b'A large document has a project budget of 12345.\n' * 20
     start = client.post(
         f'/api/workspaces/{w}/uploads', json={'name': 'large.md', 'size': len(data)}
@@ -402,7 +402,7 @@ def test_chunked_upload_offsets_completion_duplicates_and_access(client):
             '/api/auth/register',
             json={'email': f'{time.time_ns()}@upload.test', 'password': 'another-long-password'},
         )
-        ow = wid(other)
+        ow = workspaceId(other)
         assert other.get(base).status_code == 404
         assert other.get(f'/api/workspaces/{ow}/uploads/{job}').status_code == 404
         assert (
@@ -427,7 +427,7 @@ def test_chunked_upload_offsets_completion_duplicates_and_access(client):
 def test_staged_upload_validation_and_cancellation(client, monkeypatch):
     from app.routes import documents as document_routes
 
-    w = wid(client)
+    w = workspaceId(client)
     monkeypatch.setattr(document_routes, 'MAX_FILE_BYTES', 100)
     path = f'/api/workspaces/{w}/uploads'
     assert client.post(path, json={'name': 'big.pdf', 'size': 101}).status_code == 413
@@ -439,7 +439,7 @@ def test_staged_upload_validation_and_cancellation(client, monkeypatch):
 
 
 def test_country_count_answers_numeric_evidence_instead_of_titles(client):
-    w = wid(client)
+    w = workspaceId(client)
     upload(
         client,
         w,
@@ -464,7 +464,7 @@ def test_country_count_answers_numeric_evidence_instead_of_titles(client):
 
 
 def test_saved_conversations_are_scoped_and_editable(client):
-    w = wid(client)
+    w = workspaceId(client)
     route = f'/api/workspaces/{w}/conversations'
     first = client.post(
         route,
@@ -500,7 +500,7 @@ def test_saved_conversations_are_scoped_and_editable(client):
             '/api/auth/register',
             json={'email': f'{time.time_ns()}@second.com', 'password': 'another-long-password'},
         )
-        ow = wid(other)
+        ow = workspaceId(other)
         assert other.get(f'/api/workspaces/{ow}/conversations/{cid}').status_code == 404
         assert other.delete(f'/api/workspaces/{ow}/conversations/{cid}').status_code == 404
     assert client.delete(f'{route}/{cid}').status_code == 200
@@ -508,13 +508,13 @@ def test_saved_conversations_are_scoped_and_editable(client):
 
 
 def test_insights_endpoints_are_removed(client):
-    w = wid(client)
+    w = workspaceId(client)
     assert client.get(f'/api/workspaces/{w}/analyses').status_code == 404
     assert client.post(f'/api/workspaces/{w}/analyses', json={'kind': 'summary'}).status_code == 404
 
 
 def test_workspace_deletion_requires_owner_and_confirmation(client):
-    w = wid(client)
+    w = workspaceId(client)
     document = upload(client, w)
     drain()
     created = client.post(
@@ -544,21 +544,21 @@ def test_workspace_deletion_requires_owner_and_confirmation(client):
 def test_gmail_routes_are_authenticated_and_config_guarded(client, monkeypatch):
     from app import gmail
 
-    w = wid(client)
+    w = workspaceId(client)
     route = f'/api/workspaces/{w}/gmail'
-    assert client.get(f'/api/gmail/status?wid={w}').json()['connected'] is False
+    assert client.get(f'/api/gmail/status?workspaceId={w}').json()['connected'] is False
     assert client.post(route + '/search', json={'query': 'in:inbox'}).status_code == 409
     assert client.post(route + '/summarize', json={'message_ids': []}).status_code == 422
     with TestClient(app) as stranger:
-        assert stranger.get(f'/api/gmail/status?wid={w}').status_code == 401
+        assert stranger.get(f'/api/gmail/status?workspaceId={w}').status_code == 401
     monkeypatch.setattr(gmail, 'CLIENT', '')
-    assert client.get(f'/api/gmail/connect?wid={w}').status_code == 503
+    assert client.get(f'/api/gmail/connect?workspaceId={w}').status_code == 503
 
 
 def test_gmail_summary_reports_provider_configuration_without_gmail_access(client, monkeypatch):
     from app import gmail
 
-    w = wid(client)
+    w = workspaceId(client)
     monkeypatch.setattr(gmail.config, 'AI_PROVIDER', 'none')
     monkeypatch.setattr(gmail.config, 'API_KEY', '')
     result = client.post(f'/api/workspaces/{w}/gmail/summarize', json={'message_ids': ['abc123']})
@@ -941,7 +941,7 @@ def test_local_connected_synthesis_timeout_does_not_masquerade_as_answer(monkeyp
 
 
 def test_connected_chat_stream_returns_explicit_no_evidence_result(client):
-    w = wid(client)
+    w = workspaceId(client)
     response = client.post(
         f'/api/workspaces/{w}/connected-chat/stream',
         json={'question': 'Summarize the selected sources', 'providers': []},
@@ -959,7 +959,7 @@ def test_connected_chat_stream_returns_explicit_no_evidence_result(client):
 
 
 def test_connected_chat_stream_keeps_local_excerpt_mode_without_model(client, monkeypatch):
-    w = wid(client)
+    w = workspaceId(client)
     upload(client, w)
     drain()
     monkeypatch.setattr(config, 'AI_PROVIDER', 'none')
@@ -981,7 +981,7 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
     from app import external_sources, main
     from app.db import ExternalConnection, Session
 
-    w = wid(client)
+    w = workspaceId(client)
     with Session() as db:
         db.add(
             ExternalConnection(workspace_id=w, provider='slack', account='test', secret='encrypted')
@@ -1018,7 +1018,7 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
 def test_connected_chat_preserves_full_slack_message_through_retrieval(client, monkeypatch):
     from app import connected_synthesis, external_sources, main
 
-    w = wid(client)
+    w = workspaceId(client)
     full_text = (
         'Deforestation introduction. '
         + ('Background. ' * 150)
@@ -1065,7 +1065,7 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 
 
 def test_natural_language_connected_queries_are_simplified():
-    from app.main import drive_query_for_question, gmail_query_for_question
+    from app.research_queries import drive_query_for_question, gmail_query_for_question
 
     assert (
         gmail_query_for_question(
@@ -1106,7 +1106,7 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
     from app import gmail, main
     from app.db import Session, User
 
-    w = wid(client)
+    w = workspaceId(client)
     actor_id = client.get('/api/me').json()['id']
     question = 'Are there any credit card offers?'
     detail = (
@@ -1241,7 +1241,7 @@ def test_source_health_check_distinguishes_unconnected_from_healthy(client, monk
     from app import external_sources
     from app.db import ExternalConnection, Session
 
-    w = wid(client)
+    w = workspaceId(client)
     with Session() as db:
         db.add(
             ExternalConnection(
@@ -1332,7 +1332,7 @@ def test_drive_search_scope_and_connect_requires_login(client):
     from app.drive import SCOPE, DriveSearch
 
     assert SCOPE == 'https://www.googleapis.com/auth/drive.readonly'
-    assert client.get('/api/drive/connect?wid=missing').status_code in (404, 503)
+    assert client.get('/api/drive/connect?workspaceId=missing').status_code in (404, 503)
     with __import__('pytest').raises(ValidationError):
         DriveSearch(query='x' * 181)
 
@@ -1380,7 +1380,7 @@ def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatc
 def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch):
     from app import connected_synthesis, main
 
-    w = wid(client)
+    w = workspaceId(client)
 
     def fake_retrieve(*args, **kwargs):
         return [
@@ -1417,7 +1417,7 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
     from app import main
     from app.sources import Evidence
 
-    w = wid(client)
+    w = workspaceId(client)
     records = [
         Evidence(
             'github',
@@ -1435,7 +1435,6 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
         ),
     ]
     monkeypatch.setattr(main, 'collect_connected_evidence', lambda *args: (records, {}))
-    monkeypatch.setattr(main, 'enabled', lambda: True)
     response = client.post(
         f'/api/workspaces/{w}/connected-chat',
         json={'question': 'my pull requests', 'include_documents': False, 'providers': ['github']},
@@ -1483,7 +1482,7 @@ def test_unqualified_github_pr_search_is_scoped_to_connected_users_repositories(
 
 
 def test_health_and_processing_stats(client):
-    workspace_id = wid(client)
+    workspace_id = workspaceId(client)
     assert client.get('/api/health/live').json()['status'] == 'ok'
     assert client.get('/api/health/ready').json()['status'] == 'ready'
     response = client.get(f'/api/workspaces/{workspace_id}/processing-stats')
@@ -1507,7 +1506,7 @@ def test_retrieval_diversifies_sources():
 def test_transient_worker_failure_requeues_with_delay(client, monkeypatch):
     from app import worker
 
-    workspace_id = wid(client)
+    workspace_id = workspaceId(client)
     document = upload(client, workspace_id, 'retry-transient.md', 'A sample document.')
 
     def unavailable(*args, **kwargs):
@@ -1520,10 +1519,25 @@ def test_transient_worker_failure_requeues_with_delay(client, monkeypatch):
         assert state.status == 'queued'
         assert state.lease > time.time()
         assert state.generation == 1
+        assert state.attempts == 1
+        state.status = 'failed'
+        state.attempts = 3
+        state.generation = 3
+        db.commit()
+
+    response = client.post(f'/api/workspaces/{workspace_id}/documents/{document["id"]}/retry')
+    assert response.status_code == 200
+    assert worker.run_one()
+    with Session() as db:
+        state = db.get(Document, document['id'])
+        assert state.status == 'queued'
+        assert state.lease > time.time()
+        assert state.generation == 5
+        assert state.attempts == 1
 
 
 def test_operations_endpoint_is_workspace_scoped(client):
-    w = wid(client)
+    w = workspaceId(client)
     response = client.get(f'/api/workspaces/{w}/operations')
     assert response.status_code == 200
     assert response.json()['documents']['total'] == 0

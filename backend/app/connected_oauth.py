@@ -10,11 +10,10 @@ import json
 import os
 import secrets
 import time
-from typing import Annotated
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User, Workspace
@@ -86,7 +85,7 @@ def _token_request(provider, payload):
 
 
 @router.get('/{provider}/connect')
-def connect(provider: str, workspaceId: Annotated[str, Query(alias='wid')], request: Request):
+def connect(provider: str, workspaceId: str, request: Request):
     client_id, _, redirect, auth_base, _, scope = _settings(provider)
     with Session() as db:
         who = actor(request, db)

@@ -25,7 +25,12 @@ def claim(model):
             db.query(model)
             .filter(model.id == job.id, model.generation == job.generation, eligible)
             .update(
-                {'status': 'processing', 'lease': now + 600, 'generation': generation},
+                {
+                    'status': 'processing',
+                    'lease': now + 600,
+                    'generation': generation,
+                    'attempts': model.attempts + 1,
+                },
                 synchronize_session=False,
             )
         )
@@ -64,11 +69,15 @@ def run_one():
                 # Validation failures require user action. Retry transient provider/network
                 # failures up to three total attempts, with bounded exponential backoff.
                 permanent = isinstance(exc, (ValueError, UnicodeError))
-                retry = not permanent and generation < 3
-                next_lease = time.time() + min(300, 2**generation * 5) if retry else 0
-                db.query(model).filter_by(
+                current = db.query(model).filter_by(
                     id=job_id, generation=generation, status='processing'
-                ).update(
+                )
+                state = current.first()
+                if state is None:
+                    return True
+                retry = not permanent and state.attempts < 3
+                next_lease = time.time() + 2**state.attempts * 5 if retry else 0
+                current.update(
                     {
                         'status': 'queued' if retry else 'failed',
                         'lease': next_lease,

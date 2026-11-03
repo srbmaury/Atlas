@@ -3,7 +3,7 @@
 Atlas readiness endpoint: `GET /api/health/ready` checks database access and
 the current Alembic revision. Liveness: `GET /api/health/live`.
 Workspace owners can inspect ingestion and source-health counts with
-`GET /api/workspaces/{wid}/operations`.
+`GET /api/workspaces/{workspaceId}/operations`.
 
 ## Backups and recovery
 

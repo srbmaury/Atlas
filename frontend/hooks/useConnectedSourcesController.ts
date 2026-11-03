@@ -70,7 +70,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         setGmailBusy(true);
         setError('');
         try {
-            const value = await api<OAuthAuthorizationResponse>(`/gmail/connect?wid=${encodeURIComponent(workspaceId)}`);
+            const value = await api<OAuthAuthorizationResponse>(`/gmail/connect?workspaceId=${encodeURIComponent(workspaceId)}`);
             window.location.assign(value.authorization_url);
         } catch (e) {
             setError((e as Error).message);
@@ -101,7 +101,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         setDriveBusy(true);
         setError('');
         try {
-            const result = await api<OAuthAuthorizationResponse>(`/drive/connect?wid=${encodeURIComponent(workspaceId)}`);
+            const result = await api<OAuthAuthorizationResponse>(`/drive/connect?workspaceId=${encodeURIComponent(workspaceId)}`);
             window.location.assign(result.authorization_url);
         } catch (e) {
             setError((e as Error).message);
@@ -144,7 +144,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
             refreshDrive(),
             refreshSourceStatuses(),
             loadSourceChecks(),
-            api<GmailStatus>(`/gmail/status?wid=${encodeURIComponent(target)}`)
+            api<GmailStatus>(`/gmail/status?workspaceId=${encodeURIComponent(target)}`)
                 .then((status) => {
                     if (scope.current === target) setGmailStatus(status);
                 })
@@ -191,7 +191,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         setSourceBusy(true);
         setError('');
         try {
-            const response = await api<OAuthAuthorizationResponse>(`/connected-oauth/${sourceProvider}/connect?wid=${encodeURIComponent(workspaceId)}`);
+            const response = await api<OAuthAuthorizationResponse>(`/connected-oauth/${sourceProvider}/connect?workspaceId=${encodeURIComponent(workspaceId)}`);
             window.location.assign(response.authorization_url);
         } catch (e) {
             setError((e as Error).message);

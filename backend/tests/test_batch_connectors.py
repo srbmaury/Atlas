@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -115,6 +115,7 @@ def test_calendar_list_result_respects_requested_count_and_orders_citations():
 
     question = 'list next 10 events from my calendar'
     body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
+    now = datetime.now(timezone.utc)
     evidence = [
         Evidence(
             'calendar',
@@ -122,7 +123,7 @@ def test_calendar_list_result_respects_requested_count_and_orders_citations():
             'Old event',
             'Details',
             'https://calendar.google.com/past',
-            '2025-07-29T20:00:00+05:30',
+            (now - timedelta(days=1)).isoformat(),
         ),
         *[
             Evidence(
@@ -131,7 +132,7 @@ def test_calendar_list_result_respects_requested_count_and_orders_citations():
                 f'Event {index}',
                 'Details',
                 'https://calendar.google.com/event',
-                f'2026-11-{index + 3:02d}T10:00:00+05:30',
+                (now + timedelta(days=index + 1)).isoformat(),
             )
             for index in reversed(range(12))
         ],
@@ -176,16 +177,24 @@ def test_calendar_singular_next_event_returns_one_future_event():
     from app.main import connected_source_listing_result
     from app.sources import Evidence
 
-    body = SimpleNamespace(providers=['calendar'])
+    body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
+    now = datetime.now(timezone.utc)
     evidence = [
-        Evidence('calendar', 'past', 'Earlier event', 'Details', None, '2025-07-29T20:00:00+05:30'),
+        Evidence(
+            'calendar',
+            'past',
+            'Earlier event',
+            'Details',
+            None,
+            (now - timedelta(days=1)).isoformat(),
+        ),
         Evidence(
             'calendar',
             'first',
             'First future event',
             'Details',
             None,
-            '2026-11-03T09:00:00+05:30',
+            (now + timedelta(days=1)).isoformat(),
         ),
         Evidence(
             'calendar',
@@ -193,7 +202,7 @@ def test_calendar_singular_next_event_returns_one_future_event():
             'Second future event',
             'Details',
             None,
-            '2026-11-04T09:00:00+05:30',
+            (now + timedelta(days=2)).isoformat(),
         ),
     ]
 
@@ -203,7 +212,7 @@ def test_calendar_singular_next_event_returns_one_future_event():
 
     assert len(result['sources']) == 1
     assert result['sources'][0]['name'] == 'First future event'
-    assert result['answer'].startswith('Found 1 matching item in Google Calendar:')
+    assert result['answer'].startswith('Found 2 matching items in Google Calendar:')
 
 
 def test_connected_source_listing_cites_drive_and_gmail_titles():

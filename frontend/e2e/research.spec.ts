@@ -156,9 +156,10 @@ test('source passage keeps paragraphs and makes URLs clickable',async({page})=>{
   await page.getByRole('button',{name:/Open source 1: A very long GitHub pull request title/}).click();
   const dialog=page.getByRole('dialog',{name:'Source passage'});
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator('.document-plain p')).toHaveText('First source line. Second source line.');
-  await expect(dialog.locator('.document-field')).toContainText('Original');
-  const link=dialog.getByRole('link',{name:'https://example.com/record?q=ok'});
+  await expect(dialog.getByRole('region',{name:'Cited sentence'}).locator('.document-plain p')).toHaveText('First source line. Second source line.');
+  const cited=dialog.getByRole('region',{name:'Cited sentence'});
+  await expect(cited.locator('.document-field')).toContainText('Original');
+  const link=cited.getByRole('link',{name:'https://example.com/record?q=ok'});
   await expect(link).toHaveAttribute('href','https://example.com/record?q=ok');
   await expect(link).toHaveAttribute('target','_blank');
 });
@@ -200,7 +201,7 @@ test('select all toggles, and calendar prompts stay scoped to calendar',async({p
   for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint'])
     await expect(page.getByRole('checkbox',{name,exact:true})).not.toBeChecked();
 
-  await page.getByRole('checkbox',{name:'Documents'}).check();
+  await page.getByRole('checkbox',{name:'Calendar'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('list next 10 events from my calendar');
   await page.getByRole('button',{name:'Send question'}).click();
   await expect.poll(()=>requests.length).toBe(1);
@@ -238,8 +239,10 @@ test('new chat resets source scope to documents only',async({page})=>{
   await expect(page.getByRole('checkbox',{name:'GitHub'})).not.toBeChecked();
 });
 
-test('personal pull-request questions route to connected GitHub only',async({page})=>{
+test('pull-request questions use the selected GitHub scope',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
+  await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('my pull requests');
   await page.getByRole('button',{name:'Send question'}).click();
   await expect(page.locator('.answer-head').last()).toContainText('GitHub');
@@ -308,7 +311,7 @@ test('Home keeps the primary research entry accessible on mobile',async({page})=
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth)).toBe(false);
 });
 
-test('nested citations open a modal excerpt and restore focus',async({page})=>{
+test('nested citations open a modal excerpt and restore focus',async({page}, testInfo)=>{
  await page.route('**/api/workspaces/w1/connected-chat/stream',route=>route.fulfill({status:200,contentType:'application/x-ndjson',body:JSON.stringify({type:'done',result:{answer:'Evidence **supports [1]**.',mode:'connected',sources:[{chunk_id:'pr-1',document_id:'',name:'Release decision',page:0,location_type:'github',provider:'github',url:'https://github.com/example/repo/pull/1',text:'Release after accessibility review.'}]}})+'\n'}));
  await page.getByRole('checkbox',{name:'GitHub'}).check();
  await page.getByRole('textbox',{name:'Your question'}).fill('Summarize the sources');
@@ -318,10 +321,10 @@ test('nested citations open a modal excerpt and restore focus',async({page})=>{
  await citation.click();
  const drawer=page.getByRole('dialog',{name:'Source passage'});
  await expect(drawer).toContainText('Release after accessibility review.');
- await page.screenshot({path:'/tmp/atlas-audit/after-evidence.png',animations:'disabled'});
+ await page.screenshot({path:testInfo.outputPath('after-evidence.png'),animations:'disabled'});
  await expect(drawer).toContainText('GitHub');
  await expect(drawer).not.toContainText('Section 0');
- await expect(drawer.getByRole('link',{name:'Open source',exact:true})).toHaveAttribute('href','https://github.com/example/repo/pull/1');
+ await expect(drawer.getByRole('link',{name:'Open in GitHub',exact:true})).toHaveAttribute('href','https://github.com/example/repo/pull/1');
  await expect(drawer.getByRole('button',{name:'Close preview'})).toBeFocused();
  await page.keyboard.press('Shift+Tab');
  await expect(drawer.getByRole('button',{name:'Close',exact:true})).toBeFocused();
@@ -339,7 +342,7 @@ test('IME confirmation does not submit a question',async({page})=>{
  await expect(page.locator('.user-message')).toHaveCount(0);
 });
 
-test('audit screen captures',async({page})=>{
+test('audit screen captures',async({page}, testInfo)=>{
  test.setTimeout(120000);
  for(const width of [390,768,1280,1920]){
  await page.setViewportSize({width,height:900});
@@ -348,7 +351,7 @@ test('audit screen captures',async({page})=>{
  for(const screen of ['Home','Documents','Sources','Ask Atlas']){
  if(await page.getByRole('button',{name:'Open menu',exact:true}).isVisible())await page.getByRole('button',{name:'Open menu',exact:true}).click();
  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:screen,exact:true}).click();
- await page.screenshot({path:`/tmp/atlas-audit/${process.env.AUDIT_PHASE||'after'}-${screen}-${width}-${theme}.png`,fullPage:true,animations:'disabled'});
+ await page.screenshot({path:testInfo.outputPath(`${process.env.AUDIT_PHASE||'after'}-${screen}-${width}-${theme}.png`),fullPage:true,animations:'disabled'});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),`${screen} ${width} ${theme}`).toBe(false);
  if(width>600){
  const sidebar=await page.locator('.sidebar').boundingBox();
@@ -374,7 +377,7 @@ test('document processing failures expose context and retry',async({page})=>{
  await expect(page.getByRole('heading',{name:'No matching documents'})).toBeVisible();
 });
 
-test('authentication failure stays actionable and announced',async({page})=>{
+test('authentication failure stays actionable and announced',async({page}, testInfo)=>{
  await page.route('**/api/me',route=>route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({detail:'Please sign in.'})}));
  await page.reload();
  await expect(page.getByRole('heading',{name:'Create your workspace'})).toBeVisible();
@@ -384,7 +387,7 @@ test('authentication failure stays actionable and announced',async({page})=>{
  await page.getByLabel('Password',{exact:true}).fill('wrong-password');
  await page.getByRole('button',{name:'Sign in',exact:true}).click();
  await expect(page.locator('.auth-form').getByRole('alert')).toContainText('Incorrect email or password.');
- await page.screenshot({path:'/tmp/atlas-audit/after-auth.png',animations:'disabled'});
+ await page.screenshot({path:testInfo.outputPath('after-auth.png'),animations:'disabled'});
 });
 
 test('session actions create and delete a workspace then sign out',async({page})=>{
@@ -447,14 +450,14 @@ test('stopping an answer preserves the submitted question and releases busy stat
  await expect(page.getByRole('button',{name:'Send question'})).toBeEnabled();
 });
 
-test('workspace metadata uses the backend wid query parameter',async({page})=>{
+test('workspace metadata uses the workspaceId query parameter',async({page})=>{
  const statusRequest=page.waitForRequest(request=>{
   const url=new URL(request.url());
-  return url.pathname==='/api/gmail/status'&&url.searchParams.get('wid')==='w1';
+  return url.pathname==='/api/gmail/status'&&url.searchParams.get('workspaceId')==='w1';
  });
  await page.reload();
  const request=await statusRequest;
- expect(new URL(request.url()).searchParams.has('workspaceId')).toBe(false);
+ expect([...new URL(request.url()).searchParams]).toEqual([['workspaceId','w1']]);
  await expect(page.getByRole('navigation',{name:'Main navigation'})).toBeVisible();
 });
 

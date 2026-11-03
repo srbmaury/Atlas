@@ -276,8 +276,12 @@ export function AtlasWorkspace() {
               .join(' · ')
         : '';
 
+    const openAnswerSource = useCallback((item: Source, context?: string) => {
+        setSource(context ? { ...item, highlight_context: context } : item);
+    }, []);
+
     function renderAnswer(result: Answer, onPrompt: (prompt: string) => void) {
-        return <ResearchAnswer result={result} onOpenSource={(item, context) => setSource(context ? { ...item, highlight_context: context } : item)} onPrompt={onPrompt} />;
+        return <ResearchAnswer result={result} onOpenSource={openAnswerSource} onPrompt={onPrompt} />;
     }
 
     const { authenticate, addWorkspace, removeWorkspace, signOut } = createSessionActions({
@@ -777,7 +781,7 @@ export function AtlasWorkspace() {
                 />
             )}
             <EvidenceInspector
-                wid={workspaceId}
+                workspaceId={workspaceId}
                 source={source}
                 preview={preview}
                 onClose={() => {

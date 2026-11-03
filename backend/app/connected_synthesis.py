@@ -215,12 +215,14 @@ def _trim_excerpt(text, question, limit):
 
 
 def bounded_payload(
-    evidence, max_items=50, per_source=3000, max_total=16000, question='', per_provider=20
+    evidence, max_items=50, per_source=3000, max_total=16000, question='', per_provider=None
 ):
     # Evidence is deduplicated/ranked before this step; preserve diversity when budgeting model context.
     groups = {}
     for item in evidence:
         groups.setdefault(item.provider, []).append(item)
+    if per_provider is None:
+        per_provider = max_items if len(groups) == 1 else 20
     terms = _query_terms(question)
 
     def score(item):

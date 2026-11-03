@@ -1,6 +1,7 @@
 """Security regression tests for browser headers and outbound fetch policy."""
 
 import json
+from threading import Event
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,13 +11,23 @@ from app.main import app
 
 
 def test_web_fetch_connects_only_to_the_validated_public_address(monkeypatch):
-    monkeypatch.setattr(web_sources, 'resolve_public_addresses', lambda hostname, port: ['93.184.216.34'])
+    monkeypatch.setattr(
+        web_sources, 'resolve_public_addresses', lambda hostname, port: ['93.184.216.34']
+    )
 
     class FakeConnection:
+        sock = None
+
         def __init__(self, hostname, address, port, timeout):
             assert hostname == 'example.com'
             assert address == '93.184.216.34'
             assert port == 443
+
+        def connect(self):
+            pass
+
+        def close(self):
+            pass
 
         def request(self, method, target, headers):
             assert method == 'GET'
@@ -43,6 +54,38 @@ def test_web_fetch_connects_only_to_the_validated_public_address(monkeypatch):
         'Example',
         'This is enough readable page content for a test.',
     )
+
+
+def test_web_fetch_deadline_interrupts_response_headers(monkeypatch):
+    interrupted = Event()
+    monkeypatch.setattr(web_sources, 'FETCH_TIMEOUT', 0.2)
+    monkeypatch.setattr(
+        web_sources, 'resolve_public_addresses', lambda hostname, port: ['93.184.216.34']
+    )
+
+    class FakeConnection:
+        def __init__(self, *args, **kwargs):
+            self.sock = self
+
+        def connect(self):
+            pass
+
+        def request(self, *args, **kwargs):
+            pass
+
+        def getresponse(self):
+            assert interrupted.wait(2), 'deadline did not interrupt the socket'
+            raise OSError('Socket was shut down')
+
+        def shutdown(self, how):
+            interrupted.set()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(web_sources, 'PinnedHTTPSConnection', FakeConnection)
+    with pytest.raises(ValueError, match='Could not fetch'):
+        web_sources.fetch_page('https://example.com/article')
 
 
 def test_web_fetch_rejects_mixed_public_and_private_dns_answers(monkeypatch):

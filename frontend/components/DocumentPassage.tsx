@@ -7,18 +7,15 @@ function highlightedText(line: string, search?: string, keyPrefix = 'match'): Re
     if (!search?.trim()) return [line];
     const index = line.toLocaleLowerCase().indexOf(search.toLocaleLowerCase());
     if (index < 0) return [line];
-    return [
-        line.slice(0, index),
-        <mark key={keyPrefix}>{line.slice(index, index + search.length)}</mark>,
-        ...highlightedText(line.slice(index + search.length), search, `${keyPrefix}-next`),
-    ].filter((part) => part !== '');
+    return [line.slice(0, index), <mark key={keyPrefix}>{line.slice(index, index + search.length)}</mark>, ...highlightedText(line.slice(index + search.length), search, `${keyPrefix}-next`)].filter(
+        (part) => part !== '',
+    );
 }
 
 function highlightNodes(children: ReactNode, search?: string): ReactNode {
     return Children.map(children, (child) => {
         if (typeof child === 'string') return highlightedText(child, search);
-        if (isValidElement<{ children?: ReactNode }>(child) && child.props.children)
-            return cloneElement(child, {}, highlightNodes(child.props.children, search));
+        if (isValidElement<{ children?: ReactNode }>(child) && child.props.children) return cloneElement(child, {}, highlightNodes(child.props.children, search));
         return child;
     });
 }
@@ -42,8 +39,7 @@ function linkedLine(line: string, keyPrefix: string, search?: string) {
             url = url.slice(0, -1);
         }
         const start = match.index ?? 0;
-        if (start > cursor)
-            pieces.push(...highlightedText(line.slice(cursor, start), search, `${keyPrefix}-${index}-text`));
+        if (start > cursor) pieces.push(...highlightedText(line.slice(cursor, start), search, `${keyPrefix}-${index}-text`));
         try {
             const parsed = new URL(url);
             if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
@@ -104,17 +100,11 @@ export function DocumentPassage({ text, name, highlight }: { text: string; name:
                     );
                 if (block.type === 'field') {
                     const fieldText = `${block.label}: ${block.value}`;
-                    const highlightsField = Boolean(
-                        highlight && fieldText.toLocaleLowerCase().includes(highlight.toLocaleLowerCase()),
-                    );
+                    const highlightsField = Boolean(highlight && fieldText.toLocaleLowerCase().includes(highlight.toLocaleLowerCase()));
                     return (
                         <div className="document-field" key={index}>
-                            <strong>
-                                {highlightsField ? <mark>{block.label}</mark> : highlightedText(block.label, highlight, `label-${index}`)}
-                            </strong>
-                            <span>
-                                {highlightsField ? <mark>{linkedLine(block.value, `field-${index}`)}</mark> : linkedLine(block.value, `field-${index}`, highlight)}
-                            </span>
+                            <strong>{highlightsField ? <mark>{block.label}</mark> : highlightedText(block.label, highlight, `label-${index}`)}</strong>
+                            <span>{highlightsField ? <mark>{linkedLine(block.value, `field-${index}`)}</mark> : linkedLine(block.value, `field-${index}`, highlight)}</span>
                         </div>
                     );
                 }

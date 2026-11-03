@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import type { Doc } from '../lib/types';
 
 type Options = {
-    wid: string;
+    workspaceId: string;
     maxFileBytes: number;
     scope: RefObject<string>;
     input: RefObject<HTMLInputElement | null>;
@@ -14,7 +14,7 @@ type Options = {
 };
 
 /** Upload transport and web imports share workspace scoping and import feedback. */
-export function useDocumentImports({ wid, maxFileBytes, scope, input, refresh, setError, setNotice }: Options) {
+export function useDocumentImports({ workspaceId, maxFileBytes, scope, input, refresh, setError, setNotice }: Options) {
     const [uploading, setUploading] = useState(false);
     const [webUrl, setWebUrl] = useState('');
     const [webBusy, setWebBusy] = useState(false);
@@ -22,8 +22,8 @@ export function useDocumentImports({ wid, maxFileBytes, scope, input, refresh, s
     const [uploadSummary, setUploadSummary] = useState<{ ids: string[]; duplicates: number } | null>(null);
     async function importWebPage(event: FormEvent) {
         event.preventDefault();
-        if (!wid || webBusy || !webUrl.trim()) return;
-        const target = wid;
+        if (!workspaceId || webBusy || !webUrl.trim()) return;
+        const target = workspaceId;
         setWebBusy(true);
         setError('');
         setNotice('');
@@ -45,7 +45,7 @@ export function useDocumentImports({ wid, maxFileBytes, scope, input, refresh, s
     }
     async function upload(files: FileList | File[]) {
         if (!files.length || uploading) return;
-        const target = wid;
+        const target = workspaceId;
         setUploading(true);
         setError('');
         setNotice('');

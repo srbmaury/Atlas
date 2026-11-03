@@ -33,12 +33,12 @@ def source_health(workspaceId: str, actor=Depends(user), db=Depends(database)):
 def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=Depends(database)):
     """Check real provider access; return only status, account, and match counts."""
     workspace(workspaceId, actor, db)
-    from .drive import access_token as drive_access
-    from .drive import drive_search
-    from .external_sources import PROVIDERS, read_connection, verify_source_access
-    from .gmail import GMAIL_API, gmail_get
-    from .gmail import access_token as gmail_access
-    from .gmail import connection as gmail_connection
+    from ..drive import access_token as drive_access
+    from ..drive import drive_search
+    from ..external_sources import PROVIDERS, read_connection, verify_source_access
+    from ..gmail import GMAIL_API, gmail_get
+    from ..gmail import access_token as gmail_access
+    from ..gmail import connection as gmail_connection
 
     checks = []
 

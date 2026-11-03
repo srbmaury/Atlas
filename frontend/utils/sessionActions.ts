@@ -74,7 +74,7 @@ export async function refreshWorkspaceMetadata({
 }) {
     if (!workspaceId) return;
     await Promise.all([
-        api<GmailStatus>(`/gmail/status?wid=${encodeURIComponent(workspaceId)}`)
+        api<GmailStatus>(`/gmail/status?workspaceId=${encodeURIComponent(workspaceId)}`)
             .then((status) => {
                 if (scope.current === workspaceId) setGmailStatus(status);
             })

@@ -8,13 +8,12 @@ import re
 import secrets
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Annotated
 from urllib.parse import urlencode
 
 import httpx
 import pypdfium2 as pdfium
 from docx import Document as WordDocument
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
@@ -101,7 +100,7 @@ def google_token(payload):
 
 
 @router.get('/drive/connect')
-def connect(workspaceId: Annotated[str, Query(alias='wid')], request: Request):
+def connect(workspaceId: str, request: Request):
     configured()
     with Session() as db:
         who = actor(request, db)

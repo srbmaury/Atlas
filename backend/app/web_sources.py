@@ -15,6 +15,9 @@ import json
 import re
 import socket
 import ssl
+import threading
+import time
+from contextlib import suppress
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
@@ -27,6 +30,7 @@ from .db import Document, Session, uid
 router = APIRouter(prefix='/api')
 MAX_HTML_BYTES = min(2_000_000, MAX_FILE_BYTES)
 MAX_TEXT_CHARS = 500_000
+FETCH_TIMEOUT = 15.0
 
 
 class UrlRequest(BaseModel):
@@ -88,9 +92,15 @@ class PinnedHTTPConnection(http.client.HTTPConnection):
 
 class PinnedHTTPSConnection(PinnedHTTPConnection):
     def connect(self):
+        deadline = time.monotonic() + self.timeout
         sock = socket.create_connection((self.address, self.port), self.timeout)
         try:
-            self.sock = ssl.create_default_context().wrap_socket(sock, server_hostname=self.host)
+            context = ssl.create_default_context()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Web fetch deadline exceeded.')
+            sock.settimeout(remaining)
+            self.sock = context.wrap_socket(sock, server_hostname=self.host)
         except Exception:
             sock.close()
             raise
@@ -140,11 +150,7 @@ def extract_chatgpt_share(html: str) -> tuple[str, str] | None:
     """Extract public conversation turns from ChatGPT's server-rendered share data."""
     chunks = re.findall(r'streamController\.enqueue\(("(?:\\.|[^"\\])*")\)', html)
     serialized = next(
-        (
-            json.loads(chunk)
-            for chunk in chunks
-            if json.loads(chunk).lstrip().startswith('[')
-        ),
+        (json.loads(chunk) for chunk in chunks if json.loads(chunk).lstrip().startswith('[')),
         None,
     )
     if not serialized:
@@ -223,6 +229,7 @@ def extract_chatgpt_share(html: str) -> tuple[str, str] | None:
 
 
 def fetch_page(url: str) -> tuple[str, str]:
+    deadline = time.monotonic() + FETCH_TIMEOUT
     url, addresses = _validated_public_url(url)
     parts = urlsplit(url)
     hostname = parts.hostname.rstrip('.').lower()
@@ -231,12 +238,30 @@ def fetch_page(url: str) -> tuple[str, str]:
     if parts.query:
         target += '?' + parts.query
     connection_type = PinnedHTTPSConnection if parts.scheme == 'https' else PinnedHTTPConnection
+
+    def interrupt(sock):
+        with suppress(OSError):
+            sock.shutdown(socket.SHUT_RDWR)
+
     try:
         response = None
         last_error = None
         for address in addresses:
-            connection = connection_type(hostname, address, port, timeout=15.0)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Web fetch deadline exceeded.')
+            connection = connection_type(hostname, address, port, timeout=remaining)
+            timer = None
             try:
+                connection.connect()
+                # Socket timeouts alone let a peer keep the response alive by
+                # sending bytes periodically. Shutdown also interrupts header reads.
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('Web fetch deadline exceeded.')
+                timer = threading.Timer(remaining, interrupt, args=(connection.sock,))
+                timer.daemon = True
+                timer.start()
                 connection.request(
                     'GET',
                     target,
@@ -252,7 +277,11 @@ def fetch_page(url: str) -> tuple[str, str]:
                 break
             except OSError as exc:
                 last_error = exc
-                connection.close()
+            finally:
+                if response is None:
+                    if timer is not None:
+                        timer.cancel()
+                    connection.close()
         if response is None:
             raise last_error or OSError('No public address was reachable.')
         try:
@@ -264,6 +293,8 @@ def fetch_page(url: str) -> tuple[str, str]:
             if media_type not in ('text/html', 'application/xhtml+xml'):
                 raise ValueError('The URL must return an HTML page.')
             data = response.read(MAX_HTML_BYTES + 1)
+            if time.monotonic() >= deadline:
+                raise TimeoutError('Web fetch deadline exceeded.')
             if len(data) > MAX_HTML_BYTES:
                 raise ValueError('Page exceeds the HTML size limit.')
             encoding = 'utf-8'
@@ -272,7 +303,9 @@ def fetch_page(url: str) -> tuple[str, str]:
             if match:
                 encoding = match.group(1)
         finally:
+            timer.cancel()
             response.close()
+            connection.close()
         html = data.decode(encoding, errors='replace')
         title, body = extract_html(html)
         if hostname == 'chatgpt.com' and re.match(r'^/share/[^/]+/?$', parts.path):
