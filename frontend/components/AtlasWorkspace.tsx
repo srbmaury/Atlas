@@ -777,7 +777,7 @@ export function AtlasWorkspace() {
                 />
             )}
             <EvidenceInspector
-                wid={workspaceId}
+                workspaceId={workspaceId}
                 source={source}
                 preview={preview}
                 onClose={() => {

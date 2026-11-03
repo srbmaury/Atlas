@@ -178,11 +178,30 @@ def original(workspaceId: str, did: str, actor=Depends(user), db=Depends(databas
 @router.post('/api/workspaces/{workspaceId}/documents/{did}/retry')
 def retry(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)):
     doc = document(workspaceId, did, actor, db)
-    if doc.status not in ('failed', 'ready'):
+    changed = (
+        db.query(Document)
+        .filter(
+            Document.id == did,
+            Document.generation == doc.generation,
+            Document.status.in_(('failed', 'ready')),
+        )
+        .update(
+            {
+                'status': 'queued',
+                'error': None,
+                'chunk_count': 0,
+                'generation': Document.generation + 1,
+                'attempts': 0,
+                'lease': 0,
+                'ocr_pages': [],
+            },
+            synchronize_session=False,
+        )
+    )
+    if not changed:
         raise HTTPException(409, 'Document is already queued or processing.')
     db.query(Chunk).filter_by(document_id=did).delete()
-    doc.status, doc.error, doc.chunk_count, doc.generation = 'queued', None, 0, doc.generation + 1
-    doc.ocr_pages = []
+    db.refresh(doc)
     db.commit()
     return public_doc(doc)
 

@@ -82,6 +82,7 @@ class Document(Base):
     created = Column(Float, default=time.time)
     lease = Column(Float, default=0)
     generation = Column(Integer, default=0)
+    attempts = Column(Integer, nullable=False, server_default='0')
 
 
 class Chunk(Base):

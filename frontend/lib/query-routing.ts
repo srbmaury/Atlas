@@ -1,4 +1,4 @@
-import { isResearchProvider } from './providers';
+import { isResearchProvider } from './providers.ts';
 import type { ResearchProvider } from './providers';
 
 export type ResearchScope = {

@@ -23,14 +23,14 @@ function surroundingLines(text: string, target: string | null) {
 }
 
 export function EvidenceInspector({
-    wid,
+    workspaceId,
     source,
     preview,
     onClose,
     onPreviewChange,
     onError,
 }: {
-    wid: string;
+    workspaceId: string;
     source: Source | null;
     preview: DocumentPreview | null;
     onClose: () => void;
@@ -53,7 +53,7 @@ export function EvidenceInspector({
         setPageBusy(true);
         try {
             const result = await api<DocumentPreview>(
-                `/workspaces/${wid}/documents/${pdfDocumentId}/chunks?page=${page}`,
+                `/workspaces/${workspaceId}/documents/${pdfDocumentId}/chunks?page=${page}`,
             );
             const loaded = { ...result, current_page: page };
             if (requestId !== pageRequest.current) return;
@@ -77,7 +77,7 @@ export function EvidenceInspector({
         };
         // A new cited passage or document starts at its own page.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wid, source?.chunk_id, source?.page, preview?.document.id]);
+    }, [workspaceId, source?.chunk_id, source?.page, preview?.document.id]);
 
     if (!source && !preview) return null;
 
@@ -114,9 +114,9 @@ export function EvidenceInspector({
               ? 'Open webpage'
               : null;
     const originalUrl = source?.document_id
-        ? `/api/workspaces/${wid}/documents/${source.document_id}/original`
+        ? `/api/workspaces/${workspaceId}/documents/${source.document_id}/original`
         : preview?.document.id
-          ? `/api/workspaces/${wid}/documents/${preview.document.id}/original`
+          ? `/api/workspaces/${workspaceId}/documents/${preview.document.id}/original`
           : null;
 
     return (
@@ -226,7 +226,7 @@ export function EvidenceInspector({
                                     className="btn"
                                     onClick={async () => {
                                         try {
-                                            const next = await api<typeof preview>(`/workspaces/${wid}/documents/${preview.document.id}/chunks?offset=${preview.chunks.length}`);
+                                            const next = await api<typeof preview>(`/workspaces/${workspaceId}/documents/${preview.document.id}/chunks?offset=${preview.chunks.length}`);
                                             if (next)
                                                 onPreviewChange({
                                                     ...preview,

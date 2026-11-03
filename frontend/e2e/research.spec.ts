@@ -447,10 +447,10 @@ test('stopping an answer preserves the submitted question and releases busy stat
  await expect(page.getByRole('button',{name:'Send question'})).toBeEnabled();
 });
 
-test('workspace metadata uses the backend wid query parameter',async({page})=>{
+test('workspace metadata uses the workspaceId query parameter',async({page})=>{
  const statusRequest=page.waitForRequest(request=>{
   const url=new URL(request.url());
-  return url.pathname==='/api/gmail/status'&&url.searchParams.get('wid')==='w1';
+  return url.pathname==='/api/gmail/status'&&url.searchParams.get('workspaceId')==='w1';
  });
  await page.reload();
  const request=await statusRequest;

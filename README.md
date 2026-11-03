@@ -45,7 +45,7 @@ sequenceDiagram
   participant Worker as Ingestion worker
   participant Extract as Parser / OCR / chunker
   User->>Web: Choose one or more files
-  Web->>API: POST /workspaces/{wid}/documents
+  Web->>API: POST /workspaces/{workspaceId}/documents
   Note over Web,API: Large files use staged /uploads endpoints
   API->>Store: Store original file
   API->>DB: Create queued document record
@@ -76,7 +76,7 @@ sequenceDiagram
   participant Provider as Connected provider APIs
   participant AI as Ollama / OpenAI (optional)
   User->>Web: Ask question and choose source scope
-  Web->>API: POST /workspaces/{wid}/connected-chat/stream
+  Web->>API: POST /workspaces/{workspaceId}/connected-chat/stream
   API-->>Web: Search progress event
   API->>Search: Collect scoped evidence
   opt Documents selected
