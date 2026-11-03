@@ -44,11 +44,13 @@ const citationStopWords = new Set(
 
 /** Find the source sentence that best supports the answer text linked to a citation. */
 export function citedSentence(text: string, context?: string) {
-    const sentences = text.match(/[^.!?\n]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [];
+    const sentences =
+        text
+            .match(/[^.!?\n]+[.!?]?/g)
+            ?.map((sentence) => sentence.trim())
+            .filter(Boolean) ?? [];
     if (!context?.trim() || !sentences.length) return null;
-    const terms = new Set(
-        (context.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []).filter((term) => !citationStopWords.has(term)),
-    );
+    const terms = new Set((context.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []).filter((term) => !citationStopWords.has(term)));
     if (!terms.size) return null;
     let best: { sentence: string; score: number } | null = null;
     for (const sentence of sentences) {
@@ -69,7 +71,6 @@ export function extractionWarning(text: string, ocr = false) {
     if (damaged / sample.length > 0.005) return 'Text extraction looks damaged · verify this passage against the original.';
     const words = sample.match(/[\p{L}\p{N}]+/gu) ?? [];
     const isolated = words.filter((word) => word.length === 1 && !/^[aAiI]$/.test(word)).length;
-    if (words.length > 35 && isolated / words.length > 0.28)
-        return 'Text formatting looks irregular · verify this passage against the original.';
+    if (words.length > 35 && isolated / words.length > 0.28) return 'Text formatting looks irregular · verify this passage against the original.';
     return null;
 }

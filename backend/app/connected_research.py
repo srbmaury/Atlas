@@ -297,6 +297,7 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
     searchable_scopes = {
         'drive',
         'gmail',
+        'calendar',
         'onedrive',
         'outlook',
         'sharepoint',
@@ -373,7 +374,10 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
         empty_labels = ', '.join(labels.get(provider, provider) for provider in empty_providers)
         lines.append(f'No matching items from {empty_labels}.')
     for index, item in enumerate(shown, 1):
-        lines.append(f'- **{item.title}** · {labels.get(item.provider, item.provider)} [{index}]')
+        line = f'- **{item.title}** · {labels.get(item.provider, item.provider)} [{index}]'
+        if item.provider == 'github' and item.url and '/pull/' in item.url and item.excerpt:
+            line += f' — {item.excerpt[:300]}'
+        lines.append(line)
     if len(matches) > len(shown):
         lines.append(f'Showing the first {len(shown)} of {len(matches)} matches.')
     return {

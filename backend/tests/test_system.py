@@ -1065,7 +1065,7 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 
 
 def test_natural_language_connected_queries_are_simplified():
-    from app.main import drive_query_for_question, gmail_query_for_question
+    from app.research_queries import drive_query_for_question, gmail_query_for_question
 
     assert (
         gmail_query_for_question(
@@ -1435,7 +1435,6 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
         ),
     ]
     monkeypatch.setattr(main, 'collect_connected_evidence', lambda *args: (records, {}))
-    monkeypatch.setattr(main, 'enabled', lambda: True)
     response = client.post(
         f'/api/workspaces/{w}/connected-chat',
         json={'question': 'my pull requests', 'include_documents': False, 'providers': ['github']},

@@ -16,12 +16,7 @@ function plainText(children: ReactNode): string {
         .join('');
 }
 
-function citationText(
-    children: ReactNode,
-    evidence: Source[],
-    onOpen: (source: Source, context: string) => void,
-    context: string,
-): ReactNode {
+function citationText(children: ReactNode, evidence: Source[], onOpen: (source: Source, context: string) => void, context: string): ReactNode {
     return Children.map(children, (child) =>
         typeof child === 'string'
             ? child.split(/(\[\d+\])/g).map((part, index) => {
@@ -40,7 +35,15 @@ function citationText(
               : child,
     );
 }
-export const ResearchAnswer = memo(function ResearchAnswer({ result, onOpenSource, onPrompt }: { result: Answer; onOpenSource: (source: Source, context?: string) => void; onPrompt: (prompt: string) => void }) {
+export const ResearchAnswer = memo(function ResearchAnswer({
+    result,
+    onOpenSource,
+    onPrompt,
+}: {
+    result: Answer;
+    onOpenSource: (source: Source, context?: string) => void;
+    onPrompt: (prompt: string) => void;
+}) {
     const sources = visibleEvidence(result);
     return (
         <>
@@ -50,14 +53,16 @@ export const ResearchAnswer = memo(function ResearchAnswer({ result, onOpenSourc
                     components={{
                         p: ({ children }) => {
                             const context =
-                                plainText(children).replace(/\[\d+\]/g, '').trim() ||
-                                result.answer.replace(/\[\d+\]/g, '').trim();
+                                plainText(children)
+                                    .replace(/\[\d+\]/g, '')
+                                    .trim() || result.answer.replace(/\[\d+\]/g, '').trim();
                             return <p>{citationText(children, sources.length ? result.sources : [], onOpenSource, context)}</p>;
                         },
                         li: ({ children }) => {
                             const context =
-                                plainText(children).replace(/\[\d+\]/g, '').trim() ||
-                                result.answer.replace(/\[\d+\]/g, '').trim();
+                                plainText(children)
+                                    .replace(/\[\d+\]/g, '')
+                                    .trim() || result.answer.replace(/\[\d+\]/g, '').trim();
                             return <li>{citationText(children, sources.length ? result.sources : [], onOpenSource, context)}</li>;
                         },
                     }}

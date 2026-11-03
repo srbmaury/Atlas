@@ -56,7 +56,9 @@ def score(item, question):
 
 def is_listing_question(question):
     """Recognize record-list requests across providers without provider-specific terms."""
-    words = set(tokens(question))
+    words = set(tokens(question)) | {
+        word.removesuffix('s') for word in re.findall(r'\w+', question.lower())
+    }
     asks_to_list = bool(
         re.search(r'\b(?:list|show|find|get|name|search)\b', question, re.I)
         or re.search(
@@ -86,7 +88,9 @@ def is_listing_question(question):
         'request',
         'pr',
     }
-    return asks_to_list and bool(words & record_terms)
+    return (asks_to_list and bool(words & record_terms)) or bool(
+        re.fullmatch(r'(?:my|our) (?:pull requests?|prs?)\s*[?.]?', question.strip(), re.I)
+    )
 
 
 def is_recency_question(question):
@@ -138,7 +142,9 @@ def prepare_evidence(question, items, *, limit=60, per_provider=20):
             candidates.sort(key=lambda item: -score(item, question))
 
     selected = []
-    provider_order = list(groups)
+    provider_order = sorted(
+        groups, key=lambda provider: score(groups[provider][0], question), reverse=True
+    )
     positions = {provider: 0 for provider in provider_order}
     while len(selected) < limit:
         added = False

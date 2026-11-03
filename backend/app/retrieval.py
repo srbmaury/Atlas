@@ -158,7 +158,6 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
                 .limit(60)
                 .all()
             )
-            semantic_candidates = []
         elif engine.dialect.name == 'sqlite' and _sqlite_fts_available():
             raw_terms = re.findall(r'\w+', query.lower())
             terms = list(
@@ -184,13 +183,9 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
                     {c.id: c for c in base.filter(Chunk.id.in_(fts_ids)).all()} if fts_ids else {}
                 )
                 lexical = [by_id[row.chunk_id] for row in rows[:60] if row.chunk_id in by_id]
-                semantic_candidates = [by_id[chunk_id] for chunk_id in fts_ids if chunk_id in by_id]
-            else:
-                semantic_candidates = []
         else:
             chunks = base.all()
             lexical = [c for c, _ in bm25(query, chunks)]
-            semantic_candidates = chunks
         if engine.dialect.name == 'postgresql' and enabled():
             vector = embed([query])[0]
             semantic = (
@@ -207,7 +202,8 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
         elif engine.dialect.name != 'postgresql' and enabled():
             vector = embed([query])[0]
             ranked = []
-            for c in semantic_candidates:
+            semantic_candidates = base.filter(Chunk.embedding_model == embedding_model_id())
+            for c in semantic_candidates.yield_per(100):
                 if c.embedding is not None and c.embedding_model == embedding_model_id():
                     similarity = cosine_similarity(vector, c.embedding)
                     if similarity > 0.2:

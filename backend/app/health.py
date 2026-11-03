@@ -1,7 +1,9 @@
 """Operational probes: liveness does not depend on database; readiness does."""
 
 import logging
+from pathlib import Path
 
+from alembic.script import ScriptDirectory
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import text
 
@@ -10,6 +12,9 @@ from .gmail import actor, allowed_workspace
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
+SCHEMA_HEAD = ScriptDirectory(
+    str(Path(__file__).resolve().parents[1] / 'migrations')
+).get_current_head()
 
 
 @router.get('/health/live')
@@ -25,8 +30,8 @@ def ready():
             revision = connection.execute(
                 text('SELECT version_num FROM alembic_version')
             ).scalar_one_or_none()
-            if revision != '0003':
-                raise RuntimeError('Atlas database schema migration 0003 is required.')
+            if revision != SCHEMA_HEAD:
+                raise RuntimeError('Atlas database schema must be at the current migration head.')
     except Exception as exc:
         log.warning('Readiness check failed: %s', type(exc).__name__)
         raise HTTPException(status_code=503, detail='Database unavailable')
