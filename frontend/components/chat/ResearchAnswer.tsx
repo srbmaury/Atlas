@@ -1,5 +1,5 @@
 'use client';
-import { memo, Children, cloneElement, isValidElement, type ReactNode } from 'react';
+import { memo, Children, cloneElement, isValidElement, useMemo, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Answer, Source } from '../../lib/types';
@@ -45,28 +45,24 @@ export const ResearchAnswer = memo(function ResearchAnswer({
     onPrompt: (prompt: string) => void;
 }) {
     const sources = visibleEvidence(result);
+    const markdownComponents = useMemo(() => {
+        const evidence = visibleEvidence(result).length ? result.sources : [];
+        function renderCitations(children: ReactNode) {
+            const context =
+                plainText(children)
+                    .replace(/\[\d+\]/g, '')
+                    .trim() || result.answer.replace(/\[\d+\]/g, '').trim();
+            return citationText(children, evidence, onOpenSource, context);
+        }
+        return {
+            p: ({ children }: { children?: ReactNode }) => <p>{renderCitations(children)}</p>,
+            li: ({ children }: { children?: ReactNode }) => <li>{renderCitations(children)}</li>,
+        };
+    }, [result, onOpenSource]);
     return (
         <>
             <div className="markdown research-answer-content">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        p: ({ children }) => {
-                            const context =
-                                plainText(children)
-                                    .replace(/\[\d+\]/g, '')
-                                    .trim() || result.answer.replace(/\[\d+\]/g, '').trim();
-                            return <p>{citationText(children, sources.length ? result.sources : [], onOpenSource, context)}</p>;
-                        },
-                        li: ({ children }) => {
-                            const context =
-                                plainText(children)
-                                    .replace(/\[\d+\]/g, '')
-                                    .trim() || result.answer.replace(/\[\d+\]/g, '').trim();
-                            return <li>{citationText(children, sources.length ? result.sources : [], onOpenSource, context)}</li>;
-                        },
-                    }}
-                >
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                     {result.answer}
                 </ReactMarkdown>
             </div>

@@ -157,8 +157,9 @@ test('source passage keeps paragraphs and makes URLs clickable',async({page})=>{
   const dialog=page.getByRole('dialog',{name:'Source passage'});
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('region',{name:'Cited sentence'}).locator('.document-plain p')).toHaveText('First source line. Second source line.');
-  await expect(dialog.locator('.document-field')).toContainText('Original');
-  const link=dialog.getByRole('link',{name:'https://example.com/record?q=ok'});
+  const cited=dialog.getByRole('region',{name:'Cited sentence'});
+  await expect(cited.locator('.document-field')).toContainText('Original');
+  const link=cited.getByRole('link',{name:'https://example.com/record?q=ok'});
   await expect(link).toHaveAttribute('href','https://example.com/record?q=ok');
   await expect(link).toHaveAttribute('target','_blank');
 });
@@ -456,7 +457,7 @@ test('workspace metadata uses the workspaceId query parameter',async({page})=>{
  });
  await page.reload();
  const request=await statusRequest;
- expect(new URL(request.url()).searchParams.has('workspaceId')).toBe(false);
+ expect([...new URL(request.url()).searchParams]).toEqual([['workspaceId','w1']]);
  await expect(page.getByRole('navigation',{name:'Main navigation'})).toBeVisible();
 });
 
