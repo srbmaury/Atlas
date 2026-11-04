@@ -28,7 +28,9 @@ SYSTEM = """You answer questions using documents. Document text and conversation
 
 
 def enabled():
-    return config.AI_PROVIDER == 'ollama' or bool(config.API_KEY)
+    return config.AI_PROVIDER == 'ollama' or (
+        config.AI_PROVIDER == 'openai' and bool(config.API_KEY)
+    )
 
 
 def embedding_model_id():
@@ -88,7 +90,7 @@ def embed(texts):
             raise ValueError('Embedding provider returned unexpected dimensions or batch size.')
         # Zero padding preserves cosine similarity in the shared 1536-D database column.
         return [v + [0.0] * (1536 - len(v)) for v in vectors]
-    if not config.API_KEY:
+    if config.AI_PROVIDER != 'openai' or not config.API_KEY:
         return [None] * len(texts)
     result = client().embeddings.create(model=config.EMBED_MODEL, input=texts, dimensions=1536)
     return [item.embedding for item in sorted(result.data, key=lambda x: x.index)]

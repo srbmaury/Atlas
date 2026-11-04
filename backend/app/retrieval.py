@@ -4,7 +4,7 @@ from collections import Counter
 from difflib import SequenceMatcher
 from functools import lru_cache
 
-from sqlalchemy import text
+from sqlalchemy import column, select, table, text
 
 from .ai import embed, embedding_model_id, enabled
 from .db import Chunk, Document, Session, engine
@@ -170,19 +170,24 @@ def retrieve(workspace_id, query, document_ids=None, limit=8):
             )
             match_query = ' OR '.join(f'"{term}"' for term in terms)
             if match_query:
+                # Apply the selected-document and ready-status scope before ranking.
+                fts = table('chunks_fts', column('chunk_id'), column('workspace_id'))
                 rows = db.execute(
-                    text(
-                        'SELECT chunk_id, bm25(chunks_fts) AS rank FROM chunks_fts '
-                        'WHERE chunks_fts MATCH :query AND workspace_id = :workspace_id '
-                        'ORDER BY rank LIMIT 200'
-                    ),
-                    {'query': match_query, 'workspace_id': workspace_id},
+                    select(fts.c.chunk_id)
+                    .where(
+                        text('chunks_fts MATCH :query'),
+                        fts.c.workspace_id == workspace_id,
+                        fts.c.chunk_id.in_(base.with_entities(Chunk.id).statement),
+                    )
+                    .order_by(text('bm25(chunks_fts)'))
+                    .limit(60),
+                    {'query': match_query},
                 ).all()
                 fts_ids = [row.chunk_id for row in rows]
                 by_id = (
                     {c.id: c for c in base.filter(Chunk.id.in_(fts_ids)).all()} if fts_ids else {}
                 )
-                lexical = [by_id[row.chunk_id] for row in rows[:60] if row.chunk_id in by_id]
+                lexical = [by_id[row.chunk_id] for row in rows if row.chunk_id in by_id]
         else:
             chunks = base.all()
             lexical = [c for c, _ in bm25(query, chunks)]

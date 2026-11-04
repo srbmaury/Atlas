@@ -142,3 +142,72 @@ def test_valid_cited_answer_remains_synthesis():
     )
     assert events[-1]['mode'] == 'connected'
     assert events[-1]['sources'][0]['title'] == 'Europe.pdf'
+
+
+def test_connected_synthesis_receives_bounded_history():
+    import json
+
+    from app.connected_synthesis import synthesize_connected
+
+    captured = []
+
+    def create(**kwargs):
+        captured.append(json.loads(kwargs['input']))
+        return SimpleNamespace(output_text='Maya approved the launch budget. [1]')
+
+    history = [{'role': 'user', 'content': 'launch budget ' * 200}] * 8
+    source = evidence('Decision', 'Maya approved the launch budget.')
+
+    def factory():
+        return SimpleNamespace(responses=SimpleNamespace(create=create))
+
+    synthesize_connected(
+        'Who approved that?', [source], 'openai', 'key', 'model', factory, None, history=history
+    )
+    list(
+        stream_connected(
+            'Who approved that?',
+            [source],
+            'openai',
+            'key',
+            'model',
+            lambda: SimpleNamespace(
+                responses=SimpleNamespace(
+                    create=lambda **kwargs: (
+                        captured.append(json.loads(kwargs['input']))
+                        or [
+                            SimpleNamespace(
+                                type='response.output_text.delta',
+                                delta='Maya approved the launch budget. [1]',
+                            )
+                        ]
+                    )
+                )
+            ),
+            '',
+            '',
+            history=history,
+        )
+    )
+    assert len(captured) == 2
+    for prompt in captured:
+        assert len(prompt['recent_conversation']) == 4
+        assert all(len(turn['content']) <= 1000 for turn in prompt['recent_conversation'])
+
+
+def test_partial_connector_failure_marks_answer_coverage():
+    from app.connected_research import attach_retrieval_trace
+    from app.schemas import ConnectedQuestion
+
+    body = ConnectedQuestion(
+        question='budget', include_documents=False, providers=['slack', 'notion']
+    )
+    result = attach_retrieval_trace(
+        {'answer': 'Budget approved.', 'sources': [], 'coverage_note': 'Some claims omitted.'},
+        body,
+        [],
+        {'found': {'slack': 1}, 'failed': ['notion']},
+    )
+    assert 'Some claims omitted.' in result['coverage_note']
+    assert 'could not search notion' in result['coverage_note']
+    assert result['retrieval']['sources'][1]['status'] == 'failed'

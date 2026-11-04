@@ -46,6 +46,18 @@ def collect_connected_evidence(
     stats = retrieval_stats if retrieval_stats is not None else {}
     stats.update({'found': {provider: 0 for provider in connected_scope(body)}, 'failed': []})
     tasks = []
+    failures = []
+    query = retrieval_query(body.question, body.history)
+
+    def credential(provider, load):
+        try:
+            return load()
+        except Exception as exc:
+            failures.append((provider, exc))
+            stats['failed'].append(provider)
+            log.warning('Connected credential failed for %s: %s', provider, type(exc).__name__)
+            return None
+
     try:
         if body.include_documents:
             retrieved_documents = retrieve_chunks(
@@ -58,38 +70,44 @@ def collect_connected_evidence(
                 )
                 document_evidence[item['chunk_id']] = item
         if body.include_gmail:
-            entry = connection(db, actor, workspaceId)
-            token = access_token(entry, db)
-            tasks.append(
-                (
-                    'gmail',
-                    lambda: _search_gmail(
-                        token,
-                        body,
-                        GMAIL_API,
-                        gmail_get,
-                        email_from_json,
-                        gmail_query_for_question,
-                    ),
-                )
+            token = credential(
+                'gmail', lambda: access_token(connection(db, actor, workspaceId), db)
             )
+            if token is not None:
+                tasks.append(
+                    (
+                        'gmail',
+                        lambda: _search_gmail(
+                            token,
+                            body,
+                            GMAIL_API,
+                            gmail_get,
+                            email_from_json,
+                            gmail_query_for_question,
+                        ),
+                    )
+                )
         if 'drive' in body.providers:
-            drive_token = drive_access_token(db, actor, workspaceId)
-            tasks.append(
-                (
-                    'drive',
-                    lambda: drive_evidence(
-                        drive_token,
-                        drive_search(drive_token, drive_query_for_question(body.question)),
-                    ),
+            drive_token = credential('drive', lambda: drive_access_token(db, actor, workspaceId))
+            if drive_token is not None:
+                tasks.append(
+                    (
+                        'drive',
+                        lambda: drive_evidence(
+                            drive_token,
+                            drive_search(drive_token, drive_query_for_question(query)),
+                        ),
+                    )
                 )
-            )
         for provider in dict.fromkeys(p for p in body.providers if p != 'drive'):
-            _, provider_token = read_connection(db, actor, workspaceId, provider)
+            loaded = credential(provider, lambda: read_connection(db, actor, workspaceId, provider))
+            if loaded is None:
+                continue
+            _, provider_token = loaded
             tasks.append(
                 (
                     provider,
-                    lambda p=provider, t=provider_token: source_search(p, t, body.question),
+                    lambda p=provider, t=provider_token: source_search(p, t, query),
                 )
             )
         # A single slow connector should not serialize all selected sources. Keep
@@ -106,7 +124,6 @@ def collect_connected_evidence(
                 CONNECTED_SOURCE_EXECUTOR.submit(search): provider for provider, search in tasks
             }
             _, pending = wait(futures, timeout=timeout)
-            failures = []
             for future, provider in futures.items():
                 if future in pending:
                     future.cancel()
@@ -141,8 +158,8 @@ def collect_connected_evidence(
                     )
             # Do not hold the request open for a connector that missed the shared
             # deadline. Running calls remain bounded by their adapter HTTP timeouts.
-            if failures and len(failures) == len(tasks) and not evidence:
-                raise failures[0][1]
+        if failures and not evidence:
+            raise failures[0][1]
     except HTTPException:
         raise
     except Exception as exc:
@@ -187,6 +204,10 @@ def attach_retrieval_trace(result, body, evidence, stats, used_sources=None):
         result.get('sources', []) if used_sources is None else used_sources,
         result.get('scope'),
     )
+    failed = (stats or {}).get('failed', [])
+    if failed:
+        warning = 'Search coverage is incomplete: could not search ' + ', '.join(failed) + '.'
+        result['coverage_note'] = ' '.join(filter(None, [result.get('coverage_note'), warning]))
     return result
 
 
@@ -194,7 +215,12 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
     matches = gmail_get(
         token,
         gmail_api + '/messages',
-        {'q': gmail_query_for_question(body.gmail_query, body.question), 'maxResults': 8},
+        {
+            'q': gmail_query_for_question(
+                body.gmail_query, retrieval_query(body.question, body.history)
+            ),
+            'maxResults': 8,
+        },
     ).get('messages', [])
     from .sources import Evidence
 

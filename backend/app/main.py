@@ -150,6 +150,7 @@ def connected_chat(
             config.CHAT_MODEL,
             client,
             ollama_chat,
+            history=[turn.model_dump() for turn in body.history],
         )
     except HTTPException:
         raise
@@ -315,6 +316,7 @@ def connected_chat_stream(
                     config.OLLAMA_URL,
                     config.OLLAMA_CHAT_MODEL,
                     cancellation,
+                    history=[turn.model_dump() for turn in body.history],
                 )
 
             for event in stream_with_heartbeats(answer_events):

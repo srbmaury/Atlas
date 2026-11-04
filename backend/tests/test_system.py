@@ -169,6 +169,7 @@ def test_chunker_preserves_end_and_bounded_size():
 
 
 def test_ai_invalid_citations_rejected(monkeypatch):
+    monkeypatch.setattr(config, 'AI_PROVIDER', 'openai')
     monkeypatch.setattr(config, 'API_KEY', 'test-key')
     fake = SimpleNamespace(
         responses=SimpleNamespace(
@@ -185,6 +186,7 @@ def test_ai_invalid_citations_rejected(monkeypatch):
 
 
 def test_ai_embedding_order(monkeypatch):
+    monkeypatch.setattr(config, 'AI_PROVIDER', 'openai')
     monkeypatch.setattr(config, 'API_KEY', 'test-key')
     fake = SimpleNamespace(
         embeddings=SimpleNamespace(
@@ -200,7 +202,8 @@ def test_ai_embedding_order(monkeypatch):
     assert ai.embed(['one', 'two']) == [[1], [2]]
 
 
-def test_pdf_page_sources_and_blank_page_rejection(client):
+def test_pdf_page_sources_and_blank_page_preservation(client, monkeypatch):
+    monkeypatch.setenv('OCR_ENABLED', 'false')
     import io
 
     from pypdf import PdfWriter
@@ -247,8 +250,9 @@ def test_pdf_page_sources_and_blank_page_rejection(client):
         for d in client.get(f'/api/workspaces/{w}/documents').json()
         if d['name'] == 'partial-scan.pdf'
     )
-    assert doc['status'] == 'failed' and 'OCR' in doc['error']
-    assert doc['chunk_count'] == 0
+    assert doc['status'] == 'ready'
+    assert doc['pages'] == 2
+    assert doc['chunk_count'] == 1
 
 
 def test_docx_tables_and_sections(client):
@@ -308,6 +312,7 @@ def test_hybrid_semantic_retrieval(client, monkeypatch):
         chunk.embedding = vector
         chunk.embedding_model = config.EMBED_MODEL
         db.commit()
+    monkeypatch.setattr(config, 'AI_PROVIDER', 'openai')
     monkeypatch.setattr(config, 'API_KEY', 'mock-provider')
     monkeypatch.setattr(retrieval, 'embed', lambda texts: [vector for _ in texts])
     # No literal overlap; the mocked embedding supplies the semantic match.
@@ -1043,7 +1048,7 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
     )
     captured = {}
 
-    def fake_synthesize(question, evidence, *args):
+    def fake_synthesize(question, evidence, *args, **kwargs):
         item = evidence[0]
         captured['excerpt'] = item.excerpt
         return 'The note lists several causes [1].', [
@@ -1394,7 +1399,7 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
             }
         ]
 
-    def fake_synthesize(question, evidence, *args):
+    def fake_synthesize(question, evidence, *args, **kwargs):
         return 'Milestone agreed [1].', [
             {**evidence[0].as_prompt(1), 'origin_id': evidence[0].source_id}
         ]
@@ -1550,3 +1555,89 @@ def test_operations_endpoint_is_workspace_scoped(client):
             json={'email': f'{time.time_ns()}@guest.example', 'password': 'another-long-password'},
         )
         assert guest.get(f'/api/workspaces/{w}/operations').status_code == 404
+
+
+def test_disabled_provider_never_calls_openai_with_saved_key(monkeypatch):
+    monkeypatch.setattr(config, 'AI_PROVIDER', 'none')
+    monkeypatch.setattr(config, 'API_KEY', 'saved-key')
+
+    def forbidden():
+        pytest.fail('Disabled provider must not create an OpenAI client')
+
+    monkeypatch.setattr(ai, 'client', forbidden)
+    assert not ai.enabled()
+    assert ai.embed(['budget']) == [None]
+    result = ai.generate('budget', [{'name': 'plan', 'page': 1, 'text': 'Budget is 20'}])
+    assert result['mode'] == 'local_excerpts'
+
+
+def test_selected_document_retrieval_scopes_before_limit(client):
+    from app.retrieval import retrieve
+
+    w = workspaceId(client)
+    with Session() as db:
+        other = Document(workspace_id=w, name='alpha.txt', digest='rank-a', size=1, status='ready')
+        selected = Document(
+            workspace_id=w, name='beta.txt', digest='rank-b', size=1, status='ready'
+        )
+        db.add_all([other, selected])
+        db.flush()
+        for i in range(210):
+            db.add(Chunk(document_id=other.id, workspace_id=w, page=1, ordinal=i, text='budget'))
+        db.add(
+            Chunk(
+                document_id=selected.id,
+                workspace_id=w,
+                page=1,
+                ordinal=0,
+                text='budget ' + 'extra ' * 150,
+            )
+        )
+        db.commit()
+        selected_id = selected.id
+    results = retrieve(w, 'budget', [selected_id])
+    assert len(results) == 1
+    assert results[0]['document_id'] == selected_id
+
+
+def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
+    from fastapi import HTTPException
+
+    from app import external_sources, main
+    from app.db import User, Workspace
+
+    w = workspaceId(client)
+    seen = []
+
+    def credentials(db, actor, workspace_id, provider):
+        if provider == 'notion':
+            raise HTTPException(422, 'Reconnect Notion')
+        return None, 'token'
+
+    def search(provider, token, question):
+        seen.append(question)
+        return [
+            {
+                'id': 'decision',
+                'title': 'Launch budget',
+                'excerpt': 'Maya approved the launch budget.',
+                'url': 'https://example.com/decision',
+            }
+        ]
+
+    monkeypatch.setattr(external_sources, 'read_connection', credentials)
+    monkeypatch.setattr(external_sources, 'source_search', search)
+    body = main.ConnectedQuestion(
+        question='Who approved that?',
+        include_documents=False,
+        providers=['notion', 'slack'],
+        history=[{'role': 'user', 'content': 'Discuss the launch budget'}],
+    )
+    stats = {}
+    with Session() as db:
+        owner = db.get(User, db.get(Workspace, w).owner_id)
+        evidence, _ = main.collect_connected_evidence(w, body, owner, db, stats)
+    assert evidence
+    assert stats['failed'] == ['notion']
+    assert stats['found']['slack'] == 1
+    assert 'launch budget' in seen[0]
