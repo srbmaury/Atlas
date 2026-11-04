@@ -391,30 +391,35 @@ test('authentication failure stays actionable and announced',async({page}, testI
  await page.screenshot({path:testInfo.outputPath('after-auth.png'),animations:'disabled'});
 });
 
-test('session actions create and delete a workspace then sign out',async({page})=>{
+test('workspace creation, settings deletion and sign out preserve the selected workspace',async({page})=>{
+ let created=false;
  await page.route('**/api/workspaces',route=>{
-  if(route.request().method()!=='POST')return route.fallback();
+  if(route.request().method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'w1',name:'Test workspace',role:'manager'},...(created?[{id:'w2',name:'Research review',role:'manager'}]:[])])});
   expect(route.request().postDataJSON()).toEqual({name:'Research review'});
+  created=true;
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'w2',name:'Research review',role:'manager'})});
  });
  await page.route('**/api/workspaces/w2',route=>{
   expect(route.request().method()).toBe('DELETE');
   expect(route.request().postDataJSON()).toEqual({name:'Research review'});
+  created=false;
   return route.fulfill({status:200,contentType:'application/json',body:'{}'});
  });
- await page.getByRole('button',{name:'Manage workspaces',exact:true}).click();
+ await page.getByRole('button',{name:'Switch workspace',exact:true}).click();
  const dialog=page.getByRole('dialog',{name:'Your workspaces'});
  await dialog.getByLabel('New workspace',{exact:true}).fill('Research review');
  await dialog.getByRole('button',{name:'Create workspace',exact:true}).click();
  await expect(dialog).toHaveCount(0);
  await expect(page.locator('.workspace-btn')).toContainText('Research review');
- await page.getByRole('button',{name:'Manage workspaces',exact:true}).click();
- await dialog.getByRole('button',{name:'Delete workspace Research review',exact:true}).click();
- const remove=dialog.getByRole('button',{name:'Delete workspace',exact:true});
+ await page.getByRole('button',{name:'Switch workspace',exact:true}).click();
+ await dialog.getByRole('link',{name:'Members, permissions & workspace settings'}).click();
+ await expect(page).toHaveURL(/settings\?section=workspace&workspaceId=w2/);
+ const remove=page.getByRole('button',{name:'Delete workspace',exact:true});
  await expect(remove).toBeDisabled();
- await dialog.getByLabel('Type workspace name to confirm').fill('Research review');
+ await page.getByLabel('Type workspace name to confirm').fill('Research review');
  await remove.click();
- await expect(dialog).toHaveCount(0);
+ await expect(page.getByText('Workspace deleted.',{exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Back to Atlas'}).click();
  await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
  await page.getByRole('button',{name:'Sign out',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Create your workspace',exact:true})).toBeVisible();
@@ -490,4 +495,44 @@ test('web import reports success and clears its input',async({page})=>{
  await page.getByRole('button',{name:'Add URL',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'Added Article to your library for indexing.'})).toBeVisible();
  await expect(page.getByLabel('Save public web page')).toHaveValue('');
+});
+
+test('empty-library Add documents button keeps its padding on Home', async ({ page }) => {
+    await page.route('**/api/workspaces/w1/documents', route => route.fulfill({status:200,contentType:'application/json',body:'[]'}));
+    await page.reload();
+    await page.getByRole('button', {name:'Home',exact:true}).click();
+    const button = page.locator('.home-card-empty').getByRole('button', {name:'Add documents',exact:true});
+    await expect(button).toBeVisible();
+    const style = await button.evaluate(element => { const value=getComputedStyle(element); return {left:parseFloat(value.paddingLeft),right:parseFloat(value.paddingRight),top:parseFloat(value.paddingTop),height:element.getBoundingClientRect().height}; });
+    expect(style.left).toBeGreaterThanOrEqual(12);
+    expect(style.right).toBeGreaterThanOrEqual(12);
+    expect(style.top).toBeGreaterThanOrEqual(8);
+    expect(style.height).toBeGreaterThanOrEqual(34);
+});
+
+test('workspace switcher stays compact and avatar opens account settings', async ({ page }) => {
+    await page.getByRole('button', {name:'Switch workspace',exact:true}).click();
+    const dialog = page.getByRole('dialog', {name:'Your workspaces'});
+    await expect(dialog.getByRole('heading',{name:'Members & access'})).toHaveCount(0);
+    await expect(dialog.getByLabel('Registered member email')).toHaveCount(0);
+    await expect(dialog.getByRole('link',{name:'Members, permissions & workspace settings'})).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('link',{name:'Account settings',exact:true}).first().click();
+    await expect(page.getByRole('heading',{name:'Profile & preferences',exact:true})).toBeVisible();
+    await expect(page.getByRole('region',{name:'Profile',exact:true})).toContainText('test@example.com');
+    await page.getByRole('button',{name:'Switch to dark mode',exact:true}).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+    await page.getByRole('link',{name:'Back to Atlas'}).click();
+    await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
+});
+
+test('settings fit a narrow screen and preserve workspace on return', async ({ page }) => {
+    await page.setViewportSize({width:390,height:844});
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading',{name:'Workspace settings',exact:true})).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    await page.screenshot({path:'test-results/settings-mobile.png',fullPage:true});
+    await page.getByRole('button',{name:'Profile & preferences',exact:true}).click();
+    await page.getByRole('button',{name:'Sign out',exact:true}).click();
+    await expect(page.getByRole('heading',{name:'You’re signed out',exact:true})).toBeVisible();
 });

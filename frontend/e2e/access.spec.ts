@@ -35,8 +35,9 @@ async function setup(page: Page, role: 'manager' | 'viewer') {
 
 test('manager adds a member and explicitly shares a connection', async ({ page }) => {
     const changes = await setup(page, 'manager');
-    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading', { name: 'Workspace settings', exact: true })).toBeVisible();
+    const dialog = page.locator('.settings-main');
     await expect(dialog.getByRole('heading', { name: 'Members & access' })).toBeVisible();
     await dialog.getByLabel('Registered member email').fill('viewer@example.com');
     await dialog.getByLabel('Member role', { exact: true }).selectOption('viewer');
@@ -46,7 +47,7 @@ test('manager adds a member and explicitly shares a connection', async ({ page }
     await expect(dialog.getByRole('checkbox', { name: 'Share gmail with this workspace' })).toBeChecked();
     expect(changes).toEqual([{ email: 'viewer@example.com', role: 'viewer' }, { shared: true, member_ids: [] }]);
     await page.screenshot({ path: 'test-results/access-manager.png', fullPage: true });
-    await dialog.getByLabel('Manage access for').selectOption('organisation');
+    await page.getByRole('button', { name: 'Organisations', exact: true }).click();
     await expect(dialog.getByLabel('Organisation', { exact: true })).toHaveValue('o1');
     await expect(dialog.getByRole('button', { name: 'Create organisation workspace' })).toBeVisible();
 });
@@ -57,19 +58,21 @@ test('viewer sees role guidance and has no document or member mutation controls'
     await expect(page.getByRole('button', { name: 'Add documents', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Delete notes.md', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reindex notes.md', exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading', { name: 'Workspace settings', exact: true })).toBeVisible();
+    const dialog = page.locator('.settings-main');
     await expect(dialog.getByText('Ask a workspace manager to change membership.')).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Add or update member' })).toHaveCount(0);
-    await expect(dialog.getByRole('button', { name: 'Delete workspace Research' })).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: 'Delete workspace', exact: true })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/access-viewer.png', fullPage: true });
 });
 
 test('rejected source sharing rolls back and shows the permission error', async ({ page }) => {
     await setup(page, 'manager');
     await page.route('**/api/workspaces/w1/connection-sharing/gmail', (route) => route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ detail: 'Only the connection owner can manage this credential.' }) }));
-    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading', { name: 'Workspace settings', exact: true })).toBeVisible();
+    const dialog = page.locator('.settings-main');
     const checkbox = dialog.getByRole('checkbox', { name: 'Share gmail with this workspace' });
     await checkbox.click();
     await expect(dialog.getByRole('alert')).toHaveText('Only the connection owner can manage this credential.');
@@ -78,8 +81,9 @@ test('rejected source sharing rolls back and shows the permission error', async 
 
 test('manager grants a selected member source access and reads security history', async ({ page }) => {
     const changes = await setup(page, 'manager');
-    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading', { name: 'Workspace settings', exact: true })).toBeVisible();
+    const dialog = page.locator('.settings-main');
     await dialog.getByLabel('Registered member email').fill('reader@example.com');
     await dialog.getByRole('button', { name: 'Add or update member' }).click();
     const grant = dialog.getByRole('checkbox', { name: 'Allow gmail for reader@example.com' });
@@ -97,8 +101,9 @@ test('ownership transfer requires the resource name and selects an existing memb
         submitted = route.request().postDataJSON();
         await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({owner_id:'member'})});
     });
-    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    await expect(page.getByRole('heading', { name: 'Workspace settings', exact: true })).toBeVisible();
+    const dialog = page.locator('.settings-main');
     await dialog.getByLabel('Registered member email').fill('next-owner@example.com');
     await dialog.getByRole('button', { name: 'Add or update member' }).click();
     await dialog.getByLabel('New owner', { exact: true }).selectOption('member');

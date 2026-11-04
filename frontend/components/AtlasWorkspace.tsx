@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
 import { createConversationActions } from '../utils/conversationActions';
@@ -37,7 +38,6 @@ import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitiv
 import { flushSync } from 'react-dom';
 
 import { prettyBytes } from '../utils/utils';
-import { api } from '../lib/api';
 import { PROVIDER_LABELS } from '../lib/providers';
 
 export function AtlasWorkspace() {
@@ -118,9 +118,6 @@ export function AtlasWorkspace() {
     const [dragging, setDragging] = useState(false);
     const [workspaceName, setWorkspaceName] = useState('');
     const [newWorkspace, setNewWorkspace] = useState(false);
-    const [deleteWorkspaceId, setDeleteWorkspaceId] = useState<string | null>(null);
-    const [confirmWorkspaceName, setConfirmWorkspaceName] = useState('');
-    const [deletingWorkspace, setDeletingWorkspace] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [scopeOpen, setScopeOpen] = useState(false);
@@ -287,25 +284,17 @@ export function AtlasWorkspace() {
         return <ResearchAnswer result={result} onOpenSource={openAnswerSource} onPrompt={onPrompt} />;
     }
 
-    const { authenticate, addWorkspace, removeWorkspace, signOut } = createSessionActions({
+    const { authenticate, addWorkspace, signOut } = createSessionActions({
         register,
         email,
         password,
-        workspaceId,
         workspaceName,
-        workspaces,
-        deleteWorkspaceId,
-        confirmWorkspaceName,
-        deletingWorkspace,
-        uploading,
-        busy,
         boot,
         setUser,
         setWorkspaces,
         setWorkspaceId,
         setBusy,
         setError,
-        setNotice,
         setPassword,
         setDocs,
         setMessages,
@@ -313,9 +302,6 @@ export function AtlasWorkspace() {
         setSource,
         setNewWorkspace,
         setWorkspaceName,
-        setDeletingWorkspace,
-        setDeleteWorkspaceId,
-        setConfirmWorkspaceName,
     });
     const { importWebPage, upload, remove, retry, inspect } = createDocumentActions({
         workspaceId,
@@ -457,9 +443,9 @@ export function AtlasWorkspace() {
                     </button>
                     <div className="top-actions">
                         {themeButton}
-                        <button className="initials" aria-label="Manage workspaces" onClick={() => setNewWorkspace(true)}>
+                        <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
                             {initials}
-                        </button>
+                        </Link>
                     </div>
                 </header>
                 <div className="content">
@@ -781,33 +767,16 @@ export function AtlasWorkspace() {
                 <WorkspaceManagerDialog
                     workspaces={workspaces}
                     activeId={workspaceId}
-                    userId={user.id}
                     busy={busy}
                     uploading={uploading}
-                    deleting={deletingWorkspace}
-                    deleteId={deleteWorkspaceId}
-                    confirmation={confirmWorkspaceName}
                     name={workspaceName}
-                    onClose={() => {
-                        setNewWorkspace(false);
-                        setDeleteWorkspaceId(null);
-                    }}
+                    onClose={() => setNewWorkspace(false)}
                     onSelect={(id) => {
                         setWorkspaceId(id);
                         setNewWorkspace(false);
                     }}
-                    onSelectDelete={(id) => {
-                        setDeleteWorkspaceId(id);
-                        setConfirmWorkspaceName('');
-                    }}
-                    onConfirmation={setConfirmWorkspaceName}
-                    onCancelDelete={() => setDeleteWorkspaceId(null)}
-                    onDelete={() => void removeWorkspace()}
                     onName={setWorkspaceName}
                     onCreate={addWorkspace}
-                    onRefresh={async () => {
-                        setWorkspaces(await api<Workspace[]>('/workspaces'));
-                    }}
                 />
             )}
             <EvidenceInspector

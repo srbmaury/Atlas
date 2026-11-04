@@ -399,7 +399,7 @@
     font-size: 13px;
     line-height: 1.7;
 }
-.home-card-empty button {
+.home-card-empty button:not(.btn) {
     background: none;
     border: 0;
     color: var(--forest);
