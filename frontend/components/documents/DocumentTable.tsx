@@ -6,6 +6,7 @@ import { fileExtension } from '../../utils/utils';
 import { EmptyState, FileBadge, Status } from '../ui/WorkspacePrimitives';
 
 interface DocumentTableProps {
+    canEdit?: boolean;
     items: Doc[];
     filter: string;
     onClearFilter: () => void;
@@ -17,7 +18,7 @@ interface DocumentTableProps {
     formatSize: (bytes: number) => string;
 }
 
-export function DocumentTable({ items, filter, onClearFilter, uploadButton, onInspect, onRetry, onRemove, downloadUrl, formatSize }: DocumentTableProps) {
+export function DocumentTable({ canEdit = true, items, filter, onClearFilter, uploadButton, onInspect, onRetry, onRemove, downloadUrl, formatSize }: DocumentTableProps) {
     if (!items.length)
         return (
             <EmptyState
@@ -70,7 +71,7 @@ export function DocumentTable({ items, filter, onClearFilter, uploadButton, onIn
                             </td>
                             <td>
                                 <div className="row-actions">
-                                    {['ready', 'failed'].includes(d.status) && (
+                                    {canEdit && ['ready', 'failed'].includes(d.status) && (
                                         <button className="icon-button" aria-label={`Reindex ${d.name}`} title="Reindex document" onClick={() => onRetry(d)}>
                                             <RotateCcw />
                                         </button>
@@ -78,9 +79,11 @@ export function DocumentTable({ items, filter, onClearFilter, uploadButton, onIn
                                     <a className="icon-button" aria-label={`Download ${d.name}`} href={downloadUrl(d)}>
                                         <Download />
                                     </a>
-                                    <button className="icon-button destructive" aria-label={`Delete ${d.name}`} title="Delete document" onClick={() => onRemove(d)}>
-                                        <Trash2 />
-                                    </button>
+                                    {canEdit && (
+                                        <button className="icon-button destructive" aria-label={`Delete ${d.name}`} title="Delete document" onClick={() => onRemove(d)}>
+                                            <Trash2 />
+                                        </button>
+                                    )}
                                 </div>
                             </td>
                         </tr>

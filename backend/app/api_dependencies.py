@@ -22,10 +22,9 @@ def user(request: Request, db=Depends(database)):
 
 
 def workspace(workspace_id: str, actor: User, db: Session) -> Workspace:
-    item = db.query(Workspace).filter_by(id=workspace_id, owner_id=actor.id).first()
-    if not item:
-        raise HTTPException(404, 'Workspace not found.')
-    return item
+    from .rbac import require_workspace
+
+    return require_workspace(db, actor, workspace_id)
 
 
 def document(workspace_id: str, document_id: str, actor: User, db: Session) -> Document:

@@ -368,3 +368,70 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 - `frontend/utils/`: typed session, document, and conversation actions.
 - `frontend/app/{globals,rebuild}.css`: ordered entry points for styles in `frontend/app/styles/`; rule order is preserved for existing visual refinements.
 - `compose.yaml`: PostgreSQL, API, worker, and web services.
+
+## Organisations and access roles
+
+Open the workspace menu (your workspace name or avatar), then **Members & access**.
+Create an organisation, add existing registered Atlas accounts by email, and create
+organisation workspaces from that panel. Add members to each workspace explicitly;
+organisation membership alone does not grant access to its content. Personal
+workspaces can also grant access directly to registered accounts.
+
+| Scope | Role | Permissions |
+| --- | --- | --- |
+| Organisation | Owner | Manage organisation membership; remains the protected owner |
+| Organisation | Admin | Manage organisation members and create organisation workspaces |
+| Organisation | Member | Belong to the organisation; needs a separate workspace grant |
+| Workspace | Manager | Read and ask, manage documents and workspace members, create connections, delete workspace |
+| Workspace | Editor | Read and ask, upload/import, reindex, and delete documents |
+| Workspace | Viewer | Read documents, download originals, search permitted sources, and ask questions |
+
+Workspace creators remain protected managers. Adding or changing membership uses
+**Add or update member** with the registered account's exact email and desired role.
+Atlas does not send invitation emails. Organisation deletion, SSO, groups, and
+custom roles are not implemented. Owners can use **Transfer ownership** to choose an
+existing member and confirm by typing the workspace or organisation name. The previous
+workspace owner remains a manager; the previous organisation owner remains an admin.
+Transfer a departing member's workspaces before removing them from the organisation.
+Documents are preserved; private chats and personal credentials keep their owners.
+
+**Privacy boundaries:** saved conversations belong to their author, including in
+shared workspaces. Organisation administrators do not automatically gain workspace
+content access. Connector credentials are private to the connecting user by default.
+Only their owner, while a workspace manager, can explicitly share, replace, or
+remove a connection. Source permissions support private, selected-member, and
+all-workspace access. Grant selected members in **Source permissions**, or use the
+workspace-wide checkbox to include every current and future member. Managers and
+organisation admins cannot bypass source grants. Provider permissions still bound
+what the shared credential can retrieve; choose those permissions accordingly. This is not per-file
+provider ACL replication. One credential slot per provider/workspace is supported.
+
+Removing a member revokes their workspace access, removes their source grants, and
+disconnects their saved credentials so an offboarded account cannot occupy a provider slot.
+Revoke provider-side authorisation separately when appropriate.
+Unsharing blocks future retrieval, but does not erase excerpts already saved in
+other members' private chats. API permissions are checked on the server, including
+legacy connector routes and OAuth callbacks; slow chat results recheck access before
+releasing answer text.
+
+**Security history** lists membership, ownership, connection creation/removal, and
+source-sharing changes. Managers can read workspace history; organisation owners and
+admins can read organisation-wide access metadata (including workspace events),
+without receiving workspace content access. Ownership, membership, source-grant and
+credential changes serialize on their parent resource to avoid conflicting updates.
+Events are committed atomically with
+successful access changes, are paginated, and cannot be modified or deleted through
+the API. No credentials, prompts, or source excerpts are recorded. Events start at
+this upgrade; older changes are not reconstructed.
+
+Every scoped route declares its required role through `workspace_permission` or
+`organisation_permission`; role selection does not depend on URL matching. The route
+coverage regression test catches newly added workspace routes missing a declaration.
+
+Migrations `0007` and `0008` run at startup. Migration `0008` adds source grants and
+security history without broadening existing sharing or rewriting credentials.
+Migration `0007` preserves existing workspaces as personal,
+assigns existing chats and connections to their workspace owner, and keeps all
+connections private. Back up the database before upgrading. Downgrade is deliberately
+blocked because dropping access metadata could expose shared workspace data; restore
+a pre-upgrade backup if a rollback is required.

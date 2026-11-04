@@ -1024,6 +1024,13 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
     from app import connected_synthesis, external_sources, main
 
     w = workspaceId(client)
+    from app.db import ExternalConnection
+
+    with Session() as db:
+        db.add(
+            ExternalConnection(workspace_id=w, provider='slack', account='test', secret='mocked')
+        )
+        db.commit()
     full_text = (
         'Deforestation introduction. '
         + ('Background. ' * 150)
@@ -1423,6 +1430,13 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
     from app.sources import Evidence
 
     w = workspaceId(client)
+    from app.db import ExternalConnection
+
+    with Session() as db:
+        db.add(
+            ExternalConnection(workspace_id=w, provider='github', account='test', secret='mocked')
+        )
+        db.commit()
     records = [
         Evidence(
             'github',

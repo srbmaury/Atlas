@@ -13,11 +13,13 @@ import time
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User, Workspace
+from .access_audit import record, reset_grants
+from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
+from .rbac import connection_for_change, require_connection, require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/connected-oauth')
 PROVIDERS = {'calendar', 'onedrive', 'outlook', 'sharepoint'}
@@ -84,7 +86,10 @@ def _token_request(provider, payload):
         ) from exc
 
 
-@router.get('/{provider}/connect')
+@router.get(
+    '/{provider}/connect',
+    dependencies=[Depends(workspace_permission('manager', manage_connection=True))],
+)
 def connect(provider: str, workspaceId: str, request: Request):
     client_id, _, redirect, auth_base, _, scope = _settings(provider)
     with Session() as db:
@@ -129,11 +134,12 @@ def callback(provider: str, state: str = '', code: str = ''):
         workspaceId = item.workspace_id
         verifier = item.verifier
         owner = db.get(User, item.user_id)
-        if (
-            not owner
-            or not db.query(Workspace).filter_by(id=workspaceId, owner_id=owner.id).first()
-        ):
+        if not owner:
             raise HTTPException(400, 'Workspace no longer exists.')
+        require_workspace(db, owner, workspaceId, 'manager')
+        require_connection(
+            db, owner, db.get(ExternalConnection, (workspaceId, provider)), manage=True
+        )
         db.delete(item)
         db.commit()
         payload = {
@@ -157,15 +163,22 @@ def callback(provider: str, state: str = '', code: str = ''):
         encrypted = (
             crypt().encrypt(json.dumps({'auth': 'oauth', 'refresh': refresh}).encode()).decode()
         )
-        row = db.get(ExternalConnection, (workspaceId, provider))
+        row = connection_for_change(db, owner, workspaceId, provider)
         if row:
             row.account, row.secret = account, encrypted
+            row.connected_by, row.shared = owner.id, False
         else:
             db.add(
                 ExternalConnection(
-                    workspace_id=workspaceId, provider=provider, account=account, secret=encrypted
+                    workspace_id=workspaceId,
+                    provider=provider,
+                    account=account,
+                    secret=encrypted,
+                    connected_by=owner.id,
                 )
             )
+        reset_grants(db, workspaceId, provider)
+        record(db, owner.id, 'workspace', workspaceId, 'source.connected', provider)
         health = db.get(SourceHealthCheck, (workspaceId, provider))
         if health:
             db.delete(health)

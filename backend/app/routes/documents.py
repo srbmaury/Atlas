@@ -14,12 +14,16 @@ from ..api_dependencies import database, document, public_doc, user, workspace
 from ..config import DATA, MAX_FILE_BYTES
 from ..db import Chunk, Document, uid
 from ..ingest import SUPPORTED
+from ..rbac import workspace_permission
 from ..schemas import UploadRequest
 
 router = APIRouter()
 
 
-@router.get('/api/workspaces/{workspaceId}/documents')
+@router.get(
+    '/api/workspaces/{workspaceId}/documents',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def documents(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return [
@@ -30,19 +34,27 @@ def documents(workspaceId: str, actor=Depends(user), db=Depends(database)):
     ]
 
 
-@router.post('/api/workspaces/{workspaceId}/uploads')
+@router.post(
+    '/api/workspaces/{workspaceId}/uploads', dependencies=[Depends(workspace_permission('editor'))]
+)
 def start_upload(workspaceId: str, body: UploadRequest, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return uploads.start(workspaceId, actor.id, body.name, body.size, MAX_FILE_BYTES, SUPPORTED)
 
 
-@router.get('/api/workspaces/{workspaceId}/uploads/{upload_id}')
+@router.get(
+    '/api/workspaces/{workspaceId}/uploads/{upload_id}',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def upload_status(workspaceId: str, upload_id: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return uploads.status(upload_id, workspaceId, actor.id)
 
 
-@router.put('/api/workspaces/{workspaceId}/uploads/{upload_id}')
+@router.put(
+    '/api/workspaces/{workspaceId}/uploads/{upload_id}',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 async def upload_part(
     workspaceId: str,
     upload_id: str,
@@ -60,20 +72,29 @@ async def upload_part(
     return await run_in_threadpool(uploads.append, upload_id, workspaceId, actor.id, offset, data)
 
 
-@router.post('/api/workspaces/{workspaceId}/uploads/{upload_id}/complete')
+@router.post(
+    '/api/workspaces/{workspaceId}/uploads/{upload_id}/complete',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 def complete_upload(workspaceId: str, upload_id: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     doc, duplicate = uploads.finish(upload_id, workspaceId, actor.id, db)
     return {**public_doc(doc), 'duplicate': duplicate}
 
 
-@router.delete('/api/workspaces/{workspaceId}/uploads/{upload_id}')
+@router.delete(
+    '/api/workspaces/{workspaceId}/uploads/{upload_id}',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 def cancel_upload(workspaceId: str, upload_id: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return uploads.cancel(upload_id, workspaceId, actor.id)
 
 
-@router.post('/api/workspaces/{workspaceId}/documents')
+@router.post(
+    '/api/workspaces/{workspaceId}/documents',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 async def upload(
     workspaceId: str, files: List[UploadFile] = File(...), actor=Depends(user), db=Depends(database)
 ):
@@ -141,7 +162,10 @@ async def upload(
     return {'documents': results}
 
 
-@router.get('/api/workspaces/{workspaceId}/documents/{did}/chunks')
+@router.get(
+    '/api/workspaces/{workspaceId}/documents/{did}/chunks',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def chunks(
     workspaceId: str,
     did: str,
@@ -167,7 +191,10 @@ def chunks(
     }
 
 
-@router.get('/api/workspaces/{workspaceId}/documents/{did}/original')
+@router.get(
+    '/api/workspaces/{workspaceId}/documents/{did}/original',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def original(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)):
     doc = document(workspaceId, did, actor, db)
     return FileResponse(
@@ -175,7 +202,10 @@ def original(workspaceId: str, did: str, actor=Depends(user), db=Depends(databas
     )
 
 
-@router.post('/api/workspaces/{workspaceId}/documents/{did}/retry')
+@router.post(
+    '/api/workspaces/{workspaceId}/documents/{did}/retry',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 def retry(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)):
     doc = document(workspaceId, did, actor, db)
     changed = (
@@ -206,7 +236,10 @@ def retry(workspaceId: str, did: str, actor=Depends(user), db=Depends(database))
     return public_doc(doc)
 
 
-@router.delete('/api/workspaces/{workspaceId}/documents/{did}')
+@router.delete(
+    '/api/workspaces/{workspaceId}/documents/{did}',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
 def delete(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)):
     doc = document(workspaceId, did, actor, db)
     db.delete(doc)

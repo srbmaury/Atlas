@@ -13,12 +13,20 @@ from urllib.parse import urlencode
 import httpx
 import pypdfium2 as pdfium
 from docx import Document as WordDocument
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User, Workspace
+from .access_audit import record, reset_grants
+from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
+from .rbac import (
+    connection_for_change,
+    connection_visible,
+    require_connection,
+    require_workspace,
+    workspace_permission,
+)
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -99,7 +107,12 @@ def google_token(payload):
         ) from exc
 
 
-@router.get('/drive/connect')
+@router.get(
+    '/drive/connect',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='drive', manage_connection=True))
+    ],
+)
 def connect(workspaceId: str, request: Request):
     configured()
     with Session() as db:
@@ -138,8 +151,10 @@ def callback(state: str = '', code: str = ''):
             raise HTTPException(400, 'Drive authorization expired. Start again.')
         workspaceId = item.workspace_id
         who = db.get(User, item.user_id)
-        if not who or not db.query(Workspace).filter_by(id=workspaceId, owner_id=who.id).first():
+        if not who:
             raise HTTPException(400, 'Workspace no longer exists.')
+        require_workspace(db, who, workspaceId, 'manager')
+        require_connection(db, who, db.get(ExternalConnection, (workspaceId, 'drive')), manage=True)
         db.delete(item)
         db.commit()
         tokens = google_token(
@@ -165,16 +180,23 @@ def callback(state: str = '', code: str = ''):
             {'fields': 'user(displayName,emailAddress)'},
         )
         account = (identity.get('user') or {}).get('emailAddress') or 'Google Drive'
-        row = db.get(ExternalConnection, (workspaceId, 'drive'))
+        row = connection_for_change(db, who, workspaceId, 'drive')
         encrypted = crypt().encrypt(refresh.encode()).decode()
         if row:
             row.account, row.secret = account, encrypted
+            row.connected_by, row.shared = who.id, False
         else:
             db.add(
                 ExternalConnection(
-                    workspace_id=workspaceId, provider='drive', account=account, secret=encrypted
+                    workspace_id=workspaceId,
+                    provider='drive',
+                    account=account,
+                    secret=encrypted,
+                    connected_by=who.id,
                 )
             )
+        reset_grants(db, workspaceId, 'drive')
+        record(db, who.id, 'workspace', workspaceId, 'source.connected', 'drive')
         health = db.get(SourceHealthCheck, (workspaceId, 'drive'))
         if health:
             db.delete(health)
@@ -187,6 +209,7 @@ def access_token(db, who, workspaceId):
     row = db.get(ExternalConnection, (workspaceId, 'drive'))
     if not row:
         raise HTTPException(409, 'Connect Google Drive first.')
+    require_connection(db, who, row)
     try:
         refresh = crypt().decrypt(row.secret.encode()).decode()
     except Exception as exc:
@@ -334,12 +357,16 @@ class DriveSearch(BaseModel):
     query: str = Field(default='', max_length=180)
 
 
-@router.get('/workspaces/{workspaceId}/drive/status')
+@router.get(
+    '/workspaces/{workspaceId}/drive/status', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def status(workspaceId: str, request: Request):
     with Session() as db:
         who = actor(request, db)
         allowed_workspace(db, who, workspaceId)
         row = db.get(ExternalConnection, (workspaceId, 'drive'))
+        if not connection_visible(db, who, row):
+            row = None
         return {
             'connected': bool(row),
             'account': row.account if row else None,
@@ -347,7 +374,9 @@ def status(workspaceId: str, request: Request):
         }
 
 
-@router.post('/workspaces/{workspaceId}/drive/search')
+@router.post(
+    '/workspaces/{workspaceId}/drive/search', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def search(workspaceId: str, body: DriveSearch, request: Request):
     with Session() as db:
         who = actor(request, db)
@@ -355,12 +384,20 @@ def search(workspaceId: str, body: DriveSearch, request: Request):
     return {'results': drive_search(token, body.query)}
 
 
-@router.delete('/workspaces/{workspaceId}/drive')
+@router.delete(
+    '/workspaces/{workspaceId}/drive',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='drive', manage_connection=True))
+    ],
+)
 def disconnect(workspaceId: str, request: Request):
     with Session() as db:
         who = actor(request, db)
         allowed_workspace(db, who, workspaceId)
+        connection_for_change(db, who, workspaceId, 'drive')
         db.query(ExternalConnection).filter_by(workspace_id=workspaceId, provider='drive').delete()
+        reset_grants(db, workspaceId, 'drive')
+        record(db, who.id, 'workspace', workspaceId, 'source.disconnected', 'drive')
         health = db.get(SourceHealthCheck, (workspaceId, 'drive'))
         if health:
             db.delete(health)

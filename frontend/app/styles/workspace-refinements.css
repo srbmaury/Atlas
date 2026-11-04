@@ -503,3 +503,129 @@
         margin-left: 64px;
     }
 }
+
+.access-management {
+    border-top: 1px solid var(--line);
+    margin-top: 24px;
+    padding-top: 20px;
+}
+.access-management h2 {
+    font-size: 18px;
+    margin: 0 0 8px;
+}
+.access-management p {
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+.access-management label {
+    display: grid;
+    gap: 6px;
+    margin: 10px 0;
+    font-size: 13px;
+}
+.access-management input:not([type='checkbox']),
+.access-management select {
+    width: 100%;
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: var(--panel);
+    color: var(--text);
+}
+.access-form {
+    margin: 18px 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+.access-form small {
+    display: block;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+.access-members {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+.access-members li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+.access-members strong {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.access-members small,
+.workspace-role {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 4px;
+    text-transform: capitalize;
+}
+.access-management .access-share-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.access-share-row input {
+    margin-top: 3px;
+}
+.access-error {
+    color: var(--danger, #b42318);
+}
+
+.access-source {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+    min-width: 0;
+}
+.access-source legend {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.access-source small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.access-audit {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 14px;
+}
+.access-events {
+    padding: 0;
+    list-style: none;
+    max-height: 300px;
+    overflow: auto;
+}
+.access-events li {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 0;
+    overflow-wrap: anywhere;
+}
+.access-events strong,
+.access-events small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.access-events details {
+    font-size: 12px;
+    margin-top: 6px;
+}
+.access-events pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+}

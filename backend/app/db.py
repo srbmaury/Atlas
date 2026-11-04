@@ -5,6 +5,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Column,
     Float,
     ForeignKey,
@@ -61,6 +62,7 @@ class Workspace(Base):
     id = Column(String, primary_key=True, default=uid)
     owner_id = Column(String, ForeignKey('users.id'), nullable=False, index=True)
     name = Column(String, nullable=False)
+    organisation_id = Column(String, nullable=True, index=True)
     created = Column(Float, default=time.time)
 
 
@@ -107,6 +109,8 @@ class ExternalConnection(Base):
     provider = Column(String, primary_key=True)
     account = Column(String, nullable=False)
     secret = Column(Text, nullable=False)
+    connected_by = Column(String)
+    shared = Column(Boolean, nullable=False, server_default='0')
 
 
 class SourceHealthCheck(Base):
@@ -134,6 +138,8 @@ class GmailConnection(Base):
     workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), primary_key=True)
     email = Column(String, nullable=False)
     refresh_token = Column(Text, nullable=False)
+    connected_by = Column(String)
+    shared = Column(Boolean, nullable=False, server_default='0')
 
 
 class DriveOAuthState(Base):
@@ -159,9 +165,56 @@ class Conversation(Base):
         String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True
     )
     title = Column(String(120), nullable=False)
+    author_id = Column(String, index=True)
     messages = Column(JSON, nullable=False, default=list)
     created = Column(Float, default=time.time)
     updated = Column(Float, default=time.time, index=True)
+
+
+class Organisation(Base):
+    __tablename__ = 'organisations'
+    id = Column(String, primary_key=True, default=uid)
+    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
+    name = Column(String(100), nullable=False)
+    created = Column(Float, default=time.time)
+
+
+class OrganisationMember(Base):
+    __tablename__ = 'organisation_members'
+    __table_args__ = (CheckConstraint("role IN ('admin', 'member')"),)
+    organisation_id = Column(
+        String, ForeignKey('organisations.id', ondelete='CASCADE'), primary_key=True
+    )
+    user_id = Column(String, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    role = Column(String, nullable=False)
+
+
+class WorkspaceMember(Base):
+    __tablename__ = 'workspace_members'
+    __table_args__ = (CheckConstraint("role IN ('manager', 'editor', 'viewer')"),)
+    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(String, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    role = Column(String, nullable=False)
+
+
+class SourceGrant(Base):
+    __tablename__ = 'source_grants'
+    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), primary_key=True)
+    provider = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+
+
+class AccessEvent(Base):
+    __tablename__ = 'access_events'
+    id = Column(String, primary_key=True, default=uid)
+    scope_type = Column(String, nullable=False)
+    scope_id = Column(String, nullable=False, index=True)
+    organisation_id = Column(String, index=True)
+    actor_id = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+    target_id = Column(String)
+    details = Column(JSON, nullable=False, default=dict)
+    created = Column(Float, nullable=False, default=time.time, index=True)
 
 
 def init_db():
