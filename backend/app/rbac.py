@@ -26,7 +26,18 @@ def organisation_role(db, actor, organisation_id):
     return member.role if member else None
 
 
-def require_organisation(db, actor, organisation_id, manage=False):
+def lock_resource(db, model, resource_id):
+    """Serialize transfers, grants and revocations on their shared parent resource."""
+    if db.get_bind().dialect.name == 'sqlite':
+        connection = db.connection()
+        if not connection.connection.driver_connection.in_transaction:
+            connection.exec_driver_sql('BEGIN IMMEDIATE')
+    return db.query(model).filter_by(id=resource_id).populate_existing().with_for_update().first()
+
+
+def require_organisation(db, actor, organisation_id, manage=False, lock=False):
+    if lock:
+        lock_resource(db, Organisation, organisation_id)
     role = organisation_role(db, actor, organisation_id)
     if role is None:
         raise HTTPException(404, 'Organisation not found.')
@@ -45,8 +56,12 @@ def workspace_role(db, actor, item):
     return member.role if member else None
 
 
-def require_workspace(db, actor, workspace_id, minimum='viewer'):
+def require_workspace(db, actor, workspace_id, minimum='viewer', lock=False):
     item = db.get(Workspace, workspace_id)
+    if lock and item:
+        if item.organisation_id:
+            lock_resource(db, Organisation, item.organisation_id)
+        item = lock_resource(db, Workspace, workspace_id)
     role = workspace_role(db, actor, item) if item else None
     if role is None:
         raise HTTPException(404, 'Workspace not found.')
@@ -80,6 +95,17 @@ def require_connection(db, actor, row, manage=False):
         raise HTTPException(403, 'Only the connection owner can manage this credential.')
     if not connection_visible(db, actor, row):
         raise HTTPException(403, 'This connection is private to its owner.')
+
+
+def connection_for_change(db, actor, workspace_id, provider):
+    require_workspace(db, actor, workspace_id, 'manager', lock=True)
+    model = GmailConnection if provider == 'gmail' else ExternalConnection
+    query = db.query(model).filter_by(workspace_id=workspace_id)
+    if provider != 'gmail':
+        query = query.filter_by(provider=provider)
+    row = query.populate_existing().first()
+    require_connection(db, actor, row, manage=True)
+    return row
 
 
 def revalidate_access(workspace_id, actor, providers=()):

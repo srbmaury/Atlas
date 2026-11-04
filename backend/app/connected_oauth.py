@@ -19,7 +19,7 @@ from fastapi.responses import RedirectResponse
 from .access_audit import record, reset_grants
 from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import require_connection, require_workspace, workspace_permission
+from .rbac import connection_for_change, require_connection, require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/connected-oauth')
 PROVIDERS = {'calendar', 'onedrive', 'outlook', 'sharepoint'}
@@ -163,7 +163,7 @@ def callback(provider: str, state: str = '', code: str = ''):
         encrypted = (
             crypt().encrypt(json.dumps({'auth': 'oauth', 'refresh': refresh}).encode()).decode()
         )
-        row = db.get(ExternalConnection, (workspaceId, provider))
+        row = connection_for_change(db, owner, workspaceId, provider)
         if row:
             row.account, row.secret = account, encrypted
             row.connected_by, row.shared = owner.id, False

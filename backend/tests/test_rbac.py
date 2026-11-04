@@ -290,7 +290,7 @@ def test_revocation_prevents_oauth_completion(accounts, monkeypatch):
     )
 
 
-def test_workspace_removal_unshares_former_member_credentials(accounts):
+def test_workspace_removal_disconnects_former_member_credentials(accounts):
     owner, manager, _, workspace = accounts
     grant(owner, manager, workspace, 'manager')
     with Session() as db:
@@ -310,7 +310,7 @@ def test_workspace_removal_unshares_former_member_credentials(accounts):
         == 200
     )
     with Session() as db:
-        assert not db.get(ExternalConnection, (workspace, 'slack')).shared
+        assert db.get(ExternalConnection, (workspace, 'slack')) is None
     assert manager.get(f'/api/workspaces/{workspace}/documents').status_code == 404
 
 
@@ -756,3 +756,51 @@ def test_organisation_audit_retains_deleted_workspace_events_without_content_acc
     )
     assert all(row['actor_email'] == owner.identity['email'] for row in events)
     assert admin.get(f'/api/workspaces/{workspace}/documents').status_code == 404
+
+
+def test_revocation_during_credential_validation_blocks_connection_save(accounts, monkeypatch):
+    from app.db import WorkspaceMember
+
+    owner, manager, _, workspace = accounts
+    grant(owner, manager, workspace, 'manager')
+    monkeypatch.setattr(gmail, 'KEY', Fernet.generate_key().decode())
+
+    def validate(*args):
+        with Session() as db:
+            db.query(WorkspaceMember).filter_by(
+                workspace_id=workspace, user_id=manager.identity['id']
+            ).delete()
+            db.commit()
+        return 'validated-account'
+
+    monkeypatch.setattr(external_sources, 'profile', validate)
+    response = manager.post(
+        f'/api/workspaces/{workspace}/sources/github', json={'token': 'never-save-this'}
+    )
+    assert response.status_code == 404
+    with Session() as db:
+        assert db.get(ExternalConnection, (workspace, 'github')) is None
+
+
+def test_concurrent_ownership_transfers_have_one_winner(accounts):
+    from concurrent.futures import ThreadPoolExecutor
+
+    owner, first, second, workspace = accounts
+    grant(owner, first, workspace, 'viewer')
+    grant(owner, second, workspace, 'viewer')
+    name = next(
+        row['name'] for row in owner.get('/api/workspaces').json() if row['id'] == workspace
+    )
+
+    def transfer(member):
+        return owner.post(
+            f'/api/workspaces/{workspace}/ownership',
+            json={'member_id': member.identity['id'], 'confirmation': name},
+        ).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(transfer, (first, second)))
+    assert results.count(200) == 1
+    assert all(code in (200, 403, 409) for code in results)
+    events = owner.get(f'/api/workspaces/{workspace}/audit').json()['events']
+    assert sum(event['action'] == 'ownership.transferred' for event in events) == 1

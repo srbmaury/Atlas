@@ -15,7 +15,13 @@ from . import batch_connectors
 from .access_audit import record, reset_grants
 from .db import ExternalConnection, Session, SourceHealthCheck
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import connection_visible, require_connection, require_workspace, workspace_permission
+from .rbac import (
+    connection_for_change,
+    connection_visible,
+    require_connection,
+    require_workspace,
+    workspace_permission,
+)
 from .research_queries import (
     GITHUB_QUERY_STOPWORDS,
     SLACK_QUERY_STOPWORDS,
@@ -191,7 +197,7 @@ def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Requ
         )
         account = profile(provider, body.token)
         encrypted = crypt().encrypt(body.token.encode()).decode()
-        row = db.get(ExternalConnection, (workspaceId, provider))
+        row = connection_for_change(db, user, workspaceId, provider)
         if row:
             row.account, row.secret = account, encrypted
             row.connected_by, row.shared = user.id, False
@@ -224,6 +230,7 @@ def disconnect(workspaceId: str, provider: str, request: Request):
     with Session() as db:
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
+        connection_for_change(db, user, workspaceId, provider)
         db.query(ExternalConnection).filter_by(workspace_id=workspaceId, provider=provider).delete()
         reset_grants(db, workspaceId, provider)
         record(db, user.id, 'workspace', workspaceId, 'source.disconnected', provider)

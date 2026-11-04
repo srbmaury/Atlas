@@ -21,6 +21,7 @@ from ..db import (
 from ..rbac import (
     connection_owner,
     connection_visible,
+    lock_resource,
     organisation_permission,
     organisation_role,
     require_connection,
@@ -119,7 +120,7 @@ def organisation_members(organisation_id: str, actor=Depends(user), db=Depends(d
 def grant_organisation_member(
     organisation_id: str, body: OrganisationGrant, actor=Depends(user), db=Depends(database)
 ):
-    org = require_organisation(db, actor, organisation_id, manage=True)
+    org = require_organisation(db, actor, organisation_id, manage=True, lock=True)
     target = registered_account(db, body.email)
     if target.id == org.owner_id:
         raise HTTPException(409, 'The organisation owner role cannot be changed.')
@@ -150,7 +151,7 @@ def grant_organisation_member(
 def remove_organisation_member(
     organisation_id: str, member_id: str, actor=Depends(user), db=Depends(database)
 ):
-    org = require_organisation(db, actor, organisation_id, manage=True)
+    org = require_organisation(db, actor, organisation_id, manage=True, lock=True)
     if member_id == org.owner_id:
         raise HTTPException(409, 'The organisation owner cannot be removed.')
     if db.query(Workspace).filter_by(organisation_id=org.id, owner_id=member_id).first():
@@ -168,6 +169,7 @@ def remove_organisation_member(
 
 
 def revoke_workspace(db, workspace_id, member_id, actor_id):
+    lock_resource(db, Workspace, workspace_id)
     db.query(WorkspaceMember).filter_by(workspace_id=workspace_id, user_id=member_id).delete()
     # Revocation must also stop the workspace using that member's shared credentials.
     db.query(SourceGrant).filter_by(workspace_id=workspace_id, user_id=member_id).delete()
@@ -175,15 +177,16 @@ def revoke_workspace(db, workspace_id, member_id, actor_id):
         for row in db.query(model).filter_by(workspace_id=workspace_id, connected_by=member_id):
             provider = getattr(row, 'provider', 'gmail')
             reset_grants(db, workspace_id, provider)
-            row.shared = False
+            db.delete(row)
             record(
                 db,
                 actor_id,
                 'workspace',
                 workspace_id,
-                'source.access_revoked',
-                member_id,
-                provider=provider,
+                'source.disconnected',
+                provider,
+                credential_owner=member_id,
+                reason='member_removed',
             )
     db.query(SourceHealthCheck).filter_by(workspace_id=workspace_id).delete()
     record(db, actor_id, 'workspace', workspace_id, 'member.removed', member_id)
@@ -208,7 +211,7 @@ def workspace_members(workspaceId: str, actor=Depends(user), db=Depends(database
 def grant_workspace_member(
     workspaceId: str, body: WorkspaceGrant, actor=Depends(user), db=Depends(database)
 ):
-    item = require_workspace(db, actor, workspaceId, 'manager')
+    item = require_workspace(db, actor, workspaceId, 'manager', lock=True)
     target = registered_account(db, body.email)
     if target.id == item.owner_id:
         raise HTTPException(409, 'The workspace owner must remain a manager.')
@@ -243,7 +246,7 @@ def grant_workspace_member(
 def remove_workspace_member(
     workspaceId: str, member_id: str, actor=Depends(user), db=Depends(database)
 ):
-    item = require_workspace(db, actor, workspaceId, 'manager')
+    item = require_workspace(db, actor, workspaceId, 'manager', lock=True)
     if member_id == item.owner_id:
         raise HTTPException(409, 'The workspace owner cannot be removed.')
     revoke_workspace(db, workspaceId, member_id, actor.id)
@@ -287,7 +290,7 @@ def connection_sharing(workspaceId: str, actor=Depends(user), db=Depends(databas
 def share_connection(
     workspaceId: str, provider: str, body: Sharing, actor=Depends(user), db=Depends(database)
 ):
-    require_workspace(db, actor, workspaceId, 'manager')
+    require_workspace(db, actor, workspaceId, 'manager', lock=True)
     row = (
         db.get(GmailConnection, workspaceId)
         if provider == 'gmail'

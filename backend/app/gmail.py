@@ -28,7 +28,7 @@ from . import config
 from .access_audit import record, reset_grants
 from .ai import client, ollama_chat
 from .db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User
-from .rbac import workspace_permission
+from .rbac import connection_for_change, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -272,7 +272,7 @@ def callback(request: Request, state: str = '', code: str = ''):
             profile = gmail_get(tokens['access_token'], GMAIL_API + '/profile')
         except (httpx.HTTPError, KeyError):
             raise HTTPException(502, 'Could not complete Google authorization.')
-        old = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
+        old = connection_for_change(db, user, workspaceId, 'gmail')
         if old:
             db.delete(old)
             db.flush()
@@ -626,6 +626,7 @@ def disconnect(workspaceId: str, request: Request):
     with Session() as db:
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
+        connection_for_change(db, user, workspaceId, 'gmail')
         db.query(GmailConnection).filter_by(workspace_id=workspaceId).delete()
         reset_grants(db, workspaceId, 'gmail')
         record(db, user.id, 'workspace', workspaceId, 'source.disconnected', 'gmail')

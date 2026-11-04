@@ -406,7 +406,9 @@ organisation admins cannot bypass source grants. Provider permissions still boun
 what the shared credential can retrieve; choose those permissions accordingly. This is not per-file
 provider ACL replication. One credential slot per provider/workspace is supported.
 
-Removing a member revokes their workspace access and unshares their credentials.
+Removing a member revokes their workspace access, removes their source grants, and
+disconnects their saved credentials so an offboarded account cannot occupy a provider slot.
+Revoke provider-side authorisation separately when appropriate.
 Unsharing blocks future retrieval, but does not erase excerpts already saved in
 other members' private chats. API permissions are checked on the server, including
 legacy connector routes and OAuth callbacks; slow chat results recheck access before
@@ -415,7 +417,9 @@ releasing answer text.
 **Security history** lists membership, ownership, connection creation/removal, and
 source-sharing changes. Managers can read workspace history; organisation owners and
 admins can read organisation-wide access metadata (including workspace events),
-without receiving workspace content access. Events are committed atomically with
+without receiving workspace content access. Ownership, membership, source-grant and
+credential changes serialize on their parent resource to avoid conflicting updates.
+Events are committed atomically with
 successful access changes, are paginated, and cannot be modified or deleted through
 the API. No credentials, prompts, or source excerpts are recorded. Events start at
 this upgrade; older changes are not reconstructed.

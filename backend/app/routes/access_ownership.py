@@ -38,7 +38,7 @@ class OwnershipTransfer(BaseModel):
 def transfer_workspace(
     workspaceId: str, body: OwnershipTransfer, actor=Depends(user), db=Depends(database)
 ):
-    item = require_workspace(db, actor, workspaceId, 'manager')
+    item = require_workspace(db, actor, workspaceId, 'manager', lock=True)
     if item.owner_id != actor.id:
         raise HTTPException(403, 'Only the current workspace owner can transfer ownership.')
     if body.confirmation != item.name:
@@ -87,7 +87,7 @@ def transfer_workspace(
 def transfer_organisation(
     organisation_id: str, body: OwnershipTransfer, actor=Depends(user), db=Depends(database)
 ):
-    org = require_organisation(db, actor, organisation_id, manage=True)
+    org = require_organisation(db, actor, organisation_id, manage=True, lock=True)
     if org.owner_id != actor.id:
         raise HTTPException(403, 'Only the current organisation owner can transfer ownership.')
     if body.confirmation != org.name:

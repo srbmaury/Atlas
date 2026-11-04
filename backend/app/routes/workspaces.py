@@ -21,7 +21,7 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
-from ..rbac import require_organisation, workspace_permission, workspace_role
+from ..rbac import require_organisation, require_workspace, workspace_permission, workspace_role
 from ..schemas import DeleteWorkspaceRequest, Named
 
 
@@ -79,7 +79,7 @@ def create_workspace(body: WorkspaceCreate, actor=Depends(user), db=Depends(data
     if not body.name.strip():
         raise HTTPException(422, 'Workspace name is required.')
     if body.organisation_id:
-        require_organisation(db, actor, body.organisation_id, manage=True)
+        require_organisation(db, actor, body.organisation_id, manage=True, lock=True)
     item = Workspace(
         owner_id=actor.id, name=body.name.strip(), organisation_id=body.organisation_id
     )
@@ -96,7 +96,7 @@ def create_workspace(body: WorkspaceCreate, actor=Depends(user), db=Depends(data
 def delete_workspace(
     workspaceId: str, body: DeleteWorkspaceRequest, actor=Depends(user), db=Depends(database)
 ):
-    item = workspace(workspaceId, actor, db)
+    item = require_workspace(db, actor, workspaceId, 'manager', lock=True)
     if body.name != item.name:
         raise HTTPException(422, 'Type the exact workspace name to confirm deletion.')
     documents = db.query(Document).filter_by(workspace_id=workspaceId).all()

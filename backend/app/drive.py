@@ -20,7 +20,13 @@ from pydantic import BaseModel, Field
 from .access_audit import record, reset_grants
 from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import connection_visible, require_connection, require_workspace, workspace_permission
+from .rbac import (
+    connection_for_change,
+    connection_visible,
+    require_connection,
+    require_workspace,
+    workspace_permission,
+)
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -174,7 +180,7 @@ def callback(state: str = '', code: str = ''):
             {'fields': 'user(displayName,emailAddress)'},
         )
         account = (identity.get('user') or {}).get('emailAddress') or 'Google Drive'
-        row = db.get(ExternalConnection, (workspaceId, 'drive'))
+        row = connection_for_change(db, who, workspaceId, 'drive')
         encrypted = crypt().encrypt(refresh.encode()).decode()
         if row:
             row.account, row.secret = account, encrypted
@@ -388,6 +394,7 @@ def disconnect(workspaceId: str, request: Request):
     with Session() as db:
         who = actor(request, db)
         allowed_workspace(db, who, workspaceId)
+        connection_for_change(db, who, workspaceId, 'drive')
         db.query(ExternalConnection).filter_by(workspace_id=workspaceId, provider='drive').delete()
         reset_grants(db, workspaceId, 'drive')
         record(db, who.id, 'workspace', workspaceId, 'source.disconnected', 'drive')
