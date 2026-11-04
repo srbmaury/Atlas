@@ -418,7 +418,7 @@ test('workspace creation, settings deletion and sign out preserve the selected w
  await expect(remove).toBeDisabled();
  await page.getByLabel('Type workspace name to confirm').fill('Research review');
  await remove.click();
- await expect(page.getByRole('status')).toContainText('Workspace deleted.');
+ await expect(page.getByText('Workspace deleted.',{exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Back to Atlas'}).click();
  await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
  await page.getByRole('button',{name:'Sign out',exact:true}).click();

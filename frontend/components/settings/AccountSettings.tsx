@@ -176,8 +176,8 @@ export function AccountSettings() {
                                     <dd>{user.email}</dd>
                                 </div>
                                 <div>
-                                    <dt>Account ID</dt>
-                                    <dd>{user.id}</dd>
+                                    <dt>Workspaces</dt>
+                                    <dd>{workspaces.length}</dd>
                                 </div>
                             </dl>
                         </section>
