@@ -371,9 +371,12 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 
 ## Organisations and access roles
 
-Open the workspace menu (your workspace name or avatar), then **Members & access**.
+Open your avatar to visit **Account & settings** (`/settings`). Use **Workspace settings**
+for membership, source permissions, ownership, security history, and deletion; use
+**Organisations** to manage teams and create organisation workspaces. The workspace
+switcher stays focused on switching and creating personal workspaces.
 Create an organisation, add existing registered Atlas accounts by email, and create
-organisation workspaces from that panel. Add members to each workspace explicitly;
+organisation workspaces from the Organisations section. Add members to each workspace explicitly;
 organisation membership alone does not grant access to its content. Personal
 workspaces can also grant access directly to registered accounts.
 

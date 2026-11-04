@@ -11,10 +11,10 @@ type Organisation = { id: string; name: string; role: 'owner' | 'admin' | 'membe
 type Member = AccessMember;
 type Sharing = SourceSharing;
 
-export function AccessManagement({ workspace, userId, onRefresh }: { workspace?: Workspace; userId: string; onRefresh: () => Promise<void> }) {
+export function AccessManagement({ workspace, userId, onRefresh, view }: { workspace?: Workspace; userId: string; onRefresh: () => Promise<void>; view?: 'workspace' | 'organisation' }) {
     const [organisations, setOrganisations] = useState<Organisation[]>([]);
     const [organisationId, setOrganisationId] = useState('');
-    const [kind, setKind] = useState<'workspace' | 'organisation'>('workspace');
+    const [kind, setKind] = useState<'workspace' | 'organisation'>(view || 'workspace');
     const [members, setMembers] = useState<Member[]>([]);
     const [connections, setConnections] = useState<Sharing[]>([]);
     const [email, setEmail] = useState('');
@@ -29,6 +29,10 @@ export function AccessManagement({ workspace, userId, onRefresh }: { workspace?:
     const organisation = organisations.find((item) => item.id === organisationId);
     const canManage = kind === 'workspace' ? workspace?.role === 'manager' : organisation?.role === 'owner' || organisation?.role === 'admin';
     const base = kind === 'workspace' ? (workspace ? `/workspaces/${workspace.id}` : '') : organisationId ? `/organisations/${organisationId}` : '';
+
+    useEffect(() => {
+        if (view) setKind(view);
+    }, [view]);
 
     useEffect(() => {
         let active = true;
@@ -111,20 +115,24 @@ export function AccessManagement({ workspace, userId, onRefresh }: { workspace?:
         <section className="access-management" aria-label="Members and access">
             <h2>Members &amp; access</h2>
             <p>Organisation membership and workspace access are separate. Conversations stay private to their author.</p>
-            <label>
-                Manage access for
-                <select
-                    value={kind}
-                    disabled={busy}
-                    onChange={(event) => {
-                        setKind(event.target.value as typeof kind);
-                        setNotice('');
-                    }}
-                >
-                    <option value="workspace">Current workspace</option>
-                    <option value="organisation">Organisation</option>
-                </select>
-            </label>
+            {!view && (
+                <>
+                    <label>
+                        Manage access for
+                        <select
+                            value={kind}
+                            disabled={busy}
+                            onChange={(event) => {
+                                setKind(event.target.value as typeof kind);
+                                setNotice('');
+                            }}
+                        >
+                            <option value="workspace">Current workspace</option>
+                            <option value="organisation">Organisation</option>
+                        </select>
+                    </label>
+                </>
+            )}
             {kind === 'organisation' && (
                 <label>
                     Organisation
@@ -247,26 +255,28 @@ export function AccessManagement({ workspace, userId, onRefresh }: { workspace?:
                     )}
                 </>
             )}
-            <form
-                className="access-form"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    void perform(async () => {
-                        const created = await api<Organisation>('/organisations', { method: 'POST', body: JSON.stringify({ name }) });
-                        setKind('organisation');
-                        setOrganisationId(created.id);
-                        setName('');
-                    }, 'Organisation created.');
-                }}
-            >
-                <label>
-                    New organisation
-                    <input required maxLength={100} value={name} disabled={busy} onChange={(event) => setName(event.target.value)} placeholder="Organisation name" />
-                </label>
-                <button className="btn" disabled={busy}>
-                    Create organisation
-                </button>
-            </form>
+            {kind === 'organisation' && (
+                <form
+                    className="access-form"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        void perform(async () => {
+                            const created = await api<Organisation>('/organisations', { method: 'POST', body: JSON.stringify({ name }) });
+                            setKind('organisation');
+                            setOrganisationId(created.id);
+                            setName('');
+                        }, 'Organisation created.');
+                    }}
+                >
+                    <label>
+                        New organisation
+                        <input required maxLength={100} value={name} disabled={busy} onChange={(event) => setName(event.target.value)} placeholder="Organisation name" />
+                    </label>
+                    <button className="btn" disabled={busy}>
+                        Create organisation
+                    </button>
+                </form>
+            )}
         </section>
     );
 }

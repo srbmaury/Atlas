@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
@@ -47,7 +48,7 @@ export function WorkspaceSidebar({
                     <PanelLeftClose />
                 </button>
             </div>
-            <button className="workspace-btn" onClick={onWorkspaceSettings}>
+            <button aria-label="Switch workspace" className="workspace-btn" onClick={onWorkspaceSettings}>
                 <span className="ws-avatar">{workspace?.name[0]?.toUpperCase() || 'A'}</span>
                 <span>
                     <strong>{workspace?.name || 'Choose workspace'}</strong>
@@ -91,11 +92,13 @@ export function WorkspaceSidebar({
                     <strong>{storageLabel}</strong>
                 </div>
                 <div className="profile">
-                    <span className="avatar">{initials}</span>
-                    <div>
-                        <strong>{email.split('@')[0]}</strong>
-                        <small>{email}</small>
-                    </div>
+                    <Link className="profile-settings-link" aria-label="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`}>
+                        <span className="avatar">{initials}</span>
+                        <div>
+                            <strong>{email.split('@')[0]}</strong>
+                            <small>{email}</small>
+                        </div>
+                    </Link>
                     <button className="icon-button" aria-label="Sign out" title="Sign out" onClick={onSignOut}>
                         <LogOut />
                     </button>

@@ -629,3 +629,49 @@
     overflow-wrap: anywhere;
     font-size: 11px;
 }
+
+.profile-settings-link {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+    border-radius: 8px;
+}
+.profile-settings-link > div {
+    min-width: 0;
+}
+.profile-settings-link:hover {
+    color: var(--brand);
+}
+.workspace-settings-link {
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    margin-top: 18px;
+}
+.workspace-settings-link a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    color: var(--sub);
+}
+.workspace-settings-link a svg:last-child {
+    margin-left: auto;
+}
+.workspace-settings-link a:hover {
+    color: var(--brand);
+}
+.home-card-empty > .btn {
+    margin-top: 12px;
+}
+.collapsed .profile-settings-link {
+    display: none;
+}
+.profile-settings-link .avatar {
+    flex-shrink: 0;
+}
+.dialog .workspace-list {
+    max-height: min(38dvh, 360px);
+    overflow-y: auto;
+}
