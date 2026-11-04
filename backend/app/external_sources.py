@@ -8,13 +8,14 @@ import logging
 import re
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from . import batch_connectors
+from .access_audit import record, reset_grants
 from .db import ExternalConnection, Session, SourceHealthCheck
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import connection_visible, require_connection, require_workspace
+from .rbac import connection_visible, require_connection, require_workspace, workspace_permission
 from .research_queries import (
     GITHUB_QUERY_STOPWORDS,
     SLACK_QUERY_STOPWORDS,
@@ -159,7 +160,9 @@ def read_connection(db, user, workspaceId, provider):
     return row, secret
 
 
-@router.get('/workspaces/{workspaceId}/sources')
+@router.get(
+    '/workspaces/{workspaceId}/sources', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def statuses(workspaceId: str, request: Request):
     with Session() as db:
         user = actor(request, db)
@@ -172,7 +175,10 @@ def statuses(workspaceId: str, request: Request):
         ]
 
 
-@router.post('/workspaces/{workspaceId}/sources/{provider}')
+@router.post(
+    '/workspaces/{workspaceId}/sources/{provider}',
+    dependencies=[Depends(workspace_permission('manager', manage_connection=True))],
+)
 def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Request):
     if provider not in PROVIDERS:
         raise HTTPException(404, 'Unsupported source provider.')
@@ -199,6 +205,8 @@ def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Requ
                     connected_by=user.id,
                 )
             )
+        reset_grants(db, workspaceId, provider)
+        record(db, user.id, 'workspace', workspaceId, 'source.connected', provider)
         health = db.get(SourceHealthCheck, (workspaceId, provider))
         if health:
             db.delete(health)
@@ -206,7 +214,10 @@ def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Requ
         return {'provider': provider, 'connected': True, 'account': account}
 
 
-@router.delete('/workspaces/{workspaceId}/sources/{provider}')
+@router.delete(
+    '/workspaces/{workspaceId}/sources/{provider}',
+    dependencies=[Depends(workspace_permission('manager', manage_connection=True))],
+)
 def disconnect(workspaceId: str, provider: str, request: Request):
     if provider not in PROVIDERS:
         raise HTTPException(404, 'Unsupported source provider.')
@@ -214,6 +225,8 @@ def disconnect(workspaceId: str, provider: str, request: Request):
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
         db.query(ExternalConnection).filter_by(workspace_id=workspaceId, provider=provider).delete()
+        reset_grants(db, workspaceId, provider)
+        record(db, user.id, 'workspace', workspaceId, 'source.disconnected', provider)
         health = db.get(SourceHealthCheck, (workspaceId, provider))
         if health:
             db.delete(health)
@@ -659,7 +672,10 @@ def notion_excerpt(text, terms):
     return ('…' if start else '') + excerpt + ('…' if start + len(excerpt) < len(text) else '')
 
 
-@router.post('/workspaces/{workspaceId}/sources/{provider}/search')
+@router.post(
+    '/workspaces/{workspaceId}/sources/{provider}/search',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def search(workspaceId: str, provider: str, body: SearchRequest, request: Request):
     with Session() as db:
         user = actor(request, db)

@@ -197,6 +197,26 @@ class WorkspaceMember(Base):
     role = Column(String, nullable=False)
 
 
+class SourceGrant(Base):
+    __tablename__ = 'source_grants'
+    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), primary_key=True)
+    provider = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+
+
+class AccessEvent(Base):
+    __tablename__ = 'access_events'
+    id = Column(String, primary_key=True, default=uid)
+    scope_type = Column(String, nullable=False)
+    scope_id = Column(String, nullable=False, index=True)
+    organisation_id = Column(String, index=True)
+    actor_id = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+    target_id = Column(String)
+    details = Column(JSON, nullable=False, default=dict)
+    created = Column(Float, nullable=False, default=time.time, index=True)
+
+
 def init_db():
     """Apply versioned schema migrations before accepting requests.
 

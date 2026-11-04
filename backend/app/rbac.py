@@ -8,6 +8,7 @@ from .db import (
     Organisation,
     OrganisationMember,
     Session,
+    SourceGrant,
     Workspace,
     WorkspaceMember,
 )
@@ -59,7 +60,16 @@ def connection_owner(db, row):
 
 
 def connection_visible(db, actor, row):
-    return bool(row and (row.shared or connection_owner(db, row) == actor.id))
+    if row is None:
+        return False
+    item = db.get(Workspace, row.workspace_id)
+    if not item or not workspace_role(db, actor, item):
+        return False
+    return bool(
+        row.shared
+        or connection_owner(db, row) == actor.id
+        or db.get(SourceGrant, (row.workspace_id, getattr(row, 'provider', 'gmail'), actor.id))
+    )
 
 
 def require_connection(db, actor, row, manage=False):
@@ -89,70 +99,44 @@ def revalidate_access(workspace_id, actor, providers=()):
             require_connection(db, actor, row)
 
 
-def authorize_workspace_request(request: Request):
-    """One fail-closed boundary for modern and legacy workspace API routes.
+def workspace_permission(minimum='viewer', *, provider=None, manage_connection=False):
+    """Declare the required role on each route; URL spelling never selects a role."""
+    if minimum not in WORKSPACE_LEVELS:
+        raise ValueError('Unknown workspace role')
 
-    Explicit read operations using POST remain available to viewers. Unknown
-    mutations require manager access instead of accidentally permitting writes.
-    """
-    workspace_id = request.path_params.get('workspaceId')
-    if not workspace_id and request.url.path in (
-        '/api/gmail/status',
-        '/api/gmail/connect',
-        '/api/drive/connect',
-    ):
-        workspace_id = request.query_params.get('workspaceId')
-    if (
-        not workspace_id
-        and request.url.path.startswith('/api/connected-oauth/')
-        and request.url.path.endswith('/connect')
-    ):
-        workspace_id = request.query_params.get('workspaceId')
-    if not workspace_id:
-        return
-    path = request.url.path
-    suffix = path.split(f'/workspaces/{workspace_id}', 1)[-1]
-    minimum = 'viewer'
-    if path.endswith('/connect') or '/connected-oauth/' in path:
-        minimum = 'manager'
-    elif request.method not in ('GET', 'HEAD', 'OPTIONS'):
-        read_posts = (
-            '/chat',
-            '/connected-chat',
-            '/connected-chat/stream',
-            '/gmail/search',
-            '/gmail/summarize',
-            '/gmail/summarize-query',
-            '/drive/search',
+    def authorize(request: Request):
+        from .gmail import actor
+
+        workspace_id = request.path_params.get('workspaceId') or request.query_params.get(
+            'workspaceId'
         )
-        if suffix in read_posts or (suffix.startswith('/sources/') and suffix.endswith('/search')):
-            minimum = 'viewer'
-        elif suffix == '/conversations' or suffix.startswith('/conversations/'):
-            minimum = 'viewer'  # Routes additionally restrict conversations to their author.
-        elif (
-            suffix.startswith('/documents')
-            or suffix.startswith('/uploads')
-            or suffix == '/web-pages'
-        ):
-            minimum = 'editor'
-        else:
-            minimum = 'manager'
-    from .gmail import actor
-
-    with Session() as db:
-        who = actor(request, db)
-        require_workspace(db, who, workspace_id, minimum)
-        # Protect replacement/disconnect of another person's private credential.
-        if minimum == 'manager':
-            provider = request.path_params.get('provider')
-            if '/gmail' in path:
-                provider = 'gmail'
-            elif '/drive' in path:
-                provider = 'drive'
-            if provider:
+        if not workspace_id:
+            raise HTTPException(422, 'Workspace ID is required.')
+        with Session() as db:
+            who = actor(request, db)
+            require_workspace(db, who, workspace_id, minimum)
+            if manage_connection:
+                name = provider or request.path_params.get('provider')
+                if not name:
+                    raise HTTPException(422, 'Source provider is required.')
                 row = (
                     db.get(GmailConnection, workspace_id)
-                    if provider == 'gmail'
-                    else db.get(ExternalConnection, (workspace_id, provider))
+                    if name == 'gmail'
+                    else db.get(ExternalConnection, (workspace_id, name))
                 )
                 require_connection(db, who, row, manage=True)
+
+    authorize.workspace_role = minimum
+    return authorize
+
+
+def organisation_permission(manage=False):
+    def authorize(request: Request):
+        from .gmail import actor
+
+        with Session() as db:
+            require_organisation(
+                db, actor(request, db), request.path_params['organisation_id'], manage
+            )
+
+    return authorize

@@ -13,13 +13,14 @@ from urllib.parse import urlencode
 import httpx
 import pypdfium2 as pdfium
 from docx import Document as WordDocument
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
+from .access_audit import record, reset_grants
 from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import connection_visible, require_connection, require_workspace
+from .rbac import connection_visible, require_connection, require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -100,7 +101,12 @@ def google_token(payload):
         ) from exc
 
 
-@router.get('/drive/connect')
+@router.get(
+    '/drive/connect',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='drive', manage_connection=True))
+    ],
+)
 def connect(workspaceId: str, request: Request):
     configured()
     with Session() as db:
@@ -183,6 +189,8 @@ def callback(state: str = '', code: str = ''):
                     connected_by=who.id,
                 )
             )
+        reset_grants(db, workspaceId, 'drive')
+        record(db, who.id, 'workspace', workspaceId, 'source.connected', 'drive')
         health = db.get(SourceHealthCheck, (workspaceId, 'drive'))
         if health:
             db.delete(health)
@@ -343,7 +351,9 @@ class DriveSearch(BaseModel):
     query: str = Field(default='', max_length=180)
 
 
-@router.get('/workspaces/{workspaceId}/drive/status')
+@router.get(
+    '/workspaces/{workspaceId}/drive/status', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def status(workspaceId: str, request: Request):
     with Session() as db:
         who = actor(request, db)
@@ -358,7 +368,9 @@ def status(workspaceId: str, request: Request):
         }
 
 
-@router.post('/workspaces/{workspaceId}/drive/search')
+@router.post(
+    '/workspaces/{workspaceId}/drive/search', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def search(workspaceId: str, body: DriveSearch, request: Request):
     with Session() as db:
         who = actor(request, db)
@@ -366,12 +378,19 @@ def search(workspaceId: str, body: DriveSearch, request: Request):
     return {'results': drive_search(token, body.query)}
 
 
-@router.delete('/workspaces/{workspaceId}/drive')
+@router.delete(
+    '/workspaces/{workspaceId}/drive',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='drive', manage_connection=True))
+    ],
+)
 def disconnect(workspaceId: str, request: Request):
     with Session() as db:
         who = actor(request, db)
         allowed_workspace(db, who, workspaceId)
         db.query(ExternalConnection).filter_by(workspace_id=workspaceId, provider='drive').delete()
+        reset_grants(db, workspaceId, 'drive')
+        record(db, who.id, 'workspace', workspaceId, 'source.disconnected', 'drive')
         health = db.get(SourceHealthCheck, (workspaceId, 'drive'))
         if health:
             db.delete(health)

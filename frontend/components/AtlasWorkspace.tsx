@@ -781,6 +781,7 @@ export function AtlasWorkspace() {
                 <WorkspaceManagerDialog
                     workspaces={workspaces}
                     activeId={workspaceId}
+                    userId={user.id}
                     busy={busy}
                     uploading={uploading}
                     deleting={deletingWorkspace}

@@ -580,3 +580,52 @@
 .access-error {
     color: var(--danger, #b42318);
 }
+
+.access-source {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+    min-width: 0;
+}
+.access-source legend {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.access-source small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.access-audit {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 14px;
+}
+.access-events {
+    padding: 0;
+    list-style: none;
+    max-height: 300px;
+    overflow: auto;
+}
+.access-events li {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 0;
+    overflow-wrap: anywhere;
+}
+.access-events strong,
+.access-events small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.access-events details {
+    font-size: 12px;
+    margin-top: 6px;
+}
+.access-events pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+}

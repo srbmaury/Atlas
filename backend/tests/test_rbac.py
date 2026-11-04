@@ -427,3 +427,332 @@ def test_revocation_during_document_generation_blocks_response(accounts, monkeyp
     result = member.post(f'/api/workspaces/{workspace}/chat', json={'question': 'budget'})
     assert result.status_code == 404
     assert 'Secret budget' not in result.text
+
+
+def test_workspace_transfer_preserves_data_and_private_credential_owner(accounts):
+    owner, successor, outsider, workspace = accounts
+    grant(owner, successor, workspace, 'viewer')
+    name = next(
+        row['name'] for row in owner.get('/api/workspaces').json() if row['id'] == workspace
+    )
+    chat = owner.post(
+        f'/api/workspaces/{workspace}/conversations',
+        json={'title': 'Private research', 'messages': []},
+    ).json()
+    with Session() as db:
+        # Also exercise legacy owner fallback: transfer must pin it to the old owner.
+        db.add(
+            ExternalConnection(
+                workspace_id=workspace, provider='github', account='private', secret='opaque'
+            )
+        )
+        db.commit()
+    body = {'member_id': successor.identity['id'], 'confirmation': name}
+    assert successor.post(f'/api/workspaces/{workspace}/ownership', json=body).status_code == 403
+    assert (
+        owner.post(
+            f'/api/workspaces/{workspace}/ownership', json={**body, 'confirmation': 'wrong'}
+        ).status_code
+        == 422
+    )
+    assert (
+        owner.post(
+            f'/api/workspaces/{workspace}/ownership',
+            json={**body, 'member_id': outsider.identity['id']},
+        ).status_code
+        == 422
+    )
+    assert owner.post(f'/api/workspaces/{workspace}/ownership', json=body).status_code == 200
+    members = successor.get(f'/api/workspaces/{workspace}/members').json()
+    assert next(row for row in members if row['owner'])['id'] == successor.identity['id']
+    assert next(row for row in members if row['id'] == owner.identity['id'])['role'] == 'manager'
+    assert owner.get(f'/api/workspaces/{workspace}/conversations/{chat["id"]}').status_code == 200
+    assert (
+        successor.get(f'/api/workspaces/{workspace}/conversations/{chat["id"]}').status_code == 404
+    )
+    statuses = successor.get(f'/api/workspaces/{workspace}/sources').json()
+    assert not next(row for row in statuses if row['provider'] == 'github')['connected']
+    with Session() as db:
+        assert (
+            db.get(ExternalConnection, (workspace, 'github')).connected_by == owner.identity['id']
+        )
+    # The previous owner cannot transfer again and may now be offboarded normally.
+    assert owner.post(f'/api/workspaces/{workspace}/ownership', json=body).status_code == 403
+    assert (
+        successor.delete(f'/api/workspaces/{workspace}/members/{owner.identity["id"]}').status_code
+        == 200
+    )
+    assert owner.get(f'/api/workspaces/{workspace}/documents').status_code == 404
+
+
+def test_organisation_transfer_allows_offboarding_without_deleting_workspaces(accounts):
+    owner, successor, _, _ = accounts
+    org = owner.post('/api/organisations', json={'name': 'Transfer team'}).json()['id']
+    assert (
+        owner.put(
+            f'/api/organisations/{org}/members',
+            json={'email': successor.identity['email'], 'role': 'admin'},
+        ).status_code
+        == 200
+    )
+    workspace = owner.post(
+        '/api/workspaces', json={'name': 'Keep this', 'organisation_id': org}
+    ).json()['id']
+    grant(owner, successor, workspace, 'manager')
+    assert (
+        successor.post(
+            f'/api/organisations/{org}/ownership',
+            json={'member_id': owner.identity['id'], 'confirmation': 'Transfer team'},
+        ).status_code
+        == 403
+    )
+    assert (
+        owner.post(
+            f'/api/workspaces/{workspace}/ownership',
+            json={'member_id': successor.identity['id'], 'confirmation': 'Keep this'},
+        ).status_code
+        == 200
+    )
+    assert (
+        owner.post(
+            f'/api/organisations/{org}/ownership',
+            json={'member_id': successor.identity['id'], 'confirmation': 'Transfer team'},
+        ).status_code
+        == 200
+    )
+    assert (
+        successor.delete(f'/api/organisations/{org}/members/{owner.identity["id"]}').status_code
+        == 200
+    )
+    assert successor.get(f'/api/workspaces/{workspace}/documents').status_code == 200
+    assert owner.get(f'/api/workspaces/{workspace}/documents').status_code == 404
+
+
+def test_source_member_grants_restrict_status_search_and_chat(accounts, monkeypatch):
+    from fastapi import HTTPException
+
+    from app import main
+    from app.db import SourceGrant, User
+    from app.rbac import revalidate_access
+    from app.schemas import ConnectedQuestion
+
+    owner, allowed, denied, workspace = accounts
+    grant(owner, allowed, workspace, 'viewer')
+    grant(owner, denied, workspace, 'manager')  # Manager is not a source-access bypass.
+    key = Fernet.generate_key()
+    monkeypatch.setattr(gmail, 'KEY', key.decode())
+    with Session() as db:
+        db.add(
+            ExternalConnection(
+                workspace_id=workspace,
+                provider='github',
+                account='restricted',
+                secret=Fernet(key).encrypt(b'secret-token').decode(),
+                connected_by=owner.identity['id'],
+            )
+        )
+        db.commit()
+    assert (
+        owner.patch(
+            f'/api/workspaces/{workspace}/connection-sharing/github',
+            json={'shared': False, 'member_ids': [allowed.identity['id']]},
+        ).status_code
+        == 200
+    )
+    monkeypatch.setattr(
+        external_sources,
+        'source_search',
+        lambda *args: [
+            {
+                'id': 'record',
+                'title': 'Budget',
+                'excerpt': 'Approved budget is 20.',
+                'url': 'https://example.com',
+            }
+        ],
+    )
+    assert (
+        allowed.post(
+            f'/api/workspaces/{workspace}/sources/github/search', json={'query': 'budget'}
+        ).status_code
+        == 200
+    )
+    assert (
+        denied.post(
+            f'/api/workspaces/{workspace}/sources/github/search', json={'query': 'budget'}
+        ).status_code
+        == 403
+    )
+    assert next(
+        row
+        for row in allowed.get(f'/api/workspaces/{workspace}/sources').json()
+        if row['provider'] == 'github'
+    )['connected']
+    assert not next(
+        row
+        for row in denied.get(f'/api/workspaces/{workspace}/sources').json()
+        if row['provider'] == 'github'
+    )['connected']
+    body = ConnectedQuestion(question='budget', include_documents=False, providers=['github'])
+    with Session() as db:
+        evidence, _ = main.collect_connected_evidence(
+            workspace, body, db.get(User, allowed.identity['id']), db
+        )
+        assert evidence
+        with pytest.raises(HTTPException) as exc:
+            main.collect_connected_evidence(
+                workspace, body, db.get(User, denied.identity['id']), db
+            )
+        assert exc.value.status_code == 403
+    # Revocation blocks in-flight results as well as future searches.
+    assert (
+        owner.patch(
+            f'/api/workspaces/{workspace}/connection-sharing/github',
+            json={'shared': False, 'member_ids': []},
+        ).status_code
+        == 200
+    )
+    with Session() as db:
+        with pytest.raises(HTTPException):
+            revalidate_access(workspace, db.get(User, allowed.identity['id']), ['github'])
+        assert db.query(SourceGrant).filter_by(workspace_id=workspace).count() == 0
+
+
+def test_source_grants_cannot_target_outsiders_and_revoke_on_offboarding(accounts):
+    owner, member, outsider, workspace = accounts
+    grant(owner, member, workspace, 'viewer')
+    with Session() as db:
+        db.add(
+            ExternalConnection(
+                workspace_id=workspace,
+                provider='slack',
+                account='team',
+                secret='opaque',
+                connected_by=owner.identity['id'],
+            )
+        )
+        db.commit()
+    endpoint = f'/api/workspaces/{workspace}/connection-sharing/slack'
+    assert (
+        owner.patch(
+            endpoint, json={'shared': False, 'member_ids': [outsider.identity['id']]}
+        ).status_code
+        == 422
+    )
+    assert (
+        owner.patch(
+            endpoint, json={'shared': True, 'member_ids': [member.identity['id']]}
+        ).status_code
+        == 422
+    )
+    assert (
+        owner.patch(
+            endpoint, json={'shared': False, 'member_ids': [member.identity['id']]}
+        ).status_code
+        == 200
+    )
+    assert (
+        owner.delete(f'/api/workspaces/{workspace}/members/{member.identity["id"]}').status_code
+        == 200
+    )
+    grant(owner, member, workspace, 'viewer')
+    statuses = member.get(f'/api/workspaces/{workspace}/sources').json()
+    assert not next(row for row in statuses if row['provider'] == 'slack')['connected']
+
+
+def test_audit_is_scoped_paginated_and_cannot_be_edited(accounts):
+    owner, member, outsider, workspace = accounts
+    grant(owner, member, workspace, 'viewer')
+    grant(owner, member, workspace, 'editor')
+    page = owner.get(f'/api/workspaces/{workspace}/audit?limit=1').json()
+    assert len(page['events']) == 1 and page['next_cursor']
+    assert page['events'][0]['details']['previous_role'] == 'viewer'
+    older = owner.get(
+        f'/api/workspaces/{workspace}/audit?limit=1&cursor={page["next_cursor"]}'
+    ).json()
+    assert older['events'][0]['id'] != page['events'][0]['id']
+    assert member.get(f'/api/workspaces/{workspace}/audit').status_code == 403
+    assert outsider.get(f'/api/workspaces/{workspace}/audit').status_code == 404
+    assert (
+        outsider.get(f'/api/workspaces/{workspace}/audit?cursor={page["next_cursor"]}').status_code
+        == 404
+    )
+    assert owner.get(f'/api/workspaces/{workspace}/audit?limit=1000').status_code == 422
+    assert owner.delete(f'/api/workspaces/{workspace}/audit').status_code == 405
+    assert owner.patch(f'/api/workspaces/{workspace}/audit', json={'events': []}).status_code == 405
+
+
+def test_connect_disconnect_clear_grants_and_audit_without_secrets(accounts, monkeypatch):
+    from app.db import SourceGrant
+
+    owner, member, _, workspace = accounts
+    grant(owner, member, workspace, 'viewer')
+    key = Fernet.generate_key()
+    monkeypatch.setattr(gmail, 'KEY', key.decode())
+    monkeypatch.setattr(external_sources, 'profile', lambda *args: 'test-account')
+    endpoint = f'/api/workspaces/{workspace}/sources/github'
+    assert owner.post(endpoint, json={'token': 'never-log-this-token'}).status_code == 200
+    assert (
+        owner.patch(
+            f'/api/workspaces/{workspace}/connection-sharing/github',
+            json={'shared': False, 'member_ids': [member.identity['id']]},
+        ).status_code
+        == 200
+    )
+    # Replacing a credential must not carry old account permissions forward.
+    assert owner.post(endpoint, json={'token': 'replacement-secret'}).status_code == 200
+    with Session() as db:
+        assert db.query(SourceGrant).filter_by(workspace_id=workspace).count() == 0
+    assert owner.delete(endpoint).status_code == 200
+    history = owner.get(f'/api/workspaces/{workspace}/audit')
+    assert 'never-log-this-token' not in history.text and 'replacement-secret' not in history.text
+    assert {'source.connected', 'source.disconnected', 'source.sharing_changed'} <= {
+        row['action'] for row in history.json()['events']
+    }
+
+
+def test_every_workspace_route_declares_an_explicit_permission():
+    from fastapi.routing import APIRoute
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        scoped = '{workspaceId}' in route.path or route.path in (
+            '/api/gmail/status',
+            '/api/gmail/connect',
+            '/api/drive/connect',
+            '/api/connected-oauth/{provider}/connect',
+        )
+        if scoped:
+            assert any(
+                getattr(dependency.call, 'workspace_role', None)
+                for dependency in route.dependant.dependencies
+            ), route.path
+
+
+def test_organisation_audit_retains_deleted_workspace_events_without_content_access(accounts):
+    owner, admin, _, _ = accounts
+    org = owner.post('/api/organisations', json={'name': 'Audited team'}).json()['id']
+    assert (
+        owner.put(
+            f'/api/organisations/{org}/members',
+            json={'email': admin.identity['email'], 'role': 'admin'},
+        ).status_code
+        == 200
+    )
+    workspace = owner.post(
+        '/api/workspaces', json={'name': 'Audit lifecycle', 'organisation_id': org}
+    ).json()['id']
+    assert admin.get(f'/api/workspaces/{workspace}/documents').status_code == 404
+    assert (
+        owner.request(
+            'DELETE', f'/api/workspaces/{workspace}', json={'name': 'Audit lifecycle'}
+        ).status_code
+        == 200
+    )
+    events = admin.get(f'/api/organisations/{org}/audit').json()['events']
+    assert any(
+        row['action'] == 'workspace.deleted' and row['scope_id'] == workspace for row in events
+    )
+    assert all(row['actor_email'] == owner.identity['email'] for row in events)
+    assert admin.get(f'/api/workspaces/{workspace}/documents').status_code == 404

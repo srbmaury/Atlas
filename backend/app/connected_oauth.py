@@ -13,12 +13,13 @@ import time
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+from .access_audit import record, reset_grants
 from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import require_connection, require_workspace
+from .rbac import require_connection, require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/connected-oauth')
 PROVIDERS = {'calendar', 'onedrive', 'outlook', 'sharepoint'}
@@ -85,7 +86,10 @@ def _token_request(provider, payload):
         ) from exc
 
 
-@router.get('/{provider}/connect')
+@router.get(
+    '/{provider}/connect',
+    dependencies=[Depends(workspace_permission('manager', manage_connection=True))],
+)
 def connect(provider: str, workspaceId: str, request: Request):
     client_id, _, redirect, auth_base, _, scope = _settings(provider)
     with Session() as db:
@@ -173,6 +177,8 @@ def callback(provider: str, state: str = '', code: str = ''):
                     connected_by=owner.id,
                 )
             )
+        reset_grants(db, workspaceId, provider)
+        record(db, owner.id, 'workspace', workspaceId, 'source.connected', provider)
         health = db.get(SourceHealthCheck, (workspaceId, provider))
         if health:
             db.delete(health)

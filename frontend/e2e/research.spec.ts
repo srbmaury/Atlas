@@ -8,6 +8,7 @@ test.beforeEach(async({page})=>{
     const path=url.pathname.replace(/^\/api/,'');
     const method=route.request().method();
     const json=(value:unknown)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(value)});
+    if(path.endsWith('/audit'))return json({events:[],next_cursor:null});
     if(path==='/me') return json({id:'u1',email:'test@example.com',mode:'ai',max_file_bytes:10485760});
     if(path==='/workspaces') return json([{id:'w1',name:'Test workspace',role:'manager'}]);
     if(path==='/workspaces/w1/documents')return json([{id:'d1',name:'notes.md',size:128,status:'ready',pages:1,chunk_count:1}]);

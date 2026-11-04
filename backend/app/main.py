@@ -19,7 +19,7 @@ from .external_sources import router as external_router
 from .gmail import router as gmail_router
 from .health import router as health_router
 from .query_context import retrieval_query
-from .rbac import authorize_workspace_request, revalidate_access
+from .rbac import revalidate_access, workspace_permission
 from .retrieval import retrieve
 from .routes.access import router as access_router
 from .routes.auth import router as auth_router
@@ -50,7 +50,6 @@ async def lifespan(app):
 app = FastAPI(
     title='Atlas Document Intelligence',
     lifespan=lifespan,
-    dependencies=[Depends(authorize_workspace_request)],
 )
 app.include_router(access_router)
 app.include_router(gmail_router)
@@ -124,7 +123,10 @@ connected_source_listing_result = connected_research.connected_source_listing_re
 direct_connected_result = connected_research.direct_connected_result
 
 
-@app.post('/api/workspaces/{workspaceId}/connected-chat')
+@app.post(
+    '/api/workspaces/{workspaceId}/connected-chat',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def connected_chat(
     workspaceId: str,
     body: ConnectedQuestion,
@@ -218,7 +220,10 @@ def connected_chat(
     )
 
 
-@app.post('/api/workspaces/{workspaceId}/connected-chat/stream')
+@app.post(
+    '/api/workspaces/{workspaceId}/connected-chat/stream',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def connected_chat_stream(
     workspaceId: str,
     body: ConnectedQuestion,
@@ -381,7 +386,9 @@ def connected_chat_stream(
     )
 
 
-@app.post('/api/workspaces/{workspaceId}/chat')
+@app.post(
+    '/api/workspaces/{workspaceId}/chat', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def chat(workspaceId: str, body: Question, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     if not body.question.strip():

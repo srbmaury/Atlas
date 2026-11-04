@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 
+from ..access_audit import record
 from ..api_dependencies import database, user, workspace
 from ..config import DATA
 from ..db import (
@@ -16,10 +17,11 @@ from ..db import (
     ExternalConnection,
     GmailConnection,
     GmailOAuthState,
+    SourceGrant,
     Workspace,
     WorkspaceMember,
 )
-from ..rbac import require_organisation, workspace_role
+from ..rbac import require_organisation, workspace_permission, workspace_role
 from ..schemas import DeleteWorkspaceRequest, Named
 
 
@@ -30,7 +32,10 @@ class WorkspaceCreate(Named):
 router = APIRouter()
 
 
-@router.get('/api/workspaces/{workspaceId}/processing-stats')
+@router.get(
+    '/api/workspaces/{workspaceId}/processing-stats',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def processing_stats(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     rows = (
@@ -60,7 +65,13 @@ def workspaces(actor=Depends(user), db=Depends(database)):
 
 
 def workspace_data(item, role):
-    return {'id': item.id, 'name': item.name, 'role': role, 'organisation_id': item.organisation_id}
+    return {
+        'id': item.id,
+        'name': item.name,
+        'role': role,
+        'organisation_id': item.organisation_id,
+        'owner_id': item.owner_id,
+    }
 
 
 @router.post('/api/workspaces')
@@ -73,11 +84,15 @@ def create_workspace(body: WorkspaceCreate, actor=Depends(user), db=Depends(data
         owner_id=actor.id, name=body.name.strip(), organisation_id=body.organisation_id
     )
     db.add(item)
+    db.flush()
+    record(db, actor.id, 'workspace', item.id, 'workspace.created')
     db.commit()
     return workspace_data(item, 'manager')
 
 
-@router.delete('/api/workspaces/{workspaceId}')
+@router.delete(
+    '/api/workspaces/{workspaceId}', dependencies=[Depends(workspace_permission('manager'))]
+)
 def delete_workspace(
     workspaceId: str, body: DeleteWorkspaceRequest, actor=Depends(user), db=Depends(database)
 ):
@@ -105,6 +120,8 @@ def delete_workspace(
     db.query(Chunk).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.query(Document).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.query(WorkspaceMember).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
+    record(db, actor.id, 'workspace', item.id, 'workspace.deleted')
+    db.query(SourceGrant).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.delete(item)
     db.commit()
     for did in ids:

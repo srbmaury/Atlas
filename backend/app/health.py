@@ -4,12 +4,12 @@ import logging
 from pathlib import Path
 
 from alembic.script import ScriptDirectory
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import text
 
 from .db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
 from .gmail import actor, allowed_workspace
-from .rbac import connection_visible
+from .rbac import connection_visible, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -39,7 +39,9 @@ def ready():
     return {'status': 'ready'}
 
 
-@router.get('/workspaces/{workspaceId}/operations')
+@router.get(
+    '/workspaces/{workspaceId}/operations', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def workspace_operations(workspaceId: str, request: Request):
     """Authenticated summary for monitoring ingestion and connector health."""
     with Session() as db:

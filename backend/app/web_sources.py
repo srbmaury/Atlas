@@ -21,11 +21,12 @@ from contextlib import suppress
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from .config import DATA, MAX_FILE_BYTES
 from .db import Document, Session, uid
+from .rbac import workspace_permission
 
 router = APIRouter(prefix='/api')
 MAX_HTML_BYTES = min(2_000_000, MAX_FILE_BYTES)
@@ -352,7 +353,9 @@ def save_webpage(workspaceId: str, url: str, db) -> dict:
     return {'id': did, 'name': doc.name, 'status': doc.status, 'url': url, 'duplicate': False}
 
 
-@router.post('/workspaces/{workspaceId}/web-pages')
+@router.post(
+    '/workspaces/{workspaceId}/web-pages', dependencies=[Depends(workspace_permission('editor'))]
+)
 def add_web_page(workspaceId: str, body: UrlRequest, request: Request):
     # Import inside handler to avoid circular import with app.main.
     from .gmail import actor, allowed_workspace

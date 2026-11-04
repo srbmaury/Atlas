@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { OwnershipTransfer, type AccessMember } from './OwnershipTransfer';
+import { SecurityAudit } from './SecurityAudit';
+import { SourceSharingControls, type SourceSharing } from './SourceSharingControls';
 import type { Workspace } from '../../lib/types';
 
 type Organisation = { id: string; name: string; role: 'owner' | 'admin' | 'member' };
-type Member = { id: string; email: string; role: string; owner: boolean };
-type Sharing = { provider: string; owned: boolean; shared: boolean };
+type Member = AccessMember;
+type Sharing = SourceSharing;
 
-export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspace; onRefresh: () => Promise<void> }) {
+export function AccessManagement({ workspace, userId, onRefresh }: { workspace?: Workspace; userId: string; onRefresh: () => Promise<void> }) {
     const [organisations, setOrganisations] = useState<Organisation[]>([]);
     const [organisationId, setOrganisationId] = useState('');
     const [kind, setKind] = useState<'workspace' | 'organisation'>('workspace');
@@ -89,15 +92,15 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
         }
     }
 
-    async function changeSharing(connection: Sharing, shared: boolean) {
+    async function changeSharing(connection: Sharing, shared: boolean, memberIds: string[]) {
         if (busy) return;
         // Keep the controlled input responsive; roll back if the server rejects it.
-        setConnections((items) => items.map((item) => (item.provider === connection.provider ? { ...item, shared } : item)));
+        setConnections((items) => items.map((item) => (item.provider === connection.provider ? { ...item, shared, member_ids: memberIds } : item)));
         const saved = await perform(
             () =>
                 api(`${base}/connection-sharing/${connection.provider}`, {
                     method: 'PATCH',
-                    body: JSON.stringify({ shared }),
+                    body: JSON.stringify({ shared, member_ids: memberIds }),
                 }),
             'Connection sharing updated.',
         );
@@ -203,26 +206,25 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
                         <p>Ask a {kind === 'workspace' ? 'workspace manager' : 'organisation administrator'} to change membership.</p>
                     )}
                     {kind === 'workspace' && canManage && (
-                        <div className="access-sharing">
-                            <h3>Connection sharing</h3>
-                            <p>
-                                Connections are private by default. Sharing lets every workspace member retrieve content using that account. Members may save excerpts in their own chats. Unsharing
-                                stops future retrieval, but does not erase saved excerpts.
-                            </p>
-                            {connections.length === 0 && <p>No connections available to manage.</p>}
-                            {connections.map((connection) => (
-                                <label key={connection.provider} className="access-share-row">
-                                    <input
-                                        type="checkbox"
-                                        checked={connection.shared}
-                                        disabled={busy || !connection.owned}
-                                        onChange={(event) => void changeSharing(connection, event.target.checked)}
-                                    />
-                                    Share {connection.provider} with this workspace{!connection.owned && ' · managed by its owner'}
-                                </label>
-                            ))}
-                        </div>
+                        <SourceSharingControls
+                            userId={userId}
+                            connections={connections}
+                            members={members}
+                            busy={busy}
+                            onChange={(connection, shared, ids) => void changeSharing(connection, shared, ids)}
+                        />
                     )}
+                    {members.some((member) => member.owner && member.id === userId) && (
+                        <OwnershipTransfer
+                            name={kind === 'workspace' ? workspace?.name || '' : organisation?.name || ''}
+                            members={members}
+                            busy={busy}
+                            onTransfer={(memberId, confirmation) =>
+                                perform(() => api(`${base}/ownership`, { method: 'POST', body: JSON.stringify({ member_id: memberId, confirmation }) }), 'Ownership transferred.')
+                            }
+                        />
+                    )}
+                    {canManage && <SecurityAudit key={base} base={base} members={members} revision={revision} />}
                     {kind === 'organisation' && canManage && (
                         <form
                             className="access-form"

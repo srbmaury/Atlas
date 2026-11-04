@@ -7,13 +7,16 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..api_dependencies import database, user, workspace
 from ..db import ExternalConnection, GmailConnection, SourceHealthCheck
-from ..rbac import connection_visible
+from ..rbac import connection_visible, workspace_permission
 
 router = APIRouter()
 log = logging.getLogger(__name__)
 
 
-@router.get('/api/workspaces/{workspaceId}/sources/health')
+@router.get(
+    '/api/workspaces/{workspaceId}/sources/health',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def source_health(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return {
@@ -37,7 +40,10 @@ def source_health(workspaceId: str, actor=Depends(user), db=Depends(database)):
     }
 
 
-@router.post('/api/workspaces/{workspaceId}/sources/health/check')
+@router.post(
+    '/api/workspaces/{workspaceId}/sources/health/check',
+    dependencies=[Depends(workspace_permission('manager'))],
+)
 def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=Depends(database)):
     """Check real provider access; return only status, account, and match counts."""
     workspace(workspaceId, actor, db)

@@ -8,6 +8,7 @@ import { Dialog } from '../ui/WorkspacePrimitives';
 export function WorkspaceManagerDialog({
     workspaces,
     activeId,
+    userId,
     busy,
     uploading,
     deleting,
@@ -26,6 +27,7 @@ export function WorkspaceManagerDialog({
 }: {
     workspaces: Workspace[];
     activeId: string;
+    userId: string;
     busy: boolean;
     uploading: boolean;
     deleting: boolean;
@@ -105,7 +107,7 @@ export function WorkspaceManagerDialog({
                     Create workspace
                 </button>
             </form>
-            <AccessManagement workspace={workspaces.find((item) => item.id === activeId)} onRefresh={onRefresh} />
+            <AccessManagement userId={userId} workspace={workspaces.find((item) => item.id === activeId)} onRefresh={onRefresh} />
         </Dialog>
     );
 }

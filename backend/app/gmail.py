@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from openai import (
     APIConnectionError,
@@ -25,8 +25,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session as DatabaseSession
 
 from . import config
+from .access_audit import record, reset_grants
 from .ai import client, ollama_chat
 from .db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User
+from .rbac import workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -175,7 +177,7 @@ class SummaryRequest(BaseModel):
     message_ids: list[str] = Field(min_length=1, max_length=15)
 
 
-@router.get('/gmail/status')
+@router.get('/gmail/status', dependencies=[Depends(workspace_permission('viewer'))])
 def status(workspaceId: str, request: Request):
     from .rbac import connection_visible
 
@@ -192,7 +194,12 @@ def status(workspaceId: str, request: Request):
         }
 
 
-@router.get('/gmail/connect')
+@router.get(
+    '/gmail/connect',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='gmail', manage_connection=True))
+    ],
+)
 def connect(workspaceId: str, request: Request):
     configured()
     with Session() as db:
@@ -277,6 +284,8 @@ def callback(request: Request, state: str = '', code: str = ''):
                 connected_by=user.id,
             )
         )
+        reset_grants(db, workspaceId, 'gmail')
+        record(db, user.id, 'workspace', workspaceId, 'source.connected', 'gmail')
         health = db.get(SourceHealthCheck, (workspaceId, 'gmail'))
         if health:
             db.delete(health)
@@ -284,7 +293,9 @@ def callback(request: Request, state: str = '', code: str = ''):
         return RedirectResponse('/?gmail=connected', status_code=303)
 
 
-@router.post('/workspaces/{workspaceId}/gmail/search')
+@router.post(
+    '/workspaces/{workspaceId}/gmail/search', dependencies=[Depends(workspace_permission('viewer'))]
+)
 def search(workspaceId: str, body: SearchRequest, request: Request):
     try:
         with Session() as db:
@@ -311,7 +322,10 @@ def search(workspaceId: str, body: SearchRequest, request: Request):
         ) from exc
 
 
-@router.post('/workspaces/{workspaceId}/gmail/summarize')
+@router.post(
+    '/workspaces/{workspaceId}/gmail/summarize',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def summarize(workspaceId: str, body: SummaryRequest, request: Request):
     if not (config.API_KEY or config.AI_PROVIDER == 'ollama'):
         raise HTTPException(409, 'Configure an AI provider to summarize emails.')
@@ -467,7 +481,10 @@ def query_summary_model(messages, instructions, max_tokens=1400):
     raise HTTPException(409, 'Configure an AI provider to summarize Gmail messages.')
 
 
-@router.post('/workspaces/{workspaceId}/gmail/summarize-query')
+@router.post(
+    '/workspaces/{workspaceId}/gmail/summarize-query',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
 def summarize_query(workspaceId: str, body: QuerySummaryRequest, request: Request):
     """Search Gmail using its query syntax; summarize matches in small batches."""
     if not (config.AI_PROVIDER == 'ollama' or (config.AI_PROVIDER == 'openai' and config.API_KEY)):
@@ -599,12 +616,19 @@ def summarize_query(workspaceId: str, body: QuerySummaryRequest, request: Reques
     }
 
 
-@router.delete('/workspaces/{workspaceId}/gmail')
+@router.delete(
+    '/workspaces/{workspaceId}/gmail',
+    dependencies=[
+        Depends(workspace_permission('manager', provider='gmail', manage_connection=True))
+    ],
+)
 def disconnect(workspaceId: str, request: Request):
     with Session() as db:
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
         db.query(GmailConnection).filter_by(workspace_id=workspaceId).delete()
+        reset_grants(db, workspaceId, 'gmail')
+        record(db, user.id, 'workspace', workspaceId, 'source.disconnected', 'gmail')
         health = db.get(SourceHealthCheck, (workspaceId, 'gmail'))
         if health:
             db.delete(health)
