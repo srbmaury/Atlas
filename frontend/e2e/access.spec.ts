@@ -41,7 +41,7 @@ test('manager adds a member and explicitly shares a connection', async ({ page }
     await dialog.getByLabel('Registered member email').fill('viewer@example.com');
     await dialog.getByLabel('Member role', { exact: true }).selectOption('viewer');
     await dialog.getByRole('button', { name: 'Add or update member' }).click();
-    await expect(dialog.getByText('viewer@example.com', { exact: true })).toBeVisible();
+    await expect(dialog.locator('.access-members').getByText('viewer@example.com', { exact: true })).toBeVisible();
     await dialog.getByRole('checkbox', { name: 'Share gmail with this workspace' }).check();
     await expect(dialog.getByRole('checkbox', { name: 'Share gmail with this workspace' })).toBeChecked();
     expect(changes).toEqual([{ email: 'viewer@example.com', role: 'viewer' }, { shared: true, member_ids: [] }]);
