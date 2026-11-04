@@ -62,8 +62,6 @@ def extract(path, name, heartbeat=None, ocr_pages=None):
                         ) from exc
                     except pytesseract.TesseractError as exc:
                         raise ValueError(f'OCR failed for PDF page {i + 1}.') from exc
-                if not value.strip():
-                    raise ValueError(f'PDF page {i + 1} has no readable text, including OCR.')
                 pages.append((i + 1, value.replace('\r\n', '\n')))
             return pages
         finally:
