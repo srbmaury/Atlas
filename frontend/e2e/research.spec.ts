@@ -394,7 +394,7 @@ test('session actions create and delete a workspace then sign out',async({page})
  await page.route('**/api/workspaces',route=>{
   if(route.request().method()!=='POST')return route.fallback();
   expect(route.request().postDataJSON()).toEqual({name:'Research review'});
-  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'w2',name:'Research review'})});
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'w2',name:'Research review',role:'manager'})});
  });
  await page.route('**/api/workspaces/w2',route=>{
   expect(route.request().method()).toBe('DELETE');

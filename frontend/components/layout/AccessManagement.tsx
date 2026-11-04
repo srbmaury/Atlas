@@ -108,7 +108,7 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
             {kind === 'organisation' && (
                 <label>
                     Organisation
-                    <select value={organisationId} disabled={busy} onChange={(event) => setOrganisationId(event.target.value)}>
+                    <select aria-label="Organisation" value={organisationId} disabled={busy} onChange={(event) => setOrganisationId(event.target.value)}>
                         <option value="">Choose an organisation</option>
                         {organisations.map((item) => (
                             <option key={item.id} value={item.id}>
@@ -171,7 +171,7 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
                             </label>
                             <label>
                                 Role
-                                <select value={role} disabled={busy} onChange={(event) => setRole(event.target.value)}>
+                                <select aria-label="Member role" value={role} disabled={busy} onChange={(event) => setRole(event.target.value)}>
                                     {(kind === 'workspace' ? ['viewer', 'editor', 'manager'] : ['member', 'admin']).map((value) => (
                                         <option key={value}>{value}</option>
                                     ))}
