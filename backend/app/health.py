@@ -7,8 +7,9 @@ from alembic.script import ScriptDirectory
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import text
 
-from .db import Document, Session, SourceHealthCheck, engine
+from .db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
 from .gmail import actor, allowed_workspace
+from .rbac import connection_visible
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -48,7 +49,17 @@ def workspace_operations(workspaceId: str, request: Request):
         counts = {}
         for (status,) in documents:
             counts[status] = counts.get(status, 0) + 1
-        checks = db.query(SourceHealthCheck).filter_by(workspace_id=workspaceId).all()
+        checks = [
+            item
+            for item in db.query(SourceHealthCheck).filter_by(workspace_id=workspaceId).all()
+            if connection_visible(
+                db,
+                who,
+                db.get(GmailConnection, workspaceId)
+                if item.provider == 'gmail'
+                else db.get(ExternalConnection, (workspaceId, item.provider)),
+            )
+        ]
         return {
             'documents': {'total': len(documents), 'by_status': counts},
             'sources': {

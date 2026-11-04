@@ -6,6 +6,7 @@ import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { FileBadge } from '../ui/WorkspacePrimitives';
 
 interface HomeViewProps {
+    canEdit?: boolean;
     query: string;
     onQueryChange: (value: string) => void;
     onAsk: () => void;
@@ -32,6 +33,7 @@ interface HomeViewProps {
 }
 
 export function HomeView({
+    canEdit = true,
     query,
     onQueryChange,
     onAsk,
@@ -206,30 +208,32 @@ export function HomeView({
                     )}
                 </div>
             </div>
-            <div
-                className={`home-dropzone ${dragging ? 'dragging' : ''}`}
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    onDragging(true);
-                }}
-                onDragLeave={() => onDragging(false)}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    onDragging(false);
-                    onDrop(e.dataTransfer.files);
-                }}
-            >
-                <span className="home-drop-icon">
-                    <Upload size={20} />
-                </span>
-                <div>
-                    <strong>Upload documents</strong>
-                    <p>Drop PDF, DOCX, TXT, Markdown, CSV, JSON or HTML files. Up to {maxSizeMB} MB each.</p>
+            {canEdit && (
+                <div
+                    className={`home-dropzone ${dragging ? 'dragging' : ''}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        onDragging(true);
+                    }}
+                    onDragLeave={() => onDragging(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        onDragging(false);
+                        onDrop(e.dataTransfer.files);
+                    }}
+                >
+                    <span className="home-drop-icon">
+                        <Upload size={20} />
+                    </span>
+                    <div>
+                        <strong>Upload documents</strong>
+                        <p>Drop PDF, DOCX, TXT, Markdown, CSV, JSON or HTML files. Up to {maxSizeMB} MB each.</p>
+                    </div>
+                    <button className="btn" disabled={uploading} onClick={onBrowse}>
+                        Choose files
+                    </button>
                 </div>
-                <button className="btn" disabled={uploading} onClick={onBrowse}>
-                    Choose files
-                </button>
-            </div>
+            )}
         </section>
     );
 }

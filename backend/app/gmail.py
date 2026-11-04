@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session as DatabaseSession
 
 from . import config
 from .ai import client, ollama_chat
-from .db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User, Workspace
+from .db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -64,10 +64,9 @@ def actor(request: Request, db: DatabaseSession):
 
 
 def allowed_workspace(db, user, workspaceId):
-    workspace = db.query(Workspace).filter_by(id=workspaceId, owner_id=user.id).first()
-    if workspace is None:
-        raise HTTPException(404, 'Workspace not found.')
-    return workspace
+    from .rbac import require_workspace
+
+    return require_workspace(db, user, workspaceId)
 
 
 def connection(db, user, workspaceId):
@@ -75,6 +74,9 @@ def connection(db, user, workspaceId):
     entry = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
     if entry is None:
         raise HTTPException(409, 'Connect Gmail to this workspace first.')
+    from .rbac import require_connection
+
+    require_connection(db, user, entry)
     return entry
 
 
@@ -175,10 +177,14 @@ class SummaryRequest(BaseModel):
 
 @router.get('/gmail/status')
 def status(workspaceId: str, request: Request):
+    from .rbac import connection_visible
+
     with Session() as db:
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
         entry = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
+        if not connection_visible(db, user, entry):
+            entry = None
         return {
             'connected': bool(entry),
             'email': entry.email if entry else None,
@@ -228,12 +234,12 @@ def callback(request: Request, state: str = '', code: str = ''):
         if not oauth or oauth.expires < time.time():
             raise HTTPException(400, 'Gmail authorization expired. Start again.')
         user = db.get(User, oauth.user_id)
-        if (
-            user is None
-            or db.query(Workspace).filter_by(id=oauth.workspace_id, owner_id=user.id).first()
-            is None
-        ):
+        from .rbac import require_connection, require_workspace
+
+        if user is None:
             raise HTTPException(400, 'The connected workspace is no longer available.')
+        require_workspace(db, user, oauth.workspace_id, 'manager')
+        require_connection(db, user, db.get(GmailConnection, oauth.workspace_id), manage=True)
         workspaceId = oauth.workspace_id
         db.delete(oauth)
         db.commit()
@@ -268,6 +274,7 @@ def callback(request: Request, state: str = '', code: str = ''):
                 workspace_id=workspaceId,
                 email=profile.get('emailAddress', ''),
                 refresh_token=crypt().encrypt(refresh.encode()).decode(),
+                connected_by=user.id,
             )
         )
         health = db.get(SourceHealthCheck, (workspaceId, 'gmail'))

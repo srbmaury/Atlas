@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..api_dependencies import database, user, workspace
 from ..db import ExternalConnection, GmailConnection, SourceHealthCheck
+from ..rbac import connection_visible
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -25,6 +26,13 @@ def source_health(workspaceId: str, actor=Depends(user), db=Depends(database)):
                 'checked_at': row.checked_at,
             }
             for row in db.query(SourceHealthCheck).filter_by(workspace_id=workspaceId).all()
+            if connection_visible(
+                db,
+                actor,
+                db.get(GmailConnection, workspaceId)
+                if row.provider == 'gmail'
+                else db.get(ExternalConnection, (workspaceId, row.provider)),
+            )
         ]
     }
 
@@ -80,7 +88,7 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
 
     for provider in PROVIDERS:
         row = db.get(ExternalConnection, (workspaceId, provider))
-        if row:
+        if connection_visible(db, actor, row):
 
             def check_external(p=provider):
                 _, token = read_connection(db, actor, workspaceId, p)
@@ -91,7 +99,7 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
             record(provider, False, lambda: None)
 
     gmail_row = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
-    if gmail_row:
+    if connection_visible(db, actor, gmail_row):
 
         def check_gmail():
             entry = gmail_connection(db, actor, workspaceId)
@@ -106,7 +114,7 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
         record('gmail', False, lambda: None)
 
     drive_row = db.get(ExternalConnection, (workspaceId, 'drive'))
-    if drive_row:
+    if connection_visible(db, actor, drive_row):
 
         def check_drive():
             token = drive_access(db, actor, workspaceId)

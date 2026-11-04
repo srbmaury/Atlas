@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from . import batch_connectors
 from .db import ExternalConnection, Session, SourceHealthCheck
 from .gmail import actor, allowed_workspace, crypt
+from .rbac import connection_visible, require_connection, require_workspace
 from .research_queries import (
     GITHUB_QUERY_STOPWORDS,
     SLACK_QUERY_STOPWORDS,
@@ -145,6 +146,7 @@ def read_connection(db, user, workspaceId, provider):
     row = db.get(ExternalConnection, (workspaceId, provider))
     if not row:
         raise HTTPException(409, f'Connect {provider.title()} first.')
+    require_connection(db, user, row)
     try:
         secret = crypt().decrypt(row.secret.encode()).decode()
     except Exception as exc:
@@ -163,7 +165,7 @@ def statuses(workspaceId: str, request: Request):
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
         rows = db.query(ExternalConnection).filter_by(workspace_id=workspaceId).all()
-        accounts = {r.provider: r.account for r in rows}
+        accounts = {r.provider: r.account for r in rows if connection_visible(db, user, r)}
         return [
             {'provider': p, 'connected': p in accounts, 'account': accounts.get(p)}
             for p in PROVIDERS
@@ -177,15 +179,24 @@ def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Requ
     with Session() as db:
         user = actor(request, db)
         allowed_workspace(db, user, workspaceId)
+        require_workspace(db, user, workspaceId, 'manager')
+        require_connection(
+            db, user, db.get(ExternalConnection, (workspaceId, provider)), manage=True
+        )
         account = profile(provider, body.token)
         encrypted = crypt().encrypt(body.token.encode()).decode()
         row = db.get(ExternalConnection, (workspaceId, provider))
         if row:
             row.account, row.secret = account, encrypted
+            row.connected_by, row.shared = user.id, False
         else:
             db.add(
                 ExternalConnection(
-                    workspace_id=workspaceId, provider=provider, account=account, secret=encrypted
+                    workspace_id=workspaceId,
+                    provider=provider,
+                    account=account,
+                    secret=encrypted,
+                    connected_by=user.id,
                 )
             )
         health = db.get(SourceHealthCheck, (workspaceId, provider))

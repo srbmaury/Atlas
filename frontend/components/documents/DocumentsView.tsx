@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { Search, Upload } from 'lucide-react';
 
 interface DocumentsViewProps {
+    canEdit?: boolean;
     uploadButton: ReactNode;
     webImport: ReactNode;
     totalDocuments: number;
@@ -21,6 +22,7 @@ interface DocumentsViewProps {
 }
 
 export function DocumentsView({
+    canEdit = true,
     uploadButton,
     webImport,
     totalDocuments,
@@ -78,30 +80,32 @@ export function DocumentsView({
                 </div>
                 {documentTable}
             </div>
-            <div
-                className={`home-dropzone ${dragging ? 'dragging' : ''}`}
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    onDragging(true);
-                }}
-                onDragLeave={() => onDragging(false)}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    onDragging(false);
-                    onDrop(e.dataTransfer.files);
-                }}
-            >
-                <span className="home-drop-icon">
-                    <Upload size={20} />
-                </span>
-                <div>
-                    <strong>Add documents to your library</strong>
-                    <p>Drag in PDFs, Word, text, Markdown, CSV, JSON or HTML · max {maxSizeMB} MB each.</p>
+            {canEdit && (
+                <div
+                    className={`home-dropzone ${dragging ? 'dragging' : ''}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        onDragging(true);
+                    }}
+                    onDragLeave={() => onDragging(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        onDragging(false);
+                        onDrop(e.dataTransfer.files);
+                    }}
+                >
+                    <span className="home-drop-icon">
+                        <Upload size={20} />
+                    </span>
+                    <div>
+                        <strong>Add documents to your library</strong>
+                        <p>Drag in PDFs, Word, text, Markdown, CSV, JSON or HTML · max {maxSizeMB} MB each.</p>
+                    </div>
+                    <button className="btn" disabled={uploading} onClick={onBrowse}>
+                        Browse files
+                    </button>
                 </div>
-                <button className="btn" disabled={uploading} onClick={onBrowse}>
-                    Browse files
-                </button>
-            </div>
+            )}
         </section>
     );
 }

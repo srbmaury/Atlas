@@ -17,8 +17,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User, Workspace
+from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
+from .rbac import connection_visible, require_connection, require_workspace
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -138,8 +139,10 @@ def callback(state: str = '', code: str = ''):
             raise HTTPException(400, 'Drive authorization expired. Start again.')
         workspaceId = item.workspace_id
         who = db.get(User, item.user_id)
-        if not who or not db.query(Workspace).filter_by(id=workspaceId, owner_id=who.id).first():
+        if not who:
             raise HTTPException(400, 'Workspace no longer exists.')
+        require_workspace(db, who, workspaceId, 'manager')
+        require_connection(db, who, db.get(ExternalConnection, (workspaceId, 'drive')), manage=True)
         db.delete(item)
         db.commit()
         tokens = google_token(
@@ -169,10 +172,15 @@ def callback(state: str = '', code: str = ''):
         encrypted = crypt().encrypt(refresh.encode()).decode()
         if row:
             row.account, row.secret = account, encrypted
+            row.connected_by, row.shared = who.id, False
         else:
             db.add(
                 ExternalConnection(
-                    workspace_id=workspaceId, provider='drive', account=account, secret=encrypted
+                    workspace_id=workspaceId,
+                    provider='drive',
+                    account=account,
+                    secret=encrypted,
+                    connected_by=who.id,
                 )
             )
         health = db.get(SourceHealthCheck, (workspaceId, 'drive'))
@@ -187,6 +195,7 @@ def access_token(db, who, workspaceId):
     row = db.get(ExternalConnection, (workspaceId, 'drive'))
     if not row:
         raise HTTPException(409, 'Connect Google Drive first.')
+    require_connection(db, who, row)
     try:
         refresh = crypt().decrypt(row.secret.encode()).decode()
     except Exception as exc:
@@ -340,6 +349,8 @@ def status(workspaceId: str, request: Request):
         who = actor(request, db)
         allowed_workspace(db, who, workspaceId)
         row = db.get(ExternalConnection, (workspaceId, 'drive'))
+        if not connection_visible(db, who, row):
+            row = None
         return {
             'connected': bool(row),
             'account': row.account if row else None,

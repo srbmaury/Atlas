@@ -1,5 +1,7 @@
 """Workspace management and processing status endpoints."""
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 
@@ -15,8 +17,15 @@ from ..db import (
     GmailConnection,
     GmailOAuthState,
     Workspace,
+    WorkspaceMember,
 )
+from ..rbac import require_organisation, workspace_role
 from ..schemas import DeleteWorkspaceRequest, Named
+
+
+class WorkspaceCreate(Named):
+    organisation_id: Optional[str] = None
+
 
 router = APIRouter()
 
@@ -41,20 +50,31 @@ def processing_stats(workspaceId: str, actor=Depends(user), db=Depends(database)
 
 @router.get('/api/workspaces')
 def workspaces(actor=Depends(user), db=Depends(database)):
-    return [
-        {'id': w.id, 'name': w.name}
-        for w in db.query(Workspace).filter_by(owner_id=actor.id).order_by(Workspace.created)
-    ]
+    memberships = db.query(WorkspaceMember.workspace_id).filter_by(user_id=actor.id)
+    candidates = (
+        db.query(Workspace)
+        .filter((Workspace.owner_id == actor.id) | Workspace.id.in_(memberships))
+        .order_by(Workspace.created)
+    )
+    return [workspace_data(w, role) for w in candidates if (role := workspace_role(db, actor, w))]
+
+
+def workspace_data(item, role):
+    return {'id': item.id, 'name': item.name, 'role': role, 'organisation_id': item.organisation_id}
 
 
 @router.post('/api/workspaces')
-def create_workspace(body: Named, actor=Depends(user), db=Depends(database)):
+def create_workspace(body: WorkspaceCreate, actor=Depends(user), db=Depends(database)):
     if not body.name.strip():
         raise HTTPException(422, 'Workspace name is required.')
-    item = Workspace(owner_id=actor.id, name=body.name.strip())
+    if body.organisation_id:
+        require_organisation(db, actor, body.organisation_id, manage=True)
+    item = Workspace(
+        owner_id=actor.id, name=body.name.strip(), organisation_id=body.organisation_id
+    )
     db.add(item)
     db.commit()
-    return {'id': item.id, 'name': item.name}
+    return workspace_data(item, 'manager')
 
 
 @router.delete('/api/workspaces/{workspaceId}')
@@ -84,6 +104,7 @@ def delete_workspace(
     db.query(Conversation).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.query(Chunk).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.query(Document).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
+    db.query(WorkspaceMember).filter_by(workspace_id=workspaceId).delete(synchronize_session=False)
     db.delete(item)
     db.commit()
     for did in ids:

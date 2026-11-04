@@ -37,6 +37,7 @@ import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitiv
 import { flushSync } from 'react-dom';
 
 import { prettyBytes } from '../utils/utils';
+import { api } from '../lib/api';
 import { PROVIDER_LABELS } from '../lib/providers';
 
 export function AtlasWorkspace() {
@@ -255,6 +256,8 @@ export function AtlasWorkspace() {
     ];
     const filtered = docs.filter((d) => d.name.toLowerCase().includes(filter.toLowerCase()));
     const workspace = workspaces.find((w) => w.id === workspaceId);
+    const canEdit = workspace?.role === 'editor' || workspace?.role === 'manager';
+    const canManage = workspace?.role === 'manager';
 
     const storage = docs.reduce((sum, d) => sum + d.size, 0);
     // Only passages actually cited in the answer count as supporting evidence.
@@ -369,7 +372,7 @@ export function AtlasWorkspace() {
     });
 
     const uploadButton = (
-        <button className="btn primary" disabled={uploading || !workspaceId} onClick={() => input.current?.click()}>
+        <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>
             {uploading ? <LoaderCircle className="spin" /> : <Plus />}
             <span>{uploading ? 'Uploading…' : 'Add documents'}</span>
         </button>
@@ -411,7 +414,7 @@ export function AtlasWorkspace() {
                 accept=".pdf,.docx,.txt,.md,.csv,.json,.html,.htm"
                 hidden
                 onChange={(e) => {
-                    if (e.target.files) void upload(e.target.files);
+                    if (canEdit && e.target.files) void upload(e.target.files);
                 }}
             />
             {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
@@ -513,6 +516,7 @@ export function AtlasWorkspace() {
                     )}
                     {workspaceId && tab === 'overview' && (
                         <HomeView
+                            canEdit={canEdit}
                             query={query}
                             onQueryChange={setQuery}
                             onAsk={() => void ask(query, true)}
@@ -538,10 +542,14 @@ export function AtlasWorkspace() {
                             uploadButton={uploadButton}
                             dragging={dragging}
                             onDragging={setDragging}
-                            onDrop={(files) => void upload(files)}
+                            onDrop={(files) => {
+                                if (canEdit) void upload(files);
+                            }}
                             maxSizeMB={Math.round(user.max_file_bytes / 1024 / 1024)}
                             uploading={uploading}
-                            onBrowse={() => input.current?.click()}
+                            onBrowse={() => {
+                                if (canEdit) input.current?.click();
+                            }}
                             formatSize={prettyBytes}
                         />
                     )}
@@ -588,7 +596,9 @@ export function AtlasWorkspace() {
                             endRef={chatEnd}
                             query={query}
                             setQuery={setQuery}
-                            onUpload={() => input.current?.click()}
+                            onUpload={() => {
+                                if (canEdit) input.current?.click();
+                            }}
                             uploading={uploading}
                             hasAskSources={hasAskSources}
                         />
@@ -596,7 +606,14 @@ export function AtlasWorkspace() {
                     {workspaceId && tab === 'documents' && (
                         <DocumentsView
                             uploadButton={uploadButton}
-                            webImport={<WebPageImportForm url={webUrl} busy={webBusy} onUrlChange={setWebUrl} onSubmit={(event) => void importWebPage(event)} />}
+                            canEdit={canEdit}
+                            webImport={
+                                canEdit ? (
+                                    <WebPageImportForm url={webUrl} busy={webBusy} onUrlChange={setWebUrl} onSubmit={(event) => void importWebPage(event)} />
+                                ) : (
+                                    <p>You have viewer access. Ask an editor or manager to add documents.</p>
+                                )
+                            }
                             totalDocuments={docs.length}
                             readyDocuments={ready.length}
                             storageLabel={storage ? prettyBytes(storage) : '0 KB'}
@@ -605,6 +622,7 @@ export function AtlasWorkspace() {
                             onFilter={setFilter}
                             documentTable={
                                 <DocumentTable
+                                    canEdit={canEdit}
                                     items={filtered}
                                     filter={filter}
                                     onClearFilter={() => setFilter('')}
@@ -618,10 +636,14 @@ export function AtlasWorkspace() {
                             }
                             dragging={dragging}
                             onDragging={setDragging}
-                            onDrop={(files) => void upload(files)}
+                            onDrop={(files) => {
+                                if (canEdit) void upload(files);
+                            }}
                             maxSizeMB={Math.round(user.max_file_bytes / 1024 / 1024)}
                             uploading={uploading}
-                            onBrowse={() => input.current?.click()}
+                            onBrowse={() => {
+                                if (canEdit) input.current?.click();
+                            }}
                         />
                     )}
                     {workspaceId && tab === 'sources' && (
@@ -641,7 +663,7 @@ export function AtlasWorkspace() {
                                             <button className="btn" onClick={() => void refreshConnections()}>
                                                 Refresh list
                                             </button>
-                                            <button className="btn primary" disabled={sourceChecksBusy} onClick={() => void verifySourceConnections()}>
+                                            <button className="btn primary" disabled={sourceChecksBusy || !canManage} onClick={() => void verifySourceConnections()}>
                                                 {sourceChecksBusy ? (
                                                     <>
                                                         <LoaderCircle className="spin" />
@@ -659,6 +681,10 @@ export function AtlasWorkspace() {
                                         sourceStatuses={sourceStatuses}
                                         sourceChecks={sourceChecks}
                                         onOpen={(provider) => {
+                                            if (!canManage) {
+                                                setNotice('Select shared sources above the chat prompt to search them. A manager handles connections.');
+                                                return;
+                                            }
                                             setSourceManage(provider);
                                             if (provider === 'gmail') window.scrollTo({ top: 0, behavior: 'instant' });
                                             if (['github', 'notion', 'slack', 'calendar', 'linear', 'jira', 'onedrive', 'outlook', 'sharepoint'].includes(provider)) {
@@ -778,6 +804,9 @@ export function AtlasWorkspace() {
                     onDelete={() => void removeWorkspace()}
                     onName={setWorkspaceName}
                     onCreate={addWorkspace}
+                    onRefresh={async () => {
+                        setWorkspaces(await api<Workspace[]>('/workspaces'));
+                    }}
                 />
             )}
             <EvidenceInspector

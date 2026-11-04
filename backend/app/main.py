@@ -19,7 +19,9 @@ from .external_sources import router as external_router
 from .gmail import router as gmail_router
 from .health import router as health_router
 from .query_context import retrieval_query
+from .rbac import authorize_workspace_request, revalidate_access
 from .retrieval import retrieve
+from .routes.access import router as access_router
 from .routes.auth import router as auth_router
 from .routes.conversations import router as conversations_router
 from .routes.documents import router as documents_router
@@ -45,7 +47,12 @@ async def lifespan(app):
         thread.join(timeout=5)
 
 
-app = FastAPI(title='Atlas Document Intelligence', lifespan=lifespan)
+app = FastAPI(
+    title='Atlas Document Intelligence',
+    lifespan=lifespan,
+    dependencies=[Depends(authorize_workspace_request)],
+)
+app.include_router(access_router)
 app.include_router(gmail_router)
 app.include_router(external_router)
 app.include_router(drive_router)
@@ -132,6 +139,7 @@ def connected_chat(
     evidence, document_evidence = collect_connected_evidence(
         workspaceId, body, actor, db, retrieval_stats
     )
+    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
     if not evidence:
         return no_evidence_result(body, retrieval_stats)
     # A local 8k-context model cannot accept all retrieved source bodies at once.
@@ -171,6 +179,7 @@ def connected_chat(
         raise HTTPException(
             502, 'Connected answer generation failed. Check the AI provider logs.'
         ) from exc
+    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
     from .connected_synthesis import has_valid_citations
 
     if not has_valid_citations(answer or '', payload):
@@ -248,6 +257,7 @@ def connected_chat_stream(
             evidence, document_evidence = collect_connected_evidence(
                 workspaceId, body, actor, db, retrieval_stats
             )
+            revalidate_access(workspaceId, actor, {item.provider for item in evidence})
             if not evidence:
                 yield (
                     json.dumps(
@@ -290,6 +300,7 @@ def connected_chat_stream(
                 result = generate(
                     body.question, doc_sources, [t.model_dump() for t in body.history]
                 )
+                revalidate_access(workspaceId, actor)
                 result['scope'] = connected_scope(body)
                 attach_retrieval_trace(result, body, evidence, retrieval_stats)
                 if result.get('mode') in ('ai', 'connected') and result.get('sources'):
@@ -320,6 +331,8 @@ def connected_chat_stream(
                 )
 
             for event in stream_with_heartbeats(answer_events):
+                if event['type'] in ('delta', 'complete'):
+                    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
                 if event['type'] == 'complete':
                     public_sources = (
                         connected_sources_for_payload(event['sources'], document_evidence)
@@ -396,6 +409,7 @@ def chat(workspaceId: str, body: Question, actor=Depends(user), db=Depends(datab
         else:
             detail = 'Answer generation failed. Check your AI provider configuration and server logs, then retry.'
         raise HTTPException(502, detail) from exc
+    revalidate_access(workspaceId, actor)
     # Do not return passages for documents deleted or reindexed during the provider call.
     if sources:
         current = (

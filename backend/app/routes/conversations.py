@@ -13,7 +13,11 @@ router = APIRouter()
 
 def owned_conversation(workspace_id, conversation_id, actor, db):
     workspace(workspace_id, actor, db)
-    item = db.query(Conversation).filter_by(id=conversation_id, workspace_id=workspace_id).first()
+    item = (
+        db.query(Conversation)
+        .filter_by(id=conversation_id, workspace_id=workspace_id, author_id=actor.id)
+        .first()
+    )
     if item is None:
         raise HTTPException(404, 'Conversation not found.')
     return item
@@ -34,7 +38,7 @@ def list_conversations(workspaceId: str, actor=Depends(user), db=Depends(databas
     workspace(workspaceId, actor, db)
     items = (
         db.query(Conversation)
-        .filter_by(workspace_id=workspaceId)
+        .filter_by(workspace_id=workspaceId, author_id=actor.id)
         .order_by(Conversation.updated.desc())
         .all()
     )
@@ -46,7 +50,12 @@ def create_conversation(
     workspaceId: str, body: ConversationPayload, actor=Depends(user), db=Depends(database)
 ):
     workspace(workspaceId, actor, db)
-    item = Conversation(workspace_id=workspaceId, title=body.title.strip(), messages=body.messages)
+    item = Conversation(
+        workspace_id=workspaceId,
+        author_id=actor.id,
+        title=body.title.strip(),
+        messages=body.messages,
+    )
     db.add(item)
     db.commit()
     return conversation_data(item)

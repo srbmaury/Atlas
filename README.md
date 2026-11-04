@@ -368,3 +368,46 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 - `frontend/utils/`: typed session, document, and conversation actions.
 - `frontend/app/{globals,rebuild}.css`: ordered entry points for styles in `frontend/app/styles/`; rule order is preserved for existing visual refinements.
 - `compose.yaml`: PostgreSQL, API, worker, and web services.
+
+## Organisations and access roles
+
+Open the workspace menu (your workspace name or avatar), then **Members & access**.
+Create an organisation, add existing registered Atlas accounts by email, and create
+organisation workspaces from that panel. Add members to each workspace explicitly;
+organisation membership alone does not grant access to its content. Personal
+workspaces can also grant access directly to registered accounts.
+
+| Scope | Role | Permissions |
+| --- | --- | --- |
+| Organisation | Owner | Manage organisation membership; remains the protected owner |
+| Organisation | Admin | Manage organisation members and create organisation workspaces |
+| Organisation | Member | Belong to the organisation; needs a separate workspace grant |
+| Workspace | Manager | Read and ask, manage documents and workspace members, create connections, delete workspace |
+| Workspace | Editor | Read and ask, upload/import, reindex, and delete documents |
+| Workspace | Viewer | Read documents, download originals, search permitted sources, and ask questions |
+
+Workspace creators remain protected managers. Adding or changing membership uses
+**Add or update member** with the registered account's exact email and desired role.
+Atlas does not send invitation emails. Ownership transfer, organisation deletion,
+SSO, groups, and custom roles are not implemented. A member who owns organisation
+workspaces cannot be removed until those workspaces are deleted.
+
+**Privacy boundaries:** saved conversations belong to their author, including in
+shared workspaces. Organisation administrators do not automatically gain workspace
+content access. Connector credentials are private to the connecting user by default.
+Only their owner, while a workspace manager, can explicitly share, replace, or
+remove a connection. Sharing lets every workspace member retrieve content using
+that credential; choose its provider permissions accordingly. This is not per-file
+provider ACL replication. One credential slot per provider/workspace is supported.
+
+Removing a member revokes their workspace access and unshares their credentials.
+Unsharing blocks future retrieval, but does not erase excerpts already saved in
+other members' private chats. API permissions are checked on the server, including
+legacy connector routes and OAuth callbacks; slow chat results recheck access before
+releasing answer text.
+
+Migration `0007` runs at startup. It preserves existing workspaces as personal,
+assigns existing chats and connections to their workspace owner, and keeps all
+connections private. Back up the database before upgrading. Downgrade is deliberately
+blocked because dropping access metadata could expose shared workspace data; restore
+a pre-upgrade backup if a rollback is required.

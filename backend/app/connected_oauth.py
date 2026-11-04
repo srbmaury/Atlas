@@ -16,8 +16,9 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User, Workspace
+from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
 from .gmail import actor, allowed_workspace, crypt
+from .rbac import require_connection, require_workspace
 
 router = APIRouter(prefix='/api/connected-oauth')
 PROVIDERS = {'calendar', 'onedrive', 'outlook', 'sharepoint'}
@@ -129,11 +130,12 @@ def callback(provider: str, state: str = '', code: str = ''):
         workspaceId = item.workspace_id
         verifier = item.verifier
         owner = db.get(User, item.user_id)
-        if (
-            not owner
-            or not db.query(Workspace).filter_by(id=workspaceId, owner_id=owner.id).first()
-        ):
+        if not owner:
             raise HTTPException(400, 'Workspace no longer exists.')
+        require_workspace(db, owner, workspaceId, 'manager')
+        require_connection(
+            db, owner, db.get(ExternalConnection, (workspaceId, provider)), manage=True
+        )
         db.delete(item)
         db.commit()
         payload = {
@@ -160,10 +162,15 @@ def callback(provider: str, state: str = '', code: str = ''):
         row = db.get(ExternalConnection, (workspaceId, provider))
         if row:
             row.account, row.secret = account, encrypted
+            row.connected_by, row.shared = owner.id, False
         else:
             db.add(
                 ExternalConnection(
-                    workspace_id=workspaceId, provider=provider, account=account, secret=encrypted
+                    workspace_id=workspaceId,
+                    provider=provider,
+                    account=account,
+                    secret=encrypted,
+                    connected_by=owner.id,
                 )
             )
         health = db.get(SourceHealthCheck, (workspaceId, provider))
