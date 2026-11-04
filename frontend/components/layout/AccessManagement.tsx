@@ -71,7 +71,7 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
     }, [base, kind, canManage, revision]);
 
     async function perform(action: () => Promise<unknown>, message: string) {
-        if (busy) return;
+        if (busy) return false;
         setBusy(true);
         setError('');
         setNotice('');
@@ -80,11 +80,28 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
             await onRefresh();
             setRevision((value) => value + 1);
             setNotice(message);
+            return true;
         } catch (failure) {
             setError((failure as Error).message);
+            return false;
         } finally {
             setBusy(false);
         }
+    }
+
+    async function changeSharing(connection: Sharing, shared: boolean) {
+        if (busy) return;
+        // Keep the controlled input responsive; roll back if the server rejects it.
+        setConnections((items) => items.map((item) => (item.provider === connection.provider ? { ...item, shared } : item)));
+        const saved = await perform(
+            () =>
+                api(`${base}/connection-sharing/${connection.provider}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ shared }),
+                }),
+            'Connection sharing updated.',
+        );
+        if (!saved) setConnections((items) => items.map((item) => (item.provider === connection.provider ? connection : item)));
     }
 
     return (
@@ -199,12 +216,7 @@ export function AccessManagement({ workspace, onRefresh }: { workspace?: Workspa
                                         type="checkbox"
                                         checked={connection.shared}
                                         disabled={busy || !connection.owned}
-                                        onChange={(event) =>
-                                            void perform(
-                                                () => api(`${base}/connection-sharing/${connection.provider}`, { method: 'PATCH', body: JSON.stringify({ shared: event.target.checked }) }),
-                                                'Connection sharing updated.',
-                                            )
-                                        }
+                                        onChange={(event) => void changeSharing(connection, event.target.checked)}
                                     />
                                     Share {connection.provider} with this workspace{!connection.owned && ' · managed by its owner'}
                                 </label>

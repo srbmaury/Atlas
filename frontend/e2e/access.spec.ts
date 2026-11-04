@@ -60,3 +60,14 @@ test('viewer sees role guidance and has no document or member mutation controls'
     await expect(dialog.getByRole('button', { name: 'Delete workspace Research' })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/access-viewer.png', fullPage: true });
 });
+
+test('rejected source sharing rolls back and shows the permission error', async ({ page }) => {
+    await setup(page, 'manager');
+    await page.route('**/api/workspaces/w1/connection-sharing/gmail', (route) => route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ detail: 'Only the connection owner can manage this credential.' }) }));
+    await page.getByRole('button', { name: 'Manage workspaces', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    const checkbox = dialog.getByRole('checkbox', { name: 'Share gmail with this workspace' });
+    await checkbox.click();
+    await expect(dialog.getByRole('alert')).toHaveText('Only the connection owner can manage this credential.');
+    await expect(checkbox).not.toBeChecked();
+});
