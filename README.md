@@ -4,6 +4,10 @@ Atlas is a private, workspace-based research app. Upload documents, connect read
 
 The app uses a Next.js/TypeScript frontend and a FastAPI backend. Local development uses SQLite; Docker Compose runs PostgreSQL with pgvector. You can generate answers with Ollama on your machine, OpenAI, or use source excerpts without an AI provider.
 
+## Understand Atlas in two minutes
+
+New to Atlas's team model? Start with the [organisation and workspace guide](docs/ORGANISATIONS_AND_WORKSPACES.md) for a visual explanation of membership, workspace roles, connected accounts, private conversations and how evidence is retrieved. The full technical flow diagrams are below.
+
 ## Architecture and request flows
 
 The diagrams below describe the code in this repository, rather than a proposed architecture. GitHub renders them directly with Mermaid.
