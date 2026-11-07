@@ -602,7 +602,7 @@ export function AtlasWorkspace() {
                             pendingDocuments={uploadedDocs.filter(doc => doc.status !== 'ready').map(doc => ({ id: doc.id, name: doc.name, status: doc.status }))}
                             onRemoveDocument={id => setSelected(old => old.filter(item => item !== id))}
                             uploadProgress={uploadProgress}
-                            uploadResult={uploadSummary ? (uploadStatus || 'No new documents added') : ''}
+                            uploadResult={uploadSummary ? (uploadedDocs.length ? `${uploadedDocs.map(doc => doc.name).slice(0, 2).join(', ')}${uploadedDocs.length > 2 ? ` and ${uploadedDocs.length - 2} more` : ''} · ${uploadStatus || 'Added to library'}` : (uploadStatus || 'No new documents added')) : ''}
                             onDismissUploadResult={() => setUploadSummary(null)}
                             onBrowseLibrary={() => setScopeOpen(true)}
                             onUpload={() => {
