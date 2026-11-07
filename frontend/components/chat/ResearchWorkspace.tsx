@@ -219,7 +219,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                     <div className="research-evidence-group-title"><FileText size={15}/><strong title={name}>{name}</strong><small>{passages.length} {passages.length === 1 ? 'passage' : 'passages'}</small></div>
                                     {passages.map(({source,number}) => <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
                                         <span className="research-rail-number">{number}</span>
-                                        <span className="research-rail-copy"><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\\s+/g, ' ').slice(0,110) || 'Open supporting passage'}{(source.text?.length || 0) > 110 ? '…' : ''}</span></span>
+                                        <span className="research-rail-copy"><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\s+/g, ' ').slice(0,110) || 'Open supporting passage'}{(source.text?.length || 0) > 110 ? '…' : ''}</span></span>
                                         <ArrowUpRight size={14}/>
                                     </button>)}
                                 </div>;
