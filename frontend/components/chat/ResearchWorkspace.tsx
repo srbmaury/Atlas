@@ -106,17 +106,10 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </button>
                 </div>
             </div>
-            <div className="filters">
-                <button className="filter" onClick={props.onOpenScope}>
-                    <FileText />
-                    {props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}
-                    <ChevronDown />
+            <div className="research-source-toolbar">
+                <button className="research-document-scope" type="button" onClick={props.onOpenScope}>
+                    <FileText size={15}/>{props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}<ChevronDown size={14}/>
                 </button>
-                <span className="research-mode">
-                    <i />
-                    {props.userMode === 'ai' ? 'AI research' : 'Source search'} · {props.readyCount} ready documents
-                </span>
-            </div>
             <ResearchSourceSelector
                 includeDocuments={props.includeDocuments}
                 onIncludeDocuments={props.setIncludeDocuments}
@@ -140,6 +133,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                 onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
                 onManage={props.onManageSources}
             />
+            </div>
             {props.connectedGmail && (
                 <div className="unified-gmail-scope">
                     <label>
@@ -217,11 +211,17 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
                         <div className="research-rail-heading"><BookOpen size={17}/><div><strong>Evidence</strong><span>{evidence.length ? `${evidence.length} cited passages` : 'Source references'}</span></div></div>
                         {evidence.length ? <div className="research-rail-list">
-                            {evidence.map(({source,number}) => <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
-                                <span className="research-rail-number">{number}</span>
-                                <span className="research-rail-copy"><strong>{sourceDisplayName(source)}</strong><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\s+/g,' ').slice(0,155) || 'Open the supporting passage'}{(source.text?.length || 0)>155 ? '…' : ''}</span></span>
-                                <ArrowUpRight size={14}/>
-                            </button>)}
+                            {Array.from(new Set(evidence.map(({source}) => sourceDisplayName(source)))).map(name => {
+                                const passages = evidence.filter(({source}) => sourceDisplayName(source) === name);
+                                return <div className="research-evidence-group" key={name}>
+                                    <div className="research-evidence-group-title"><FileText size={15}/><strong title={name}>{name}</strong><small>{passages.length} {passages.length === 1 ? 'passage' : 'passages'}</small></div>
+                                    {passages.map(({source,number}) => <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
+                                        <span className="research-rail-number">{number}</span>
+                                        <span className="research-rail-copy"><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\\s+/g, ' ').slice(0,110) || 'Open supporting passage'}{(source.text?.length || 0) > 110 ? '…' : ''}</span></span>
+                                        <ArrowUpRight size={14}/>
+                                    </button>)}
+                                </div>;
+                            })}
                         </div> : <div className="research-rail-empty"><p>Evidence from your answers appears here.</p><span>Choose a citation to inspect the original passage and surrounding context.</span></div>}
                     </aside>
                 </div>
