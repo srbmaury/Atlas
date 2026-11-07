@@ -1,5 +1,6 @@
 'use client';
-import { ArrowUpRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUpRight, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import type { GmailStatus } from '../../lib/types';
 import type { ConnectedSourceStatus, ResearchProvider } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -31,9 +32,26 @@ export function ResearchSourceSelector({
     onSelectAll,
     onManage,
 }: ResearchSourceSelectorProps) {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!open) return;
+        function dismiss(event: PointerEvent) { if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false); }
+        function escape(event: KeyboardEvent) { if (event.key === 'Escape') setOpen(false); }
+        document.addEventListener('pointerdown', dismiss);
+        document.addEventListener('keydown', escape);
+        return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', escape); };
+    }, [open]);
     const availableProviders: ResearchProvider[] = [...(driveStatus?.connected ? (['drive'] as const) : []), ...sourceStatuses.filter((source) => source.connected).map((source) => source.provider)];
     const allSelected = includeDocuments && (!gmailStatus?.connected || connectedGmail) && availableProviders.every((provider) => connectedProviders.includes(provider));
+    const count = Number(includeDocuments) + Number(connectedGmail && !!gmailStatus?.connected) + availableProviders.filter(provider => connectedProviders.includes(provider)).length;
+    const summary = count === 0 ? 'No sources selected' : count === 1 && includeDocuments ? 'Documents' : `${count} sources active`;
     return (
+        <div className="research-source-picker" ref={menuRef}>
+            <button type="button" className="research-source-trigger" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(value => !value)}>
+                <SlidersHorizontal size={15}/><span>Sources: {summary}</span><ChevronDown size={14}/>
+            </button>
+            {open && <div className="research-source-popover" role="dialog" aria-label="Choose search sources">
         <div className="unified-sources">
             <span className="unified-sources-label">Search sources</span>
             <button
@@ -72,9 +90,11 @@ export function ResearchSourceSelector({
                     {PROVIDER_LABELS[p]}
                 </label>
             ))}
-            <button type="button" className="unified-source-manage" onClick={onManage}>
+            <button type="button" className="unified-source-manage" onClick={() => { setOpen(false); onManage(); }}>
                 Manage connections <ArrowUpRight size={13} />
             </button>
+        </div>
+        </div>}
         </div>
     );
 }
