@@ -27,7 +27,6 @@ def test_code_search_query_preserves_explicit_repository_scope():
     assert 'user:atlas-user' not in query
 
 
-
 def test_explicit_github_url_is_parsed_and_forces_repository_scope():
     question = 'Analyse my repo https://github.com/srbmaury/Atlas'
     assert external_sources.github_repository_from_query(question) == 'srbmaury/Atlas'
