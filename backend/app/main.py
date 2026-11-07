@@ -24,8 +24,8 @@ from .retrieval import retrieve
 from .routes.access import router as access_router
 from .routes.auth import router as auth_router
 from .routes.conversations import router as conversations_router
+from .routes.deep_research import initialize_research_runs, router as deep_research_router
 from .routes.documents import router as documents_router
-from .routes.deep_research import router as deep_research_router, initialize_research_runs
 from .routes.source_health import router as source_health_router
 from .routes.workspaces import router as workspaces_router
 from .schemas import ConnectedQuestion, Question
