@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Building2, FolderOpen, LoaderCircle, LogOut, Moon, Sun, UserRound, ShieldCheck, UsersRound, Palette, PlugZap } from 'lucide-react';
+import { ArrowLeft, Building2, LoaderCircle, LogOut, Moon, Sun, UserRound, ShieldCheck, UsersRound, Palette } from 'lucide-react';
 import { api } from '../../lib/api';
 import type { User, Workspace } from '../../lib/types';
 import { useAtlasTheme } from '../../hooks/useAtlasTheme';
