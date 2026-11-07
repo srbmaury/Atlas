@@ -435,6 +435,8 @@ export function AtlasWorkspace() {
                 onNavigate={navigate}
                 chats={chats}
                 onOpenChat={(id) => void loadChat(id)}
+                onRenameChat={(item) => void renameChat(item)}
+                onDeleteChat={(item) => void deleteChat(item)}
                 onAllChats={() => {
                     navigate('chat');
                     setHistoryOpen(true);
