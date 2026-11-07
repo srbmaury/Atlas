@@ -400,7 +400,6 @@ def github_flow_layer(path):
     return 'Source reference'
 
 
-
 def github_repository_file_search(token, repository, query, limit=12):
     """Retrieve useful source files through Git Trees + Contents when code search is empty."""
     owner, name = repository.split('/', 1)
@@ -458,9 +457,7 @@ def github_repository_file_search(token, repository, query, limit=12):
     }
     query_terms = [
         term.lower()
-        for term in re.findall(
-            r'[A-Za-z_][A-Za-z0-9_]{2,}', github_query_without_repository(query)
-        )
+        for term in re.findall(r'[A-Za-z_][A-Za-z0-9_]{2,}', github_query_without_repository(query))
         if term.lower() not in GITHUB_QUERY_STOPWORDS
     ]
     priority_names = {
@@ -544,6 +541,7 @@ def github_repository_file_search(token, repository, query, limit=12):
         )
     return results
 
+
 def github_flow_search(token, query, login):
     """Build a bounded, two-hop code-reference trace from GitHub code search."""
     repository = github_repository_from_query(query)
@@ -600,7 +598,7 @@ def github_flow_search(token, query, login):
     if not terms:
         # Whole-repository analysis has no named feature; seed code discovery with imports.
         terms = ['import']
-    scope = ([f'repo:{repository}'] if repository else qualifiers)
+    scope = [f'repo:{repository}'] if repository else qualifiers
     scope = scope or ([f'user:{login}'] if login else [])
     if not scope:
         raise HTTPException(
