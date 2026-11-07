@@ -75,9 +75,9 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <span className="eyebrow">RESEARCH ASSISTANT</span>
+                    <span className="eyebrow">ASK ATLAS</span>
                     <h1 title={props.title}>{props.title}</h1>
-                    <p className="subtitle">Answers grounded in your documents, with evidence you can inspect.</p>
+                    <p className="subtitle">Answers grounded in your knowledge, with citations you can verify.</p>
                 </div>
                 <div className="actions">
                     <button className="btn" onClick={props.onToggleHistory}>
