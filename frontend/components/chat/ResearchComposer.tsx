@@ -15,6 +15,7 @@ interface ResearchComposerProps {
     hasAskSources: boolean;
     hasMessages: boolean;
     selectedDocuments: { id: string; name: string }[];
+    allDocumentsActive: boolean;
     pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
     uploadProgress: string;
@@ -22,7 +23,7 @@ interface ResearchComposerProps {
     onDismissUploadResult: () => void;
 }
 
-export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments, pendingDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult }: ResearchComposerProps) {
+export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments, allDocumentsActive, pendingDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult }: ResearchComposerProps) {
     const voice = useVoiceInput();
     const [addOpen, setAddOpen] = useState(false);
     const addRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,8 @@ export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowse
                 onSubmit();
             }}
         >
-            {(selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && <div className="composer-context" aria-label="Question context">
+            {(allDocumentsActive || selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && <div className="composer-context" aria-label="Question context">
+                {allDocumentsActive && <button type="button" className="composer-all-documents" onClick={onBrowseLibrary}><FolderOpen size={13}/> All documents <span>· Change</span></button>}
                 {selectedDocuments.length > 0 && <div className="composer-context-documents">
                     {selectedDocuments.map(doc => <span className="composer-document-chip" key={doc.id}><FileText size={13}/><span title={doc.name}>{doc.name}</span><button type="button" aria-label={`Remove ${doc.name} from question`} onClick={() => onRemoveDocument(doc.id)}>×</button></span>)}
                 </div>}
