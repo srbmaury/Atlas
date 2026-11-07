@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2 } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 type Tab = 'overview' | 'chat' | 'documents' | 'sources';
@@ -61,10 +61,10 @@ export function WorkspaceSidebar({
             <nav className="nav" aria-label="Main navigation">
                 {(
                     [
-                        { id: 'overview', label: 'Home', icon: HomeIcon },
-                        { id: 'chat', label: 'Ask Atlas', icon: Search },
+                        { id: 'overview', label: 'Overview', icon: HomeIcon },
+                        { id: 'chat', label: 'Ask Atlas', icon: MessageSquare },
                         { id: 'documents', label: 'Documents', icon: FileText },
-                        { id: 'sources', label: 'Sources', icon: FolderOpen },
+                        { id: 'sources', label: 'Connected sources', icon: FolderOpen },
                     ] as const
                 ).map((item) => (
                     <button key={item.id} className={tab === item.id ? 'active' : ''} title={item.label} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
@@ -74,7 +74,7 @@ export function WorkspaceSidebar({
                 ))}
             </nav>
             <div className="sidebar-research" aria-label="Recent conversations">
-                <div className="section-label">RECENT CHATS</div>
+                <div className="section-label">RECENT RESEARCH</div>
                 {chats.slice(0, 4).map((item) => (
                     <button key={item.id} className="workspace-stat" onClick={() => onOpenChat(item.id)} title={item.title}>
                         <MessageSquare />
@@ -86,7 +86,7 @@ export function WorkspaceSidebar({
                     <span>All conversations ({chats.length})</span>
                 </button>
             </div>
-            <div className="bottom">
+            <div className="bottom"><Link className="sidebar-settings-entry" href={`/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`}><Settings2 size={16} /><span>Account & settings</span></Link>
                 <div className="usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <span>Storage</span>
                     <strong>{storageLabel}</strong>
