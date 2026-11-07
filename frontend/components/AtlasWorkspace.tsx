@@ -584,6 +584,11 @@ export function AtlasWorkspace() {
                             query={query}
                             setQuery={setQuery}
                             canUpload={canEdit}
+                            selectedDocuments={ready.filter(doc => selected.includes(doc.id)).map(doc => ({ id: doc.id, name: doc.name }))}
+                            onRemoveDocument={id => setSelected(old => old.filter(item => item !== id))}
+                            uploadProgress={uploadProgress}
+                            uploadResult={uploadSummary ? (uploadStatus || 'No new documents added') : ''}
+                            onDismissUploadResult={() => setUploadSummary(null)}
                             onBrowseLibrary={() => setScopeOpen(true)}
                             onUpload={() => {
                                 if (canEdit) input.current?.click();
