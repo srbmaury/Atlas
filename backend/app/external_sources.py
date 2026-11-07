@@ -503,7 +503,7 @@ def github_repository_file_search(token, repository, query, limit=12):
     candidates.sort(key=lambda item: (-item[0], item[1].count('/'), item[1].lower()))
     results = []
     total_chars = 0
-    for _, path in candidates[: max(limit * 3, limit)]:
+    for _, path in candidates[: limit * 3]:
         if len(results) >= limit or total_chars >= 32_000:
             break
         content_data = http_json(
@@ -561,7 +561,6 @@ def github_flow_search(token, query, login):
         'chain',
         'end',
         'to',
-        'end',
         'the',
         'for',
         'how',
@@ -618,6 +617,7 @@ def github_flow_search(token, query, login):
             {'q': search_query, 'per_page': 8},
             accept='application/vnd.github.text-match+json',
         )
+        matched_items = []
         for item in data.get('items', []):
             repository_name = (item.get('repository') or {}).get('full_name', '')
             if repository and repository_name.casefold() != repository.casefold():
@@ -627,6 +627,7 @@ def github_flow_search(token, query, login):
             if key in seen:
                 continue
             seen.add(key)
+            matched_items.append(item)
             fragments = [
                 match.get('fragment', '').strip()
                 for match in (item.get('text_matches') or [])
@@ -650,7 +651,7 @@ def github_flow_search(token, query, login):
             )
             if len(results) >= 16:
                 break
-        return data.get('items', [])
+        return matched_items
 
     initial = collect(base_query, 'Initial feature match')
     if not initial and repository:
