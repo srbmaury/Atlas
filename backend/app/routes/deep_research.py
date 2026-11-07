@@ -9,13 +9,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
-from sqlalchemy import Column, Float, ForeignKey, JSON, String, Text
+from pydantic import Field
+from sqlalchemy import JSON, Column, Float, ForeignKey, String, Text
 
-from .api_dependencies import database, user, workspace
-from .db import Base, Session, User, engine, uid
-from .rbac import revalidate_access, workspace_permission
-from .schemas import ConnectedQuestion
+from ..api_dependencies import database, user, workspace
+from ..db import Base, Session, User, engine, uid
+from ..rbac import revalidate_access, workspace_permission
+from ..schemas import ConnectedQuestion
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/research-runs')
@@ -93,7 +93,7 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
 
 
 def _investigate(run_id, actor_id):
-    from .main import connected_chat
+    from ..main import connected_chat
     try:
         with Session() as db:
             run = db.get(ResearchRun, run_id)
@@ -158,7 +158,7 @@ def start_research(workspaceId: str, body: ResearchRequest, actor=Depends(user),
     if not body.include_documents and not body.include_gmail and not body.providers:
         raise HTTPException(422, 'Choose at least one research source.')
     if body.document_ids:
-        from .db import Document
+        from ..db import Document
         count = db.query(Document).filter(Document.workspace_id == workspaceId, Document.id.in_(body.document_ids)).count()
         if count != len(set(body.document_ids)):
             raise HTTPException(404, 'Selected document not found.')
