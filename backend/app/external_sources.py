@@ -292,7 +292,7 @@ def github_wants_code(query):
     """Recognize requests for source files and symbol implementations."""
     return bool(
         re.search(
-            r'\b(?:code|source\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
+            r'\b(?:code|source\s+code|function|class|method|implementation|implemented|definition|symbol)\b',
             query,
             re.I,
         )
