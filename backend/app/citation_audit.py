@@ -9,7 +9,18 @@ from .retrieval import tokens
 
 REFERENCE = re.compile(r'\[(\d+)\]')
 NUMBER = re.compile(r'(?<![\w])(?:\d{1,4}(?:[,.]\d{3})*(?:\.\d+)?%?)(?![\w])')
-NEGATIONS = {'not', 'never', 'no', 'without', 'neither', 'cannot', "n't"}
+NEGATION_PATTERN = re.compile(
+    r"\b(?:not|never|no|without|neither|cannot|can['’]t|won['’]t|"
+    r"don['’]t|doesn['’]t|didn['’]t|isn['’]t|aren['’]t|wasn['’]t|"
+    r"weren['’]t|shouldn['’]t|wouldn['’]t|couldn['’]t|mustn['’]t|"
+    r"[a-z]+n['’]t)\b",
+    re.I,
+)
+
+
+def has_negation(text: str) -> bool:
+    """Recognize standalone negation and contracted forms such as isn't/don't."""
+    return bool(NEGATION_PATTERN.search(text))
 
 
 def audit_citations(answer: str, sources: list[dict], *, threshold: float = 0.35) -> dict:
@@ -26,7 +37,7 @@ def audit_citations(answer: str, sources: list[dict], *, threshold: float = 0.35
         valid = [n for n in ids if 1 <= n <= len(sources)]
         claim_terms = set(tokens(claim))
         numbers = set(NUMBER.findall(claim))
-        claim_negations = bool(NEGATIONS & set(re.findall(r"\b[\w']+\b", claim.lower())))
+        claim_negations = has_negation(claim)
         cited_texts = [str(sources[n - 1].get('text', '')) for n in valid]
         overlaps = []
         evidence_numbers = set()
@@ -37,7 +48,7 @@ def audit_citations(answer: str, sources: list[dict], *, threshold: float = 0.35
                 len(claim_terms & evidence_terms) / len(claim_terms) if claim_terms else 0
             )
             evidence_numbers.update(NUMBER.findall(evidence))
-            evidence_negations = bool(NEGATIONS & set(re.findall(r"\b[\w']+\b", evidence.lower())))
+            evidence_negations = has_negation(evidence)
             negation_mismatches.append(claim_negations != evidence_negations)
         # Multiple citations should support a claim collectively, while a single
         # passage's lexical match remains independently visible in the score.
