@@ -381,35 +381,3 @@
         height: clamp(470px, calc(100dvh - 210px), 900px);
     }
 }
-
-
-/* Source passage contrast override: keep extracted content readable in dark mode. */
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-plain,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-markdown,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-plain :is(p, li, h1, h2, h3, strong, span, code),
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-markdown :is(p, li, h1, h2, h3, strong, span, code, blockquote, td, th) {
-    color: #e6e8eb !important;
-}
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-plain a,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-markdown a {
-    color: #8ab4f8 !important;
-}
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-kicker,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .document-field strong,
-:root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .caption {
-    color: #adb4be !important;
-}
-
-
-/* The cited passage is a separate card; set its surface explicitly in dark mode. */
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence {
-    background: #25282d !important;
-    color: #e6e8eb !important;
-}
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain,
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown,
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain *,
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown * {
-    color: #e6e8eb !important;
-}
