@@ -71,6 +71,8 @@ def test_repository_only_flow_does_not_leak_results_from_other_repositories(monk
     assert len(results) == 1
     assert results[0]['scope'] == 'srbmaury/Atlas'
     assert results[0]['metadata']['path'] == 'README.md'
+    assert 'import' in calls[0].split()
+    assert 'README' not in calls[0].split()
     assert all('repo:srbmaury/Atlas' in query for query in calls)
 
 
