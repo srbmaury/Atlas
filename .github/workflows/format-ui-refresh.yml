@@ -1,0 +1,34 @@
+name: Format UI refresh branch
+on:
+  push:
+    branches: [feat/settings-ui-refresh]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/settings-ui-refresh
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Format frontend
+        working-directory: frontend
+        run: npm run format
+      - name: Commit formatted code
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend
+          if ! git diff --cached --quiet; then
+            git commit -m "style: apply Prettier to UI refresh"
+            git push origin HEAD:feat/settings-ui-refresh
+          fi
