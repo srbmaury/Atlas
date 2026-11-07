@@ -73,10 +73,13 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
             run.status = status
         if stage:
             stages = list(run.stages or [])
+            reached = False
             for item in stages:
                 if item['key'] == stage:
                     item['status'] = 'completed' if status == 'completed' else 'running'
-                    break
+                    reached = True
+                elif not reached:
+                    item['status'] = 'completed'
             run.stages = stages
         if findings is not None:
             run.findings = findings
@@ -141,12 +144,6 @@ def _investigate(run_id, actor_id):
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
             return
         _save(run_id, status='completed', stage='synthesizing', findings=findings)
-        # Mark the preceding stages as completed as well.
-        with Session() as db:
-            run = db.get(ResearchRun, run_id)
-            if run and run.status == 'completed':
-                run.stages = [{**step, 'status': 'completed'} for step in run.stages]
-                db.commit()
     except Exception as exc:
         log.exception('Deep research run %s failed', run_id)
         _save(run_id, status='failed', error=str(exc)[:250])
