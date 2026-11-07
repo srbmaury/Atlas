@@ -60,7 +60,6 @@ interface ResearchWorkspaceProps {
     onBrowseLibrary: () => void;
     canUpload: boolean;
     selectedDocuments: { id: string; name: string }[];
-    allDocumentsActive: boolean;
     pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
     uploadProgress: string;
