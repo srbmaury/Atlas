@@ -583,6 +583,8 @@ export function AtlasWorkspace() {
                             endRef={chatEnd}
                             query={query}
                             setQuery={setQuery}
+                            canUpload={canEdit}
+                            onBrowseLibrary={() => setScopeOpen(true)}
                             onUpload={() => {
                                 if (canEdit) input.current?.click();
                             }}
