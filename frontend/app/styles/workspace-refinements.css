@@ -776,3 +776,15 @@
 .atlas-v3 .composer-add-menu button span {display:flex;flex-direction:column;gap:4px;}
 .atlas-v3 .composer-add-menu button strong {font-size:12px;font-weight:650;}
 .atlas-v3 .composer-add-menu button small {font-size:11px;color:var(--muted);}
+
+
+/* Attachments belong to the question: visible above its input, removable before sending. */
+.atlas-v3 .research-composer-v2 {display:flex;flex-wrap:wrap;align-items:center;}
+.atlas-v3 .research-composer-v2 .composer-context {order:-1;flex:0 0 100%;width:100%;padding:8px 10px 10px;border-bottom:1px solid var(--outline);display:flex;flex-direction:column;gap:8px;}
+.atlas-v3 .composer-context-documents {display:flex;flex-wrap:wrap;gap:6px;max-height:112px;overflow-y:auto;}
+.atlas-v3 .composer-document-chip {display:inline-flex;align-items:center;gap:6px;max-width:235px;border:1px solid var(--outline);border-radius:6px;padding:5px 7px;background:var(--pill);font-size:11px;color:var(--ink);}
+.atlas-v3 .composer-document-chip>span {white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+.atlas-v3 .composer-document-chip button,.atlas-v3 .composer-upload-status button {border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:0 2px;}
+.atlas-v3 .composer-document-chip button:hover,.atlas-v3 .composer-upload-status button:hover {color:var(--ink);}
+.atlas-v3 .composer-upload-status {display:flex;align-items:center;gap:8px;font-size:11px;line-height:1.5;color:var(--muted);}
+.atlas-v3 .composer-upload-status>span {flex:1;overflow-wrap:anywhere;}
