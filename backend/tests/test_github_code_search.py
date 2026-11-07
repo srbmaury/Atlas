@@ -91,7 +91,11 @@ def test_flow_search_follows_symbols_and_deduplicates_files(monkeypatch):
                         'path': 'frontend/hooks/useConversation.ts',
                         'html_url': 'https://github.com/atlas-user/app/blob/main/frontend/hooks/useConversation.ts',
                         'repository': {'full_name': 'atlas-user/app'},
-                        'text_matches': [{'fragment': 'export function send_question() { return api('/documents'); }'}],
+                        'text_matches': [
+                            {
+                                'fragment': "export function send_question() { return api('/documents'); }"
+                            }
+                        ],
                     },
                     {
                         'sha': 'two',
