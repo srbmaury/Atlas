@@ -541,6 +541,7 @@ export function AtlasWorkspace() {
                     )}
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
+                            onOpenSource={openAnswerSource}
                             title={title}
                             userMode={user.mode}
                             readyCount={ready.length}
