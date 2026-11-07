@@ -222,14 +222,14 @@ test('select all toggles, and calendar prompts stay scoped to calendar',async({p
   await openSourcePicker(page);
   await page.getByRole('button',{name:'Select all connected sources and documents'}).click();
   await expect(page.getByRole('button',{name:'Unselect all connected sources and documents'})).toBeVisible();
-  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint'])
-  await openSourcePicker(page);
+  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint']) {
     await expect(page.getByRole('checkbox',{name,exact:true})).toBeChecked();
+  }
   await openSourcePicker(page);
   await page.getByRole('button',{name:'Unselect all connected sources and documents'}).click();
-  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint'])
-  await openSourcePicker(page);
+  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint']) {
     await expect(page.getByRole('checkbox',{name,exact:true})).not.toBeChecked();
+  }
 
   await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Calendar'}).check();
@@ -392,7 +392,7 @@ test('audit screen captures',async({page}, testInfo)=>{
  await page.setViewportSize({width,height:900});
  for(const theme of ['light','dark']){
  await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
- for(const screen of ['Home','Documents','Connected sources','Ask Atlas']){
+ for(const screen of ['Overview','Documents','Connected sources','Ask Atlas']){
  if(await page.getByRole('button',{name:'Open menu',exact:true}).isVisible())await page.getByRole('button',{name:'Open menu',exact:true}).click();
  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:screen,exact:true}).click();
  await page.screenshot({path:testInfo.outputPath(`${process.env.AUDIT_PHASE||'after'}-${screen}-${width}-${theme}.png`),fullPage:true,animations:'disabled'});
