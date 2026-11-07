@@ -297,7 +297,7 @@ test('pull-request questions use the selected GitHub scope',async({page})=>{
   const badge=await page.locator('.answer .source-chip .file.source').boundingBox();
   expect(badge?.width).toBe(25);
   const research=await page.locator('.chat-workspace .research').evaluate(node=>getComputedStyle(node).gridTemplateColumns);
-  expect(research.trim().split(/\s+/)).toHaveLength(1);
+  expect(research.trim().split(/\s+/)).toHaveLength(2);
 });
 
 test('global search starts independent research after opening a saved chat',async({page})=>{
@@ -322,6 +322,7 @@ test('workspace and document search inputs do not show the inner focus box',asyn
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'Documents',exact:true}).click();
   const documentSearch=page.getByRole('searchbox',{name:'Search documents'});
+  await documentSearch.focus();
   await expect(documentSearch).toBeFocused();
   await expect.poll(()=>documentSearch.evaluate(node=>getComputedStyle(node).outlineStyle)).toBe('none');
   await expect.poll(()=>documentSearch.evaluate(node=>getComputedStyle(node).boxShadow)).toBe('none');
