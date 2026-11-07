@@ -60,12 +60,17 @@ def is_listing_question(question):
         word.removesuffix('s') for word in re.findall(r'\w+', question.lower())
     }
     asks_to_list = bool(
-        re.search(r'\b(?:list|show|find|get|name|search)\b', question, re.I)
+        re.search(
+            r'\b(?:list|show|find|get|name|search)\b|\b(?:tell|give)\s+me\b',
+            question,
+            re.I,
+        )
         or re.search(
             r'\b(?:what|which)\b.{0,50}\b(?:next|upcoming|active|recent|latest|newest)\b',
             question,
             re.I,
         )
+        or re.search(r'\bwhat\s+are\b.{0,50}\bmy\b', question, re.I)
     )
     record_terms = {
         'file',
