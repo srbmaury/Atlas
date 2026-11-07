@@ -14,9 +14,14 @@ interface ResearchComposerProps {
     busy: boolean;
     hasAskSources: boolean;
     hasMessages: boolean;
+    selectedDocuments: { id: string; name: string }[];
+    onRemoveDocument: (id: string) => void;
+    uploadProgress: string;
+    uploadResult: string;
+    onDismissUploadResult: () => void;
 }
 
-export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages }: ResearchComposerProps) {
+export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult }: ResearchComposerProps) {
     const voice = useVoiceInput();
     const [addOpen, setAddOpen] = useState(false);
     const addRef = useRef<HTMLDivElement>(null);
@@ -41,6 +46,13 @@ export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowse
                 onSubmit();
             }}
         >
+            {(selectedDocuments.length > 0 || uploadProgress || uploadResult) && <div className="composer-context" aria-label="Question context">
+                {selectedDocuments.length > 0 && <div className="composer-context-documents">
+                    {selectedDocuments.map(doc => <span className="composer-document-chip" key={doc.id}><FileText size={13}/><span title={doc.name}>{doc.name}</span><button type="button" aria-label={`Remove ${doc.name} from question`} onClick={() => onRemoveDocument(doc.id)}>×</button></span>)}
+                </div>}
+                {uploadProgress && <div className="composer-upload-status" role="status"><LoaderCircle size={14} className="spin"/><span>{uploadProgress}</span></div>}
+                {!uploadProgress && uploadResult && <div className="composer-upload-status" role="status"><FileText size={14}/><span>{uploadResult}</span><button type="button" aria-label="Dismiss upload status" onClick={onDismissUploadResult}>×</button></div>}
+            </div>}
             <div className="composer-add-wrap" ref={addRef}>
                 <button className="icon-button composer-add-trigger" type="button" aria-label="Add context" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen(open => !open)}>
                     <Plus />
