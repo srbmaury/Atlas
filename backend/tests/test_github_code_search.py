@@ -1,4 +1,4 @@
-'''GitHub source-code search behavior and scope regressions.'''
+"""GitHub source-code search behavior and scope regressions."""
 
 from app import external_sources
 
@@ -61,7 +61,6 @@ def test_github_code_search_returns_file_snippets_and_links(monkeypatch):
     assert calls[1][1]['q'].endswith('user:atlas-user in:file')
     assert calls[1][2] == 'application/vnd.github.text-match+json'
     assert all('secret-token' not in str(result) for result in results)
-
 
 
 def test_flow_trace_intent_and_layer_labels():

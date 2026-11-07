@@ -413,7 +413,9 @@ def github_flow_search(token, query, login):
         )
     scope = qualifiers or ([f'user:{login}'] if login else [])
     if not scope:
-        raise HTTPException(422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.')
+        raise HTTPException(
+            422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.'
+        )
     base_query = ' '.join([*terms[:8], *scope, 'in:file'])[:240]
     scope = re.findall(r'\b(?:repo|org|user):[^\s]+', base_query, re.I)
     scope_clause = ' '.join(scope) if scope else f'user:{login}'
