@@ -112,6 +112,7 @@ export function AtlasWorkspace() {
     const [uploadProgress, setUploadProgress] = useState('');
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const autoAttachedUploads = useRef<Set<string>>(new Set());
     const [uploadSummary, setUploadSummary] = useState<{ ids: string[]; duplicates: number } | null>(null);
     const [source, setSource] = useState<Source | null>(null);
     const [preview, setPreview] = useState<DocumentPreview | null>(null);
@@ -280,8 +281,11 @@ export function AtlasWorkspace() {
     // once indexing finishes. Keep the filename visible while processing.
     useEffect(() => {
         if (!uploadSummary?.ids.length) return;
-        const newlyReady = docs.filter(doc => uploadSummary.ids.includes(doc.id) && doc.status === 'ready').map(doc => doc.id);
-        if (newlyReady.length) setSelected(old => [...new Set([...old, ...newlyReady])]);
+        const newlyReady = docs.filter(doc => uploadSummary.ids.includes(doc.id) && doc.status === 'ready' && !autoAttachedUploads.current.has(doc.id)).map(doc => doc.id);
+        if (newlyReady.length) {
+            newlyReady.forEach(id => autoAttachedUploads.current.add(id));
+            setSelected(old => [...new Set([...old, ...newlyReady])]);
+        }
     }, [docs, uploadSummary]);
 
     useEffect(() => {
@@ -481,24 +485,16 @@ export function AtlasWorkspace() {
                             </button>
                         </div>
                     )}
-                    {uploadProgress && (
-                        <div className="feedback" role="status">
-                            <LoaderCircle className="spin" />
-                            <span>{uploadProgress}</span>
-                        </div>
+                    {tab !== 'chat' && uploadProgress && (
+                        <div className="feedback" role="status"><LoaderCircle className="spin" /><span>{uploadProgress}</span></div>
                     )}
-                    {uploadSummary && (
+                    {tab !== 'chat' && uploadSummary && (
                         <div className="feedback" role="status">
                             <Upload />
-                            <span>
-                                {uploadStatus || 'No files added'}{' '}
-                                <button className="text-button" onClick={() => navigate('documents')}>
-                                    View documents
-                                </button>
+                            <span>{uploadStatus || 'No files added'}{' '}
+                                <button className="text-button" onClick={() => navigate('documents')}>View documents</button>
                             </span>
-                            <button className="icon-button" aria-label="Dismiss upload status" onClick={() => setUploadSummary(null)}>
-                                <X />
-                            </button>
+                            <button className="icon-button" aria-label="Dismiss upload status" onClick={() => setUploadSummary(null)}><X /></button>
                         </div>
                     )}
                     {!workspaceId && (
