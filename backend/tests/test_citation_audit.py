@@ -68,3 +68,4 @@ def test_lexical_match_is_never_reported_as_verified_entailment():
     assert claim['requires_human_review'] is True
     assert result['semantic_entailment_verified'] is False
     assert result['claims_requiring_human_review'] == 1
+    assert result['needs_review'] == 1

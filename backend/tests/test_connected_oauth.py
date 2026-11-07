@@ -95,6 +95,7 @@ def test_oauth_rejects_ambiguous_or_untrusted_redirect_bases(monkeypatch, redire
 
 
 def test_microsoft_provider_uses_read_only_scopes(monkeypatch):
+    monkeypatch.setattr(connected_oauth, 'crypt', lambda: object())
     monkeypatch.setenv('MICROSOFT_CLIENT_ID', 'client-id')
     monkeypatch.setenv(
         'ATLAS_CONNECTED_OAUTH_REDIRECT_BASE', 'https://atlas.example.com/api/connected-oauth'
