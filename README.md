@@ -117,6 +117,19 @@ For documents-only requests, the server may use the document answer-generation p
 
 GitHub code-search questions can also ask Atlas to **trace a code flow** (for example, “trace the document upload flow”). Atlas performs a bounded first-pass code search, extracts up to three function/class symbols from returned snippets, and searches for references to those symbols. Results are labeled by a conservative path-based layer hint such as Frontend / UI, API / routing, Backend / service, or Database / persistence. This is a discovery aid, not a complete call graph: GitHub search indexing, snippets, dynamic dispatch, generated code, and cross-repository boundaries can leave gaps. Open the linked files and verify each hop before treating the trace as complete.
 
+## Deep Research (initial implementation)
+
+In **Ask Atlas**, expand **Deep Research** to launch a multi-step investigation using the currently selected document and connected-source scope. Standard depth runs two independent evidence-backed questions; Deep runs three. Each step reuses the existing citation-aware connected-chat pipeline, and the UI shows persisted stages, partial findings, history and cancellation. Runs survive page reloads. Only the run owner can retrieve or cancel them; provider permissions are checked again on read and execution.
+
+API endpoints (authenticated, workspace-scoped):
+
+- `POST /api/workspaces/{workspaceId}/research-runs` — create a run using the connected-chat source fields plus `depth`.
+- `GET /api/workspaces/{workspaceId}/research-runs` — list your 20 most recent runs.
+- `GET /api/workspaces/{workspaceId}/research-runs/{runId}` — fetch current stages and findings.
+- `POST /api/workspaces/{workspaceId}/research-runs/{runId}/cancel` — request cancellation.
+
+**MVP limitations:** Execution uses a bounded in-process thread pool and polling rather than a durable distributed queue or event stream. An API restart marks unfinished runs as interrupted; cancellation takes effect between source searches and cannot terminate a provider request already in flight. The first release performs independent searches and a basic citation-presence check, **not** semantic contradiction detection or a single globally synthesized report. Run records currently use an additive SQLAlchemy table initializer; a versioned Alembic migration, worker leases, durable retries and event replay are required before multi-replica production rollout. Results contain source excerpts and must follow workspace retention policies.
+
 ## Get started locally
 
 ### Requirements
