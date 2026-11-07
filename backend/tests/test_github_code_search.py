@@ -27,6 +27,53 @@ def test_code_search_query_preserves_explicit_repository_scope():
     assert 'user:atlas-user' not in query
 
 
+
+def test_explicit_github_url_is_parsed_and_forces_repository_scope():
+    question = 'Analyse my repo https://github.com/srbmaury/Atlas'
+    assert external_sources.github_repository_from_query(question) == 'srbmaury/Atlas'
+    assert external_sources.github_wants_code(question)
+    assert external_sources.github_wants_flow(question)
+    query = external_sources.github_code_search_query(question, 'connected-user')
+    assert 'repo:srbmaury/Atlas' in query
+    assert 'user:connected-user' not in query
+
+
+def test_repository_only_flow_does_not_leak_results_from_other_repositories(monkeypatch):
+    calls = []
+
+    def fake_http(url, token, provider, params=None, method='GET', accept='application/json'):
+        calls.append(params['q'])
+        if url.endswith('/user'):
+            return {'login': 'connected-user'}
+        return {
+            'items': [
+                {
+                    'sha': 'wrong',
+                    'path': 'README.md',
+                    'html_url': 'https://github.com/srbmaury/srbmaury/blob/main/README.md',
+                    'repository': {'full_name': 'srbmaury/srbmaury'},
+                    'text_matches': [{'fragment': 'wrong repository'}],
+                },
+                {
+                    'sha': 'right',
+                    'path': 'README.md',
+                    'html_url': 'https://github.com/srbmaury/Atlas/blob/main/README.md',
+                    'repository': {'full_name': 'srbmaury/Atlas'},
+                    'text_matches': [{'fragment': 'Atlas repository'}],
+                },
+            ]
+        }
+
+    monkeypatch.setattr(external_sources, 'http_json', fake_http)
+    results = external_sources.source_search(
+        'github', 'secret-token', 'Analyse my repo https://github.com/srbmaury/Atlas'
+    )
+    assert len(results) == 1
+    assert results[0]['scope'] == 'srbmaury/Atlas'
+    assert results[0]['metadata']['path'] == 'README.md'
+    assert all('repo:srbmaury/Atlas' in query for query in calls)
+
+
 def test_github_code_search_returns_file_snippets_and_links(monkeypatch):
     calls = []
 
