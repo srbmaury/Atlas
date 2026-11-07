@@ -788,3 +788,6 @@
 .atlas-v3 .composer-document-chip button:hover,.atlas-v3 .composer-upload-status button:hover {color:var(--ink);}
 .atlas-v3 .composer-upload-status {display:flex;align-items:center;gap:8px;font-size:11px;line-height:1.5;color:var(--muted);}
 .atlas-v3 .composer-upload-status>span {flex:1;overflow-wrap:anywhere;}
+
+.atlas-v3 .composer-document-pending {border-style:dashed;opacity:.8;}
+.atlas-v3 .composer-document-pending small {flex-shrink:0;font-size:10px;color:var(--muted);}
