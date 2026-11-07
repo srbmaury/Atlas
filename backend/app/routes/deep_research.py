@@ -4,6 +4,7 @@ The first release deliberately reuses the existing cited connected-chat pipeline
 for each independent research question. It does not claim autonomous verification
 or invent a global confidence score.
 """
+
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -27,7 +28,9 @@ TERMINAL = ('completed', 'failed', 'cancelled')
 class ResearchRun(Base):
     __tablename__ = 'research_runs'
     id = Column(String, primary_key=True, default=uid)
-    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True)
+    workspace_id = Column(
+        String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     owner_id = Column(String, ForeignKey('users.id'), nullable=False)
     question = Column(Text, nullable=False)
     scope = Column(JSON, nullable=False)
@@ -49,7 +52,9 @@ def initialize_research_runs():
     Base.metadata.create_all(bind=engine, tables=[ResearchRun.__table__])
     # Threads cannot survive process restarts; report interrupted work honestly.
     with Session() as db:
-        for run in db.query(ResearchRun).filter(ResearchRun.status.in_(['queued', 'running'])).all():
+        for run in (
+            db.query(ResearchRun).filter(ResearchRun.status.in_(['queued', 'running'])).all()
+        ):
             run.status = 'failed'
             run.error = 'Research was interrupted by a server restart. Start a new investigation.'
             run.updated = time.time()
@@ -58,9 +63,14 @@ def initialize_research_runs():
 
 def public_run(run):
     return {
-        'id': run.id, 'question': run.question, 'status': run.status,
-        'stages': run.stages or [], 'findings': run.findings or [],
-        'error': run.error, 'created': run.created, 'updated': run.updated,
+        'id': run.id,
+        'question': run.question,
+        'status': run.status,
+        'stages': run.stages or [],
+        'findings': run.findings or [],
+        'error': run.error,
+        'created': run.created,
+        'updated': run.updated,
     }
 
 
@@ -84,7 +94,10 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
         if findings is not None:
             run.findings = findings
         if status == 'failed':
-            run.stages = [{**item, 'status': 'failed' if item['status'] == 'running' else item['status']} for item in run.stages]
+            run.stages = [
+                {**item, 'status': 'failed' if item['status'] == 'running' else item['status']}
+                for item in run.stages
+            ]
         if error is not None:
             run.error = error
         run.updated = time.time()
@@ -94,6 +107,7 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
 
 def _investigate(run_id, actor_id):
     from ..main import connected_chat
+
     try:
         with Session() as db:
             run = db.get(ResearchRun, run_id)
@@ -112,10 +126,18 @@ def _investigate(run_id, actor_id):
         # the selected sources and uses the existing citation validation.
         questions = [
             ('Key findings', question),
-            ('Supporting and missing evidence', 'What evidence supports or limits the following question? ' + question),
+            (
+                'Supporting and missing evidence',
+                'What evidence supports or limits the following question? ' + question,
+            ),
         ]
         if scope.get('depth') == 'deep':
-            questions.append(('Alternative explanations', 'What alternative explanations or unresolved questions exist for: ' + question))
+            questions.append(
+                (
+                    'Alternative explanations',
+                    'What alternative explanations or unresolved questions exist for: ' + question,
+                )
+            )
         if not _save(run_id, status='running', stage='retrieving'):
             return
         findings = []
@@ -128,7 +150,12 @@ def _investigate(run_id, actor_id):
                 if not actor:
                     raise ValueError('Research owner is no longer available.')
                 workspace(workspace_id, actor, db)
-                revalidate_access(workspace_id, actor, set(scope.get('providers', [])) | ({'gmail'} if scope.get('include_gmail') else set()))
+                revalidate_access(
+                    workspace_id,
+                    actor,
+                    set(scope.get('providers', []))
+                    | ({'gmail'} if scope.get('include_gmail') else set()),
+                )
                 body = ConnectedQuestion(**{**scope, 'question': subquestion})
                 result = connected_chat(workspace_id, body, None, actor=actor, db=db)
                 # Results remain scoped to this workspace and are re-authorized
@@ -142,7 +169,9 @@ def _investigate(run_id, actor_id):
         # detection is a separate roadmap item, not represented as completed.
         for finding in findings:
             result = finding['result']
-            finding['verified'] = bool(result.get('sources')) and result.get('mode') != 'citation_check_failed'
+            finding['verified'] = (
+                bool(result.get('sources')) and result.get('mode') != 'citation_check_failed'
+            )
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
             return
         _save(run_id, status='completed', stage='synthesizing', findings=findings)
@@ -152,23 +181,44 @@ def _investigate(run_id, actor_id):
 
 
 @router.post('', dependencies=[Depends(workspace_permission('viewer'))])
-def start_research(workspaceId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)):
+def start_research(
+    workspaceId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)
+):
     workspace(workspaceId, actor, db)
-    revalidate_access(workspaceId, actor, set(body.providers) | ({'gmail'} if body.include_gmail else set()))
+    revalidate_access(
+        workspaceId, actor, set(body.providers) | ({'gmail'} if body.include_gmail else set())
+    )
     if not body.include_documents and not body.include_gmail and not body.providers:
         raise HTTPException(422, 'Choose at least one research source.')
     if body.document_ids:
         from ..db import Document
-        count = db.query(Document).filter(Document.workspace_id == workspaceId, Document.id.in_(body.document_ids)).count()
+
+        count = (
+            db.query(Document)
+            .filter(Document.workspace_id == workspaceId, Document.id.in_(body.document_ids))
+            .count()
+        )
         if count != len(set(body.document_ids)):
             raise HTTPException(404, 'Selected document not found.')
-    active = db.query(ResearchRun).filter(ResearchRun.workspace_id == workspaceId, ResearchRun.status.in_(['queued', 'running'])).count()
+    active = (
+        db.query(ResearchRun)
+        .filter(
+            ResearchRun.workspace_id == workspaceId, ResearchRun.status.in_(['queued', 'running'])
+        )
+        .count()
+    )
     if active >= 2:
         raise HTTPException(429, 'Two investigations are already running in this workspace.')
     run = ResearchRun(
-        workspace_id=workspaceId, owner_id=actor.id, question=body.question.strip(),
-        scope=body.model_dump(exclude={'history'}), status='queued',
-        stages=[{'key': key, 'label': key.replace('_', ' ').title(), 'status': 'queued'} for key in STAGES],
+        workspace_id=workspaceId,
+        owner_id=actor.id,
+        question=body.question.strip(),
+        scope=body.model_dump(exclude={'history'}),
+        status='queued',
+        stages=[
+            {'key': key, 'label': key.replace('_', ' ').title(), 'status': 'queued'}
+            for key in STAGES
+        ],
         findings=[],
     )
     db.add(run)
@@ -185,14 +235,24 @@ def _authorized_run(workspace_id, run_id, actor, db):
     if run.owner_id != actor.id:
         raise HTTPException(403, 'Only the research owner can access this investigation.')
     scope = run.scope or {}
-    revalidate_access(workspace_id, actor, set(scope.get('providers', [])) | ({'gmail'} if scope.get('include_gmail') else set()))
+    revalidate_access(
+        workspace_id,
+        actor,
+        set(scope.get('providers', [])) | ({'gmail'} if scope.get('include_gmail') else set()),
+    )
     return run
 
 
 @router.get('', dependencies=[Depends(workspace_permission('viewer'))])
 def list_research(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
-    runs = db.query(ResearchRun).filter_by(workspace_id=workspaceId, owner_id=actor.id).order_by(ResearchRun.created.desc()).limit(20).all()
+    runs = (
+        db.query(ResearchRun)
+        .filter_by(workspace_id=workspaceId, owner_id=actor.id)
+        .order_by(ResearchRun.created.desc())
+        .limit(20)
+        .all()
+    )
     result = []
     for run in runs:
         try:
@@ -213,7 +273,10 @@ def cancel_research(workspaceId: str, runId: str, actor=Depends(user), db=Depend
     run = _authorized_run(workspaceId, runId, actor, db)
     if run.status not in TERMINAL:
         run.status = 'cancelled'
-        run.stages = [{**item, 'status': 'cancelled' if item['status'] == 'running' else item['status']} for item in run.stages]
+        run.stages = [
+            {**item, 'status': 'cancelled' if item['status'] == 'running' else item['status']}
+            for item in run.stages
+        ]
         run.updated = time.time()
         db.commit()
     return public_run(run)
