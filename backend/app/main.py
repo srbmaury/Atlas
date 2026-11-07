@@ -25,6 +25,7 @@ from .routes.access import router as access_router
 from .routes.auth import router as auth_router
 from .routes.conversations import router as conversations_router
 from .routes.documents import router as documents_router
+from .routes.deep_research import router as deep_research_router, initialize_research_runs
 from .routes.source_health import router as source_health_router
 from .routes.workspaces import router as workspaces_router
 from .schemas import ConnectedQuestion, Question
@@ -35,6 +36,7 @@ from .worker import loop
 @asynccontextmanager
 async def lifespan(app):
     init_db()
+    initialize_research_runs()
     (DATA / 'files').mkdir(exist_ok=True)
     stop = threading.Event()
     thread = None
@@ -61,6 +63,7 @@ app.include_router(connected_oauth_router)
 app.include_router(auth_router)
 app.include_router(conversations_router)
 app.include_router(documents_router)
+app.include_router(deep_research_router)
 app.include_router(workspaces_router)
 app.include_router(source_health_router)
 log = logging.getLogger('atlas.requests')
