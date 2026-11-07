@@ -364,7 +364,7 @@ def github_code_search_query(query, login):
         )
     # A repository-only analysis still needs a search term for GitHub's code API.
     if not terms:
-        terms = ['README']
+        terms = ['import']
     return ' '.join([*terms[:9], *scope, 'in:file'])[:240]
 
 
@@ -452,7 +452,7 @@ def github_flow_search(token, query, login):
         if word.lower() not in flow_stopwords and ':' not in word
     ]
     if not terms:
-        # Whole-repository analysis has no named feature; seed discovery from README.
+        # Whole-repository analysis has no named feature; seed discovery from common source imports.
         terms = ['README']
     scope = ([f'repo:{repository}'] if repository else qualifiers)
     scope = scope or ([f'user:{login}'] if login else [])
