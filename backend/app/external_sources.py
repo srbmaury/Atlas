@@ -288,27 +288,55 @@ def github_repository_query(query, login):
     return ' '.join([owner, *terms[:8]]).strip()[:180]
 
 
-def github_wants_code(query):
-    """Recognize requests for source files and symbol implementations."""
-    return bool(
-        re.search(
-            r'\b(?:code|source\s+code|function|class|method|implementation|implemented|definition|symbol)\b',
-            query,
-            re.I,
-        )
+def github_repository_from_query(query):
+    """Extract an explicit repository from a GitHub URL or repo: qualifier."""
+    match = re.search(
+        r'(?:https?://)?(?:www\\.)?github\\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)',
+        query,
+        re.I,
     )
+    if match:
+        return f'{match.group(1)}/{match.group(2).removesuffix(".git")}'
+    match = re.search(r'\\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', query, re.I)
+    return match.group(1).removesuffix('.git') if match else None
+
+
+def github_query_without_repository(query):
+    """Remove URL/qualifier syntax before extracting natural-language search terms."""
+    query = re.sub(
+        r'https?://(?:www\\.)?github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[^\\s]*)?',
+        ' ',
+        query,
+        flags=re.I,
+    )
+    return re.sub(r'\\brepo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', ' ', query, flags=re.I)
+
+
+def github_wants_code(query):
+    """Recognize code requests, including analysis of an explicitly linked repository."""
+    code_request = re.search(
+        r'\\b(?:code|source\\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
+        query,
+        re.I,
+    )
+    repository_analysis = github_repository_from_query(query) and re.search(
+        r'\\b(?:analy[sz]e|review|audit|understand|explain|map)\\b', query, re.I
+    )
+    return bool(code_request or repository_analysis)
 
 
 def github_code_search_query(query, login):
     """Build a bounded GitHub code-search query scoped to the connected account."""
+    repository = github_repository_from_query(query)
+    clean_query = github_query_without_repository(query)
     qualifiers = re.findall(
-        r'\b(?:repo|org|user|language|extension|path|filename|in):[^\s]+',
-        query,
+        r'\b(?:org|user|language|extension|path|filename|in):[^\s]+',
+        clean_query,
         re.I,
     )
     terms = [
         word
-        for word in provider_query_terms(query)
+        for word in provider_query_terms(clean_query)
         if word.lower() not in GITHUB_QUERY_STOPWORDS
         and word.lower()
         not in {
@@ -328,23 +356,29 @@ def github_code_search_query(query, login):
     ]
     if not terms:
         raise HTTPException(422, 'Add a function, class, identifier, or topic to search in code.')
-    scope = qualifiers or ([f'user:{login}'] if login else [])
+    scope = ([f'repo:{repository}'] if repository else qualifiers)
+    scope = scope or ([f'user:{login}'] if login else [])
     if not scope:
         raise HTTPException(
             422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.'
         )
+    # A repository-only analysis still needs a search term for GitHub's code API.
+    if not terms:
+        terms = ['README']
     return ' '.join([*terms[:9], *scope, 'in:file'])[:240]
 
 
 def github_wants_flow(query):
-    """Recognize requests to trace a feature across application layers."""
-    return bool(
-        re.search(
-            r'\b(?:trace|tracing|call\s+chain|code\s+flow|request\s+flow|end[- ]to[- ]end\s+flow)\b',
-            query,
-            re.I,
-        )
+    """Recognize flow tracing and explicit whole-repository analysis requests."""
+    flow_request = re.search(
+        r'\\b(?:trace|tracing|call\\s+chain|code\\s+flow|request\\s+flow|end[- ]to[- ]end\\s+flow)\\b',
+        query,
+        re.I,
     )
+    repository_analysis = github_repository_from_query(query) and re.search(
+        r'\\b(?:analy[sz]e|review|audit|map)\\b', query, re.I
+    )
+    return bool(flow_request or repository_analysis)
 
 
 def github_flow_layer(path):
@@ -366,9 +400,11 @@ def github_flow_layer(path):
 
 def github_flow_search(token, query, login):
     """Build a bounded, two-hop code-reference trace from GitHub code search."""
+    repository = github_repository_from_query(query)
+    clean_query = github_query_without_repository(query)
     qualifiers = re.findall(
-        r'\b(?:repo|org|user|language|extension|path|filename):[^\s]+',
-        query,
+        r'\b(?:org|user|language|extension|path|filename):[^\s]+',
+        clean_query,
         re.I,
     )
     flow_stopwords = {
@@ -404,14 +440,14 @@ def github_flow_search(token, query, login):
     }
     terms = [
         word
-        for word in re.findall(r'[A-Za-z0-9_.$-]{2,}', query)
+        for word in re.findall(r'[A-Za-z0-9_.$-]{2,}', clean_query)
         if word.lower() not in flow_stopwords and ':' not in word
     ]
     if not terms:
-        raise HTTPException(
-            422, 'Name the feature, endpoint, or symbol whose flow you want to trace.'
-        )
-    scope = qualifiers or ([f'user:{login}'] if login else [])
+        # Whole-repository analysis has no named feature; seed discovery from README.
+        terms = ['README']
+    scope = ([f'repo:{repository}'] if repository else qualifiers)
+    scope = scope or ([f'user:{login}'] if login else [])
     if not scope:
         raise HTTPException(
             422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.'
@@ -431,9 +467,11 @@ def github_flow_search(token, query, login):
             accept='application/vnd.github.text-match+json',
         )
         for item in data.get('items', []):
-            repository = (item.get('repository') or {}).get('full_name', '')
+            repository_name = (item.get('repository') or {}).get('full_name', '')
+            if repository and repository_name.casefold() != repository.casefold():
+                continue
             path = item.get('path') or item.get('name') or 'source file'
-            key = (repository.lower(), path.lower())
+            key = (repository_name.lower(), path.lower())
             if key in seen:
                 continue
             seen.add(key)
@@ -675,12 +713,15 @@ def source_search(provider, token, query):
                 accept='application/vnd.github.text-match+json',
             )
             results = []
+            requested_repository = github_repository_from_query(query)
             for item in data.get('items', []):
+                repository = (item.get('repository') or {}).get('full_name', '')
+                if requested_repository and repository.casefold() != requested_repository.casefold():
+                    continue
                 matches = item.get('text_matches') or []
                 fragments = [
                     match.get('fragment', '').strip() for match in matches if match.get('fragment')
                 ]
-                repository = (item.get('repository') or {}).get('full_name', '')
                 path = item.get('path') or item.get('name') or 'source file'
                 results.append(
                     {
@@ -690,6 +731,9 @@ def source_search(provider, token, query):
                         'excerpt': '\n…\n'.join(fragments)[:8000]
                         or f'Matching source file: {path}',
                         'url': item.get('html_url'),
+                        'owner': repository.split('/', 1)[0] if '/' in repository else None,
+                        'scope': repository or None,
+                        'metadata': {'repository': repository, 'path': path},
                     }
                 )
             return results
