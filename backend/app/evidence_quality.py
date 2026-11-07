@@ -61,7 +61,7 @@ def is_listing_question(question):
     }
     asks_to_list = bool(
         re.search(
-            r'\b(?:list|show|find|get|name|search)\b|\b(?:tell|give)\s+me\b',
+            r'\b(?:list|show|find|get|name|search)\b|\b(?:tell|give)\s+me\s+(?:\d+|my|our|the names of)\b',
             question,
             re.I,
         )
