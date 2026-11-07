@@ -327,6 +327,7 @@
     background: #1d4ed8;
 }
 :root[data-theme='dark'] .atlas-v3 {
+    --evidence: #25282d;
     --canvas: var(--bg);
     --wash: var(--sidebar);
     --ink: var(--text);
