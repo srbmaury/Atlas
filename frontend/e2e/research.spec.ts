@@ -349,7 +349,7 @@ test('Home keeps the primary research entry accessible on mobile',async({page})=
  await page.setViewportSize({width:390,height:844});
  await page.getByRole('button',{name:'Open menu',exact:true}).click();
  await page.getByRole('button',{name:'Overview',exact:true}).click();
- await expect(page.getByRole('heading',{name:/What would you like/})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Ask anything across your knowledge'})).toBeVisible();
  await expect(page.getByRole('textbox',{name:'Ask Atlas'})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth)).toBe(false);
 });
