@@ -83,6 +83,8 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
             run.stages = stages
         if findings is not None:
             run.findings = findings
+        if status == 'failed':
+            run.stages = [{**item, 'status': 'failed' if item['status'] == 'running' else item['status']} for item in run.stages]
         if error is not None:
             run.error = error
         run.updated = time.time()
@@ -211,6 +213,7 @@ def cancel_research(workspaceId: str, runId: str, actor=Depends(user), db=Depend
     run = _authorized_run(workspaceId, runId, actor, db)
     if run.status not in TERMINAL:
         run.status = 'cancelled'
+        run.stages = [{**item, 'status': 'cancelled' if item['status'] == 'running' else item['status']} for item in run.stages]
         run.updated = time.time()
         db.commit()
     return public_run(run)
