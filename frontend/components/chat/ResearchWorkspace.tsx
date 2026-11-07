@@ -1,9 +1,10 @@
 'use client';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus } from 'lucide-react';
-import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider } from '../../lib/types';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen } from 'lucide-react';
+import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
+import { visibleEvidence, sourceDisplayName, sourceLocation } from '../../lib/evidence';
 import { prompts } from '../../utils/utils';
 import { ConversationHistory } from './ConversationHistory';
 import { ConversationTranscript } from './ConversationTranscript';
@@ -14,6 +15,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     title: string;
+    onOpenSource: (source: Source) => void;
     userMode: string;
     readyCount: number;
     includeDocuments: boolean;
@@ -60,6 +62,8 @@ interface ResearchWorkspaceProps {
 }
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
+    const latestAnswer = [...props.messages].reverse().find(message => message.role !== 'user' && message.result)?.result;
+    const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
     const allSelected =
         props.includeDocuments &&
         (!props.gmailStatus?.connected || props.connectedGmail) &&
@@ -194,6 +198,16 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             {props.messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
                         </p>
                     </div>
+                    <aside className="research-evidence-rail" aria-label="Supporting evidence">
+                        <div className="research-rail-heading"><BookOpen size={17}/><div><strong>Evidence</strong><span>{evidence.length ? `${evidence.length} cited passages` : 'Source references'}</span></div></div>
+                        {evidence.length ? <div className="research-rail-list">
+                            {evidence.map(({source,number}) => <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
+                                <span className="research-rail-number">{number}</span>
+                                <span className="research-rail-copy"><strong>{sourceDisplayName(source)}</strong><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\s+/g,' ').slice(0,155) || 'Open the supporting passage'}{(source.text?.length || 0)>155 ? '…' : ''}</span></span>
+                                <ArrowUpRight size={14}/>
+                            </button>)}
+                        </div> : <div className="research-rail-empty"><p>Evidence from your answers appears here.</p><span>Choose a citation to inspect the original passage and surrounding context.</span></div>}
+                    </aside>
                 </div>
             </div>
         </section>
