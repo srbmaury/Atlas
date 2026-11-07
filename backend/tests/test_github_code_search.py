@@ -42,9 +42,9 @@ def test_repository_only_flow_does_not_leak_results_from_other_repositories(monk
     calls = []
 
     def fake_http(url, token, provider, params=None, method='GET', accept='application/json'):
-        calls.append(params['q'])
         if url.endswith('/user'):
             return {'login': 'connected-user'}
+        calls.append(params['q'])
         return {
             'items': [
                 {
