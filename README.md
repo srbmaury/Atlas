@@ -443,7 +443,7 @@ connections private. Back up the database before upgrading. Downgrade is deliber
 blocked because dropping access metadata could expose shared workspace data; restore
 a pre-upgrade backup if a rollback is required.
 
- 
+
 ## Security and production readiness
 
 See [SECURITY.md](SECURITY.md) for implemented safeguards and the explicit
