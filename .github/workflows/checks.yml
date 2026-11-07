@@ -17,6 +17,8 @@ jobs:
               run: |
                   pip install -r backend/requirements.lock
                   pip check
+            - name: Show test formatting diff
+              run: ruff format --diff backend/tests/test_github_code_search.py
             - name: Check Python style
               run: |
                   ruff check backend evals ops load_tests
