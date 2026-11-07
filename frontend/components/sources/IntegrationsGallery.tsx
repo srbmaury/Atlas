@@ -16,8 +16,8 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
         <>
             <div className="integration-overview">
                 <div>
-                    <h2>Your integrations</h2>
-                    <p>Choose a service to connect or manage its access.</p>
+                    <h2>Connected sources</h2>
+                    <p>Connect the tools your team uses, and inspect connection health and access.</p>
                 </div>
                 <span>{[gmailStatus?.connected, driveStatus?.connected, ...sourceStatuses.map((x) => x.connected)].filter(Boolean).length} connected</span>
             </div>

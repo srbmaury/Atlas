@@ -28,9 +28,9 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
                     <span className="welcome-mark">
                         <AtlasMark />
                     </span>
-                    <span className="eyebrow">ASK YOUR KNOWLEDGE</span>
-                    <h2>Ask across your knowledge.</h2>
-                    <p>{readyCount ? 'Find a specific detail, compare documents, or follow an idea back to its source.' : 'Add your first documents to explore them with Atlas.'}</p>
+                    <span className="eyebrow">EVIDENCE-BASED RESEARCH</span>
+                    <h2>Find the answer. Check the source.</h2>
+                    <p>{readyCount ? 'Explore a topic, compare sources, or trace a claim back to the original passage.' : 'Add your first documents to explore them with Atlas.'}</p>
                     {!readyCount ? (
                         uploadButton
                     ) : (

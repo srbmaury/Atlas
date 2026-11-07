@@ -1,6 +1,6 @@
 'use client';
 import { type ReactNode } from 'react';
-import { Search, Upload } from 'lucide-react';
+import { Search, Upload, FileText, CheckCircle2, HardDrive } from 'lucide-react';
 
 interface DocumentsViewProps {
     canEdit?: boolean;
@@ -46,21 +46,24 @@ export function DocumentsView({
             </div>
             <div className="library-intro">
                 <div>
-                    <span className="section-kicker">YOUR KNOWLEDGE LIBRARY</span>
+                    <span className="section-kicker">WORKSPACE / DOCUMENTS</span>
                     <h1>Documents</h1>
-                    <p>Every file you add becomes part of the answers Atlas can explain and reference.</p>
+                    <p>Search, inspect, and manage the files behind your research.</p>
                 </div>
                 {uploadButton}
             </div>
             {webImport}
-            <div className="library-stat-strip">
+            <div className="library-stat-strip library-metrics">
                 <span>
+                    <FileText size={17} />
                     <strong>{totalDocuments}</strong> Documents
                 </span>
                 <span>
+                    <CheckCircle2 size={17} />
                     <strong>{readyDocuments}</strong> Ready to search
                 </span>
                 <span>
+                    <HardDrive size={17} />
                     <strong>{storageLabel}</strong> Storage used
                 </span>
             </div>
@@ -75,7 +78,7 @@ export function DocumentsView({
                 <div className="library-search-row">
                     <label>
                         <Search size={17} />
-                        <input type="search" autoFocus aria-label="Search documents" placeholder="Search your documents…" value={filter} onChange={(e) => onFilter(e.target.value)} />
+                        <input type="search" aria-label="Search documents" placeholder="Search your documents…" value={filter} onChange={(e) => onFilter(e.target.value)} />
                     </label>
                 </div>
                 {documentTable}

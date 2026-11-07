@@ -68,8 +68,8 @@ export function HomeView({
         <section className="atlas-home">
             <div className="home-hero home-hero-focused">
                 <div className="home-hero-copy">
-                    <h1>What would you like to explore?</h1>
-                    <p>Search your documents and connected sources.</p>
+                    <h1>Ask anything across your knowledge</h1>
+                    <p>Find answers, compare documents, and inspect evidence from connected sources.</p>
                 </div>
             </div>
             <div className="home-prompt-panel">
@@ -86,7 +86,7 @@ export function HomeView({
                 >
                     <textarea
                         aria-label="Ask Atlas"
-                        placeholder="What would you like to understand?"
+                        placeholder="Ask a question about your workspace…"
                         value={query}
                         maxLength={4000}
                         onChange={(e) => onQueryChange(e.target.value)}
@@ -133,7 +133,7 @@ export function HomeView({
             </div>
             <div className="home-section-header">
                 <div>
-                    <h2>Recent work</h2>
+                    <h2>Your workspace</h2>
                 </div>
                 <button className="text-action" onClick={onOpenSources}>
                     Connected sources <ArrowUpRight size={15} />

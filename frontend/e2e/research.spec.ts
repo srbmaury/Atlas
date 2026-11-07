@@ -53,8 +53,16 @@ test.beforeEach(async({page})=>{
   await expect(page.getByRole('navigation',{name:'Main navigation'})).toBeVisible();
 });
 
+// Source filters are intentionally hidden until the compact picker is opened.
+// Keep test assertions scoped to the open popover rather than exposing every
+// integration in the main toolbar.
+async function openSourcePicker(page: import('@playwright/test').Page) {
+  const trigger = page.getByRole('button', {name:/Sources:/});
+  if (await trigger.getAttribute('aria-expanded') !== 'true') await trigger.click();
+}
+
 test('Home question begins an independent conversation',async({page})=>{
-  await page.getByRole('button',{name:'Home',exact:true}).click();
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.getByRole('textbox',{name:'Ask Atlas'}).fill('Fresh question from home');
   await page.getByRole('button',{name:'Ask Atlas',exact:true}).last().click();
   await expect(page.getByText('Fresh question from home').first()).toBeVisible();
@@ -73,7 +81,7 @@ test('composer remains in view after long response',async({page})=>{
 });
 
 test('Gmail replaces sources gallery without stacking beneath it',async({page})=>{
-  await page.getByRole('button',{name:'Sources',exact:true}).click();
+  await page.getByRole('button',{name:'Connected sources',exact:true}).click();
   await page.locator('.integration-tile').filter({hasText:'Gmail'}).click();
   await expect(page.getByRole('heading',{name:'Gmail',exact:true})).toBeVisible();
   await expect(page.locator('.integrations-grid')).toHaveCount(0);
@@ -85,13 +93,13 @@ test('All conversations opens the saved history panel',async({page})=>{
   await page.getByRole('button',{name:/All conversations/}).click();
   await expect(page.locator('.chat-history')).toBeVisible();
   await expect(page.locator('.chat-history-open')).toHaveText('Earlier conversation');
-  await page.getByRole('button',{name:'Home',exact:true}).click();
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.getByRole('button',{name:'Open conversations',exact:true}).click();
   await expect(page.locator('.chat-history')).toBeVisible();
 });
 
 test('connection dialog traps focus and dismisses with Escape',async({page})=>{
-  await page.getByRole('button',{name:'Sources',exact:true}).click();
+  await page.getByRole('button',{name:'Connected sources',exact:true}).click();
   await page.locator('.integration-tile').filter({hasText:'GitHub'}).click();
   const dialog=page.getByRole('dialog',{name:'Manage source connection'});
   await expect(dialog).toBeVisible();
@@ -101,16 +109,22 @@ test('connection dialog traps focus and dismisses with Escape',async({page})=>{
 });
 
 test('source-only questions can exclude documents and restore scope from chat history',async({page})=>{
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('List three open pull requests from GitHub');
   await page.getByRole('button',{name:'Send question'}).click();
   await expect(page.locator('.answer-head').last()).toContainText('GitHub');
   await expect(page.locator('.answer-head').last()).not.toContainText('Documents');
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).check();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).uncheck();
   await page.getByRole('button',{name:'List three open pull requests from GitHub',exact:true}).click();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Documents'})).not.toBeChecked();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'GitHub'})).toBeChecked();
 });
 
@@ -131,8 +145,11 @@ test('single and multiple selected providers are sent with the prompt',async({pa
 
   await page.reload();
   await expect(page.getByRole('navigation',{name:'Main navigation'})).toBeVisible();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Calendar'})).toBeEnabled();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('Summarize the selected issue');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -140,8 +157,11 @@ test('single and multiple selected providers are sent with the prompt',async({pa
   expect(requests[0]).toMatchObject({include_documents:false,providers:['github']});
 
   await page.getByRole('button',{name:'New chat',exact:true}).click();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Calendar'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('Compare details from the selected sources');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -150,7 +170,9 @@ test('single and multiple selected providers are sent with the prompt',async({pa
 });
 
 test('source passage keeps paragraphs and makes URLs clickable',async({page})=>{
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('Find the source passage');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -166,7 +188,9 @@ test('source passage keeps paragraphs and makes URLs clickable',async({page})=>{
 });
 
 test('answer shows readable source previews, evidence review, and follow-up prompts',async({page})=>{
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('Summarize this pull request');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -193,15 +217,21 @@ test('select all toggles, and calendar prompts stay scoped to calendar',async({p
 
   await page.reload();
   await expect(page.getByRole('navigation',{name:'Main navigation'})).toBeVisible();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Calendar'})).toBeEnabled();
+  await openSourcePicker(page);
   await page.getByRole('button',{name:'Select all connected sources and documents'}).click();
   await expect(page.getByRole('button',{name:'Unselect all connected sources and documents'})).toBeVisible();
-  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint'])
+  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint']) {
     await expect(page.getByRole('checkbox',{name,exact:true})).toBeChecked();
+  }
+  await openSourcePicker(page);
   await page.getByRole('button',{name:'Unselect all connected sources and documents'}).click();
-  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint'])
+  for (const name of ['Documents','Gmail','Drive','GitHub','Notion','Slack','Calendar','Linear','Jira','OneDrive','Outlook','SharePoint']) {
     await expect(page.getByRole('checkbox',{name,exact:true})).not.toBeChecked();
+  }
 
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Calendar'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('list next 10 events from my calendar');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -219,8 +249,11 @@ test('explicit Gmail selection is preserved for flight email questions',async({p
     await route.fulfill({status:200,contentType:'application/x-ndjson',body:JSON.stringify({type:'done',result})+'\n'});
   });
   await page.reload();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Gmail'})).toBeEnabled();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Gmail'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('Find my flight email for Varanasi 6E 501');
   await page.getByRole('button',{name:'Send question'}).click();
@@ -229,33 +262,42 @@ test('explicit Gmail selection is preserved for flight email questions',async({p
   await expect(page.locator('.answer-row')).toBeVisible();
   await expect(page.locator('.answer-head').last()).toContainText('Live source results');
   await expect(page.locator('.answer-head').last()).toContainText('Gmail');
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Calendar'})).not.toBeChecked();
 });
 
 test('new chat resets source scope to documents only',async({page})=>{
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('button',{name:'New chat',exact:true}).click();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Documents'})).toBeChecked();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'GitHub'})).not.toBeChecked();
 });
 
 test('pull-request questions use the selected GitHub scope',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'Documents'}).uncheck();
+  await openSourcePicker(page);
   await page.getByRole('checkbox',{name:'GitHub'}).check();
   await page.getByRole('textbox',{name:'Your question'}).fill('my pull requests');
   await page.getByRole('button',{name:'Send question'}).click();
   await expect(page.locator('.answer-head').last()).toContainText('GitHub');
   await expect(page.locator('.answer-head').last()).not.toContainText('Documents');
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'Documents'})).not.toBeChecked();
+  await openSourcePicker(page);
   await expect(page.getByRole('checkbox',{name:'GitHub'})).toBeChecked();
   await expect(page.locator('.evidence-panel')).toHaveCount(0);
   await expect(page.locator('.answer .source-chip .file.source')).toHaveText('SRC');
   const badge=await page.locator('.answer .source-chip .file.source').boundingBox();
   expect(badge?.width).toBe(25);
   const research=await page.locator('.chat-workspace .research').evaluate(node=>getComputedStyle(node).gridTemplateColumns);
-  expect(research.trim().split(/\s+/)).toHaveLength(1);
+  expect(research.trim().split(/\s+/)).toHaveLength(2);
 });
 
 test('global search starts independent research after opening a saved chat',async({page})=>{
@@ -280,6 +322,7 @@ test('workspace and document search inputs do not show the inner focus box',asyn
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'Documents',exact:true}).click();
   const documentSearch=page.getByRole('searchbox',{name:'Search documents'});
+  await documentSearch.focus();
   await expect(documentSearch).toBeFocused();
   await expect.poll(()=>documentSearch.evaluate(node=>getComputedStyle(node).outlineStyle)).toBe('none');
   await expect.poll(()=>documentSearch.evaluate(node=>getComputedStyle(node).boxShadow)).toBe('none');
@@ -306,14 +349,15 @@ test('mobile navigation closes after choosing a destination',async({page})=>{
 test('Home keeps the primary research entry accessible on mobile',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.getByRole('button',{name:'Open menu',exact:true}).click();
- await page.getByRole('button',{name:'Home',exact:true}).click();
- await expect(page.getByRole('heading',{name:/What would you like/})).toBeVisible();
+ await page.getByRole('button',{name:'Overview',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Ask anything across your knowledge'})).toBeVisible();
  await expect(page.getByRole('textbox',{name:'Ask Atlas'})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth)).toBe(false);
 });
 
 test('nested citations open a modal excerpt and restore focus',async({page}, testInfo)=>{
  await page.route('**/api/workspaces/w1/connected-chat/stream',route=>route.fulfill({status:200,contentType:'application/x-ndjson',body:JSON.stringify({type:'done',result:{answer:'Evidence **supports [1]**.',mode:'connected',sources:[{chunk_id:'pr-1',document_id:'',name:'Release decision',page:0,location_type:'github',provider:'github',url:'https://github.com/example/repo/pull/1',text:'Release after accessibility review.'}]}})+'\n'}));
+  await openSourcePicker(page);
  await page.getByRole('checkbox',{name:'GitHub'}).check();
  await page.getByRole('textbox',{name:'Your question'}).fill('Summarize the sources');
  await page.getByRole('button',{name:'Send question'}).click();
@@ -349,7 +393,7 @@ test('audit screen captures',async({page}, testInfo)=>{
  await page.setViewportSize({width,height:900});
  for(const theme of ['light','dark']){
  await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
- for(const screen of ['Home','Documents','Sources','Ask Atlas']){
+ for(const screen of ['Overview','Documents','Connected sources','Ask Atlas']){
  if(await page.getByRole('button',{name:'Open menu',exact:true}).isVisible())await page.getByRole('button',{name:'Open menu',exact:true}).click();
  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:screen,exact:true}).click();
  await page.screenshot({path:testInfo.outputPath(`${process.env.AUDIT_PHASE||'after'}-${screen}-${width}-${theme}.png`),fullPage:true,animations:'disabled'});
@@ -500,7 +544,7 @@ test('web import reports success and clears its input',async({page})=>{
 test('empty-library Add documents button keeps its padding on Home', async ({ page }) => {
     await page.route('**/api/workspaces/w1/documents', route => route.fulfill({status:200,contentType:'application/json',body:'[]'}));
     await page.reload();
-    await page.getByRole('button', {name:'Home',exact:true}).click();
+    await page.getByRole('button', {name:'Overview',exact:true}).click();
     const button = page.locator('.home-card-empty').getByRole('button', {name:'Add documents',exact:true});
     await expect(button).toBeVisible();
     const style = await button.evaluate(element => { const value=getComputedStyle(element); return {left:parseFloat(value.paddingLeft),right:parseFloat(value.paddingRight),top:parseFloat(value.paddingTop),height:element.getBoundingClientRect().height}; });
@@ -518,9 +562,9 @@ test('workspace switcher stays compact and avatar opens account settings', async
     await expect(dialog.getByRole('link',{name:'Members, permissions & workspace settings'})).toBeVisible();
     await page.keyboard.press('Escape');
     await page.getByRole('link',{name:'Account settings',exact:true}).first().click();
-    await expect(page.getByRole('heading',{name:'Profile & preferences',exact:true})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Account',exact:true})).toBeVisible();
     await expect(page.getByRole('region',{name:'Profile',exact:true})).toContainText('test@example.com');
-    await page.getByRole('button',{name:'Switch to dark mode',exact:true}).click();
+    await page.getByRole('button',{name:'Dark',exact:true}).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
     await page.getByRole('link',{name:'Back to Atlas'}).click();
     await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
@@ -529,10 +573,10 @@ test('workspace switcher stays compact and avatar opens account settings', async
 test('settings fit a narrow screen and preserve workspace on return', async ({ page }) => {
     await page.setViewportSize({width:390,height:844});
     await page.goto('/settings?section=workspace&workspaceId=w1');
-    await expect(page.getByRole('heading',{name:'Workspace settings',exact:true})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Workspace & members',exact:true})).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     await page.screenshot({path:'test-results/settings-mobile.png',fullPage:true});
-    await page.getByRole('button',{name:'Profile & preferences',exact:true}).click();
+    await page.getByRole('button',{name:'Account',exact:true}).click();
     await page.getByRole('button',{name:'Sign out',exact:true}).click();
     await expect(page.getByRole('heading',{name:'You’re signed out',exact:true})).toBeVisible();
 });

@@ -1,5 +1,6 @@
 'use client';
-import { memo, Children, cloneElement, isValidElement, useMemo, type ReactNode } from 'react';
+import { memo, Children, cloneElement, isValidElement, useMemo, useState, type ReactNode } from 'react';
+import { Check, Copy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Answer, Source } from '../../lib/types';
@@ -44,6 +45,7 @@ export const ResearchAnswer = memo(function ResearchAnswer({
     onOpenSource: (source: Source, context?: string) => void;
     onPrompt: (prompt: string) => void;
 }) {
+    const [copied, setCopied] = useState(false);
     const sources = visibleEvidence(result);
     const markdownComponents = useMemo(() => {
         const evidence = visibleEvidence(result).length ? result.sources : [];
@@ -65,6 +67,22 @@ export const ResearchAnswer = memo(function ResearchAnswer({
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                     {result.answer}
                 </ReactMarkdown>
+            </div>
+            <div className="research-answer-actions">
+                <button
+                    type="button"
+                    onClick={() => {
+                        void navigator.clipboard
+                            .writeText(result.answer)
+                            .then(() => {
+                                setCopied(true);
+                                window.setTimeout(() => setCopied(false), 1800);
+                            })
+                            .catch(() => setCopied(false));
+                    }}
+                >
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy answer'}
+                </button>
             </div>
             {result.coverage_note && (
                 <p className="answer-evidence-review" role="status">

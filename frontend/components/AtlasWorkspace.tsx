@@ -112,6 +112,7 @@ export function AtlasWorkspace() {
     const [uploadProgress, setUploadProgress] = useState('');
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const autoAttachedUploads = useRef<Set<string>>(new Set());
     const [uploadSummary, setUploadSummary] = useState<{ ids: string[]; duplicates: number } | null>(null);
     const [source, setSource] = useState<Source | null>(null);
     const [preview, setPreview] = useState<DocumentPreview | null>(null);
@@ -276,6 +277,25 @@ export function AtlasWorkspace() {
               .join(' · ')
         : '';
 
+    // Files uploaded from the question composer become part of its source scope
+    // once indexing finishes. Keep the filename visible while processing.
+    useEffect(() => {
+        if (!uploadSummary?.ids.length) return;
+        const newlyReady = docs.filter((doc) => uploadSummary.ids.includes(doc.id) && doc.status === 'ready' && !autoAttachedUploads.current.has(doc.id)).map((doc) => doc.id);
+        if (newlyReady.length) {
+            newlyReady.forEach((id) => autoAttachedUploads.current.add(id));
+            setSelected((old) => [...new Set([...old, ...newlyReady])]);
+        }
+    }, [docs, uploadSummary]);
+
+    useEffect(() => {
+        if (!uploadSummary?.ids.some((id) => docs.some((doc) => doc.id === id && (doc.status === 'queued' || doc.status === 'processing')))) return;
+        const timer = window.setInterval(() => {
+            void refresh().catch(() => undefined);
+        }, 3000);
+        return () => window.clearInterval(timer);
+    }, [docs, uploadSummary, refresh]);
+
     const openAnswerSource = useCallback((item: Source, context?: string) => {
         setSource(context ? { ...item, highlight_context: context } : item);
     }, []);
@@ -417,6 +437,8 @@ export function AtlasWorkspace() {
                 onNavigate={navigate}
                 chats={chats}
                 onOpenChat={(id) => void loadChat(id)}
+                onRenameChat={(item) => void renameChat(item)}
+                onDeleteChat={(item) => void deleteChat(item)}
                 onAllChats={() => {
                     navigate('chat');
                     setHistoryOpen(true);
@@ -467,13 +489,13 @@ export function AtlasWorkspace() {
                             </button>
                         </div>
                     )}
-                    {uploadProgress && (
+                    {tab !== 'chat' && uploadProgress && (
                         <div className="feedback" role="status">
                             <LoaderCircle className="spin" />
                             <span>{uploadProgress}</span>
                         </div>
                     )}
-                    {uploadSummary && (
+                    {tab !== 'chat' && uploadSummary && (
                         <div className="feedback" role="status">
                             <Upload />
                             <span>
@@ -541,6 +563,7 @@ export function AtlasWorkspace() {
                     )}
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
+                            onOpenSource={openAnswerSource}
                             title={title}
                             userMode={user.mode}
                             readyCount={ready.length}
@@ -582,6 +605,23 @@ export function AtlasWorkspace() {
                             endRef={chatEnd}
                             query={query}
                             setQuery={setQuery}
+                            canUpload={canEdit}
+                            selectedDocuments={ready.filter((doc) => selected.includes(doc.id)).map((doc) => ({ id: doc.id, name: doc.name }))}
+                            pendingDocuments={uploadedDocs.filter((doc) => doc.status !== 'ready').map((doc) => ({ id: doc.id, name: doc.name, status: doc.status }))}
+                            onRemoveDocument={(id) => setSelected((old) => old.filter((item) => item !== id))}
+                            uploadProgress={uploadProgress}
+                            uploadResult={
+                                uploadSummary
+                                    ? uploadedDocs.length
+                                        ? `${uploadedDocs
+                                              .map((doc) => doc.name)
+                                              .slice(0, 2)
+                                              .join(', ')}${uploadedDocs.length > 2 ? ` and ${uploadedDocs.length - 2} more` : ''} · ${uploadStatus || 'Added to library'}`
+                                        : uploadStatus || 'No new documents added'
+                                    : ''
+                            }
+                            onDismissUploadResult={() => setUploadSummary(null)}
+                            onBrowseLibrary={() => setScopeOpen(true)}
                             onUpload={() => {
                                 if (canEdit) input.current?.click();
                             }}
