@@ -310,13 +310,29 @@ def github_code_search_query(query, login):
         word
         for word in provider_query_terms(query)
         if word.lower() not in GITHUB_QUERY_STOPWORDS
-        and word.lower() not in {'code', 'source', 'search', 'find', 'show', 'where', 'implemented', 'trace', 'tracing', 'flow', 'chain', 'end'}
+        and word.lower()
+        not in {
+            'code',
+            'source',
+            'search',
+            'find',
+            'show',
+            'where',
+            'implemented',
+            'trace',
+            'tracing',
+            'flow',
+            'chain',
+            'end',
+        }
     ]
     if not terms:
         raise HTTPException(422, 'Add a function, class, identifier, or topic to search in code.')
     scope = qualifiers or ([f'user:{login}'] if login else [])
     if not scope:
-        raise HTTPException(422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.')
+        raise HTTPException(
+            422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.'
+        )
     return ' '.join([*terms[:9], *scope, 'in:file'])[:240]
 
 
@@ -338,7 +354,10 @@ def github_flow_layer(path):
         return 'Frontend / UI'
     if '/routes/' in normalized or normalized.endswith(('/main.py', '/router.py', '/routes.py')):
         return 'API / routing'
-    if any(part in normalized for part in ('/models/', '/migrations/', '/repositories/', '/db.py', '/database')):
+    if any(
+        part in normalized
+        for part in ('/models/', '/migrations/', '/repositories/', '/db.py', '/database')
+    ):
         return 'Database / persistence'
     if normalized.startswith(('backend/', 'server/')):
         return 'Backend / service'
@@ -353,24 +372,50 @@ def github_flow_search(token, query, login):
         re.I,
     )
     flow_stopwords = {
-        'trace', 'tracing', 'flow', 'code', 'request', 'call', 'chain',
-        'end', 'to', 'end', 'the', 'for', 'how', 'does', 'work', 'show',
-        'me', 'please', 'from', 'frontend', 'backend', 'database', 'db',
-        'ui', 'api', 'through', 'across', 'follow', 'feature',
+        'trace',
+        'tracing',
+        'flow',
+        'code',
+        'request',
+        'call',
+        'chain',
+        'end',
+        'to',
+        'end',
+        'the',
+        'for',
+        'how',
+        'does',
+        'work',
+        'show',
+        'me',
+        'please',
+        'from',
+        'frontend',
+        'backend',
+        'database',
+        'db',
+        'ui',
+        'api',
+        'through',
+        'across',
+        'follow',
+        'feature',
     }
     terms = [
-        word for word in re.findall(r'[A-Za-z0-9_.$-]{2,}', query)
+        word
+        for word in re.findall(r'[A-Za-z0-9_.$-]{2,}', query)
         if word.lower() not in flow_stopwords and ':' not in word
     ]
     if not terms:
-        raise HTTPException(422, 'Name the feature, endpoint, or symbol whose flow you want to trace.')
+        raise HTTPException(
+            422, 'Name the feature, endpoint, or symbol whose flow you want to trace.'
+        )
     scope = qualifiers or ([f'user:{login}'] if login else [])
     if not scope:
         raise HTTPException(422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.')
     base_query = ' '.join([*terms[:8], *scope, 'in:file'])[:240]
-    scope = re.findall(
-        r'\b(?:repo|org|user):[^\s]+', base_query, re.I
-    )
+    scope = re.findall(r'\b(?:repo|org|user):[^\s]+', base_query, re.I)
     scope_clause = ' '.join(scope) if scope else f'user:{login}'
     seen = set()
     results = []
@@ -397,13 +442,17 @@ def github_flow_search(token, query, login):
             ]
             excerpt = '\n…\n'.join(fragments)[:5000] or f'Matching source file: {path}'
             layer = github_flow_layer(path)
-            results.append({
-                'provider': 'github',
-                'id': str(item.get('sha') or item.get('url') or path),
-                'title': f'[{layer}] {repository}/{path}' if repository else f'[{layer}] {path}',
-                'excerpt': f'{relation}\n{excerpt}'[:5200],
-                'url': item.get('html_url'),
-            })
+            results.append(
+                {
+                    'provider': 'github',
+                    'id': str(item.get('sha') or item.get('url') or path),
+                    'title': f'[{layer}] {repository}/{path}'
+                    if repository
+                    else f'[{layer}] {path}',
+                    'excerpt': f'{relation}\n{excerpt}'[:5200],
+                    'url': item.get('html_url'),
+                }
+            )
             if len(results) >= 16:
                 break
         return data.get('items', [])
@@ -416,7 +465,7 @@ def github_flow_search(token, query, login):
         r'\b(?:async\s+def|def|class|function|const|let|var)\s+([A-Za-z_$][\w$]*)'
     )
     for item in initial:
-        for match in (item.get('text_matches') or []):
+        for match in item.get('text_matches') or []:
             fragment = match.get('fragment') or ''
             for symbol in symbol_pattern.findall(fragment):
                 if symbol.lower() not in {value.lower() for value in symbols}:
@@ -627,9 +676,7 @@ def source_search(provider, token, query):
             for item in data.get('items', []):
                 matches = item.get('text_matches') or []
                 fragments = [
-                    match.get('fragment', '').strip()
-                    for match in matches
-                    if match.get('fragment')
+                    match.get('fragment', '').strip() for match in matches if match.get('fragment')
                 ]
                 repository = (item.get('repository') or {}).get('full_name', '')
                 path = item.get('path') or item.get('name') or 'source file'

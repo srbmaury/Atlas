@@ -44,10 +44,10 @@ def _settings(provider):
     if not client_id or not redirect:
         raise HTTPException(503, 'Configure OAuth client credentials and redirect URL.')
     parsed_redirect = urlsplit(redirect)
-    local_http = (
-        parsed_redirect.scheme == 'http'
-        and parsed_redirect.hostname in {'localhost', '127.0.0.1'}
-    )
+    local_http = parsed_redirect.scheme == 'http' and parsed_redirect.hostname in {
+        'localhost',
+        '127.0.0.1',
+    }
     secure_https = parsed_redirect.scheme == 'https' and bool(parsed_redirect.hostname)
     if (
         not (local_http or secure_https)

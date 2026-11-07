@@ -43,7 +43,7 @@ def test_contracted_negation_is_not_treated_as_supported_positive_claim():
 
 def test_positive_claim_is_flagged_against_contracted_negative_evidence():
     result = audit_citations(
-        "The service is available [1].",
+        'The service is available [1].',
         [{'text': "The service isn't available."}],
     )
     assert result['claims'][0]['status'] == 'possible_negation_mismatch'
@@ -56,7 +56,7 @@ def test_ordinary_positive_claim_remains_supported():
     )
     assert result['claims'][0]['status'] == 'lexically_supported'
 
- 
+
 def test_lexical_match_is_never_reported_as_verified_entailment():
     result = audit_citations(
         'The service is available [1].',

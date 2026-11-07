@@ -75,7 +75,7 @@ def test_refresh_token_rotation_updates_encrypted_record(monkeypatch):
     assert db.commits == 1
     assert json.loads(Fernet(key).decrypt(row.secret.encode()))['refresh'] == 'new-refresh'
 
- 
+
 @pytest.mark.parametrize(
     'redirect',
     [
