@@ -276,6 +276,20 @@ export function AtlasWorkspace() {
               .join(' · ')
         : '';
 
+    // Files uploaded from the question composer become part of its source scope
+    // once indexing finishes. Keep the filename visible while processing.
+    useEffect(() => {
+        if (!uploadSummary?.ids.length) return;
+        const newlyReady = docs.filter(doc => uploadSummary.ids.includes(doc.id) && doc.status === 'ready').map(doc => doc.id);
+        if (newlyReady.length) setSelected(old => [...new Set([...old, ...newlyReady])]);
+    }, [docs, uploadSummary]);
+
+    useEffect(() => {
+        if (!uploadSummary?.ids.some(id => docs.some(doc => doc.id === id && (doc.status === 'queued' || doc.status === 'processing')))) return;
+        const timer = window.setInterval(() => { void refresh().catch(() => undefined); }, 3000);
+        return () => window.clearInterval(timer);
+    }, [docs, uploadSummary, refresh]);
+
     const openAnswerSource = useCallback((item: Source, context?: string) => {
         setSource(context ? { ...item, highlight_context: context } : item);
     }, []);
@@ -585,6 +599,7 @@ export function AtlasWorkspace() {
                             setQuery={setQuery}
                             canUpload={canEdit}
                             selectedDocuments={ready.filter(doc => selected.includes(doc.id)).map(doc => ({ id: doc.id, name: doc.name }))}
+                            pendingDocuments={uploadedDocs.filter(doc => doc.status !== 'ready').map(doc => ({ id: doc.id, name: doc.name, status: doc.status }))}
                             onRemoveDocument={id => setSelected(old => old.filter(item => item !== id))}
                             uploadProgress={uploadProgress}
                             uploadResult={uploadSummary ? (uploadStatus || 'No new documents added') : ''}
