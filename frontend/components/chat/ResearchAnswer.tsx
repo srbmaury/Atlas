@@ -69,8 +69,19 @@ export const ResearchAnswer = memo(function ResearchAnswer({
                 </ReactMarkdown>
             </div>
             <div className="research-answer-actions">
-                <button type="button" onClick={() => { void navigator.clipboard.writeText(result.answer).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1800); }).catch(() => setCopied(false)); }}>
-                    {copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? 'Copied' : 'Copy answer'}
+                <button
+                    type="button"
+                    onClick={() => {
+                        void navigator.clipboard
+                            .writeText(result.answer)
+                            .then(() => {
+                                setCopied(true);
+                                window.setTimeout(() => setCopied(false), 1800);
+                            })
+                            .catch(() => setCopied(false));
+                    }}
+                >
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy answer'}
                 </button>
             </div>
             {result.coverage_note && (

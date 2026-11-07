@@ -71,7 +71,7 @@ interface ResearchWorkspaceProps {
 }
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
-    const latestAnswer = [...props.messages].reverse().find(message => message.role !== 'user' && message.result)?.result;
+    const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
     const allSelected =
         props.includeDocuments &&
@@ -109,31 +109,33 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="research-source-toolbar">
                 <button className="research-document-scope" type="button" onClick={props.onOpenScope}>
-                    <FileText size={15}/>{props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}<ChevronDown size={14}/>
+                    <FileText size={15} />
+                    {props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}
+                    <ChevronDown size={14} />
                 </button>
-            <ResearchSourceSelector
-                includeDocuments={props.includeDocuments}
-                onIncludeDocuments={props.setIncludeDocuments}
-                gmailStatus={props.gmailStatus}
-                connectedGmail={props.connectedGmail}
-                onIncludeGmail={props.setConnectedGmail}
-                driveStatus={props.driveStatus}
-                sourceStatuses={props.sourceStatuses}
-                connectedProviders={props.connectedProviders}
-                onSelectAll={(select) => {
-                    props.setIncludeDocuments(select);
-                    props.setConnectedGmail(select && !!props.gmailStatus?.connected);
-                    props.setConnectedProviders(
-                        select
-                            ? RESEARCH_PROVIDERS.filter((provider) =>
-                                  provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
-                              )
-                            : [],
-                    );
-                }}
-                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
-                onManage={props.onManageSources}
-            />
+                <ResearchSourceSelector
+                    includeDocuments={props.includeDocuments}
+                    onIncludeDocuments={props.setIncludeDocuments}
+                    gmailStatus={props.gmailStatus}
+                    connectedGmail={props.connectedGmail}
+                    onIncludeGmail={props.setConnectedGmail}
+                    driveStatus={props.driveStatus}
+                    sourceStatuses={props.sourceStatuses}
+                    connectedProviders={props.connectedProviders}
+                    onSelectAll={(select) => {
+                        props.setIncludeDocuments(select);
+                        props.setConnectedGmail(select && !!props.gmailStatus?.connected);
+                        props.setConnectedProviders(
+                            select
+                                ? RESEARCH_PROVIDERS.filter((provider) =>
+                                      provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                  )
+                                : [],
+                        );
+                    }}
+                    onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
+                    onManage={props.onManageSources}
+                />
             </div>
             {props.connectedGmail && (
                 <div className="unified-gmail-scope">
@@ -211,20 +213,49 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         </p>
                     </div>
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
-                        <div className="research-rail-heading"><BookOpen size={17}/><div><strong>Evidence</strong><span>{evidence.length ? `${evidence.length} cited passages` : 'Source references'}</span></div></div>
-                        {evidence.length ? <div className="research-rail-list">
-                            {Array.from(new Set(evidence.map(({source}) => sourceDisplayName(source)))).map(name => {
-                                const passages = evidence.filter(({source}) => sourceDisplayName(source) === name);
-                                return <div className="research-evidence-group" key={name}>
-                                    <div className="research-evidence-group-title"><FileText size={15}/><strong title={name}>{name}</strong><small>{passages.length} {passages.length === 1 ? 'passage' : 'passages'}</small></div>
-                                    {passages.map(({source,number}) => <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
-                                        <span className="research-rail-number">{number}</span>
-                                        <span className="research-rail-copy"><small>{sourceLocation(source)}</small><span>{source.text?.replace(/\s+/g, ' ').slice(0,110) || 'Open supporting passage'}{(source.text?.length || 0) > 110 ? '…' : ''}</span></span>
-                                        <ArrowUpRight size={14}/>
-                                    </button>)}
-                                </div>;
-                            })}
-                        </div> : <div className="research-rail-empty"><p>Evidence from your answers appears here.</p><span>Choose a citation to inspect the original passage and surrounding context.</span></div>}
+                        <div className="research-rail-heading">
+                            <BookOpen size={17} />
+                            <div>
+                                <strong>Evidence</strong>
+                                <span>{evidence.length ? `${evidence.length} cited passages` : 'Source references'}</span>
+                            </div>
+                        </div>
+                        {evidence.length ? (
+                            <div className="research-rail-list">
+                                {Array.from(new Set(evidence.map(({ source }) => sourceDisplayName(source)))).map((name) => {
+                                    const passages = evidence.filter(({ source }) => sourceDisplayName(source) === name);
+                                    return (
+                                        <div className="research-evidence-group" key={name}>
+                                            <div className="research-evidence-group-title">
+                                                <FileText size={15} />
+                                                <strong title={name}>{name}</strong>
+                                                <small>
+                                                    {passages.length} {passages.length === 1 ? 'passage' : 'passages'}
+                                                </small>
+                                            </div>
+                                            {passages.map(({ source, number }) => (
+                                                <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
+                                                    <span className="research-rail-number">{number}</span>
+                                                    <span className="research-rail-copy">
+                                                        <small>{sourceLocation(source)}</small>
+                                                        <span>
+                                                            {source.text?.replace(/\s+/g, ' ').slice(0, 110) || 'Open supporting passage'}
+                                                            {(source.text?.length || 0) > 110 ? '…' : ''}
+                                                        </span>
+                                                    </span>
+                                                    <ArrowUpRight size={14} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="research-rail-empty">
+                                <p>Evidence from your answers appears here.</p>
+                                <span>Choose a citation to inspect the original passage and surrounding context.</span>
+                            </div>
+                        )}
                     </aside>
                 </div>
             </div>

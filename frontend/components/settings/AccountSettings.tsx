@@ -30,8 +30,13 @@ export function AccountSettings() {
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
     const [compact, setCompact] = useState(false);
-    useEffect(() => { setCompact(window.localStorage.getItem('atlas-compact-view') === 'true'); }, []);
-    function changeCompact(value: boolean) { setCompact(value); window.localStorage.setItem('atlas-compact-view', String(value)); }
+    useEffect(() => {
+        setCompact(window.localStorage.getItem('atlas-compact-view') === 'true');
+    }, []);
+    function changeCompact(value: boolean) {
+        setCompact(value);
+        window.localStorage.setItem('atlas-compact-view', String(value));
+    }
     const workspace = workspaces.find((item) => item.id === workspaceId);
     const atlasHref = workspaceId ? `/?workspaceId=${encodeURIComponent(workspaceId)}` : '/';
 
@@ -118,7 +123,7 @@ export function AccountSettings() {
         );
 
     return (
-        <div className={`atlas-v3 settings-shell${compact ? " settings-compact" : ""}`}>
+        <div className={`atlas-v3 settings-shell${compact ? ' settings-compact' : ''}`}>
             <aside className="settings-sidebar">
                 <Link href={atlasHref} className="settings-back">
                     <ArrowLeft size={16} />
@@ -126,17 +131,19 @@ export function AccountSettings() {
                 </Link>
                 <div className="settings-brand">
                     <AtlasMark />
-                    <span>Atlas <small> / Settings</small></span>
+                    <span>
+                        Atlas <small> / Settings</small>
+                    </span>
                 </div>
                 <nav aria-label="Settings navigation">
                     <span className="settings-nav-group">PERSONAL</span>
                     {sections.map(({ id, label, icon: Icon }, index) => (
                         <div key={id} className="settings-nav-entry">
-                        {index === 1 && <span className="settings-nav-group">WORKSPACE</span>}
-                        <button type="button" aria-current={section === id ? 'page' : undefined} onClick={() => navigate(id)}>
-                            <Icon size={17} />
-                            {label}
-                        </button>
+                            {index === 1 && <span className="settings-nav-group">WORKSPACE</span>}
+                            <button type="button" aria-current={section === id ? 'page' : undefined} onClick={() => navigate(id)}>
+                                <Icon size={17} />
+                                {label}
+                            </button>
                         </div>
                     ))}
                 </nav>
@@ -149,7 +156,13 @@ export function AccountSettings() {
                 <header className="settings-heading">
                     <span className="eyebrow">YOUR ATLAS</span>
                     <h1>{section === 'profile' ? 'Account' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}</h1>
-                    <p>{section === 'profile' ? 'Your profile, appearance, and session in one place.' : section === 'workspace' ? 'Manage workspace membership and access.' : 'Manage organisation membership.'}</p>
+                    <p>
+                        {section === 'profile'
+                            ? 'Your profile, appearance, and session in one place.'
+                            : section === 'workspace'
+                              ? 'Manage workspace membership and access.'
+                              : 'Manage organisation membership.'}
+                    </p>
                 </header>
                 {error && (
                     <p className="feedback error" role="alert">
@@ -163,32 +176,88 @@ export function AccountSettings() {
                 )}
                 {section === 'profile' ? (
                     <>
-                        {section === 'profile' && <section className="settings-card" aria-label="Profile">
-                            <div className="settings-section-title"><h2>My profile</h2><p>Information associated with your Atlas account.</p></div>
-                            <div className="settings-profile">
-                                <span className="settings-avatar">{user.email.slice(0, 2).toUpperCase()}</span>
-                                <div><strong>{user.email.split('@')[0]}</strong><p>Atlas account</p></div>
-                            </div>
-                            <dl className="settings-facts">
-                                <div><dt>Email address</dt><dd>{user.email}</dd></div>
-                                <div><dt>Workspaces</dt><dd>{workspaces.length}</dd></div>
-                            </dl>
-                            <p className="settings-help">Profile editing is not available for this account yet.</p>
-                        </section>}
+                        {section === 'profile' && (
+                            <section className="settings-card" aria-label="Profile">
+                                <div className="settings-section-title">
+                                    <h2>My profile</h2>
+                                    <p>Information associated with your Atlas account.</p>
+                                </div>
+                                <div className="settings-profile">
+                                    <span className="settings-avatar">{user.email.slice(0, 2).toUpperCase()}</span>
+                                    <div>
+                                        <strong>{user.email.split('@')[0]}</strong>
+                                        <p>Atlas account</p>
+                                    </div>
+                                </div>
+                                <dl className="settings-facts">
+                                    <div>
+                                        <dt>Email address</dt>
+                                        <dd>{user.email}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Workspaces</dt>
+                                        <dd>{workspaces.length}</dd>
+                                    </div>
+                                </dl>
+                                <p className="settings-help">Profile editing is not available for this account yet.</p>
+                            </section>
+                        )}
                         <section className="settings-card">
-                            <div className="settings-section-title"><h2>Appearance</h2><p>Customize Atlas on this device.</p></div>
-                            <div className="settings-setting-row"><div><strong>Theme</strong><p>Choose a light or dark interface.</p></div>
+                            <div className="settings-section-title">
+                                <h2>Appearance</h2>
+                                <p>Customize Atlas on this device.</p>
+                            </div>
+                            <div className="settings-setting-row">
+                                <div>
+                                    <strong>Theme</strong>
+                                    <p>Choose a light or dark interface.</p>
+                                </div>
                                 <div className="settings-segmented" role="group" aria-label="Color theme">
-                                    <button type="button" aria-pressed={theme === 'light'} onClick={() => { if (theme !== 'light') toggleTheme(); }}><Sun size={15}/> Light</button>
-                                    <button type="button" aria-pressed={theme === 'dark'} onClick={() => { if (theme !== 'dark') toggleTheme(); }}><Moon size={15}/> Dark</button>
+                                    <button
+                                        type="button"
+                                        aria-pressed={theme === 'light'}
+                                        onClick={() => {
+                                            if (theme !== 'light') toggleTheme();
+                                        }}
+                                    >
+                                        <Sun size={15} /> Light
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-pressed={theme === 'dark'}
+                                        onClick={() => {
+                                            if (theme !== 'dark') toggleTheme();
+                                        }}
+                                    >
+                                        <Moon size={15} /> Dark
+                                    </button>
                                 </div>
                             </div>
-                            <div className="settings-setting-row"><div><strong>Compact settings</strong><p>Reduce spacing on this page.</p></div><label className="settings-switch"><input type="checkbox" checked={compact} onChange={e => changeCompact(e.target.checked)}/><span>Compact</span></label></div>
+                            <div className="settings-setting-row">
+                                <div>
+                                    <strong>Compact settings</strong>
+                                    <p>Reduce spacing on this page.</p>
+                                </div>
+                                <label className="settings-switch">
+                                    <input type="checkbox" checked={compact} onChange={(e) => changeCompact(e.target.checked)} />
+                                    <span>Compact</span>
+                                </label>
+                            </div>
                         </section>
                         <section className="settings-card">
-                            <div className="settings-section-title"><h2>Session</h2><p>Manage your sign-in on this browser.</p></div>
-                            <div className="settings-setting-row"><div><strong>Signed in as {user.email}</strong><p>Sign out of Atlas on this browser.</p></div>
-                                <button type="button" className="btn" disabled={busy} onClick={() => void signOut()}><LogOut size={16}/>{busy ? 'Signing out…' : 'Sign out'}</button>
+                            <div className="settings-section-title">
+                                <h2>Session</h2>
+                                <p>Manage your sign-in on this browser.</p>
+                            </div>
+                            <div className="settings-setting-row">
+                                <div>
+                                    <strong>Signed in as {user.email}</strong>
+                                    <p>Sign out of Atlas on this browser.</p>
+                                </div>
+                                <button type="button" className="btn" disabled={busy} onClick={() => void signOut()}>
+                                    <LogOut size={16} />
+                                    {busy ? 'Signing out…' : 'Sign out'}
+                                </button>
                             </div>
                         </section>
                     </>

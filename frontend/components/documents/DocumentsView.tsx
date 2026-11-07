@@ -55,13 +55,16 @@ export function DocumentsView({
             {webImport}
             <div className="library-stat-strip library-metrics">
                 <span>
-                    <FileText size={17}/><strong>{totalDocuments}</strong> Documents
+                    <FileText size={17} />
+                    <strong>{totalDocuments}</strong> Documents
                 </span>
                 <span>
-                    <CheckCircle2 size={17}/><strong>{readyDocuments}</strong> Ready to search
+                    <CheckCircle2 size={17} />
+                    <strong>{readyDocuments}</strong> Ready to search
                 </span>
                 <span>
-                    <HardDrive size={17}/><strong>{storageLabel}</strong> Storage used
+                    <HardDrive size={17} />
+                    <strong>{storageLabel}</strong> Storage used
                 </span>
             </div>
             <div className="library-workspace">
