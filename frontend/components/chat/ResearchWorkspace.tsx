@@ -60,6 +60,7 @@ interface ResearchWorkspaceProps {
     onBrowseLibrary: () => void;
     canUpload: boolean;
     selectedDocuments: { id: string; name: string }[];
+    pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
     uploadProgress: string;
     uploadResult: string;
@@ -199,6 +200,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             onBrowseLibrary={props.onBrowseLibrary}
                             canUpload={props.canUpload}
                             selectedDocuments={props.selectedDocuments}
+                            pendingDocuments={props.pendingDocuments}
                             onRemoveDocument={props.onRemoveDocument}
                             uploadProgress={props.uploadProgress}
                             uploadResult={props.uploadResult}
