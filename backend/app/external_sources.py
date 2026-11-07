@@ -358,7 +358,7 @@ def github_code_search_query(query, login):
     ]
     if not terms and not repository:
         raise HTTPException(422, 'Add a function, class, identifier, or topic to search in code.')
-    scope = ([f'repo:{repository}'] if repository else qualifiers)
+    scope = [f'repo:{repository}'] if repository else qualifiers
     scope = scope or ([f'user:{login}'] if login else [])
     if not scope:
         raise HTTPException(
@@ -404,9 +404,7 @@ def github_flow_layer(path):
 def github_repository_file_search(token, repository, query, limit=12):
     """Retrieve useful source files through Git Trees + Contents when code search is empty."""
     owner, name = repository.split('/', 1)
-    metadata = http_json(
-        f'https://api.github.com/repos/{owner}/{name}', token, 'github'
-    )
+    metadata = http_json(f'https://api.github.com/repos/{owner}/{name}', token, 'github')
     branch = metadata.get('default_branch') or 'main'
     tree = http_json(
         f'https://api.github.com/repos/{owner}/{name}/git/trees/{quote(branch, safe="")}',
@@ -416,24 +414,70 @@ def github_repository_file_search(token, repository, query, limit=12):
     )
     candidates = []
     excluded_dirs = {
-        '.git', '.next', '.venv', 'venv', 'node_modules', 'dist', 'build',
-        'coverage', '__pycache__', 'vendor', 'target', 'site-packages',
+        '.git',
+        '.next',
+        '.venv',
+        'venv',
+        'node_modules',
+        'dist',
+        'build',
+        'coverage',
+        '__pycache__',
+        'vendor',
+        'target',
+        'site-packages',
     }
     allowed_suffixes = {
-        '.py', '.pyi', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs',
-        '.java', '.go', '.rs', '.rb', '.php', '.cs', '.cpp', '.h', '.hpp',
-        '.sql', '.md', '.mdx', '.json', '.toml', '.yaml', '.yml', '.ini',
-        '.cfg', '.sh', '. dockerfile',
+        '.py',
+        '.pyi',
+        '.js',
+        '.jsx',
+        '.ts',
+        '.tsx',
+        '.mjs',
+        '.cjs',
+        '.java',
+        '.go',
+        '.rs',
+        '.rb',
+        '.php',
+        '.cs',
+        '.cpp',
+        '.h',
+        '.hpp',
+        '.sql',
+        '.md',
+        '.mdx',
+        '.json',
+        '.toml',
+        '.yaml',
+        '.yml',
+        '.ini',
+        '.cfg',
+        '.sh',
     }
     query_terms = [
-        term.lower() for term in re.findall(r'[A-Za-z_][A-Za-z0-9_]{2,}', github_query_without_repository(query))
+        term.lower()
+        for term in re.findall(
+            r'[A-Za-z_][A-Za-z0-9_]{2,}', github_query_without_repository(query)
+        )
         if term.lower() not in GITHUB_QUERY_STOPWORDS
     ]
     priority_names = {
-        'readme.md': 12, 'pyproject.toml': 10, 'package.json': 10,
-        'requirements.txt': 8, 'main.py': 9, 'app.py': 8, 'index.tsx': 8,
-        'index.ts': 7, 'page.tsx': 8, 'page.ts': 7, 'server.ts': 8,
-        'docker-compose.yml': 6, 'compose.yml': 6, 'schema.sql': 7,
+        'readme.md': 12,
+        'pyproject.toml': 10,
+        'package.json': 10,
+        'requirements.txt': 8,
+        'main.py': 9,
+        'app.py': 8,
+        'index.tsx': 8,
+        'index.ts': 7,
+        'page.tsx': 8,
+        'page.ts': 7,
+        'server.ts': 8,
+        'docker-compose.yml': 6,
+        'compose.yml': 6,
+        'schema.sql': 7,
     }
     for entry in tree.get('tree', []):
         if entry.get('type') != 'blob':
@@ -444,7 +488,7 @@ def github_repository_file_search(token, repository, query, limit=12):
             continue
         basename = parts[-1]
         suffix = '.' + basename.rsplit('.', 1)[-1] if '.' in basename else ''
-        if suffix not in allowed_suffixes and basename not in {'Dockerfile', 'Makefile'}:
+        if suffix not in allowed_suffixes and basename not in {'dockerfile', 'makefile'}:
             continue
         if any(basename.endswith(ext) for ext in ('.lock', '.min.js', '.map')):
             continue
@@ -462,7 +506,7 @@ def github_repository_file_search(token, repository, query, limit=12):
     candidates.sort(key=lambda item: (-item[0], item[1].count('/'), item[1].lower()))
     results = []
     total_chars = 0
-    for _, path in candidates[:max(limit * 3, limit)]:
+    for _, path in candidates[: max(limit * 3, limit)]:
         if len(results) >= limit or total_chars >= 32_000:
             break
         content_data = http_json(
@@ -481,21 +525,23 @@ def github_repository_file_search(token, repository, query, limit=12):
             content = encoded
         if not content.strip():
             continue
-        excerpt = content[:min(3500, 32_000 - total_chars)]
+        excerpt = content[: min(3500, 32_000 - total_chars)]
         total_chars += len(excerpt)
         html_url = content_data.get('html_url') or (
             f'https://github.com/{repository}/blob/{quote(branch, safe="")}/{quote(path, safe="/")}'
         )
-        results.append({
-            'provider': 'github',
-            'id': str(content_data.get('sha') or f'{repository}:{path}'),
-            'title': f'{repository}/{path}',
-            'excerpt': f'Repository file retrieved via GitHub Contents API\n{excerpt}',
-            'url': html_url,
-            'owner': owner,
-            'scope': repository,
-            'metadata': {'repository': repository, 'path': path, 'branch': branch},
-        })
+        results.append(
+            {
+                'provider': 'github',
+                'id': str(content_data.get('sha') or f'{repository}:{path}'),
+                'title': f'{repository}/{path}',
+                'excerpt': f'Repository file retrieved via GitHub Contents API\n{excerpt}',
+                'url': html_url,
+                'owner': owner,
+                'scope': repository,
+                'metadata': {'repository': repository, 'path': path, 'branch': branch},
+            }
+        )
     return results
 
 def github_flow_search(token, query, login):
@@ -835,7 +881,10 @@ def source_search(provider, token, query):
             requested_repository = github_repository_from_query(query)
             for item in data.get('items', []):
                 repository = (item.get('repository') or {}).get('full_name', '')
-                if requested_repository and repository.casefold() != requested_repository.casefold():
+                if (
+                    requested_repository
+                    and repository.casefold() != requested_repository.casefold()
+                ):
                     continue
                 matches = item.get('text_matches') or []
                 fragments = [
