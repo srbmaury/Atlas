@@ -347,7 +347,27 @@ def github_flow_layer(path):
 
 def github_flow_search(token, query, login):
     """Build a bounded, two-hop code-reference trace from GitHub code search."""
-    base_query = github_code_search_query(query, login)
+    qualifiers = re.findall(
+        r'\b(?:repo|org|user|language|extension|path|filename):[^\s]+',
+        query,
+        re.I,
+    )
+    flow_stopwords = {
+        'trace', 'tracing', 'flow', 'code', 'request', 'call', 'chain',
+        'end', 'to', 'end', 'the', 'for', 'how', 'does', 'work', 'show',
+        'me', 'please', 'from', 'frontend', 'backend', 'database', 'db',
+        'ui', 'api', 'through', 'across', 'follow', 'feature',
+    }
+    terms = [
+        word for word in re.findall(r'[A-Za-z0-9_.$-]{2,}', query)
+        if word.lower() not in flow_stopwords and ':' not in word
+    ]
+    if not terms:
+        raise HTTPException(422, 'Name the feature, endpoint, or symbol whose flow you want to trace.')
+    scope = qualifiers or ([f'user:{login}'] if login else [])
+    if not scope:
+        raise HTTPException(422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.')
+    base_query = ' '.join([*terms[:8], *scope, 'in:file'])[:240]
     scope = re.findall(
         r'\b(?:repo|org|user):[^\s]+', base_query, re.I
     )
