@@ -41,10 +41,10 @@ class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=250)
 
 
-def http_json(url, token, provider, params=None, method='GET'):
+def http_json(url, token, provider, params=None, method='GET', accept='application/json'):
     headers = {
         'Authorization': 'Bearer ' + token,
-        'Accept': 'application/json',
+        'Accept': accept,
         'User-Agent': 'Atlas-Connected-Research',
     }
     if provider == 'notion':
@@ -288,6 +288,38 @@ def github_repository_query(query, login):
     return ' '.join([owner, *terms[:8]]).strip()[:180]
 
 
+def github_wants_code(query):
+    """Recognize requests for source files and symbol implementations."""
+    return bool(
+        re.search(
+            r'\\b(?:code|source\\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
+            query,
+            re.I,
+        )
+    )
+
+
+def github_code_search_query(query, login):
+    """Build a bounded GitHub code-search query scoped to the connected account."""
+    qualifiers = re.findall(
+        r'\\b(?:repo|org|user|language|extension|path|filename|in):[^\\s]+',
+        query,
+        re.I,
+    )
+    terms = [
+        word
+        for word in provider_query_terms(query)
+        if word.lower() not in GITHUB_QUERY_STOPWORDS
+        and word.lower() not in {'code', 'source', 'search', 'find', 'show', 'where', 'implemented'}
+    ]
+    if not terms:
+        raise HTTPException(422, 'Add a function, class, identifier, or topic to search in code.')
+    scope = qualifiers or ([f'user:{login}'] if login else [])
+    if not scope:
+        raise HTTPException(422, 'Could not identify the connected GitHub account. Reconnect GitHub and try again.')
+    return ' '.join([*terms[:9], *scope, 'in:file'])[:240]
+
+
 def github_wants_repositories(query):
     terms = set(re.findall(r'[a-zA-Z]+', query.lower()))
     return bool(
@@ -449,6 +481,46 @@ def source_search(provider, token, query):
                 }
                 for x in d.get('items', [])
             ]
+        if github_wants_code(query):
+            identity = http_json('https://api.github.com/user', token, provider)
+            login = identity.get('login')
+            if not login:
+                raise HTTPException(
+                    422,
+                    'Could not identify the connected GitHub account. Reconnect GitHub and try again.',
+                )
+            code_query = github_code_search_query(query, login)
+            data = http_json(
+                'https://api.github.com/search/code',
+                token,
+                provider,
+                {
+                    'q': code_query,
+                    'per_page': requested_result_limit(query, default=8, max_limit=20),
+                },
+                accept='application/vnd.github.text-match+json',
+            )
+            results = []
+            for item in data.get('items', []):
+                matches = item.get('text_matches') or []
+                fragments = [
+                    match.get('fragment', '').strip()
+                    for match in matches
+                    if match.get('fragment')
+                ]
+                repository = (item.get('repository') or {}).get('full_name', '')
+                path = item.get('path') or item.get('name') or 'source file'
+                results.append(
+                    {
+                        'provider': provider,
+                        'id': str(item.get('sha') or item.get('url') or path),
+                        'title': f'{repository}/{path}' if repository else path,
+                        'excerpt': '\n…\n'.join(fragments)[:8000]
+                        or f'Matching source file: {path}',
+                        'url': item.get('html_url'),
+                    }
+                )
+            return results
         if github_wants_repositories(query):
             user = http_json('https://api.github.com/user', token, provider)
             login = user.get('login', '')

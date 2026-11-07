@@ -252,9 +252,9 @@ Connect from **Sources → Google Drive**. Atlas uses read-only Drive access and
 
 ### GitHub
 
-Create a fine-grained personal access token scoped to the repositories Atlas should access, with read-only metadata and issue permissions. Add it under **Sources → GitHub**.
+Create a fine-grained personal access token scoped to the repositories Atlas should access, with read-only **Metadata**, **Issues**, **Pull requests**, and **Contents** permissions. Contents access is needed for source-code search. Add it under **Sources → GitHub**.
 
-Atlas can search repositories, issues, and pull requests. Repository descriptions and metadata can support project overviews. The connector does not search source-code files. Results are limited to repositories and records visible to the token.
+Atlas can search repositories, issues, pull requests, and source-code files. Code searches are scoped to the connected account by default; add an explicit `repo:owner/name` qualifier to narrow a search to one repository. Results and file snippets are limited to repositories and records visible to the token. Atlas never writes to connected repositories.
 
 ### Notion
 
