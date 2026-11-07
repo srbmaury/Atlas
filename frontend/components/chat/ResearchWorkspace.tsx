@@ -57,6 +57,8 @@ interface ResearchWorkspaceProps {
     query: string;
     setQuery: Setter<string>;
     onUpload: () => void;
+    onBrowseLibrary: () => void;
+    canUpload: boolean;
     uploading: boolean;
     hasAskSources: boolean;
 }
@@ -189,6 +191,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             onChange={props.setQuery}
                             onSubmit={() => props.onAsk()}
                             onUpload={props.onUpload}
+                            onBrowseLibrary={props.onBrowseLibrary}
+                            canUpload={props.canUpload}
                             uploading={props.uploading}
                             busy={props.busy}
                             hasAskSources={props.hasAskSources}
