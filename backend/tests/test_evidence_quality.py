@@ -69,7 +69,6 @@ def test_repository_listing_keeps_github_repos_without_prompt_word_overlap():
     assert [row.source_id for row in result] == ['r1']
 
 
-
 def test_conversational_github_repository_list_request_is_structured():
     from app.evidence_quality import is_listing_question
 
