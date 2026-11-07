@@ -400,3 +400,16 @@
 :root[data-theme='dark'] .atlas-v3 dialog.evidence-inspector .evidence-inspector-passage .caption {
     color: #adb4be !important;
 }
+
+
+/* The cited passage is a separate card; set its surface explicitly in dark mode. */
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence {
+    background: #25282d !important;
+    color: #e6e8eb !important;
+}
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain *,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown * {
+    color: #e6e8eb !important;
+}
