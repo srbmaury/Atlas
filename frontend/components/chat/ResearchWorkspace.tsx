@@ -9,11 +9,14 @@ import { prompts } from '../../utils/utils';
 import { ConversationHistory } from './ConversationHistory';
 import { ConversationTranscript } from './ConversationTranscript';
 import { ResearchComposer } from './ResearchComposer';
+import { DeepResearchPanel } from './DeepResearchPanel';
 import { ResearchSourceSelector } from './ResearchSourceSelector';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
+    workspaceId: string;
+    selectedDocumentIds: string[];
     title: string;
     onOpenSource: (source: Source) => void;
     userMode: string;
@@ -136,6 +139,14 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onManage={props.onManageSources}
                 />
             </div>
+            <DeepResearchPanel
+                workspaceId={props.workspaceId}
+                documentIds={props.selectedDocumentIds}
+                includeDocuments={props.includeDocuments}
+                includeGmail={props.connectedGmail}
+                gmailQuery={props.connectedGmailQuery}
+                providers={props.connectedProviders}
+            />
             {props.connectedGmail && (
                 <div className="unified-gmail-scope">
                     <label>
