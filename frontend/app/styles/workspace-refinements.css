@@ -675,24 +675,3 @@
     max-height: min(38dvh, 360px);
     overflow-y: auto;
 }
-
-
-/* Source passage: keep extracted text readable against the theme surface. */
-.atlas-v3 .evidence-inspector-passage .document-plain,
-.atlas-v3 .evidence-inspector-passage .document-markdown {
-    color: var(--ink);
-}
-.atlas-v3 .evidence-inspector-passage .document-plain p,
-.atlas-v3 .evidence-inspector-passage .document-plain li,
-.atlas-v3 .evidence-inspector-passage .document-plain .document-field span,
-.atlas-v3 .evidence-inspector-passage .document-markdown :is(p, li, blockquote, td, th) {
-    color: var(--ink);
-}
-.atlas-v3 .evidence-inspector-passage .document-plain a,
-.atlas-v3 .evidence-inspector-passage .document-markdown a {
-    color: var(--brand);
-}
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector-passage .document-kicker,
-:root[data-theme='dark'] .atlas-v3 .evidence-inspector-passage .document-field strong {
-    color: var(--muted);
-}
