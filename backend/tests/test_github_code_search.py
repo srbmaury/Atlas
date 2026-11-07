@@ -59,3 +59,66 @@ def test_github_code_search_returns_file_snippets_and_links(monkeypatch):
     assert calls[1][1]["q"].endswith("user:atlas-user in:file")
     assert calls[1][2] == "application/vnd.github.text-match+json"
     assert all("secret-token" not in str(result) for result in results)
+
+
+
+def test_flow_trace_intent_and_layer_labels():
+    assert external_sources.github_wants_flow("Trace the code flow for document upload")
+    assert external_sources.github_wants_flow("Show the request flow end-to-end")
+    assert not external_sources.github_wants_flow("Find the upload function")
+    assert external_sources.github_flow_layer("frontend/hooks/useConversation.ts") == "Frontend / UI"
+    assert external_sources.github_flow_layer("backend/app/routes/documents.py") == "API / routing"
+    assert external_sources.github_flow_layer("backend/app/db.py") == "Database / persistence"
+
+
+def test_flow_search_follows_symbols_and_deduplicates_files(monkeypatch):
+    calls = []
+
+    def fake_http(url, token, provider, params=None, method="GET", accept="application/json"):
+        calls.append((url, params, accept))
+        if url.endswith("/user"):
+            return {"login": "atlas-user"}
+        query = params["q"]
+        if "upload" in query and "send_question" not in query and "DocumentService" not in query:
+            return {
+                "items": [
+                    {
+                        "sha": "one",
+                        "path": "frontend/hooks/useConversation.ts",
+                        "html_url": "https://github.com/atlas-user/app/blob/main/frontend/hooks/useConversation.ts",
+                        "repository": {"full_name": "atlas-user/app"},
+                        "text_matches": [{"fragment": "export function send_question() { return api('/documents'); }"}],
+                    },
+                    {
+                        "sha": "two",
+                        "path": "backend/app/services/documents.py",
+                        "html_url": "https://github.com/atlas-user/app/blob/main/backend/app/services/documents.py",
+                        "repository": {"full_name": "atlas-user/app"},
+                        "text_matches": [{"fragment": "class DocumentService:"}],
+                    },
+                ]
+            }
+        symbol = "send_question" if "send_question" in query else "DocumentService"
+        path = "backend/app/routes/documents.py" if symbol == "send_question" else "backend/app/db.py"
+        return {
+            "items": [{
+                "sha": symbol,
+                "path": path,
+                "html_url": f"https://github.com/atlas-user/app/blob/main/{path}",
+                "repository": {"full_name": "atlas-user/app"},
+                "text_matches": [{"fragment": f"# reference to {symbol}"}],
+            }]
+        }
+
+    monkeypatch.setattr(external_sources, "http_json", fake_http)
+    results = external_sources.source_search(
+        "github", "secret-token", "Trace the code flow for upload documents"
+    )
+
+    assert len(results) == 4
+    assert any(item["title"].startswith("[Frontend / UI]") for item in results)
+    assert any(item["title"].startswith("[API / routing]") for item in results)
+    assert any(item["title"].startswith("[Database / persistence]") for item in results)
+    assert any("Reference lookup for" in item["excerpt"] for item in results)
+    assert all("secret-token" not in str(item) for item in results)
+    assert len(calls) == 4
