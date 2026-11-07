@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Building2, FolderOpen, LoaderCircle, LogOut, Moon, Sun, UserRound } from 'lucide-react';
+import { ArrowLeft, Building2, FolderOpen, LoaderCircle, LogOut, Moon, Sun, UserRound, ShieldCheck, UsersRound, Palette, PlugZap } from 'lucide-react';
 import { api } from '../../lib/api';
 import type { User, Workspace } from '../../lib/types';
 import { useAtlasTheme } from '../../hooks/useAtlasTheme';
@@ -11,10 +11,12 @@ import { WorkspaceDeletion } from './WorkspaceDeletion';
 import '../../app/rebuild.css';
 import '../../app/styles/settings.css';
 
-type Section = 'profile' | 'workspace' | 'organisation';
+type Section = 'profile' | 'appearance' | 'security' | 'workspace' | 'organisation';
 const sections = [
-    { id: 'profile', label: 'Profile & preferences', icon: UserRound },
-    { id: 'workspace', label: 'Workspace settings', icon: FolderOpen },
+    { id: 'profile', label: 'My profile', icon: UserRound },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'security', label: 'Security', icon: ShieldCheck },
+    { id: 'workspace', label: 'Workspace & members', icon: UsersRound },
     { id: 'organisation', label: 'Organisations', icon: Building2 },
 ] as const;
 
@@ -29,6 +31,9 @@ export function AccountSettings() {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
+    const [compact, setCompact] = useState(false);
+    useEffect(() => { setCompact(window.localStorage.getItem('atlas-compact-view') === 'true'); }, []);
+    function changeCompact(value: boolean) { setCompact(value); window.localStorage.setItem('atlas-compact-view', String(value)); }
     const workspace = workspaces.find((item) => item.id === workspaceId);
     const atlasHref = workspaceId ? `/?workspaceId=${encodeURIComponent(workspaceId)}` : '/';
 
@@ -115,7 +120,7 @@ export function AccountSettings() {
         );
 
     return (
-        <div className="atlas-v3 settings-shell">
+        <div className={`atlas-v3 settings-shell${compact ? " settings-compact" : ""}`}>
             <aside className="settings-sidebar">
                 <Link href={atlasHref} className="settings-back">
                     <ArrowLeft size={16} />
@@ -123,14 +128,18 @@ export function AccountSettings() {
                 </Link>
                 <div className="settings-brand">
                     <AtlasMark />
-                    <span>Account &amp; settings</span>
+                    <span>Atlas <small> / Settings</small></span>
                 </div>
                 <nav aria-label="Settings navigation">
-                    {sections.map(({ id, label, icon: Icon }) => (
-                        <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => navigate(id)}>
+                    <span className="settings-nav-group">PERSONAL</span>
+                    {sections.map(({ id, label, icon: Icon }, index) => (
+                        <div key={id} className="settings-nav-entry">
+                        {index === 3 && <span className="settings-nav-group">WORKSPACE</span>}
+                        <button type="button" aria-current={section === id ? 'page' : undefined} onClick={() => navigate(id)}>
                             <Icon size={17} />
                             {label}
                         </button>
+                        </div>
                     ))}
                 </nav>
                 <div className="settings-identity">
@@ -141,10 +150,12 @@ export function AccountSettings() {
             <main className="settings-main">
                 <header className="settings-heading">
                     <span className="eyebrow">YOUR ATLAS</span>
-                    <h1>{section === 'profile' ? 'Profile & preferences' : section === 'workspace' ? 'Workspace settings' : 'Organisations'}</h1>
+                    <h1>{section === 'profile' ? 'My profile' : section === 'appearance' ? 'Appearance' : section === 'security' ? 'Account security' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}</h1>
                     <p>
                         {section === 'profile'
-                            ? 'Your account, appearance, and session.'
+                            ? 'Your personal information and Atlas account.'
+                            : section === 'appearance' ? 'Customize how Atlas looks on this device.'
+                            : section === 'security' ? 'Manage your current sign-in session.'
                             : section === 'workspace'
                               ? 'Manage membership and source access in one place.'
                               : 'Manage your teams and organisation membership.'}
@@ -160,46 +171,41 @@ export function AccountSettings() {
                         {notice}
                     </p>
                 )}
-                {section === 'profile' ? (
+                {section === 'profile' || section === 'appearance' || section === 'security' ? (
                     <>
-                        <section className="settings-card" aria-label="Profile">
+                        {section === 'profile' && <section className="settings-card" aria-label="Profile">
+                            <div className="settings-section-title"><h2>My profile</h2><p>Information associated with your Atlas account.</p></div>
                             <div className="settings-profile">
                                 <span className="settings-avatar">{user.email.slice(0, 2).toUpperCase()}</span>
-                                <div>
-                                    <h2>{user.email.split('@')[0]}</h2>
-                                    <p>{user.email}</p>
-                                </div>
+                                <div><strong>{user.email.split('@')[0]}</strong><p>Atlas account</p></div>
                             </div>
                             <dl className="settings-facts">
-                                <div>
-                                    <dt>Email address</dt>
-                                    <dd>{user.email}</dd>
-                                </div>
-                                <div>
-                                    <dt>Workspaces</dt>
-                                    <dd>{workspaces.length}</dd>
-                                </div>
+                                <div><dt>Email address</dt><dd>{user.email}</dd></div>
+                                <div><dt>Workspaces</dt><dd>{workspaces.length}</dd></div>
                             </dl>
-                        </section>
-                        <section className="settings-card settings-inline">
-                            <div>
-                                <h2>Appearance</h2>
-                                <p>Choose the theme used across Atlas.</p>
+                            <p className="settings-help">Profile editing is not available for this account yet.</p>
+                        </section>}
+                        {section === 'appearance' && <section className="settings-card">
+                            <div className="settings-section-title"><h2>Appearance</h2><p>Choose your preferred interface style.</p></div>
+                            <div className="settings-setting-row">
+                                <div><strong>Color theme</strong><p>Applied throughout Atlas.</p></div>
+                                <div className="settings-segmented" role="group" aria-label="Color theme">
+                                    <button type="button" aria-pressed={theme === 'light'} onClick={() => { if (theme !== 'light') toggleTheme(); }}><Sun size={15}/> Light</button>
+                                    <button type="button" aria-pressed={theme === 'dark'} onClick={() => { if (theme !== 'dark') toggleTheme(); }}><Moon size={15}/> Dark</button>
+                                </div>
                             </div>
-                            <button type="button" className="btn" onClick={toggleTheme}>
-                                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}Switch to {theme === 'light' ? 'dark' : 'light'} mode
-                            </button>
-                        </section>
-                        <section className="settings-card settings-inline">
-                            <div>
-                                <h2>Session</h2>
-                                <p>Sign out of Atlas on this browser.</p>
+                            <div className="settings-setting-row">
+                                <div><strong>Compact view</strong><p>Use tighter spacing on this settings page.</p></div>
+                                <label className="settings-switch"><input type="checkbox" checked={compact} onChange={e => changeCompact(e.target.checked)} /><span>Compact</span></label>
                             </div>
-                            <button type="button" className="btn" disabled={busy} onClick={() => void signOut()}>
-                                <LogOut size={16} />
-                                {busy ? 'Signing out…' : 'Sign out'}
-                            </button>
-                        </section>
+                        </section>}
+                        {section === 'security' && <section className="settings-card">
+                            <div className="settings-section-title"><h2>Account security</h2><p>Review your current Atlas session.</p></div>
+                            <div className="settings-setting-row"><div><strong>Current session</strong><p>Sign out of Atlas on this browser.</p></div>
+                                <button type="button" className="btn" disabled={busy} onClick={() => void signOut()}><LogOut size={16}/>{busy ? 'Signing out…' : 'Sign out'}</button>
+                            </div>
+                            <p className="settings-help">Password changes and session management will appear here when supported by the authentication API.</p>
+                        </section>}
                     </>
                 ) : (
                     <>
