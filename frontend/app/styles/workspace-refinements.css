@@ -762,3 +762,17 @@
  .atlas-v3 .library-metrics {grid-template-columns:1fr;gap:7px;}
  .atlas-v3 .library-metrics>span {padding:12px 15px;}
 }
+
+
+/* Contextual actions in the research composer */
+.atlas-v3 .composer-add-wrap {position:relative;display:flex;align-items:center;flex-shrink:0;}
+.atlas-v3 .composer-add-trigger[aria-expanded='true'] {background:var(--active);color:var(--brand);}
+.atlas-v3 .composer-add-menu {position:absolute;z-index:35;left:0;bottom:calc(100% + 12px);width:min(310px,calc(100vw - 36px));padding:7px;border:1px solid var(--outline);border-radius:10px;background:var(--panel);box-shadow:0 12px 36px #1118271f;}
+.atlas-v3 .composer-add-menu-title {padding:10px 11px 8px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.03em;}
+.atlas-v3 .composer-add-menu button {display:flex;align-items:center;gap:12px;width:100%;padding:11px;border:0;border-radius:7px;background:transparent;color:var(--ink);text-align:left;cursor:pointer;}
+.atlas-v3 .composer-add-menu button:hover,.atlas-v3 .composer-add-menu button:focus-visible {background:var(--hover);}
+.atlas-v3 .composer-add-menu button:disabled {opacity:.45;cursor:not-allowed;}
+.atlas-v3 .composer-add-menu button>svg {flex-shrink:0;color:var(--muted);}
+.atlas-v3 .composer-add-menu button span {display:flex;flex-direction:column;gap:4px;}
+.atlas-v3 .composer-add-menu button strong {font-size:12px;font-weight:650;}
+.atlas-v3 .composer-add-menu button small {font-size:11px;color:var(--muted);}
