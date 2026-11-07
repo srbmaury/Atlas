@@ -182,3 +182,91 @@ def test_flow_search_follows_symbols_and_deduplicates_files(monkeypatch):
     assert any('Reference lookup for' in item['excerpt'] for item in results)
     assert all('secret-token' not in str(item) for item in results)
     assert len(calls) == 4
+
+
+def test_explicit_repository_code_search_falls_back_to_tree_and_contents(monkeypatch):
+    import base64
+
+    calls = []
+
+    def fake_http(url, token, provider, params=None, method='GET', accept='application/json'):
+        calls.append(url)
+        if url.endswith('/user'):
+            return {'login': 'connected-user'}
+        if url.endswith('/search/code'):
+            return {'items': []}
+        if url.endswith('/repos/srbmaury/Atlas'):
+            return {'default_branch': 'main'}
+        if '/git/trees/main' in url:
+            return {
+                'tree': [
+                    {'type': 'blob', 'path': 'README.md', 'size': 100},
+                    {'type': 'blob', 'path': 'backend/app/main.py', 'size': 200},
+                    {'type': 'blob', 'path': 'node_modules/pkg/index.js', 'size': 20},
+                ]
+            }
+        if '/contents/' in url:
+            path = url.rsplit('/contents/', 1)[1]
+            body = f'# {path}\nThis file describes the Atlas application.'
+            return {
+                'encoding': 'base64',
+                'content': base64.b64encode(body.encode()).decode(),
+                'sha': 'blob-' + path,
+                'html_url': f'https://github.com/srbmaury/Atlas/blob/main/{path}',
+            }
+        raise AssertionError(f'Unexpected GitHub endpoint: {url}')
+
+    monkeypatch.setattr(external_sources, 'http_json', fake_http)
+    results = external_sources.source_search(
+        'github',
+        'secret-token',
+        'Find the refresh implementation in https://github.com/srbmaury/Atlas',
+    )
+
+    assert results
+    assert all(item['scope'] == 'srbmaury/Atlas' for item in results)
+    assert {item['metadata']['path'] for item in results} == {
+        'README.md',
+        'backend/app/main.py',
+    }
+    assert all('Repository file retrieved' in item['excerpt'] for item in results)
+    assert all('secret-token' not in str(item) for item in results)
+    assert any('/git/trees/main' in url for url in calls)
+
+
+def test_repository_rating_intent_lists_owned_repositories():
+    assert external_sources.github_wants_repositories('Rate my GitHub')
+    assert external_sources.github_wants_repositories('Review my GitHub projects')
+
+
+def test_explicit_repository_flow_falls_back_when_code_search_is_unindexed(monkeypatch):
+    import base64
+
+    def fake_http(url, token, provider, params=None, method='GET', accept='application/json'):
+        if url.endswith('/user'):
+            return {'login': 'connected-user'}
+        if url.endswith('/search/code'):
+            return {'items': []}
+        if url.endswith('/repos/srbmaury/Atlas'):
+            return {'default_branch': 'main'}
+        if '/git/trees/main' in url:
+            return {'tree': [{'type': 'blob', 'path': 'README.md', 'size': 40}]}
+        if '/contents/README.md' in url:
+            body = '# Atlas\\nRepository overview'
+            return {
+                'encoding': 'base64',
+                'content': base64.b64encode(body.encode()).decode(),
+                'sha': 'readme-sha',
+                'html_url': 'https://github.com/srbmaury/Atlas/blob/main/README.md',
+            }
+        raise AssertionError(f'Unexpected GitHub endpoint: {url}')
+
+    monkeypatch.setattr(external_sources, 'http_json', fake_http)
+    results = external_sources.source_search(
+        'github',
+        'secret-token',
+        'Analyse my repo https://github.com/srbmaury/Atlas',
+    )
+    assert len(results) == 1
+    assert results[0]['scope'] == 'srbmaury/Atlas'
+    assert results[0]['metadata']['path'] == 'README.md'
