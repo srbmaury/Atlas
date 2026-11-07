@@ -51,7 +51,7 @@ def test_positive_claim_is_flagged_against_contracted_negative_evidence():
 
 def test_ordinary_positive_claim_remains_supported():
     result = audit_citations(
-        "The service is available [1].",
+        'The service is available [1].',
         [{'text': 'The service is available to customers.'}],
     )
     assert result['claims'][0]['status'] == 'lexically_supported'
