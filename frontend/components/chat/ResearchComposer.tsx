@@ -15,13 +15,14 @@ interface ResearchComposerProps {
     hasAskSources: boolean;
     hasMessages: boolean;
     selectedDocuments: { id: string; name: string }[];
+    pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
     uploadProgress: string;
     uploadResult: string;
     onDismissUploadResult: () => void;
 }
 
-export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult }: ResearchComposerProps) {
+export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowseLibrary, canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments, pendingDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult }: ResearchComposerProps) {
     const voice = useVoiceInput();
     const [addOpen, setAddOpen] = useState(false);
     const addRef = useRef<HTMLDivElement>(null);
@@ -46,9 +47,12 @@ export function ResearchComposer({ query, onChange, onSubmit, onUpload, onBrowse
                 onSubmit();
             }}
         >
-            {(selectedDocuments.length > 0 || uploadProgress || uploadResult) && <div className="composer-context" aria-label="Question context">
+            {(selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && <div className="composer-context" aria-label="Question context">
                 {selectedDocuments.length > 0 && <div className="composer-context-documents">
                     {selectedDocuments.map(doc => <span className="composer-document-chip" key={doc.id}><FileText size={13}/><span title={doc.name}>{doc.name}</span><button type="button" aria-label={`Remove ${doc.name} from question`} onClick={() => onRemoveDocument(doc.id)}>×</button></span>)}
+                </div>}
+                {pendingDocuments.length > 0 && <div className="composer-context-documents">
+                    {pendingDocuments.map(doc => <span className="composer-document-chip composer-document-pending" key={doc.id}><FileText size={13}/><span title={doc.name}>{doc.name}</span><small>{doc.status === 'failed' ? 'Indexing failed' : doc.status === 'processing' ? 'Indexing…' : 'Queued'}</small></span>)}
                 </div>}
                 {uploadProgress && <div className="composer-upload-status" role="status"><LoaderCircle size={14} className="spin"/><span>{uploadProgress}</span></div>}
                 {!uploadProgress && uploadResult && <div className="composer-upload-status" role="status"><FileText size={14}/><span>{uploadResult}</span><button type="button" aria-label="Dismiss upload status" onClick={onDismissUploadResult}>×</button></div>}
