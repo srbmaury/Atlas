@@ -3,7 +3,40 @@ on:
     pull_request:
     push:
         branches: [main]
+permissions:
+    contents: write
 jobs:
+    format-deep-research:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: feat/deep-research-progress
+                  persist-credentials: true
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: npm
+                  cache-dependency-path: frontend/package-lock.json
+            - run: npm ci
+              working-directory: frontend
+            - run: npm run format
+              working-directory: frontend
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.11'
+            - run: |
+                  pip install ruff
+                  ruff check --fix backend/app/main.py backend/app/routes/deep_research.py
+                  ruff format backend/app/main.py backend/app/routes/deep_research.py
+            - run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add frontend backend/app/main.py backend/app/routes/deep_research.py
+                  if ! git diff --cached --quiet; then
+                    git commit -m "style: format Deep Research frontend and backend"
+                    git push origin HEAD:feat/deep-research-progress
+                  fi
     backend:
         runs-on: ubuntu-latest
         steps:
