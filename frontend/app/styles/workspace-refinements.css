@@ -1476,3 +1476,13 @@
         left: -6px;
     }
 }
+
+/* The mobile navigation must sit above the research source picker. */
+@media (max-width: 760px) {
+    .atlas-v3 .sidebar.open {
+        z-index: 200;
+    }
+    .atlas-v3 .research-source-picker {
+        z-index: 2;
+    }
+}
