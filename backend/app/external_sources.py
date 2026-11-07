@@ -292,7 +292,7 @@ def github_wants_code(query):
     """Recognize requests for source files and symbol implementations."""
     return bool(
         re.search(
-            r'\\b(?:code|source\\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
+            r'\b(?:code|source\\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
             query,
             re.I,
         )
@@ -302,7 +302,7 @@ def github_wants_code(query):
 def github_code_search_query(query, login):
     """Build a bounded GitHub code-search query scoped to the connected account."""
     qualifiers = re.findall(
-        r'\\b(?:repo|org|user|language|extension|path|filename|in):[^\\s]+',
+        r'\b(?:repo|org|user|language|extension|path|filename|in):[^\\s]+',
         query,
         re.I,
     )
