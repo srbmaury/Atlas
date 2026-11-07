@@ -291,36 +291,36 @@ def github_repository_query(query, login):
 def github_repository_from_query(query):
     """Extract an explicit repository from a GitHub URL or repo: qualifier."""
     match = re.search(
-        r'(?:https?://)?(?:www\\.)?github\\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)',
+        r'(?:https?://)?(?:www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)',
         query,
         re.I,
     )
     if match:
         return f'{match.group(1)}/{match.group(2).removesuffix(".git")}'
-    match = re.search(r'\\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', query, re.I)
+    match = re.search(r'\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', query, re.I)
     return match.group(1).removesuffix('.git') if match else None
 
 
 def github_query_without_repository(query):
     """Remove URL/qualifier syntax before extracting natural-language search terms."""
     query = re.sub(
-        r'https?://(?:www\\.)?github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[^\\s]*)?',
+        r'https?://(?:www\.)?github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[^\s]*)?',
         ' ',
         query,
         flags=re.I,
     )
-    return re.sub(r'\\brepo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', ' ', query, flags=re.I)
+    return re.sub(r'\brepo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', ' ', query, flags=re.I)
 
 
 def github_wants_code(query):
     """Recognize code requests, including analysis of an explicitly linked repository."""
     code_request = re.search(
-        r'\\b(?:code|source\\s+code|function|class|method|implementation|implemented|definition|symbol)\\b',
+        r'\b(?:code|source\s+code|function|class|method|implementation|implemented|definition|symbol)\b',
         query,
         re.I,
     )
     repository_analysis = github_repository_from_query(query) and re.search(
-        r'\\b(?:analy[sz]e|review|audit|understand|explain|map)\\b', query, re.I
+        r'\b(?:analy[sz]e|review|audit|understand|explain|map)\b', query, re.I
     )
     return bool(code_request or repository_analysis)
 
@@ -354,7 +354,7 @@ def github_code_search_query(query, login):
             'end',
         }
     ]
-    if not terms:
+    if not terms and not repository:
         raise HTTPException(422, 'Add a function, class, identifier, or topic to search in code.')
     scope = ([f'repo:{repository}'] if repository else qualifiers)
     scope = scope or ([f'user:{login}'] if login else [])
@@ -371,12 +371,12 @@ def github_code_search_query(query, login):
 def github_wants_flow(query):
     """Recognize flow tracing and explicit whole-repository analysis requests."""
     flow_request = re.search(
-        r'\\b(?:trace|tracing|call\\s+chain|code\\s+flow|request\\s+flow|end[- ]to[- ]end\\s+flow)\\b',
+        r'\b(?:trace|tracing|call\s+chain|code\s+flow|request\s+flow|end[- ]to[- ]end\s+flow)\b',
         query,
         re.I,
     )
     repository_analysis = github_repository_from_query(query) and re.search(
-        r'\\b(?:analy[sz]e|review|audit|map)\\b', query, re.I
+        r'\b(?:analy[sz]e|review|audit|map)\b', query, re.I
     )
     return bool(flow_request or repository_analysis)
 
@@ -437,6 +437,14 @@ def github_flow_search(token, query, login):
         'across',
         'follow',
         'feature',
+        'analyze',
+        'analyse',
+        'review',
+        'audit',
+        'map',
+        'repository',
+        'repo',
+        'my',
     }
     terms = [
         word
