@@ -499,6 +499,9 @@ def github_flow_search(token, query, login):
                     else f'[{layer}] {path}',
                     'excerpt': f'{relation}\n{excerpt}'[:5200],
                     'url': item.get('html_url'),
+                    'owner': repository_name.split('/', 1)[0] if '/' in repository_name else None,
+                    'scope': repository_name or None,
+                    'metadata': {'repository': repository_name, 'path': path},
                 }
             )
             if len(results) >= 16:
