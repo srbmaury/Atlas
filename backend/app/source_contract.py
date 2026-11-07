@@ -46,6 +46,9 @@ class Evidence:
             'text': normalized.excerpt,
             'url': normalized.url,
             'date': normalized.date,
+            'owner': self.owner,
+            'scope': self.scope,
+            'metadata': dict(self.metadata),
         }
 
 

@@ -1,59 +1,329 @@
 {
   "cases": [
     {
-      "question": "redis cache invalidation",
+      "question": "How does document upload move from browser through API storage and background indexing?",
+      "relevant_ids": [
+        "a",
+        "b"
+      ],
       "candidates": [
         {
           "id": "a",
-          "text": "Travel booking itinerary and hotels"
+          "text": "The upload route stores the original file and creates a queued document record."
         },
         {
           "id": "b",
-          "text": "Redis cache invalidation strategy with TTL and cache keys"
+          "text": "The ingestion worker claims queued documents, parses content, chunks it, and persists passages."
         },
         {
           "id": "c",
-          "text": "CSS design tokens and typography"
-        },
-        {
-          "id": "d",
-          "text": "Kafka consumer lag alert"
-        },
-        {
-          "id": "e",
-          "text": "Payment gateway chargeback flow"
+          "text": "The React theme uses CSS variables and typography tokens."
         }
-      ],
-      "relevant_ids": [
-        "b"
       ]
     },
     {
-      "question": "payment retry idempotency",
+      "question": "Where are workspace permissions checked before a connected-source search?",
+      "relevant_ids": [
+        "a"
+      ],
       "candidates": [
         {
           "id": "a",
-          "text": "Idempotent payment retry strategy with request idempotency keys"
+          "text": "The source search endpoint declares workspace_permission viewer and reads the actor connection."
         },
         {
           "id": "b",
-          "text": "React animation transitions"
+          "text": "The frontend displays the workspace member role in the settings panel."
         },
         {
           "id": "c",
-          "text": "Team calendar events"
-        },
-        {
-          "id": "d",
-          "text": "Redis eviction policies"
-        },
-        {
-          "id": "e",
-          "text": "Image processing compression"
+          "text": "A retry helper applies exponential backoff to provider requests."
         }
-      ],
+      ]
+    },
+    {
+      "question": "How does Atlas prevent a citation ID from referring to a nonexistent source?",
       "relevant_ids": [
         "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "The synthesis path validates citation IDs against the evidence payload before returning an answer."
+        },
+        {
+          "id": "b",
+          "text": "The document parser extracts page numbers from PDFs."
+        },
+        {
+          "id": "c",
+          "text": "The UI renders citation chips with source labels."
+        }
+      ]
+    },
+    {
+      "question": "What happens when OAuth refresh tokens rotate for a connected calendar?",
+      "relevant_ids": [
+        "a",
+        "c"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "A replacement refresh token is encrypted and saved to the connection record when the provider rotates it."
+        },
+        {
+          "id": "b",
+          "text": "The calendar adapter maps event start times into local display strings."
+        },
+        {
+          "id": "c",
+          "text": "OAuth state values are stored as hashes and expire after ten minutes."
+        }
+      ]
+    },
+    {
+      "question": "How are uploaded documents kept separate between workspaces during retrieval?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Retrieval filters chunks by workspace_id and joins only documents whose status is ready."
+        },
+        {
+          "id": "b",
+          "text": "The upload form validates file extensions before sending a request."
+        },
+        {
+          "id": "c",
+          "text": "Workspace roles are displayed in the organisation settings screen."
+        }
+      ]
+    },
+    {
+      "question": "How does the worker recover a document when a processing lease expires?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "The worker claims queued work or records with expired leases and renews its lease during processing."
+        },
+        {
+          "id": "b",
+          "text": "A browser request polls the document status endpoint."
+        },
+        {
+          "id": "c",
+          "text": "The parser detects tables in DOCX files."
+        }
+      ]
+    },
+    {
+      "question": "Which controls prevent server-side request forgery in URL fetching?",
+      "relevant_ids": [
+        "a",
+        "b"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "URL validation rejects private and mixed public/private DNS answers, then connects to the validated public address."
+        },
+        {
+          "id": "b",
+          "text": "The HTTP client disables environment proxy inheritance and redirects."
+        },
+        {
+          "id": "c",
+          "text": "The response parser strips scripts from fetched HTML."
+        }
+      ]
+    },
+    {
+      "question": "How are private source credentials protected when shared workspace members search?",
+      "relevant_ids": [
+        "a",
+        "c"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Connection credentials are encrypted at rest and source grants restrict which members may use a connection."
+        },
+        {
+          "id": "b",
+          "text": "The frontend hides the Connect button from viewers."
+        },
+        {
+          "id": "c",
+          "text": "Provider API scopes still limit what the credential can retrieve."
+        }
+      ]
+    },
+    {
+      "question": "What does the retrieval ranker do when lexical and vector results overlap?",
+      "relevant_ids": [
+        "a",
+        "c"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Lexical and semantic rankings contribute weighted scores before candidate filtering."
+        },
+        {
+          "id": "b",
+          "text": "The parser normalizes Unicode punctuation before chunking."
+        },
+        {
+          "id": "c",
+          "text": "The worker stores embedding model identifiers with vectors."
+        }
+      ]
+    },
+    {
+      "question": "How does Atlas avoid returning a generated answer with invalid citations?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "If citation references are invalid, connected-chat returns an explicit citation-check failure instead of the unverified answer."
+        },
+        {
+          "id": "b",
+          "text": "The frontend retries streaming requests after a network disconnect."
+        },
+        {
+          "id": "c",
+          "text": "The retrieval endpoint returns ranked passages when no AI provider is configured."
+        }
+      ]
+    },
+    {
+      "question": "What happens to access when an organisation member is removed from a workspace?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Removing a member revokes workspace access, removes source grants, and disconnects saved credentials."
+        },
+        {
+          "id": "b",
+          "text": "The user's old private chat history is automatically transferred to the workspace owner."
+        },
+        {
+          "id": "c",
+          "text": "Organisation membership by itself grants access to every workspace."
+        }
+      ]
+    },
+    {
+      "question": "How are OAuth callback requests protected against cross-site request forgery?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "OAuth state is random, stored as a hash, tied to the initiating user and workspace, expires, and is consumed once; PKCE binds the code exchange."
+        },
+        {
+          "id": "b",
+          "text": "The callback accepts a state parameter from the browser and looks up the workspace by name."
+        },
+        {
+          "id": "c",
+          "text": "The access token is written to frontend local storage."
+        }
+      ]
+    },
+    {
+      "question": "Which data is intentionally excluded from the security history event log?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Security history records access and membership metadata but excludes credentials, prompts, and source excerpts."
+        },
+        {
+          "id": "b",
+          "text": "The event table stores the actor and action type for each change."
+        },
+        {
+          "id": "c",
+          "text": "Managers can read workspace access history."
+        }
+      ]
+    },
+    {
+      "question": "How does the API avoid leaking provider tokens in connector errors?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Connector errors log provider and status metadata without forwarding request headers, credentials, or raw upstream bodies."
+        },
+        {
+          "id": "b",
+          "text": "The connector returns the complete HTTP response body to the UI for debugging."
+        },
+        {
+          "id": "c",
+          "text": "The provider token is included in each search result title."
+        }
+      ]
+    },
+    {
+      "question": "What is the difference between workspace membership and organisation membership?",
+      "relevant_ids": [
+        "a",
+        "c"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "Organisation membership alone does not grant access to workspace content; a separate workspace grant is required."
+        },
+        {
+          "id": "b",
+          "text": "Organisation admins automatically become workspace managers for all workspaces."
+        },
+        {
+          "id": "c",
+          "text": "Workspace membership can be granted with a role such as viewer or editor."
+        }
+      ]
+    },
+    {
+      "question": "How does GitHub code-flow tracing follow function references?",
+      "relevant_ids": [
+        "a"
+      ],
+      "candidates": [
+        {
+          "id": "a",
+          "text": "The code-flow search extracts a small number of symbols from matching snippets and searches for references to those symbols."
+        },
+        {
+          "id": "b",
+          "text": "The integration clones each repository and builds a complete language-aware call graph."
+        },
+        {
+          "id": "c",
+          "text": "The integration runs repository code in a sandbox to discover runtime calls."
+        }
       ]
     }
   ]

@@ -67,3 +67,17 @@ def test_repository_listing_keeps_github_repos_without_prompt_word_overlap():
     result = prepare_evidence('List at least 10 of my projects from GitHub', rows)
 
     assert [row.source_id for row in result] == ['r1']
+
+
+def test_conversational_github_repository_list_request_is_structured():
+    from app.evidence_quality import is_listing_question
+
+    assert is_listing_question('Still tell me 5 of my github repos')
+    assert is_listing_question('Give me 5 of my GitHub repositories')
+    assert is_listing_question('What are 5 of my GitHub repos?')
+
+
+def test_explanatory_repository_question_is_not_a_listing():
+    from app.evidence_quality import is_listing_question
+
+    assert not is_listing_question('Tell me why my GitHub repo is failing')

@@ -31,3 +31,41 @@ def test_negated_claim_needs_review():
         'The feature is not available [1].', [{'text': 'The feature is available.'}]
     )
     assert result['claims'][0]['status'] == 'possible_negation_mismatch'
+
+
+def test_contracted_negation_is_not_treated_as_supported_positive_claim():
+    result = audit_citations(
+        "The feature isn't available [1].",
+        [{'text': 'The feature is available.'}],
+    )
+    assert result['claims'][0]['status'] == 'possible_negation_mismatch'
+
+
+def test_positive_claim_is_flagged_against_contracted_negative_evidence():
+    result = audit_citations(
+        'The service is available [1].',
+        [{'text': "The service isn't available."}],
+    )
+    assert result['claims'][0]['status'] == 'possible_negation_mismatch'
+
+
+def test_ordinary_positive_claim_remains_supported():
+    result = audit_citations(
+        'The service is available [1].',
+        [{'text': 'The service is available to customers.'}],
+    )
+    assert result['claims'][0]['status'] == 'lexically_supported'
+
+
+def test_lexical_match_is_never_reported_as_verified_entailment():
+    result = audit_citations(
+        'The service is available [1].',
+        [{'text': 'The service is available to customers.'}],
+    )
+    claim = result['claims'][0]
+    assert claim['status'] == 'lexically_supported'
+    assert claim['entailment'] == 'not_evaluated'
+    assert claim['requires_human_review'] is True
+    assert result['semantic_entailment_verified'] is False
+    assert result['claims_requiring_human_review'] == 1
+    assert result['needs_review'] == 1

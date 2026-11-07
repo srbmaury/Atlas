@@ -327,6 +327,7 @@
     background: #1d4ed8;
 }
 :root[data-theme='dark'] .atlas-v3 {
+    --evidence: #25282d;
     --canvas: var(--bg);
     --wash: var(--sidebar);
     --ink: var(--text);
@@ -379,4 +380,16 @@
     .atlas-v3 .chat-workspace .chat-pane {
         height: clamp(470px, calc(100dvh - 210px), 900px);
     }
+}
+/* Dark-mode surface and text for the source passage card. */
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence {
+    background: #25282d !important;
+    color: #e6e8eb !important;
+}
+
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-plain *,
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown * {
+    color: #e6e8eb !important;
 }

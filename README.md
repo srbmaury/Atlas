@@ -113,6 +113,10 @@ For documents-only requests, the server may use the document answer-generation p
 | Cross-source answers | `backend/app/main.py` connected-chat routes | `external_sources.py`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
 | Citation display | `frontend/components/chat/ResearchAnswer.tsx` | `frontend/lib/evidence.ts` |
 
+
+
+GitHub code-search questions can also ask Atlas to **trace a code flow** (for example, “trace the document upload flow”). Atlas performs a bounded first-pass code search, extracts up to three function/class symbols from returned snippets, and searches for references to those symbols. Results are labeled by a conservative path-based layer hint such as Frontend / UI, API / routing, Backend / service, or Database / persistence. This is a discovery aid, not a complete call graph: GitHub search indexing, snippets, dynamic dispatch, generated code, and cross-repository boundaries can leave gaps. Open the linked files and verify each hop before treating the trace as complete.
+
 ## Get started locally
 
 ### Requirements
@@ -252,9 +256,9 @@ Connect from **Sources → Google Drive**. Atlas uses read-only Drive access and
 
 ### GitHub
 
-Create a fine-grained personal access token scoped to the repositories Atlas should access, with read-only metadata and issue permissions. Add it under **Sources → GitHub**.
+Create a fine-grained personal access token scoped to the repositories Atlas should access, with read-only **Metadata**, **Issues**, **Pull requests**, and **Contents** permissions. Contents access is needed for source-code search. Add it under **Sources → GitHub**.
 
-Atlas can search repositories, issues, and pull requests. Repository descriptions and metadata can support project overviews. The connector does not search source-code files. Results are limited to repositories and records visible to the token.
+Atlas can search repositories, issues, pull requests, and source-code files. Code searches are scoped to the connected account by default; add an explicit `repo:owner/name` qualifier to narrow a search to one repository. Results and file snippets are limited to repositories and records visible to the token. Atlas never writes to connected repositories.
 
 ### Notion
 
@@ -438,3 +442,17 @@ assigns existing chats and connections to their workspace owner, and keeps all
 connections private. Back up the database before upgrading. Downgrade is deliberately
 blocked because dropping access metadata could expose shared workspace data; restore
 a pre-upgrade backup if a rollback is required.
+
+
+## Security and production readiness
+
+See [SECURITY.md](SECURITY.md) for implemented safeguards and the explicit
+production-hardening checklist. Local unit tests do not verify real provider OAuth
+configuration or deployed infrastructure. Do not expose a production deployment
+until staging, secrets, network, backup, monitoring, and independent-review gates
+have been completed.
+
+Citation auditing checks reference validity, lexical overlap, numbers, and common
+negation patterns. It deliberately reports semantic entailment as **not evaluated**;
+every claim requires human review. The offline retrieval benchmark is synthetic
+and should be treated as a regression fixture, not a production-quality score.
