@@ -442,3 +442,17 @@ assigns existing chats and connections to their workspace owner, and keeps all
 connections private. Back up the database before upgrading. Downgrade is deliberately
 blocked because dropping access metadata could expose shared workspace data; restore
 a pre-upgrade backup if a rollback is required.
+
+ 
+## Security and production readiness
+
+See [SECURITY.md](SECURITY.md) for implemented safeguards and the explicit
+production-hardening checklist. Local unit tests do not verify real provider OAuth
+configuration or deployed infrastructure. Do not expose a production deployment
+until staging, secrets, network, backup, monitoring, and independent-review gates
+have been completed.
+
+Citation auditing checks reference validity, lexical overlap, numbers, and common
+negation patterns. It deliberately reports semantic entailment as **not evaluated**;
+every claim requires human review. The offline retrieval benchmark is synthetic
+and should be treated as a regression fixture, not a production-quality score.

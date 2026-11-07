@@ -7,6 +7,7 @@ No external model or real credentials needed.
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 
@@ -15,10 +16,15 @@ def score_case(ranked_ids, relevant_ids, k=5):
     top = ranked_ids[:k]
     hits = len(set(top) & relevant)
     reciprocal_rank = next((1 / i for i, item in enumerate(top, 1) if item in relevant), 0.0)
+    dcg = sum(1 / math.log2(rank + 1) for rank, item in enumerate(top, 1) if item in relevant)
+    ideal_hits = min(len(relevant), k)
+    ideal_dcg = sum(1 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1))
     return {
         'recall_at_k': hits / len(relevant) if relevant else 0.0,
         'precision_at_k': hits / len(top) if top else 0.0,
         'mrr_at_k': reciprocal_rank,
+        'ndcg_at_k': dcg / ideal_dcg if ideal_dcg else 0.0,
+        'hit_rate_at_k': float(hits > 0),
     }
 
 
@@ -34,7 +40,7 @@ def evaluate(cases, ranker, k=5):
         'k': k,
         **{
             key: round(sum(row[key] for row in results) / len(results), 4)
-            for key in ('recall_at_k', 'precision_at_k', 'mrr_at_k')
+            for key in ('recall_at_k', 'precision_at_k', 'mrr_at_k', 'ndcg_at_k', 'hit_rate_at_k')
         },
     }
 
