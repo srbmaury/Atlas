@@ -10,7 +10,7 @@ import json
 import os
 import secrets
 import time
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -43,8 +43,18 @@ def _settings(provider):
     redirect = f'{base}/{provider}/callback'
     if not client_id or not redirect:
         raise HTTPException(503, 'Configure OAuth client credentials and redirect URL.')
-    if not redirect.startswith('https://') and not redirect.startswith(
-        ('http://localhost:', 'http://127.0.0.1:')
+    parsed_redirect = urlsplit(redirect)
+    local_http = (
+        parsed_redirect.scheme == 'http'
+        and parsed_redirect.hostname in {'localhost', '127.0.0.1'}
+    )
+    secure_https = parsed_redirect.scheme == 'https' and bool(parsed_redirect.hostname)
+    if (
+        not (local_http or secure_https)
+        or parsed_redirect.username
+        or parsed_redirect.password
+        or parsed_redirect.query
+        or parsed_redirect.fragment
     ):
         raise HTTPException(503, 'OAuth redirect must use HTTPS outside local development.')
     crypt()

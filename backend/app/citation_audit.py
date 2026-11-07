@@ -77,10 +77,14 @@ def audit_citations(answer: str, sources: list[dict], *, threshold: float = 0.35
                 'citations': ids,
                 'overlap': round(overlap, 3),
                 'status': status,
+                'entailment': 'not_evaluated',
+                'requires_human_review': True,
             }
         )
     return {
         'claims': findings,
         'needs_review': sum(row['status'] != 'lexically_supported' for row in findings),
-        'note': 'Heuristic checks only. Lexical support is not proof of entailment; verify original evidence.',
+        'claims_requiring_human_review': len(findings),
+        'semantic_entailment_verified': False,
+        'note': 'All claims require human review. Checks detect reference, number, negation, and lexical issues; they do not determine whether evidence entails a claim.',
     }
