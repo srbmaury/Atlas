@@ -1,0 +1,27 @@
+name: Format backend research files
+on:
+  push:
+    branches: [feat/evidence-first-repository]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/evidence-first-repository
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff
+      - run: ruff format backend/app/external_sources.py backend/tests/test_repository_evidence.py
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add backend/app/external_sources.py backend/tests/test_repository_evidence.py
+            git commit -m "style: format repository retrieval and regression tests"
+            git push origin HEAD:feat/evidence-first-repository
+          fi
