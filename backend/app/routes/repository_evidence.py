@@ -8,6 +8,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from ..ai import enabled as ai_enabled, generate
 from ..api_dependencies import database, user
 from ..external_sources import github_repository_file_search, http_json, read_connection
 from ..rbac import revalidate_access, workspace_permission
@@ -121,12 +122,36 @@ def inspect_repository(
         }
     results = github_repository_file_search(token, repository, body.question, limit=8)
     web_results = search_public_web(body.question) if body.include_web else []
+    evidence = [
+        {'name': item.get('metadata', {}).get('path', item['title']),
+         'page': 1, 'text': item.get('excerpt', '')[:3500]}
+        for item in results if item.get('excerpt')
+    ]
+    evidence.extend(
+        {'name': item['title'], 'page': 1, 'text': item['excerpt']}
+        for item in web_results if item.get('excerpt')
+    )
+    answer = None
+    answer_mode = 'no_evidence'
+    if evidence and ai_enabled():
+        try:
+            generated = generate(body.question, evidence)
+            answer_mode = generated.get('mode', 'unknown')
+            if answer_mode == 'ai':
+                answer = generated.get('answer')
+        except Exception:
+            # Evidence remains available if model synthesis is unavailable.
+            answer_mode = 'generation_failed'
+    elif evidence:
+        answer_mode = 'ai_not_configured'
     revalidate_access(workspaceId, actor, {'github'})
     return {
         'repository': repository,
         'question': body.question,
         'status': 'evidence_found' if results else 'no_matches',
         'count': len(results),
+        'answer': answer,
+        'answer_mode': answer_mode,
         'web_sources': web_results,
         'sources': [
             {
