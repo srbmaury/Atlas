@@ -1,6 +1,7 @@
 'use client';
+import { useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen } from 'lucide-react';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X } from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -72,6 +73,8 @@ interface ResearchWorkspaceProps {
 }
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
+    const [messageSearch, setMessageSearch] = useState('');
+    const matches = messageSearch.trim() ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase())) : [];
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
     const allSelected =
@@ -168,6 +171,25 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                 />
                 <div className="research">
                     <div className="chat-pane">
+                        {props.messages.length > 0 && (
+                            <div className="message-search-panel">
+                                <label className="message-search-input">
+                                    <Search size={15} aria-hidden="true" />
+                                    <input aria-label="Search messages in this conversation" placeholder="Find in this conversation" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} />
+                                </label>
+                                {messageSearch && <button type="button" aria-label="Clear message search" onClick={() => setMessageSearch('')}><X size={14} /></button>}
+                                {messageSearch.trim() && (
+                                    <div className="message-search-results" role="status">
+                                        <span>{matches.length} matching {matches.length === 1 ? 'message' : 'messages'}</span>
+                                        {matches.map(({ message, index }) => (
+                                            <button type="button" key={index} onClick={() => props.threadRef.current?.querySelector('[data-message-index="' + index + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                                                <strong>{message.role === 'user' ? 'You' : 'Atlas'}</strong> {message.content.slice(0, 160)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <ConversationTranscript
                             messages={props.messages}
                             busy={props.busy}
