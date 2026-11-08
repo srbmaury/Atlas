@@ -438,7 +438,14 @@ export function AtlasWorkspace() {
             setSource(null);
             setNotice(regenerate ? 'Regenerating in a new branch; the original answer is preserved.' : 'Branch created. Edit the copied prompt and send it to explore a different direction.');
             navigate('chat');
-            if (regenerate) await ask(prompt);
+            if (regenerate) {
+                // React has not committed the new chat state yet; avoid sending into the previous chat.
+                window.setTimeout(() => {
+                    document.querySelector<HTMLTextAreaElement>('.chat-pane .composer textarea')?.focus();
+                }, 0);
+                setQuery(prompt);
+                setNotice('Branch created. Send the copied prompt to regenerate; the original answer remains intact.');
+            }
         } catch (e) {
             setError((e as Error).message);
         }
