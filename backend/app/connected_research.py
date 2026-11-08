@@ -21,30 +21,6 @@ CONNECTED_SOURCE_EXECUTOR = ThreadPoolExecutor(
 )
 
 
-def effective_research_scope(body):
-    """Honor explicit email-only intent without changing other source requests."""
-    from .research_queries import email_request_scope
-
-    if not email_request_scope(body.question):
-        return body
-    return body.model_copy(
-        update={'include_gmail': True, 'include_documents': False, 'providers': []}
-    )
-
-
-def ambiguous_email_request(body):
-    from .research_queries import email_request_scope, excludes_gmail_messages
-
-    if email_request_scope(body.question) and excludes_gmail_messages(body.question):
-        return {
-            'answer': 'You asked for emails but also excluded Gmail. Do you want to exclude emails from a particular sender, or search a different mail provider?',
-            'sources': [],
-            'mode': 'clarification_needed',
-            'scope': [],
-        }
-    return None
-
-
 def collect_connected_evidence(
     workspaceId, body, actor, db, retrieval_stats=None, *, workspace_access, retrieve_chunks
 ):
