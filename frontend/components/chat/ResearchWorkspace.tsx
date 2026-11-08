@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
 import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X } from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
@@ -75,6 +75,22 @@ interface ResearchWorkspaceProps {
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const [messageSearch, setMessageSearch] = useState('');
+    useEffect(() => {
+        function onShortcut(event: KeyboardEvent) {
+            const target = event.target as HTMLElement | null;
+            const editing = target?.matches('input, textarea, [contenteditable="true"]');
+            if (event.key === '/' && !editing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+                event.preventDefault();
+                document.querySelector<HTMLTextAreaElement>('.chat-pane .composer textarea')?.focus();
+            }
+            if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
+                event.preventDefault();
+                document.querySelector<HTMLInputElement>('.message-search-input input')?.focus();
+            }
+        }
+        window.addEventListener('keydown', onShortcut);
+        return () => window.removeEventListener('keydown', onShortcut);
+    }, []);
     const matches = messageSearch.trim() ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase())) : [];
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
