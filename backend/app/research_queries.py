@@ -268,7 +268,7 @@ def gmail_query_for_question(scope, question):
     ):
         return ' '.join([scope.strip(), *filters]).strip()
     # "from CoinDCX" is a sender filter, not a free-text conjunction.
-    sender = re.search(r'\bfrom\s+([a-z][a-z0-9._+-]{1,70})\b', text)
+    sender = re.search(r'\bfrom\s+([a-z][a-z0-9._+-]{1,70})\b', cleaned)
     if sender:
         filters.append('from:' + sender.group(1))
         cleaned = re.sub(r'\bfrom\s+' + re.escape(sender.group(1)) + r'\b', ' ', cleaned)
