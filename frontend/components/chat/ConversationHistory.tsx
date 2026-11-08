@@ -52,7 +52,7 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
                     {selecting && (
                         <>
                             <label><input type="checkbox" checked={allVisibleSelected} disabled={busy || !filteredChats.length} onChange={(event) => setSelected((current) => event.target.checked ? [...new Set([...current, ...filteredChats.map((chat) => chat.id)])] : current.filter((id) => !filteredChats.some((chat) => chat.id === id))} /> Select all shown</label>
-                            <button type="button" disabled={busy || !selectedVisible.length} onClick={() => { onDeleteChats(selectedVisible); exitSelection(); }}>
+                            <button type="button" disabled={busy || !selectedVisible.length} onClick={() => { onDeleteChats(selectedVisible); }}>
                                 <Trash2 size={14} aria-hidden="true" /> Delete ({selectedVisible.length})
                             </button>
                         </>
@@ -61,7 +61,7 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
             )}
             <div className="chat-history-search">
                 <Search size={15} aria-hidden="true" />
-                <input type="search" aria-label="Search conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
+                <input type="text" aria-label="Search conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
                 {search && (
                     <button type="button" className="chat-history-clear" aria-label="Clear conversation search" onClick={() => setSearch('')}>
                         <X size={14} />
