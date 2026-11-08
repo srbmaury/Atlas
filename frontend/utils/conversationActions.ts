@@ -174,11 +174,11 @@ export function createConversationActions({
             });
             const useConnected = searchScope.includeGmail || searchScope.providers.length > 0 || user?.mode === 'ai';
             let draft = '';
-            const repositoryIntent = /\brepo:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\b/i.test(question) || /\b(repository|repo)\b/i.test(question) || /\b(application flow|codebase|entry points)\b/i.test(question);
-            const githubOnly = connectedProviders.includes('github') && (repositoryIntent || (connectedProviders.length === 1 && !connectedGmail && !includeDocuments));
+            // Source selection, not question wording, determines the research engine.
+            const useRepositoryEvidence = connectedProviders.includes('github');
             let result;
-            if (githubOnly) {
-                const repositoryContext = [...chatMessages.current].reverse().find((message) =>
+            if (useRepositoryEvidence) {
+                const repositoryContext = [...history].reverse().find((message) =>
                     message.role === 'assistant' && message.result?.sources?.some((source) => source.provider === 'github')
                 )?.result?.sources?.find((source) => source.provider === 'github')?.name.split('/').slice(0, 2).join('/');
                 const inspection = await api<{
@@ -189,7 +189,7 @@ export function createConversationActions({
                 }>(`/workspaces/${target}/repository-evidence`, {
                     method: 'POST',
                     body: JSON.stringify({
-                        question, repository: repositoryContext || null, include_web: false,
+                        question, repository: /\brepo:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/i.test(question) ? null : repositoryContext || null, include_web: false,
                         history: history.slice(-6).map((item) => ({ role: item.role, content: item.content })),
                     }),
                     signal: controller.signal,
