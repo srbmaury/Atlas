@@ -210,7 +210,7 @@ Set `AI_PROVIDER=none` and leave `OPENAI_API_KEY` empty. Atlas returns matching 
 
 ## Connect data sources
 
-See the [Connected source setup guide](docs/FIVE_SOURCE_CONNECTORS.md) for credentials, OAuth callbacks, and search limits for all providers.
+See the [Source setup guide](docs/SOURCE_SETUP.md) for credentials, OAuth callbacks, and search limits for all providers.
 
 Open **Sources** to connect a provider, then select it above the prompt in **Ask Atlas**. Connections are workspace-scoped and Atlas reads source content on demand.
 
@@ -283,7 +283,7 @@ npx playwright test
 - PDF, DOCX, TXT, Markdown, CSV, JSON, and HTML ingestion. Individual files can be up to 250 MB; scanned PDF text extraction uses Tesseract OCR.
 - Durable document processing with retry and reindex controls.
 - Keyword search, optional vector search, and source-grounded answers.
-- [On-demand retrieval from connected sources](docs/FIVE_SOURCE_CONNECTORS.md), including Google Workspace, Microsoft 365, and engineering tools.
+- [On-demand retrieval from connected sources](docs/SOURCE_SETUP.md), including Google Workspace, Microsoft 365, and engineering tools.
 
 Connected sources use permission checks at the provider and do not sync in the background. AI answers can miss details; review cited passages before relying on them. Atlas validates citation references but does not prove every claim is supported by its citation.
 

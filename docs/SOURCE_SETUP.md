@@ -1,8 +1,12 @@
-# Connected source setup
+# Atlas source setup
 
-Atlas reads connected sources on demand. Connect a provider in **Sources**, then select it for a question in **Ask Atlas**. Atlas does not copy connected content into the document library or synchronize it in the background.
+Atlas supports uploaded documents and 11 connected sources. Atlas reads connected sources on demand. Connect a provider in **Sources**, then select it for a question in **Ask Atlas**. Atlas does not copy connected content into the document library or synchronize it in the background.
 
 Set a stable, private `GMAIL_TOKEN_ENCRYPTION_KEY` on the backend before connecting a source. Generate it with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Set backend variables in `.env` for local development or in the service environment for hosted deployments. Keep secrets out of Git. Disconnecting deletes the saved credential in Atlas. Revoke the grant or token separately at the provider.
+
+## Uploaded documents
+
+Upload files from **Documents** in the workspace. Atlas indexes PDF, DOCX, TXT, Markdown, CSV, JSON, and HTML files. Scanned PDFs can use OCR when Tesseract is available. Once indexing finishes, select **Documents** in **Ask Atlas** to search the indexed text.
 
 ## Google Workspace
 
