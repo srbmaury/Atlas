@@ -485,6 +485,7 @@ export function AtlasWorkspace() {
                 await ask(prompt);
             } else if (mode === 'edit') {
                 setNotice('Editing turn ' + request.turn + ' in a new branch. Earlier turns are retained.');
+                window.requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('.research-composer-v2 textarea')?.focus());
             } else {
                 setNotice('Branched through turn ' + request.turn + '. Later turns were excluded.');
             }
