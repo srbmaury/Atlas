@@ -31,6 +31,32 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 - Switching chats during a save cannot silently overwrite another conversation.
 - Large histories remain responsive; regression tests cover empty, loading, error, and concurrent-update states.
 
+## UI/UX expansion — staged delivery
+
+**Scope:** Implement the full experience incrementally, not as one untested change. Each slice must pass frontend formatting, type checks, accessibility review, and interaction tests before merge.
+
+### Chat experience (P0)
+- Date-grouped conversation navigation, pin/archive, overflow actions, filtered bulk selection and deletion.
+- Search conversation titles and message bodies; keyboard-accessible global search.
+- Per-conversation draft persistence, explicit save/retry states, and concurrency-safe chat switching.
+- Edit and retry prompts, regenerate answers, copy individual messages, and branch from an earlier turn.
+- Responsive layouts and accessible focus, dialogs, menus, keyboard navigation, and empty/error states.
+
+### Research experience (P1)
+- Resizable, keyboard-accessible evidence inspector with exact passage navigation and two-source comparison.
+- Visible source-selection chips and quick scope controls, preserving source permissions.
+- Show real backend-reported retrieval/verification progress; never fabricate processing stages.
+- Keep citations and evidence linked when switching, resuming, or exporting conversations.
+
+### Agent experience (P2)
+- User-selectable Quick Answer and Investigate modes once agent orchestration is implemented.
+- Visible investigation steps, source provenance, cancellation, retry, and uncertainty states.
+
+### Delivery rule
+- Fix existing chat-management CI failures before expanding into additional features.
+- Add regression tests for search, bulk deletion, drafts, chat switching, evidence inspection, and mobile behavior.
+- Avoid introducing prompt-specific keyword routing or provider-specific UI assumptions.
+
 ## Next priority — Evidence-aware Investigation Agent (P1)
 
 **Goal:** Turn a user goal into a bounded, auditable multi-step investigation, not a swarm of autonomous agents.
