@@ -239,7 +239,7 @@ def expand_gmail_threads(token, matching_messages, *, max_threads=5, max_message
 
 def audit_gmail_citations(answer, source_count):
     """Check citation references, not semantic entailment of cited claims."""
-    references = [int(n) for n in re.findall(r'\\[(\\d+)\\]', answer)]
+    references = [int(n) for n in re.findall(r'\[(\d+)\]', answer)]
     invalid = sorted({n for n in references if not 1 <= n <= source_count})
     cited = sorted({n for n in references if 1 <= n <= source_count})
     # Do not claim that merely citing a message proves a factual statement.
