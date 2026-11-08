@@ -1,0 +1,35 @@
+name: Frontend formatting repair
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/frontend-format-repair.yml]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Format frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run format
+          npm run format:check
+          npm run typecheck
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format frontend UX improvements [skip ci]"
+            git push origin HEAD:main
+          fi
