@@ -120,11 +120,13 @@ export type SourceHealthCheck = SourceHealthEntry & {
 };
 export type SourceHealthListResponse = { checks: SourceHealthEntry[] };
 export type SourceHealthCheckResponse = { checks: SourceHealthCheck[] };
-export type GmailSearchResponse = { messages: GmailMessage[] };
+export type GmailSearchResponse = { messages: GmailMessage[]; threads?: GmailThread[] };
+export type GmailThread = { thread_id: string; subject: string; message_count: number; truncated?: boolean; messages: GmailMessage[] };
 export type GmailQuerySummary = GmailSummary & { count: number; limited: boolean };
 export type GmailSummary = {
     summary: string;
     mode?: 'intelligence';
+    citation_audit?: { status: 'invalid_references' | 'references_present' | 'no_references'; cited_numbers: number[]; invalid_numbers: number[]; semantic_support_verified: false };
     sources: { number: number; id: string; subject: string; url: string; sender?: string; date?: string; excerpt?: string; truncated?: boolean; thread_id?: string }[];
 };
 export type ChatSummary = { id: string; title: string; updated: number };
