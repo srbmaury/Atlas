@@ -75,6 +75,18 @@ interface ResearchWorkspaceProps {
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const [messageSearch, setMessageSearch] = useState('');
+    const [evidenceWidth, setEvidenceWidth] = useState(340);
+    useEffect(() => {
+        try {
+            const saved = Number(localStorage.getItem('atlas:evidence-width'));
+            if (saved >= 260 && saved <= 760) setEvidenceWidth(saved);
+        } catch { /* Storage may be unavailable. */ }
+    }, []);
+    function resizeEvidence(next: number) {
+        const width = Math.max(260, Math.min(760, next));
+        setEvidenceWidth(width);
+        try { localStorage.setItem('atlas:evidence-width', String(width)); } catch { /* Ignore storage failure. */ }
+    }
     useEffect(() => {
         function onShortcut(event: KeyboardEvent) {
             const target = event.target as HTMLElement | null;
@@ -187,7 +199,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onDeleteChat={props.onDeleteChat}
                     onDeleteChats={props.onDeleteChats}
                 />
-                <div className="research">
+                <div className="research" style={{ ["--atlas-evidence-width" as string]: evidenceWidth + "px" }}>
                     <div className="chat-pane">
                         {props.messages.length > 0 && (
                             <div className="message-search-panel">
@@ -256,6 +268,12 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         </p>
                     </div>
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
+                        <div className="evidence-width-controls" aria-label="Evidence panel width">
+                            <button type="button" aria-label="Narrow evidence panel" onClick={() => resizeEvidence(evidenceWidth - 80)}>−</button>
+                            <span>{evidenceWidth}px</span>
+                            <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>+</button>
+                            <button type="button" onClick={() => resizeEvidence(340)}>Reset</button>
+                        </div>
                         {latestAnswer?.retrieval && (
                             <details className="investigation-timeline">
                                 <summary><Activity size={15} /> Investigation timeline</summary>
