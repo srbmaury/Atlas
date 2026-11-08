@@ -83,6 +83,10 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     useEffect(() => {
+        setFocusedIndex(null);
+        setMessageSearch('');
+    }, [props.chatId]);
+    useEffect(() => {
         if (!props.searchTarget || props.chatId !== props.searchTarget.chatId) return;
         const target = props.searchTarget;
         if (!props.messages[target.index] || !props.messages[target.index].content.toLocaleLowerCase().includes(target.phrase.toLocaleLowerCase())) return;
@@ -100,10 +104,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         const next = position < 0 ? (direction === 1 ? 0 : matches.length - 1) : (position + direction + matches.length) % matches.length;
         focusMatch(matches[next].index);
     }
-    useEffect(() => {
-        setFocusedIndex(null);
-        setMessageSearch('');
-    }, [props.chatId]);
     const [evidenceWidth, setEvidenceWidth] = useState(340);
     useEffect(() => {
         try {
