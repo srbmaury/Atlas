@@ -139,10 +139,6 @@ def connected_chat(
     """Retrieve evidence across workspace documents and optionally live Gmail."""
     from .ai import client, ollama_chat
 
-    clarification = connected_research.ambiguous_email_request(body)
-    if clarification:
-        return clarification
-    body = connected_research.effective_research_scope(body)
     retrieval_stats = {}
     evidence, document_evidence = collect_connected_evidence(
         workspaceId, body, actor, db, retrieval_stats
@@ -241,11 +237,7 @@ def connected_chat_stream(
     import json
 
     def events():
-        clarification = connected_research.ambiguous_email_request(body)
-        if clarification:
-            yield json.dumps({'type': 'done', 'result': clarification}, ensure_ascii=False) + '\n'
-            return
-        effective_body = connected_research.effective_research_scope(body)
+        effective_body = body
         provider_labels = {
             'documents': 'Documents',
             'gmail': 'Gmail',
