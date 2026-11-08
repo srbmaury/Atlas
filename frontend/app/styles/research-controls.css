@@ -565,3 +565,7 @@ input[type='checkbox'] {
 .atlas-v3 .message-search-input input:focus,
 .atlas-v3 .message-search-input input:focus-visible { box-shadow: none; outline: 0; border: 0; }
 .atlas-v3 .message-search-panel:focus-within { border-color: var(--brand); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 16%, transparent); }
+
+.message-search-focused { outline: 2px solid var(--brand, #3277cf); outline-offset: 5px; border-radius: 8px; scroll-margin-block: 96px; }
+.message-search-highlight { background: #ffe58a; color: #242424; border-radius: 2px; padding: 0 1px; }
+.message-search-context { margin-bottom: 10px; padding: 9px 12px; border-left: 3px solid var(--brand, #3277cf); border-radius: 5px; background: var(--hover); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
