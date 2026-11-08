@@ -14,6 +14,36 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 - Keep evaluation reproducible and expose meaningful errors.
 - Ship incrementally with tests, instrumentation, and accessible UI.
 
+## Active workstream — Gmail Intelligence (P0)
+
+**Status:** In progress on `feat/gmail-intelligence`. This workstream takes priority over the proposed general-purpose roadmap while preserving the existing document and GitHub pipelines.
+
+**Goal:** Answer questions about Gmail conversations with reliable chronology, traceable message-level evidence, and actionable conclusions.
+
+### Deliverables
+1. **Thread-aware retrieval:** Group messages by Gmail `threadId`, order them chronologically, preserve sender/subject/date, and keep stable links to original messages. Do not treat unrelated messages as a conversation.
+2. **Decision and commitment extraction:** Summarize decisions, owners, deadlines, open questions, and follow-up actions; distinguish explicit commitments from inferred suggestions.
+3. **Chronological synthesis:** Detect updates, corrections, and superseded decisions within a thread. Label missing dates or ambiguous ownership rather than guessing.
+4. **Grounded citations:** Every extracted decision or task links to the original email message and relevant excerpt. Clearly distinguish full-body evidence from snippets and truncated text.
+5. **Search and scope:** Support relevant Gmail search filters and bounded thread expansion, honor connection permissions, and avoid fetching unrelated messages.
+6. **Cross-source readiness:** Normalize Gmail evidence into the existing research answer/source contract without changing the working document retrieval path.
+7. **Privacy and resilience:** Maintain read-only Gmail access; treat email text as untrusted data; redact credentials; handle pagination, rate limits, missing bodies, and revoked access.
+
+### Incremental delivery
+- **Slice A — foundation (started):** Thread grouping/chronology helper with unit tests; expose thread metadata without breaking existing message fields.
+- **Slice B:** Bounded Gmail thread expansion and thread-aware search results.
+- **Slice C — backend implemented, verification pending:** Opt-in decision, commitment, action, owner, and deadline analysis with source excerpts and message citations. Deterministic citation-number validation is implemented; semantic claim-to-evidence verification is still outstanding.
+- **Slice D — implemented on feature branch, verification pending:** Gmail UI analysis toggle, per-message evidence excerpts, expandable thread navigation, and follow-up questions scoped to the same selected emails. Cross-source integration and persistent multi-turn history remain outstanding.
+- **Slice E — tests added, not yet verified:** Backend citation-reference and request-validation tests plus Playwright Gmail thread/evidence/follow-up test. Semantic claim-to-passage verification, full benchmark runs, security review, and performance tuning remain outstanding.
+
+### Acceptance tests
+- Messages from the same thread are grouped and sorted by timestamp even if the API returns them out of order.
+- Different threads never merge merely because their subjects match.
+- Decisions, owners, and deadlines without explicit evidence are not presented as facts.
+- Every cited message is accessible through an authorized original-message link.
+- Empty, partial, and truncated threads are described accurately.
+- Existing Gmail search/summarization, document retrieval, and GitHub tests remain green.
+
 ## Phase 1 — Trust (P0)
 
 ### 1. Claim-level citation verification engine

@@ -47,4 +47,5 @@ class ConnectedQuestion(Question):
     include_documents: bool = True
     include_gmail: bool = False
     gmail_query: str = Field(default='newer_than:30d', max_length=400)
+    gmail_source_ids: List[str] = Field(default_factory=list, max_length=30)
     providers: List[str] = Field(default_factory=list, max_length=12)

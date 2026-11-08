@@ -165,9 +165,37 @@ def collect_connected_evidence(
     except Exception as exc:
         log.exception('Connected retrieval failed')
         raise HTTPException(502, 'Could not retrieve connected sources.') from exc
-    from .evidence_quality import prepare_evidence
+    from .evidence_quality import is_listing_question, prepare_evidence
 
-    return prepare_evidence(body.question, evidence), document_evidence
+    listing = is_listing_question(body.question)
+    if body.include_gmail and not listing and not getattr(body, 'gmail_source_ids', []):
+        # Gmail is normally responsible for lexical matching. If a connector or
+        # Gmail query returns a mix of obvious matches and unrelated messages,
+        # ignore only those missing all explicit topic words. Never apply this
+        # to mailbox-wide listings or previously cited messages.
+        query_words = [
+            word.lower()
+            for word in gmail_query_for_question('', body.question).split()
+            if ':' not in word and len(word) >= 3
+        ]
+        gmail_hits = [item for item in evidence if item.provider == 'gmail']
+        if len(gmail_hits) > 1 and query_words:
+            relevant_ids = {
+                item.source_id
+                for item in gmail_hits
+                if any(
+                    word in f'{item.title} {item.excerpt} {item.owner or ""}'.lower()
+                    for word in query_words
+                )
+            }
+            if relevant_ids:
+                evidence = [
+                    item
+                    for item in evidence
+                    if item.provider != 'gmail' or item.source_id in relevant_ids
+                ]
+    per_provider = 30 if body.include_gmail and listing else 20
+    return prepare_evidence(body.question, evidence, per_provider=per_provider), document_evidence
 
 
 def retrieval_trace(body, evidence, stats, used_sources, scope=None):
@@ -212,16 +240,25 @@ def attach_retrieval_trace(result, body, evidence, stats, used_sources=None):
 
 
 def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_query_for_question):
-    matches = gmail_get(
-        token,
-        gmail_api + '/messages',
-        {
-            'q': gmail_query_for_question(
-                body.gmail_query, retrieval_query(body.question, body.history)
-            ),
-            'maxResults': 8,
-        },
-    ).get('messages', [])
+    cited_ids = list(dict.fromkeys(getattr(body, 'gmail_source_ids', []) or []))
+    if cited_ids:
+        if len(cited_ids) > 30 or any(not mid.isalnum() or len(mid) > 64 for mid in cited_ids):
+            raise HTTPException(422, 'Invalid Gmail message ID in cited evidence.')
+        # Cite follow-ups should reload the exact authorized messages from Gmail,
+        # not issue a fresh keyword search that loses the previous sources.
+        matches = [{'id': mid} for mid in cited_ids]
+        search_limited = False
+    else:
+        search_result = gmail_get(
+            token,
+            gmail_api + '/messages',
+            {
+                'q': gmail_query_for_question(body.gmail_query, body.question),
+                'maxResults': 30,
+            },
+        )
+        matches = search_result.get('messages', [])
+        search_limited = bool(search_result.get('nextPageToken'))
     from .sources import Evidence
 
     def read_message(item):
@@ -235,9 +272,11 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
             (message['body'] or message['snippet'])[:8000],
             message['url'],
             message['date'],
+            owner=message.get('sender'),
+            metadata={'search_limited': search_limited},
         )
 
-    with ThreadPoolExecutor(max_workers=min(len(matches), 4) or 1) as executor:
+    with ThreadPoolExecutor(max_workers=min(len(matches), 6) or 1) as executor:
         return list(executor.map(read_message, matches))
 
 
@@ -263,6 +302,10 @@ def connected_sources_for_payload(payload, document_evidence):
         sources.append(
             {
                 'chunk_id': original['chunk_id'] if original else str(entry['source_id']),
+                'gmail_message_id': entry.get('origin_id')
+                if entry.get('provider') == 'gmail'
+                else None,
+                'sender': entry.get('owner') if entry.get('provider') == 'gmail' else None,
                 'document_id': original['document_id'] if original else '',
                 'name': entry['title'],
                 'page': original['page'] if original else 0,
@@ -373,6 +416,10 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
         )
         else 12
     )
+    if 'gmail' in scope and re.search(r'\b(?:all|every)\b', question, re.I):
+        default_limit = 30
+    elif 'gmail' in scope and default_limit == 12:
+        default_limit = 30
     limit = requested_result_limit(question, default=default_limit, max_limit=30)
     shown = matches[:limit]
     payload = [
@@ -401,11 +448,19 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
         lines.append(f'No matching items from {empty_labels}.')
     for index, item in enumerate(shown, 1):
         line = f'- **{item.title}** · {labels.get(item.provider, item.provider)} [{index}]'
+        if item.provider == 'gmail':
+            details = [str(value) for value in (item.owner, item.date) if value]
+            if details:
+                line += ' — ' + ' · '.join(details)
         if item.provider == 'github' and item.url and '/pull/' in item.url and item.excerpt:
             line += f' — {item.excerpt[:300]}'
         lines.append(line)
     if len(matches) > len(shown):
         lines.append(f'Showing the first {len(shown)} of {len(matches)} matches.')
+    if any(item.provider == 'gmail' and item.metadata.get('search_limited') for item in matches):
+        lines.append(
+            'Gmail has additional matches beyond this bounded search. Narrow the query or date range to see more.'
+        )
     return {
         'answer': '\n'.join(lines),
         'sources': connected_sources_for_payload(payload, document_evidence),

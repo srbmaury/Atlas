@@ -21,6 +21,8 @@ export type DocumentPreview = {
 };
 export type Source = {
     chunk_id: string;
+    gmail_message_id?: string;
+    sender?: string;
     document_id: string;
     name: string;
     page: number;
@@ -36,6 +38,8 @@ export type Answer = {
     answer: string;
     repository?: string | null;
     sources: Source[];
+    /** Retrieved passages retained after citation verification fails; not citations. */
+    evidence_sources?: Source[];
     related_sources?: { left: number; right: number; references: string[]; status: string }[];
     decision_timeline?: {
         date: string;
@@ -75,6 +79,8 @@ export type GmailMessage = {
     snippet: string;
     body: string;
     url: string;
+    thread_id?: string;
+    internal_date?: string;
 };
 export type GmailStatus = { connected: boolean; email: string | null; configured: boolean };
 export type OAuthAuthorizationResponse = { authorization_url: string };
@@ -118,11 +124,14 @@ export type SourceHealthCheck = SourceHealthEntry & {
 };
 export type SourceHealthListResponse = { checks: SourceHealthEntry[] };
 export type SourceHealthCheckResponse = { checks: SourceHealthCheck[] };
-export type GmailSearchResponse = { messages: GmailMessage[] };
+export type GmailSearchResponse = { messages: GmailMessage[]; threads?: GmailThread[] };
+export type GmailThread = { thread_id: string; subject: string; message_count: number; truncated?: boolean; messages: GmailMessage[] };
 export type GmailQuerySummary = GmailSummary & { count: number; limited: boolean };
 export type GmailSummary = {
     summary: string;
-    sources: { number: number; id: string; subject: string; url: string }[];
+    mode?: 'intelligence';
+    citation_audit?: { status: 'invalid_references' | 'references_present' | 'no_references'; cited_numbers: number[]; invalid_numbers: number[]; semantic_support_verified: false };
+    sources: { number: number; id: string; subject: string; url: string; sender?: string; date?: string; excerpt?: string; truncated?: boolean; thread_id?: string }[];
 };
 export type ChatSummary = { id: string; title: string; updated: number };
 export type SavedChat = ChatSummary & { messages: Message[] };

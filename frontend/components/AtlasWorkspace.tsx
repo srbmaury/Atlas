@@ -734,6 +734,7 @@ export function AtlasWorkspace() {
                                     onSearch={() => void searchGmail()}
                                     onSummarizeQuery={() => void summarizeGmailQuery()}
                                     onSummarizeSelected={() => void summarizeGmail()}
+                                    onFollowUp={(question) => void summarizeGmail(question)}
                                     onNotice={setNotice}
                                     onError={setError}
                                 />

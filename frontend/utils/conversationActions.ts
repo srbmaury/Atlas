@@ -4,6 +4,7 @@ import { conversationPlan } from '../lib/conversation';
 import { normalizeResearchScope } from '../lib/query-routing';
 import { requestResearchAnswer, persistConversation } from '../lib/researchRequests';
 import { isResearchProvider } from '../lib/providers';
+import { evidenceIntent, inspectPreviousEvidence, previousEvidence } from './evidenceFollowups';
 import type { User, Source, Message, ChatSummary, SavedChat, ResearchProvider } from '../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
@@ -195,8 +196,13 @@ export function createConversationActions({
                 !searchScope.includeDocuments &&
                 !searchScope.includeGmail &&
                 (Boolean(priorRepository) || repositoryIntent);
+            // Reuse retained evidence from any provider, including failed
+            // citation checks. This is an inspection of excerpts, not synthesis.
+            const followupIntent = startNewConversation ? null : evidenceIntent(question);
             let result;
-            if (useRepositoryEvidence) {
+            if (followupIntent) {
+                result = inspectPreviousEvidence(followupIntent, previousEvidence(chatMessages.current.slice(0, -1)));
+            } else if (useRepositoryEvidence) {
                 const inspection = await api<{
                     status: string;
                     message?: string;

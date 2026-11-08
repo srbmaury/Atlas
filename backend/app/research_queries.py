@@ -142,6 +142,28 @@ QUERY_STOPWORDS = {
     'sentences',
     'words',
     'lines',
+    'other',
+    'else',
+    'needs',
+    'need',
+    'attention',
+    'mail',
+    'mails',
+    'may',
+    'might',
+    'possibly',
+    'potentially',
+    'related',
+    'regarding',
+    'cited',
+    'evidence',
+    'more',
+    'further',
+    'except',
+    'excluding',
+    'exclude',
+    'without',
+    'ones',
 }
 
 GITHUB_QUERY_STOPWORDS = {
@@ -227,8 +249,41 @@ def natural_search_terms(question, *, extra_stopwords=()):
 
 
 def gmail_query_for_question(scope, question):
-    terms = natural_search_terms(question)
-    return ' '.join([scope.strip(), *terms]).strip()
+    """Translate common mailbox intents into Gmail operators, not literal words."""
+    text = question.lower()
+    filters = []
+    # Gmail importance is a provider flag, not a semantic ranking of significance.
+    if re.search(r'\bimportant\b', text):
+        filters.append('is:important')
+    if re.search(r'\bunread\b', text):
+        filters.append('is:unread')
+    relative = re.search(r'\b(?:last|past|previous)\s+(\d{1,3})\s+days?\b', text)
+    if relative:
+        filters.append(f'newer_than:{relative.group(1)}d')
+    elif re.search(r'\b(?:last|past|previous)\s+week\b', text):
+        filters.append('newer_than:7d')
+    elif re.search(r'\b(?:last|past|previous)\s+month\b', text):
+        filters.append('newer_than:30d')
+    cleaned = re.sub(r'\b(?:last|past|previous)\s+(?:\d{1,3}\s+days?|week|month)\b', ' ', text)
+    cleaned = re.sub(r'\b(?:important|unread|mails?|emails?|messages?)\b', ' ', cleaned)
+    # A follow-up asking for other mail must not inherit an unrelated
+    # sender/topic constraint from the previous question.
+    if re.search(r'\b(?:any|what|which)\s+other\b', text) and re.search(
+        r'\b(?:emails?|mails?|messages?)\b', text
+    ):
+        return ' '.join([scope.strip(), *filters]).strip()
+    # "from CoinDCX" is a sender filter, not a free-text conjunction.
+    sender = re.search(r'\bfrom\s+([a-z][a-z0-9._+-]{1,70})\b', cleaned)
+    if sender:
+        filters.append('from:' + sender.group(1))
+        cleaned = re.sub(r'\bfrom\s+' + re.escape(sender.group(1)) + r'\b', ' ', cleaned)
+    terms = natural_search_terms(cleaned)
+    terms = [
+        term
+        for term in terms
+        if term not in {'last', 'past', 'previous', 'days', 'day', 'week', 'month'}
+    ]
+    return ' '.join([scope.strip(), *filters, *terms]).strip()
 
 
 def drive_query_for_question(question):

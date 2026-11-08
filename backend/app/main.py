@@ -237,6 +237,7 @@ def connected_chat_stream(
     import json
 
     def events():
+        effective_body = body
         provider_labels = {
             'documents': 'Documents',
             'gmail': 'Gmail',
@@ -251,7 +252,7 @@ def connected_chat_stream(
             'outlook': 'Outlook',
             'sharepoint': 'SharePoint',
         }
-        selected_sources = connected_scope(body)
+        selected_sources = connected_scope(effective_body)
         source_names = [provider_labels.get(provider, provider) for provider in selected_sources]
         search_status = (
             f'Searching {" and ".join(source_names)}…'
@@ -262,24 +263,27 @@ def connected_chat_stream(
         try:
             retrieval_stats = {}
             evidence, document_evidence = collect_connected_evidence(
-                workspaceId, body, actor, db, retrieval_stats
+                workspaceId, effective_body, actor, db, retrieval_stats
             )
             revalidate_access(workspaceId, actor, {item.provider for item in evidence})
             if not evidence:
                 yield (
                     json.dumps(
-                        {'type': 'done', 'result': no_evidence_result(body, retrieval_stats)},
+                        {
+                            'type': 'done',
+                            'result': no_evidence_result(effective_body, retrieval_stats),
+                        },
                         ensure_ascii=False,
                     )
                     + '\n'
                 )
                 return
             direct_result = direct_connected_result(
-                body.question, body, evidence, document_evidence
+                effective_body.question, effective_body, evidence, document_evidence
             )
             if direct_result:
                 direct_result = attach_retrieval_trace(
-                    direct_result, body, evidence, retrieval_stats
+                    direct_result, effective_body, evidence, retrieval_stats
                 )
                 yield (
                     json.dumps({'type': 'done', 'result': direct_result}, ensure_ascii=False) + '\n'
@@ -298,18 +302,22 @@ def connected_chat_stream(
             # Document-only questions use the dedicated citation-checked answer generator.
             # This avoids the cross-source streaming model's short timeout and keeps
             # ordinary document Q&A focused on the user's requested answer.
-            if body.include_documents and not body.include_gmail and not body.providers:
+            if (
+                effective_body.include_documents
+                and not effective_body.include_gmail
+                and not effective_body.providers
+            ):
                 doc_sources = [
                     document_evidence[item.source_id]
                     for item in evidence
                     if item.provider == 'documents' and item.source_id in document_evidence
                 ]
                 result = generate(
-                    body.question, doc_sources, [t.model_dump() for t in body.history]
+                    effective_body.question, doc_sources, [t.model_dump() for t in body.history]
                 )
                 revalidate_access(workspaceId, actor)
-                result['scope'] = connected_scope(body)
-                attach_retrieval_trace(result, body, evidence, retrieval_stats)
+                result['scope'] = connected_scope(effective_body)
+                attach_retrieval_trace(result, effective_body, evidence, retrieval_stats)
                 if result.get('mode') in ('ai', 'connected') and result.get('sources'):
                     from .citation_audit import audit_citations
 
@@ -325,7 +333,7 @@ def connected_chat_stream(
 
             def answer_events(cancellation):
                 return stream_connected(
-                    body.question,
+                    effective_body.question,
                     evidence,
                     config.AI_PROVIDER,
                     config.API_KEY,
@@ -354,12 +362,22 @@ def connected_chat_stream(
                         'related_sources': related_sources(event['sources']),
                         'decision_timeline': decision_timeline(event['sources']),
                         'mode': event['mode'],
-                        'scope': connected_scope(body),
+                        'scope': connected_scope(effective_body),
                         'citation_audit': event.get('citation_audit'),
                         'coverage_note': event.get('coverage_note'),
                     }
+                    if event['mode'] == 'citation_check_failed':
+                        # Preserve retrieved provenance separately from validated
+                        # citations. Never label these passages as cited claims.
+                        result['evidence_sources'] = connected_sources_for_payload(
+                            [
+                                item.as_prompt(index) | {'origin_id': item.source_id}
+                                for index, item in enumerate(evidence[:30], 1)
+                            ],
+                            document_evidence,
+                        )
                     attach_retrieval_trace(
-                        result, body, evidence, retrieval_stats, event['sources']
+                        result, effective_body, evidence, retrieval_stats, event['sources']
                     )
                     yield json.dumps({'type': 'done', 'result': result}, ensure_ascii=False) + '\n'
                 elif event['type'] == 'heartbeat':

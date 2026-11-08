@@ -53,6 +53,8 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
     const {
         setGmailStatus,
         setGmailMessages,
+        setGmailThreads,
+        setGmailActiveThread,
         gmailQuery,
         gmailSummarizeQuery,
         gmailQueryLimit,
@@ -254,9 +256,11 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         try {
             const result = await api<GmailSearchResponse>(`/workspaces/${workspaceId}/gmail/search`, {
                 method: 'POST',
-                body: JSON.stringify({ query: gmailQuery, limit: 20 }),
+                body: JSON.stringify({ query: gmailQuery, limit: 20, expand_threads: true }),
             });
             setGmailMessages(result.messages);
+            setGmailThreads(result.threads || []);
+            setGmailActiveThread(null);
         } catch (e) {
             setError((e as Error).message);
         } finally {
@@ -288,9 +292,10 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
             setGmailSummarizing(false);
         }
     }
-    async function summarizeGmail() {
-        if (!gmailSelected.length) return;
-        const selectedForSummary = [...gmailSelected];
+    async function summarizeGmail(followUp?: string) {
+        if (!gmailSelected.length && !followUp) return;
+        const selectedForSummary = followUp ? gmailState.gmailSummaryIds : [...gmailSelected];
+        if (!selectedForSummary.length) return;
         setGmailBusy(true);
         setGmailSummarizing(true);
         setError('');
@@ -298,7 +303,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         try {
             const result = await api<GmailSummary>(`/workspaces/${workspaceId}/gmail/summarize`, {
                 method: 'POST',
-                body: JSON.stringify({ message_ids: gmailSelected }),
+                body: JSON.stringify({ message_ids: selectedForSummary, intelligence: gmailState.gmailIntelligence || Boolean(followUp), follow_up: followUp || undefined }),
             });
             setGmailSummary(result);
             setGmailSummaryIds(selectedForSummary);
