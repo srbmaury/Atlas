@@ -1,5 +1,5 @@
 import { chatLoadSequence } from '../lib/chatLoadSequence';
-'use client';
+('use client');
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
@@ -179,7 +179,11 @@ export function AtlasWorkspace() {
     function newChat(preserveSourceSelection = false) {
         if (busy) return;
         chatLoadSequence.invalidate();
-        try { if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query); } catch { /* Storage unavailable. */ }
+        try {
+            if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
+        } catch {
+            /* Storage unavailable. */
+        }
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
@@ -390,19 +394,28 @@ export function AtlasWorkspace() {
             try {
                 if (query) sessionStorage.setItem(key, query);
                 else sessionStorage.removeItem(key);
-            } catch { /* Private browsing can disable session storage. */ }
+            } catch {
+                /* Private browsing can disable session storage. */
+            }
         }, 250);
         return () => window.clearTimeout(timer);
     }, [workspaceId, chatId, query]);
 
     function restoreDraft(id: string | null) {
-        try { setQuery(sessionStorage.getItem(draftKey(id)) || ''); }
-        catch { setQuery(''); }
+        try {
+            setQuery(sessionStorage.getItem(draftKey(id)) || '');
+        } catch {
+            setQuery('');
+        }
     }
 
     async function switchChat(id: string) {
         if (busy) return;
-        try { sessionStorage.setItem(draftKey(chatId), query); } catch { /* Storage unavailable. */ }
+        try {
+            sessionStorage.setItem(draftKey(chatId), query);
+        } catch {
+            /* Storage unavailable. */
+        }
         await loadChat(id);
         if (activeChat.current === id) restoreDraft(id);
     }
