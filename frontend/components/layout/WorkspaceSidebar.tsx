@@ -95,7 +95,12 @@ export function WorkspaceSidebar({
                                 <span className="sidebar-chat-date">{group.label}</span>
                                 {group.items.map((item) => (
                                     <div className="sidebar-chat-row" key={item.id}>
-                                        <button className={`workspace-stat ${activeChatId === item.id ? 'active' : ''}`} aria-current={activeChatId === item.id ? 'true' : undefined} onClick={() => onOpenChat(item.id)} title={item.title}>
+                                        <button
+                                            className={`workspace-stat ${activeChatId === item.id ? 'active' : ''}`}
+                                            aria-current={activeChatId === item.id ? 'true' : undefined}
+                                            onClick={() => onOpenChat(item.id)}
+                                            title={item.title}
+                                        >
                                             {item.pinned ? <Pin /> : <MessageSquare />}
                                             <span>{item.title}</span>
                                         </button>

@@ -37,14 +37,24 @@ export function WorkspaceSearchDialog({
 }) {
     const [messageMatches, setMessageMatches] = useState<{ chat_id: string; title: string; message_index: number; excerpt: string; role: string }[]>([]);
     useEffect(() => {
-        if (query.trim().length < 2 || !workspaceId) { setMessageMatches([]); return; }
+        if (query.trim().length < 2 || !workspaceId) {
+            setMessageMatches([]);
+            return;
+        }
         let cancelled = false;
         const timer = window.setTimeout(() => {
             api<{ results: typeof messageMatches }>(`/workspaces/${workspaceId}/conversations/search?q=${encodeURIComponent(query.trim())}`)
-                .then((data) => { if (!cancelled) setMessageMatches(data.results); })
-                .catch(() => { if (!cancelled) setMessageMatches([]); });
+                .then((data) => {
+                    if (!cancelled) setMessageMatches(data.results);
+                })
+                .catch(() => {
+                    if (!cancelled) setMessageMatches([]);
+                });
         }, 300);
-        return () => { cancelled = true; window.clearTimeout(timer); };
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+        };
     }, [workspaceId, query]);
     const matches = documents.filter((doc) => doc.name.toLowerCase().includes(query.toLowerCase()));
     return (
@@ -66,15 +76,26 @@ export function WorkspaceSearchDialog({
                     { label: 'New chat', action: onNewChat },
                     { label: 'Open documents', action: () => onNavigate('documents') },
                     { label: 'Manage sources', action: () => onNavigate('sources') },
-                ].filter((item) => item.label.toLowerCase().includes(query.toLowerCase())).map((item) => (
-                    <button type="button" className="doc-item" key={item.label} onClick={item.action}><Sparkles size={15} /> {item.label} <ChevronRight size={15} /></button>
-                ))}
+                ]
+                    .filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+                    .map((item) => (
+                        <button type="button" className="doc-item" key={item.label} onClick={item.action}>
+                            <Sparkles size={15} /> {item.label} <ChevronRight size={15} />
+                        </button>
+                    ))}
             </div>
             <div className="search-results-heading">Conversations</div>
             <div className="search-results">
-                {chats.filter((chat) => chat.title.toLowerCase().includes(query.toLowerCase())).slice(0, 8).map((chat) => (
-                    <button type="button" className="doc-item" key={chat.id} onClick={() => onOpenChat(chat.id)}><Search size={15} /><span>{chat.title}</span><ChevronRight size={15} /></button>
-                ))}
+                {chats
+                    .filter((chat) => chat.title.toLowerCase().includes(query.toLowerCase()))
+                    .slice(0, 8)
+                    .map((chat) => (
+                        <button type="button" className="doc-item" key={chat.id} onClick={() => onOpenChat(chat.id)}>
+                            <Search size={15} />
+                            <span>{chat.title}</span>
+                            <ChevronRight size={15} />
+                        </button>
+                    ))}
             </div>
             {query.trim().length >= 2 && (
                 <>
@@ -83,7 +104,12 @@ export function WorkspaceSearchDialog({
                         {messageMatches.map((match) => (
                             <button type="button" className="doc-item" key={match.chat_id + ':' + match.message_index} onClick={() => onOpenMessage(match.chat_id, match.message_index, query.trim())}>
                                 <Search size={15} />
-                                <span className="doc-item-info"><strong>{match.title}</strong><small>{match.role}: {match.excerpt}</small></span>
+                                <span className="doc-item-info">
+                                    <strong>{match.title}</strong>
+                                    <small>
+                                        {match.role}: {match.excerpt}
+                                    </small>
+                                </span>
                                 <ChevronRight size={15} />
                             </button>
                         ))}

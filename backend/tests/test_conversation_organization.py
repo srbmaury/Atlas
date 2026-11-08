@@ -1,4 +1,5 @@
 """Regression tests for conversation organization and evidence-safe message payloads."""
+
 from types import SimpleNamespace
 
 from app.routes.conversations import ConversationOrganization, conversation_data, visible_messages
@@ -6,7 +7,10 @@ from app.routes.conversations import ConversationOrganization, conversation_data
 
 def test_organization_metadata_not_returned_as_messages():
     item = SimpleNamespace(
-        id='chat', title='Example', created=1.0, updated=2.0,
+        id='chat',
+        title='Example',
+        created=1.0,
+        updated=2.0,
         messages=[
             {'_atlas_metadata': True, '_atlas_pinned': True, '_atlas_archived': False},
             {'role': 'user', 'content': 'Question'},
@@ -24,7 +28,11 @@ def test_organization_metadata_not_returned_as_messages():
 
 def test_empty_conversation_has_no_organization_flags():
     item = SimpleNamespace(
-        id='empty', title='Empty', created=1.0, updated=2.0, messages=[],
+        id='empty',
+        title='Empty',
+        created=1.0,
+        updated=2.0,
+        messages=[],
     )
     assert conversation_data(item)['pinned'] is False
     assert conversation_data(item)['archived'] is False

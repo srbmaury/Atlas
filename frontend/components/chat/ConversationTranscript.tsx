@@ -22,7 +22,22 @@ interface ChatMessagesProps {
     endRef: RefObject<HTMLDivElement | null>;
 }
 
-export function ConversationTranscript({ messages, searchPhrase = '', focusedIndex = null, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
+export function ConversationTranscript({
+    messages,
+    searchPhrase = '',
+    focusedIndex = null,
+    busy,
+    readyCount,
+    uploadButton,
+    prompts,
+    onPrompt,
+    initials,
+    renderAnswer,
+    answerProgress,
+    onStop,
+    threadRef,
+    endRef,
+}: ChatMessagesProps) {
     const highlight = (content: string) => {
         const phrase = searchPhrase.trim();
         if (!phrase) return content;
@@ -34,7 +49,11 @@ export function ConversationTranscript({ messages, searchPhrase = '', focusedInd
             const index = lowered.indexOf(needle, cursor);
             if (index < 0) break;
             parts.push(content.slice(cursor, index));
-            parts.push(<mark className="message-search-highlight" key={index}>{content.slice(index, index + phrase.length)}</mark>);
+            parts.push(
+                <mark className="message-search-highlight" key={index}>
+                    {content.slice(index, index + phrase.length)}
+                </mark>,
+            );
             cursor = index + phrase.length;
         }
         parts.push(content.slice(cursor));
@@ -66,7 +85,7 @@ export function ConversationTranscript({ messages, searchPhrase = '', focusedInd
             )}
             {messages.map((m, i) =>
                 m.role === 'user' ? (
-                    <div className={`user-message ${focusedIndex === i ? "message-search-focused" : ""}`} key={i} data-message-index={i}>
+                    <div className={`user-message ${focusedIndex === i ? 'message-search-focused' : ''}`} key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
                             <div className="bubble">
@@ -75,12 +94,17 @@ export function ConversationTranscript({ messages, searchPhrase = '', focusedInd
                         </div>
                     </div>
                 ) : (
-                    <div className={`answer-row ${focusedIndex === i ? "message-search-focused" : ""}`} key={i} data-message-index={i}>
+                    <div className={`answer-row ${focusedIndex === i ? 'message-search-focused' : ''}`} key={i} data-message-index={i}>
                         <span className="assistant-mark">A</span>
                         <div className="answer">
                             {focusedIndex === i && searchPhrase.trim() && m.content.toLocaleLowerCase().includes(searchPhrase.trim().toLocaleLowerCase()) && (
                                 <div className="message-search-context" aria-label="Matching answer text">
-                                    {highlight(m.content.slice(Math.max(0, m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) - 90), m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) + searchPhrase.trim().length + 140))}
+                                    {highlight(
+                                        m.content.slice(
+                                            Math.max(0, m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) - 90),
+                                            m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) + searchPhrase.trim().length + 140,
+                                        ),
+                                    )}
                                 </div>
                             )}
                             <div className="answer-head">

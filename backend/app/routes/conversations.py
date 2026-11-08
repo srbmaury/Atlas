@@ -26,7 +26,9 @@ def owned_conversation(workspace_id, conversation_id, actor, db):
 
 
 def visible_messages(item):
-    return [dict(message) for message in (item.messages or []) if not message.get('_atlas_metadata')]
+    return [
+        dict(message) for message in (item.messages or []) if not message.get('_atlas_metadata')
+    ]
 
 
 def conversation_data(item):
@@ -37,7 +39,9 @@ def conversation_data(item):
         'created': item.created,
         'updated': item.updated,
         'pinned': bool((item.messages or [{}])[0].get('_atlas_pinned')) if item.messages else False,
-        'archived': bool((item.messages or [{}])[0].get('_atlas_archived')) if item.messages else False,
+        'archived': bool((item.messages or [{}])[0].get('_atlas_archived'))
+        if item.messages
+        else False,
     }
 
 
@@ -53,7 +57,16 @@ def list_conversations(workspaceId: str, actor=Depends(user), db=Depends(databas
         .order_by(Conversation.updated.desc())
         .all()
     )
-    return [{'id': item.id, 'title': item.title, 'updated': item.updated, 'pinned': bool(item.messages and item.messages[0].get('_atlas_pinned')), 'archived': bool(item.messages and item.messages[0].get('_atlas_archived'))} for item in items]
+    return [
+        {
+            'id': item.id,
+            'title': item.title,
+            'updated': item.updated,
+            'pinned': bool(item.messages and item.messages[0].get('_atlas_pinned')),
+            'archived': bool(item.messages and item.messages[0].get('_atlas_archived')),
+        }
+        for item in items
+    ]
 
 
 class ConversationOrganization(BaseModel):
@@ -66,8 +79,11 @@ class ConversationOrganization(BaseModel):
     dependencies=[Depends(workspace_permission('viewer'))],
 )
 def organize_conversation(
-    workspaceId: str, cid: str, body: ConversationOrganization,
-    actor=Depends(user), db=Depends(database),
+    workspaceId: str,
+    cid: str,
+    body: ConversationOrganization,
+    actor=Depends(user),
+    db=Depends(database),
 ):
     item = owned_conversation(workspaceId, cid, actor, db)
     messages = [dict(message) for message in (item.messages or [])]
@@ -124,13 +140,15 @@ def search_conversation_messages(
             if offset < 0:
                 continue
             start = max(0, offset - 75)
-            results.append({
-                'chat_id': item.id,
-                'title': item.title,
-                'message_index': index,
-                'role': message.get('role', ''),
-                'excerpt': content[start:start + 220],
-            })
+            results.append(
+                {
+                    'chat_id': item.id,
+                    'title': item.title,
+                    'message_index': index,
+                    'role': message.get('role', ''),
+                    'excerpt': content[start : start + 220],
+                }
+            )
             if len(results) >= 50:
                 return {'results': results}
     return {'results': results}
@@ -173,7 +191,14 @@ def update_conversation(
     item = owned_conversation(workspaceId, cid, actor, db)
     item.title = body.title.strip()
     metadata = (item.messages or [{}])[0]
-    prefix = [{key: metadata[key] for key in ('_atlas_pinned', '_atlas_archived') if key in metadata} | {'_atlas_metadata': True}] if any(key in metadata for key in ('_atlas_pinned', '_atlas_archived')) else []
+    prefix = (
+        [
+            {key: metadata[key] for key in ('_atlas_pinned', '_atlas_archived') if key in metadata}
+            | {'_atlas_metadata': True}
+        ]
+        if any(key in metadata for key in ('_atlas_pinned', '_atlas_archived'))
+        else []
+    )
     item.messages = prefix + body.messages
     item.updated = time.time()
     db.commit()

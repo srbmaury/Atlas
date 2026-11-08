@@ -97,12 +97,18 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         try {
             const saved = Number(localStorage.getItem('atlas:evidence-width'));
             if (saved >= 260 && saved <= 760) setEvidenceWidth(saved);
-        } catch { /* Storage may be unavailable. */ }
+        } catch {
+            /* Storage may be unavailable. */
+        }
     }, []);
     function resizeEvidence(next: number) {
         const width = Math.max(260, Math.min(760, next));
         setEvidenceWidth(width);
-        try { localStorage.setItem('atlas:evidence-width', String(width)); } catch { /* Ignore storage failure. */ }
+        try {
+            localStorage.setItem('atlas:evidence-width', String(width));
+        } catch {
+            /* Ignore storage failure. */
+        }
     }
     useEffect(() => {
         function onShortcut(event: KeyboardEvent) {
@@ -120,7 +126,9 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         window.addEventListener('keydown', onShortcut);
         return () => window.removeEventListener('keydown', onShortcut);
     }, []);
-    const matches = messageSearch.trim() ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase())) : [];
+    const matches = messageSearch.trim()
+        ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase()))
+        : [];
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
     const allSelected =
@@ -216,18 +224,39 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onDeleteChat={props.onDeleteChat}
                     onDeleteChats={props.onDeleteChats}
                 />
-                <div className="research" style={{ ["--atlas-evidence-width" as string]: evidenceWidth + "px" }}>
+                <div className="research" style={{ ['--atlas-evidence-width' as string]: evidenceWidth + 'px' }}>
                     <div className="chat-pane">
                         {props.messages.length > 0 && (
                             <div className="message-search-panel">
                                 <label className="message-search-input">
                                     <Search size={15} aria-hidden="true" />
-                                    <input aria-label="Search messages in this conversation" placeholder="Find in this conversation" value={messageSearch} onChange={(event) => { setMessageSearch(event.target.value); setFocusedIndex(null); }} />
+                                    <input
+                                        aria-label="Search messages in this conversation"
+                                        placeholder="Find in this conversation"
+                                        value={messageSearch}
+                                        onChange={(event) => {
+                                            setMessageSearch(event.target.value);
+                                            setFocusedIndex(null);
+                                        }}
+                                    />
                                 </label>
-                                {messageSearch && <button type="button" aria-label="Clear message search" onClick={() => { setMessageSearch(''); setFocusedIndex(null); }}><X size={14} /></button>}
+                                {messageSearch && (
+                                    <button
+                                        type="button"
+                                        aria-label="Clear message search"
+                                        onClick={() => {
+                                            setMessageSearch('');
+                                            setFocusedIndex(null);
+                                        }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
                                 {messageSearch.trim() && (
                                     <div className="message-search-results" role="status">
-                                        <span>{matches.length} matching {matches.length === 1 ? 'message' : 'messages'}</span>
+                                        <span>
+                                            {matches.length} matching {matches.length === 1 ? 'message' : 'messages'}
+                                        </span>
                                         {matches.map(({ message, index }) => (
                                             <button type="button" key={index} onClick={() => focusMatch(index)}>
                                                 <strong>{message.role === 'user' ? 'You' : 'Atlas'}</strong> {message.content.slice(0, 160)}
@@ -287,24 +316,45 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </div>
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
                         <div className="evidence-width-controls" aria-label="Evidence panel width">
-                            <button type="button" aria-label="Narrow evidence panel" onClick={() => resizeEvidence(evidenceWidth - 80)}>−</button>
+                            <button type="button" aria-label="Narrow evidence panel" onClick={() => resizeEvidence(evidenceWidth - 80)}>
+                                −
+                            </button>
                             <span>{evidenceWidth}px</span>
-                            <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>+</button>
-                            <button type="button" onClick={() => resizeEvidence(340)}>Reset</button>
+                            <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>
+                                +
+                            </button>
+                            <button type="button" onClick={() => resizeEvidence(340)}>
+                                Reset
+                            </button>
                         </div>
                         {latestAnswer?.retrieval && (
                             <details className="investigation-timeline">
-                                <summary><Activity size={15} /> Investigation timeline</summary>
+                                <summary>
+                                    <Activity size={15} /> Investigation timeline
+                                </summary>
                                 <ol>
-                                    <li><strong>Research requested</strong><span>Atlas searched the selected sources.</span></li>
+                                    <li>
+                                        <strong>Research requested</strong>
+                                        <span>Atlas searched the selected sources.</span>
+                                    </li>
                                     {latestAnswer.retrieval.sources.map((step, index) => (
                                         <li key={index}>
                                             <strong>{PROVIDER_LABELS[step.provider as keyof typeof PROVIDER_LABELS] || step.provider}</strong>
                                             <span>{step.status === 'failed' ? 'Search failed' : `${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
                                         </li>
                                     ))}
-                                    <li><strong>Answer prepared</strong><span>{latestAnswer.retrieval.passages_considered} passages considered; {latestAnswer.retrieval.passages_used} used.</span></li>
-                                    {latestAnswer.citation_audit && <li><strong>Citation audit</strong><span>{latestAnswer.citation_audit.needs_review} claims flagged for review.</span></li>}
+                                    <li>
+                                        <strong>Answer prepared</strong>
+                                        <span>
+                                            {latestAnswer.retrieval.passages_considered} passages considered; {latestAnswer.retrieval.passages_used} used.
+                                        </span>
+                                    </li>
+                                    {latestAnswer.citation_audit && (
+                                        <li>
+                                            <strong>Citation audit</strong>
+                                            <span>{latestAnswer.citation_audit.needs_review} claims flagged for review.</span>
+                                        </li>
+                                    )}
                                 </ol>
                                 <p className="caption">Recorded retrieval summary, not a live trace of internal model reasoning.</p>
                             </details>

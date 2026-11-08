@@ -193,7 +193,8 @@ def connected_chat(
                 'sources': [],
                 'mode': 'citation_check_failed',
                 'evidence_sources': connected_sources_for_payload(
-                    payload or [
+                    payload
+                    or [
                         item.as_prompt(index) | {'origin_id': item.source_id}
                         for index, item in enumerate(evidence[:30], 1)
                     ],

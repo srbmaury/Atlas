@@ -10,9 +10,7 @@ test('recognizes source-independent evidence follow-ups', () => {
 
 test('retains retrieved evidence when citation validation fails', () => {
     const source = { name: 'Document', text: 'Grounded passage', provider: 'documents', chunk_id: '1' };
-    const prior = previousEvidence([
-        { role: 'assistant', content: 'No verified citations', result: { sources: [], evidence_sources: [source] } },
-    ]);
+    const prior = previousEvidence([{ role: 'assistant', content: 'No verified citations', result: { sources: [], evidence_sources: [source] } }]);
     assert.equal(prior.verified, false);
     const answer = inspectPreviousEvidence('explain', prior);
     assert.equal(answer.mode, 'evidence_inspection');
