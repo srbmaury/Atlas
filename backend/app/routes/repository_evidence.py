@@ -149,7 +149,7 @@ def inspect_repository(
 
     if evidence and ai_enabled():
         try:
-            generated = generate(body.question, evidence, history=recent)
+            generated = generate(body.question, evidence, history=recent) if recent else generate(body.question, evidence)
             answer_mode = generated.get('mode', 'unknown')
             if answer_mode == 'citation_check_failed':
                 # Retry once with explicit source IDs and a bounded factual scope.
@@ -160,7 +160,7 @@ def inspect_repository(
                     'statement with a source marker like [1] or [2]. '
                     'If a detailed flow cannot be established, say what is unknown.'
                 )
-                generated = generate(retry_question, evidence[:6], history=recent)
+                generated = generate(retry_question, evidence[:6], history=recent) if recent else generate(retry_question, evidence[:6])
                 answer_mode = generated.get('mode', 'unknown')
             if answer_mode == 'ai':
                 answer = generated.get('answer')
