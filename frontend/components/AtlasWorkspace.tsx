@@ -436,6 +436,7 @@ export function AtlasWorkspace() {
                 tab={tab}
                 onNavigate={navigate}
                 chats={chats}
+                activeChatId={chatId}
                 onOpenChat={(id) => void loadChat(id)}
                 onRenameChat={(item) => void renameChat(item)}
                 onDeleteChat={(item) => void deleteChat(item)}
