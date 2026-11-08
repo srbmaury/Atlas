@@ -68,6 +68,10 @@ def accessible_repositories(token):
 
 def resolve_repository(question, selected, repositories):
     available = {item['full_name'].lower(): item['full_name'] for item in repositories}
+    # An explicit repository reference in the current message overrides saved context.
+    explicit = re.search(r'\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
+    if explicit:
+        selected = explicit.group(1)
     if selected:
         if not REPOSITORY.fullmatch(selected):
             raise HTTPException(422, 'Repository must be owner/name.')
@@ -75,9 +79,6 @@ def resolve_repository(question, selected, repositories):
         if not match:
             raise HTTPException(404, 'Repository not found in the connected GitHub account.')
         return match
-    explicit = re.search(r'\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
-    if explicit:
-        return resolve_repository(question, explicit.group(1), repositories)
     words = {word.lower() for word in re.findall(r'[A-Za-z0-9_.-]+', question)}
     candidates = [item['full_name'] for item in repositories
                   if item['full_name'].split('/')[-1].lower() in words
