@@ -1,0 +1,28 @@
+name: Temporary email intent formatting
+on:
+  push:
+    branches: [feat/gmail-intelligence]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/gmail-intelligence
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install ruff
+          ruff format backend/app/main.py backend/app/research_queries.py backend/tests/test_email_intent.py
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add backend/app/main.py backend/app/research_queries.py backend/tests/test_email_intent.py
+            git commit -m "style: format email intent routing"
+            git push origin HEAD:feat/gmail-intelligence
+          fi
