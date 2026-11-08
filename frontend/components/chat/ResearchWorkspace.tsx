@@ -9,11 +9,13 @@ import { prompts } from '../../utils/utils';
 import { ConversationHistory } from './ConversationHistory';
 import { ConversationTranscript } from './ConversationTranscript';
 import { ResearchComposer } from './ResearchComposer';
+import { RepositoryEvidence } from './RepositoryEvidence';
 import { ResearchSourceSelector } from './ResearchSourceSelector';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
+    workspaceId: string;
     title: string;
     onOpenSource: (source: Source) => void;
     userMode: string;
