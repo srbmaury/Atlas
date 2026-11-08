@@ -159,6 +159,11 @@ QUERY_STOPWORDS = {
     'evidence',
     'more',
     'further',
+    'except',
+    'excluding',
+    'exclude',
+    'without',
+    'ones',
 }
 
 GITHUB_QUERY_STOPWORDS = {
