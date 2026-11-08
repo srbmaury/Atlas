@@ -541,8 +541,6 @@ input[type='checkbox'] {
 
 
 /* Fork an earlier user message into an independent research conversation. */
-.message-branch-action { display: inline-flex; align-items: center; gap: 5px; margin: 8px 0 0 8px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--sub); font-size: 10px; cursor: pointer; vertical-align: middle; }
-.message-branch-action:hover { background: var(--hover); color: var(--text); }
 
 
 .investigation-timeline { margin: 8px 10px 14px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; font-size: 12px; }
@@ -561,16 +559,8 @@ input[type='checkbox'] {
 @media (max-width: 1049px) { .evidence-width-controls { display: none; } }
 
 .message-turn-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; border-top: 1px solid var(--line); padding-top: 7px; }
-.message-turn-actions .message-branch-action { margin: 0; font-size: 11px; border-radius: 6px; padding: 4px 7px; }
-.message-turn-actions .message-branch-action:first-child { font-weight: 650; }
-.message-turn-actions .message-branch-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (hover: hover) { .message-turn-actions { opacity: .65; transition: opacity .15s ease; } .user-message:hover .message-turn-actions, .user-message:focus-within .message-turn-actions { opacity: 1; } }
 
-/* Branch preview makes the selected turn explicit before creating a new chat. */
-.branch-preview { display: grid; gap: 12px; max-width: 560px; }
-.branch-preview-prompt { max-height: 180px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px 14px; border-left: 3px solid var(--brand); border-radius: 6px; background: var(--hover); margin: 0; }
-.branch-preview-note { color: var(--sub); font-size: 12px; }
-.branch-preview-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .chat-history-menu-portal { z-index: 9999; max-height: min(250px, calc(100dvh - 16px)); overflow-y: auto; }
 .atlas-v3 .message-search-input input:focus,
 .atlas-v3 .message-search-input input:focus-visible { box-shadow: none; outline: 0; border: 0; }
