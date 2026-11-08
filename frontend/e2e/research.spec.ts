@@ -31,6 +31,14 @@ test.beforeEach(async({page})=>{
       savedConversations.set(item.id,item);
       return json(item);
     }
+    if(path==='/workspaces/w1/repository-evidence'&&method==='POST'){
+      const data=route.request().postDataJSON();
+      const repository=data.repository||'example/repo';
+      return json({status:'ok',repository,answer:'The answer is grounded in the selected sources. [1]',
+        answer_mode:'ai',sources:[{title:'A very long GitHub pull request title without a file extension',
+          path:'README.md',url:'https://github.com/example/repo/pull/1',
+          excerpt:'First source line.\\nSecond source line.\\n\\nOriginal: https://example.com/record?q=ok.'}]});
+    }
     if(path==='/workspaces/w1/connected-chat/stream'&&method==='POST'){
       const data=route.request().postDataJSON();
       const scope=[...(data.include_documents?['documents']:[]),...(data.include_gmail?['gmail']:[]),...(data.providers||[])];
