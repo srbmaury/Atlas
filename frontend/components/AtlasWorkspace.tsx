@@ -1,3 +1,4 @@
+import { chatLoadSequence } from '../lib/chatLoadSequence';
 'use client';
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
@@ -144,6 +145,7 @@ export function AtlasWorkspace() {
     }, [boot]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
     useEffect(() => {
+        chatLoadSequence.invalidate();
         setDocs([]);
         setMessages([]);
         setChatId(null);
@@ -176,12 +178,13 @@ export function AtlasWorkspace() {
 
     function newChat(preserveSourceSelection = false) {
         if (busy) return;
+        chatLoadSequence.invalidate();
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
         chatMessages.current = [];
         setMessages([]);
-        setQuery('');
+        restoreDraft(null);
         setSource(null);
         if (!preserveSourceSelection) {
             setIncludeDocuments(true);
@@ -377,6 +380,32 @@ export function AtlasWorkspace() {
         newChat,
     });
 
+    // Drafts are scoped to workspace and conversation, including the unsaved new chat.
+    const draftKey = (id: string | null) => `atlas:draft:${workspaceId}:${id || 'new'}`;
+    useEffect(() => {
+        if (!workspaceId) return;
+        const key = draftKey(chatId);
+        const timer = window.setTimeout(() => {
+            try {
+                if (query) sessionStorage.setItem(key, query);
+                else sessionStorage.removeItem(key);
+            } catch { /* Private browsing can disable session storage. */ }
+        }, 250);
+        return () => window.clearTimeout(timer);
+    }, [workspaceId, chatId, query]);
+
+    function restoreDraft(id: string | null) {
+        try { setQuery(sessionStorage.getItem(draftKey(id)) || ''); }
+        catch { setQuery(''); }
+    }
+
+    async function switchChat(id: string) {
+        if (busy) return;
+        try { sessionStorage.setItem(draftKey(chatId), query); } catch { /* Storage unavailable. */ }
+        await loadChat(id);
+        if (activeChat.current === id) restoreDraft(id);
+    }
+
     const uploadButton = (
         <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>
             {uploading ? <LoaderCircle className="spin" /> : <Plus />}
@@ -437,7 +466,7 @@ export function AtlasWorkspace() {
                 onNavigate={navigate}
                 chats={chats}
                 activeChatId={chatId}
-                onOpenChat={(id) => void loadChat(id)}
+                onOpenChat={(id) => void switchChat(id)}
                 onRenameChat={(item) => void renameChat(item)}
                 onDeleteChat={(item) => void deleteChat(item)}
                 onAllChats={() => {
@@ -593,7 +622,7 @@ export function AtlasWorkspace() {
                             chats={chats}
                             chatId={chatId}
                             onRefreshChats={() => void refreshChats()}
-                            onOpenChat={(id) => void loadChat(id)}
+                            onOpenChat={(id) => void switchChat(id)}
                             onRenameChat={(item) => void renameChat(item)}
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}
