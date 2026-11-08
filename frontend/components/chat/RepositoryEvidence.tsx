@@ -19,7 +19,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [includeWeb, setIncludeWeb] = useState(false);
-    const [question, setQuestion] = useState('Explain the architecture and main entry points');
+    const [question, setQuestion] = useState('');
     const [result, setResult] = useState<Inspection | null>(null);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -74,7 +74,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                         {repositories.map((item) => <option key={item.full_name} value={item.full_name}>{item.full_name}{item.private ? ' (private)' : ''}</option>)}
                     </select>
                     <label htmlFor="evidence-question">What are you looking for?</label>
-                    <textarea id="evidence-question" rows={2} maxLength={400} value={question} onChange={(event) => setQuestion(event.target.value)} />
+                    <textarea id="evidence-question" placeholder="Ask a question about your connected repositories…" rows={2} maxLength={400} value={question} onChange={(event) => setQuestion(event.target.value)} />
                     <label className="repository-evidence-web"><input type="checkbox" checked={includeWeb} onChange={(event) => setIncludeWeb(event.target.checked)} /> Include public web search (requires server configuration)</label>
                     <button className="btn primary" type="button" onClick={() => void inspect()} disabled={busy || !question.trim()}>{busy ? 'Retrieving files…' : 'Find evidence'}</button>
                     {error && <p role="alert" className="repository-evidence-error">{error}</p>}
