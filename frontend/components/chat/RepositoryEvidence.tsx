@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { api } from '../../lib/api';
+
+function ReadableMarkdown({ text }: { text: string }) {
+    const clean = text.replace(/^Repository file retrieved via GitHub Contents API\s*/, '');
+    return <div className="repository-evidence-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>{clean}</ReactMarkdown></div>;
+}
 
 type Evidence = { title: string; path: string; url?: string; excerpt: string };
 type Repository = { full_name: string; private: boolean };
@@ -75,8 +82,8 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                         <div aria-live="polite">
                             <p><strong>{result.status === 'select_repository' ? 'Select a repository to continue' : `${result.count} real files retrieved`}</strong>{result.repository ? ` from ${result.repository}` : ''}</p>
                             {result.status === 'select_repository' && <p>{result.message}</p>}
-                            {result.answer && <article className="repository-evidence-answer"><h3>Answer</h3><p>{result.answer}</p><small>Citations [1], [2], etc. refer to the evidence files and web results below.</small></article>}
-                            {!result.answer && result.fallback && <article className="repository-evidence-answer"><h3>Repository overview</h3><p className="repository-evidence-notice">A verified AI answer is unavailable. The following is an excerpt from {result.fallback.path} [{result.fallback.source_id}], not a generated explanation or architecture flowchart.</p><details className="repository-evidence-source"><summary>Read source excerpt</summary><pre>{result.fallback.text}</pre></details></article>}
+                            {result.answer && <article className="repository-evidence-answer"><h3>Answer</h3><ReadableMarkdown text={result.answer} /><small>Citations [1], [2], etc. refer to the evidence files and web results below.</small></article>}
+                            {!result.answer && result.fallback && <article className="repository-evidence-answer"><h3>Repository overview</h3><p className="repository-evidence-notice">A verified AI answer is unavailable. The following is an excerpt from {result.fallback.path} [{result.fallback.source_id}], not a generated explanation or architecture flowchart.</p><details className="repository-evidence-source"><summary>Read source excerpt</summary><ReadableMarkdown text={result.fallback.text} /></details></article>}
                             {!result.answer && !result.fallback && result.count > 0 && <p className="repository-evidence-notice">No verified answer was generated ({result.answer_mode || 'unavailable'}). Inspect the sources below.</p>}
                             {result.count === 0 && <p>No matching files. Try a more specific question or verify repository permissions.</p>}
                             {!!result.web_sources?.length && <div className="repository-evidence-web-results"><strong>Public web results</strong>{result.web_sources.map((source, index) => <div key={source.url}>[{result.sources.filter((item) => item.excerpt).length + index + 1}] <a href={source.url} target="_blank" rel="noreferrer">{source.title || source.url}</a><p>{source.excerpt}</p></div>)}</div>}
@@ -84,7 +91,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                                 <details key={source.path} className="repository-evidence-source">
                                     <summary>[{index + 1}] {source.path || source.title}</summary>
                                     {source.url && <a href={source.url} target="_blank" rel="noreferrer">Open original file on GitHub</a>}
-                                    <pre>{source.excerpt}</pre>
+                                    {source.path.toLowerCase().endsWith('.md') || source.path.toLowerCase().endsWith('.mdx') ? <ReadableMarkdown text={source.excerpt} /> : <pre>{source.excerpt}</pre>}
                                 </details>
                             ))}
                         </div>
