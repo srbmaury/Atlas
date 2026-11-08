@@ -518,7 +518,7 @@ export function AtlasWorkspace() {
                         </Link>
                     </div>
                 </header>
-                <div className="content">
+                <div className={`content ${tab === 'chat' ? 'content-research' : ''}`}>
                     {error && (
                         <div className="feedback error" role="alert">
                             <AlertCircle />

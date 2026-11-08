@@ -8,8 +8,12 @@
     background: color-mix(in srgb, var(--wash) 84%, var(--panel));
     border-right: 1px solid var(--outline);
 }
-.atlas-v3 .brand-row { letter-spacing: -0.045em; }
-.atlas-v3 .nav { gap: 3px; }
+.atlas-v3 .brand-row {
+    letter-spacing: -0.045em;
+}
+.atlas-v3 .nav {
+    gap: 3px;
+}
 .atlas-v3 .nav button {
     border-radius: 10px;
     min-height: 42px;
@@ -36,7 +40,9 @@
 .atlas-v3 .research-source-toolbar {
     border-color: var(--outline);
 }
-.atlas-v3 .chat-workspace.history-visible { gap: 12px; }
+.atlas-v3 .chat-workspace.history-visible {
+    gap: 12px;
+}
 .atlas-v3 .chat-workspace.history-visible .chat-history {
     background: var(--panel);
     border-radius: var(--atlas-radius);
@@ -70,7 +76,9 @@
 .atlas-v3 .chat-workspace .thread {
     padding: clamp(18px, 2.4vw, 38px);
 }
-.atlas-v3 .thread .user-message { margin-bottom: 20px; }
+.atlas-v3 .thread .user-message {
+    margin-bottom: 20px;
+}
 .atlas-v3 .user-message .bubble {
     background: color-mix(in srgb, var(--wash) 72%, var(--panel));
     border: 1px solid var(--outline);
@@ -79,7 +87,9 @@
     line-height: 1.65;
     box-shadow: none;
 }
-.atlas-v3 .answer-row { margin-bottom: 28px; }
+.atlas-v3 .answer-row {
+    margin-bottom: 28px;
+}
 .atlas-v3 .answer {
     border-color: transparent;
     border-radius: 12px;
@@ -90,7 +100,9 @@
     line-height: 1.8;
     letter-spacing: -0.005em;
 }
-.atlas-v3 .research-answer-content p { margin-block: 0 14px; }
+.atlas-v3 .research-answer-content p {
+    margin-block: 0 14px;
+}
 .atlas-v3 .research-answer-content h2,
 .atlas-v3 .research-answer-content h3 {
     margin-top: 24px;
@@ -105,7 +117,9 @@
 }
 .atlas-v3 .research-composer-v2:focus-within {
     border-color: var(--brand);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 11%, transparent), 0 4px 20px rgba(19, 36, 27, 0.06);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--brand) 11%, transparent),
+        0 4px 20px rgba(19, 36, 27, 0.06);
 }
 .atlas-v3 .research-composer-v2 textarea {
     line-height: 1.6;
@@ -124,13 +138,18 @@
     padding: 18px 17px 15px;
     border-color: var(--outline);
 }
-.atlas-v3 .research-rail-heading strong { font-size: 13px; letter-spacing: -0.015em; }
+.atlas-v3 .research-rail-heading strong {
+    font-size: 13px;
+    letter-spacing: -0.015em;
+}
 .atlas-v3 .research-evidence-group {
     border-radius: 10px;
 }
 .atlas-v3 .research-rail-item {
     border-radius: 9px;
-    transition: background 140ms ease, border-color 140ms ease;
+    transition:
+        background 140ms ease,
+        border-color 140ms ease;
 }
 .atlas-v3 .research-rail-item:hover {
     background: var(--panel);
@@ -144,22 +163,307 @@
     outline-width: 2px;
     outline-offset: 3px;
 }
-.atlas-v3 .research-welcome { padding-block: clamp(48px, 8vh, 94px); }
-.atlas-v3 .research-welcome h2 {
-    font-size: clamp(27px, 3vw, 38px);
-    font-weight: 750;
-    letter-spacing: -0.05em;
-    line-height: 1.2;
-}
-.atlas-v3 .research-welcome > p { max-width: 520px; line-height: 1.75; }
 @media (max-width: 760px) {
-    .atlas-v3 .chat-workspace .thread { padding: 18px 14px; }
-    .atlas-v3 .research-welcome { padding: 48px 12px; }
-    .atlas-v3 .research-heading h1 { font-size: 22px; }
-    .atlas-v3 .user-message .bubble { padding: 11px 13px; }
+    .atlas-v3 .chat-workspace .thread {
+    padding: 18px 14px;
+}
+    .atlas-v3 .user-message .bubble {
+    padding: 11px 13px;
+}
 }
 @media (prefers-reduced-motion: reduce) {
     .atlas-v3 .nav button,
     .atlas-v3 .chat-history-item,
-    .atlas-v3 .research-rail-item { transition: none; }
+    .atlas-v3 .research-rail-item {
+    transition: none;
+}
+}
+
+/* Research uses the available viewport rather than a centered 1280px page. */
+.atlas-v3 .content.content-research {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 26px clamp(18px, 2.1vw, 36px) 42px;
+    box-sizing: border-box;
+}
+.atlas-v3 .content-research .chat-workspace,
+.atlas-v3 .content-research .chat-workspace .research {
+    width: 100%;
+    min-width: 0;
+}
+.atlas-v3 .content-research .chat-workspace .research {
+    box-sizing: border-box;
+}
+.atlas-v3 .content-research .research-heading h1 {
+    max-width: min(100%, 940px);
+}
+@media (min-width: 1500px) {
+    .atlas-v3 .content.content-research {
+        padding-inline: clamp(24px, 2vw, 42px);
+    }
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content.content-research {
+        padding: 20px 14px 36px;
+    }
+}
+
+/* Research composition: quieter hierarchy, centered welcome, secondary evidence. */
+.atlas-v3 .content-research .crumb {
+    margin-bottom: 12px;
+    color: var(--sub);
+}
+.atlas-v3 .content-research .heading-row {
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 14px;
+}
+.atlas-v3 .content-research .research-heading h1 {
+    font-size: clamp(24px, 2vw, 30px);
+    letter-spacing: -0.045em;
+    margin-bottom: 5px;
+}
+.atlas-v3 .content-research .research-heading .subtitle {
+    font-size: 12px;
+    line-height: 1.55;
+}
+.atlas-v3 .content-research .heading-row .actions {
+    gap: 7px;
+}
+.atlas-v3 .content-research .research-source-toolbar {
+    margin-bottom: 15px;
+    padding: 0;
+    min-height: 34px;
+}
+.atlas-v3 .content-research .chat-workspace .chat-pane {
+    min-height: 0;
+    height: clamp(460px, calc(100dvh - 245px), 940px);
+    display: flex;
+    flex-direction: column;
+}
+.atlas-v3 .content-research .chat-workspace .thread {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
+.atlas-v3 .content-research .research-welcome .starter-questions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.atlas-v3 .content-research .research-welcome .starter-questions button {
+    min-height: 52px;
+    padding: 13px 15px;
+    border-radius: 11px;
+    border-color: var(--outline);
+    background: color-mix(in srgb, var(--wash) 30%, var(--panel));
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.45;
+}
+.atlas-v3 .content-research .research-welcome .starter-questions button:hover {
+    border-color: color-mix(in srgb, var(--brand) 40%, var(--outline));
+    background: var(--hover);
+}
+.atlas-v3 .content-research .research-welcome .starter-questions button:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+.atlas-v3 .content-research .chat-workspace .thread:has(.research-welcome) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.atlas-v3 .content-research .research-welcome {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 32px 16px 42px;
+    margin: auto;
+}
+.atlas-v3 .content-research .research-welcome .welcome-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    margin-bottom: 18px;
+}
+.atlas-v3 .content-research .research-welcome .welcome-mark svg {
+    width: 27px;
+    height: 27px;
+}
+.atlas-v3 .content-research .research-welcome h2 {
+    font-size: clamp(24px, 2.2vw, 32px);
+    letter-spacing: -0.04em;
+    line-height: 1.25;
+    max-width: 620px;
+    margin: 0 auto 11px;
+}
+.atlas-v3 .content-research .research-welcome > p {
+    font-size: 13px;
+    line-height: 1.65;
+    margin: 0 auto 22px;
+    max-width: 490px;
+}
+.atlas-v3 .content-research .research-welcome .starter-questions {
+    max-width: 580px;
+    margin-inline: auto;
+}
+.atlas-v3 .content-research .research-evidence-rail {
+    background: color-mix(in srgb, var(--wash) 28%, var(--panel));
+}
+.atlas-v3 .content-research .research-rail-heading {
+    padding: 18px 16px;
+}
+.atlas-v3 .content-research .research-rail-empty {
+    padding: 24px 18px;
+    text-align: left;
+    color: var(--sub);
+}
+.atlas-v3 .content-research .research-rail-empty p {
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text);
+}
+.atlas-v3 .content-research .research-rail-empty span {
+    display: block;
+    font-size: 12px;
+    line-height: 1.65;
+}
+.atlas-v3 .content-research .evidence-width-controls {
+    opacity: 0.38;
+    transition: opacity 140ms ease;
+}
+.atlas-v3 .content-research .evidence-width-controls button:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+.atlas-v3 .content-research .evidence-width-controls:hover,
+.atlas-v3 .content-research .evidence-width-controls:focus-within {
+    opacity: 1;
+}
+.atlas-v3 .content-research .research-composer-v2 {
+    margin-top: 8px;
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content-research .heading-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .atlas-v3 .content-research .research-welcome {
+        padding: 32px 10px;
+    }
+    .atlas-v3 .content-research .research-welcome h2 {
+        font-size: clamp(23px, 5vw, 29px);
+    }
+}
+
+/* Short viewports and small screens: preserve composer access and avoid clipped content. */
+@media (max-height: 740px) and (min-width: 791px) {
+    .atlas-v3 .content-research .chat-workspace .chat-pane {
+        height: clamp(390px, calc(100dvh - 205px), 640px);
+    }
+    .atlas-v3 .content-research .research-welcome {
+        padding-block: 18px;
+    }
+    .atlas-v3 .content-research .research-welcome .welcome-mark {
+        margin-bottom: 10px;
+    }
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content-research .chat-workspace .chat-pane {
+        height: clamp(420px, calc(100dvh - 220px), 760px);
+    }
+    .atlas-v3 .content-research .research-welcome .starter-questions {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 440px;
+    }
+    .atlas-v3 .content-research .research-welcome .starter-questions button {
+        min-height: 44px;
+        padding: 10px 13px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .atlas-v3 .content-research .evidence-width-controls {
+        transition: none;
+    }
+}
+
+/* Match the actual rail width to the grid track on wide displays. */
+@media (min-width: 1160px) {
+    .atlas-v3 .content-research .chat-workspace .research:not(.evidence-collapsed) {
+        grid-template-columns: minmax(0, 1fr) minmax(260px, var(--atlas-evidence-width, 300px));
+    }
+    .atlas-v3 .content-research .research-evidence-rail {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        overflow-x: hidden;
+    }
+}
+@media (max-width: 1159px) {
+    .atlas-v3 .content-research .chat-workspace .research {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .atlas-v3 .content-research .research-evidence-rail {
+        display: none;
+    }
+}
+
+/* App-wide responsive page canvas. Keep text lines readable, not entire pages narrow. */
+.atlas-v3 .main {
+    min-width: 0;
+}
+.atlas-v3 .content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-inline: 0;
+    padding: 26px clamp(18px, 2.1vw, 36px) 46px;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .atlas-home,
+.atlas-v3 .content .connected-page,
+.atlas-v3 .content .gmail-page,
+.atlas-v3 .content .document-library-v3 {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .atlas-home .home-hero-copy,
+.atlas-v3 .content .home-hero p,
+.atlas-v3 .content .library-intro p,
+.atlas-v3 .content .subtitle {
+    max-width: 780px;
+}
+.atlas-v3 .content .integrations-grid,
+.atlas-v3 .content .library-workspace,
+.atlas-v3 .content .home-grid {
+    min-width: 0;
+}
+@media (min-width: 1600px) {
+    .atlas-v3 .content {
+        padding-inline: clamp(28px, 2.2vw, 48px);
+    }
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content {
+        padding: 20px 14px 36px;
+    }
+}
+
+/* Full-width functional surfaces; prose within them keeps its own line length. */
+.atlas-v3 .content .home-ask,
+.atlas-v3 .content .gmail-summary {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .home-ask > p,
+.atlas-v3 .content .gmail-summary > p {
+    max-width: 780px;
 }

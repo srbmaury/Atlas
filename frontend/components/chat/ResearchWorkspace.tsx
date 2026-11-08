@@ -104,7 +104,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         const next = position < 0 ? (direction === 1 ? 0 : matches.length - 1) : (position + direction + matches.length) % matches.length;
         focusMatch(matches[next].index);
     }
-    const [evidenceWidth, setEvidenceWidth] = useState(340);
+    const [evidenceWidth, setEvidenceWidth] = useState(300);
     useEffect(() => {
         try {
             const saved = Number(localStorage.getItem('atlas:evidence-width'));
@@ -158,7 +158,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <span className="eyebrow">ASK ATLAS</span>
                     <h1 title={props.title}>{props.title}</h1>
                     <p className="subtitle">Answers grounded in your knowledge, with citations you can verify.</p>
                 </div>
@@ -178,11 +177,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                 </div>
             </div>
             <div className="research-source-toolbar">
-                <button className="research-document-scope" type="button" onClick={props.onOpenScope}>
-                    <FileText size={15} />
-                    {props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}
-                    <ChevronDown size={14} />
-                </button>
                 <ResearchSourceSelector
                     includeDocuments={props.includeDocuments}
                     onIncludeDocuments={props.setIncludeDocuments}
@@ -366,7 +360,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>
                                 +
                             </button>
-                            <button type="button" onClick={() => resizeEvidence(340)}>
+                            <button type="button" onClick={() => resizeEvidence(300)}>
                                 Reset
                             </button>
                         </div>
@@ -442,8 +436,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         ) : (
                             <div className="research-rail-empty">
-                                <p>Evidence from your answers appears here.</p>
-                                <span>Choose a citation to inspect the original passage and surrounding context.</span>
+                                <p>No evidence yet</p>
+                                <span>Cited passages will appear here when Atlas answers a question.</span>
                             </div>
                         )}
                     </aside>
