@@ -438,7 +438,9 @@ export function AtlasWorkspace() {
             setSource(null);
             setNotice('Branch created. Edit the copied prompt and send it to explore a different direction.');
             navigate('chat');
-        } catch (e) { setError((e as Error).message); }
+        } catch (e) {
+            setError((e as Error).message);
+        }
     }
 
     const uploadButton = (
