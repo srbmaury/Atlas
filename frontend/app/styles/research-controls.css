@@ -538,3 +538,8 @@ input[type='checkbox'] {
 .chat-history-menu button:hover { background: var(--hover); }
 .chat-history-selection-toolbar button[aria-pressed='true'] { color: var(--brand); font-weight: 700; }
 .chat-history-title svg { display: inline; vertical-align: middle; color: var(--brand); }
+
+
+/* Fork an earlier user message into an independent research conversation. */
+.message-branch-action { display: inline-flex; align-items: center; gap: 5px; margin: 8px 0 0 8px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--sub); font-size: 10px; cursor: pointer; vertical-align: middle; }
+.message-branch-action:hover { background: var(--hover); color: var(--text); }
