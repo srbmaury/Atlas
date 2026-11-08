@@ -33,3 +33,21 @@ def test_sender_question_uses_sender_filter():
 
 def test_other_mail_follow_up_does_not_inherit_sender_keywords():
     assert gmail_query_for_question('', 'Any other email which needs my attention') == ''
+
+
+def test_important_attention_request_is_not_narrowed_by_modal_words():
+    assert gmail_query_for_question('newer_than:30d', 'List all important emails which may need my attention') == (
+        'newer_than:30d is:important'
+    )
+
+
+def test_funds_related_email_request_keeps_only_topic():
+    assert gmail_query_for_question('newer_than:30d', 'Any funds related emails') == (
+        'newer_than:30d funds'
+    )
+
+
+def test_important_email_list_keeps_scope():
+    assert gmail_query_for_question('newer_than:30d', 'List all important emails') == (
+        'newer_than:30d is:important'
+    )
