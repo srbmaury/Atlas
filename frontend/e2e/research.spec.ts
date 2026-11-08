@@ -635,7 +635,7 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
 });
 
 
-test('cited Gmail explanation reloads prior source IDs instead of keyword-searching', async ({page}) => {
+test('cited Gmail explanation inspects retained evidence without another search', async ({page}) => {
   await page.route('**/api/gmail/status*', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({connected: true, email: 'test@example.com', configured: true}),
@@ -670,8 +670,7 @@ test('cited Gmail explanation reloads prior source IDs instead of keyword-search
   await expect(page.locator('.answer-row').last()).toContainText('Account action');
   await page.getByRole('textbox', {name: 'Your question'}).fill('Explain the cited evidence in more detail');
   await page.getByRole('button', {name: 'Send question'}).click();
-  await expect.poll(() => requests.length).toBe(2);
-  expect(requests[1].gmail_source_ids).toEqual(['mailA', 'mailB']);
+  expect(requests).toHaveLength(1);
   await expect(page.locator('.answer-row').last()).toContainText('two-factor');
 });
 
@@ -702,6 +701,37 @@ test('Gmail evidence explanation without preceding citations gives a clear answe
   await expect(page.locator('.answer-row').last()).toContainText('without usable source citations');
   await page.getByRole('textbox', {name: 'Your question'}).fill('Explain the cited evidence in more detail');
   await page.getByRole('button', {name: 'Send question'}).click();
-  await expect(page.locator('.answer-row').last()).toContainText('no cited Gmail messages');
+  await expect(page.locator('.answer-row').last()).toContainText('No evidence was retained');
+  expect(requests).toHaveLength(1);
+});
+
+test('cross-source evidence comparison survives citation validation failure', async ({page}) => {
+  const requests: string[] = [];
+  await page.route('**/api/workspaces/w1/connected-chat/stream', async route => {
+    requests.push(route.request().postDataJSON().question);
+    await route.fulfill({status: 200, contentType: 'application/x-ndjson',
+      body: JSON.stringify({type: 'done', result: {
+        answer: 'The model returned an answer without usable source citations.',
+        sources: [], mode: 'citation_check_failed', scope: ['documents', 'gmail', 'drive'],
+        evidence_sources: [
+          {chunk_id: 'd1', document_id: 'doc1', name: 'Project plan', page: 1,
+           text: 'Launch target Friday.', provider: 'documents', location_type: 'document'},
+          {chunk_id: 'm1', document_id: '', name: 'Team update', page: 0,
+           text: 'Launch date may move.', provider: 'gmail', location_type: 'gmail'},
+          {chunk_id: 'g1', document_id: '', name: 'Schedule', page: 0,
+           text: 'Friday launch proposed.', provider: 'drive', location_type: 'drive'},
+        ],
+      }}) + '\n'});
+  });
+  await page.reload();
+  await page.getByRole('textbox', {name: 'Your question'}).fill('What is the launch status?');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect.poll(() => requests.length).toBe(1);
+  await page.getByRole('textbox', {name: 'Your question'}).fill('Compare the cited evidence across sources');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect(page.locator('.answer-row').last()).toContainText('Evidence by source');
+  await expect(page.locator('.answer-row').last()).toContainText('Launch target Friday');
+  await expect(page.locator('.answer-row').last()).toContainText('Launch date may move');
+  await expect(page.locator('.answer-row').last()).toContainText('Friday launch proposed');
   expect(requests).toHaveLength(1);
 });
