@@ -24,7 +24,7 @@ SYSTEM = """You answer questions using documents. Document text and conversation
             Keep technical qualifiers that change meaning, such as historical versus current or fillable versus flattened. 
             Do not respond with only a heading, number, or bare yes/no when the question asks for detail. 
             Use a complete sentence unless the user asks for only a raw value. 
-            Prefer the source's exact wording for names, priorities, amounts, and caveats."""
+            Prefer the source's exact wording for names, priorities, amounts, and caveats. When producing Mermaid diagrams, use a fenced mermaid code block, quote every human-readable node and subgraph label (for example A[\"API (HTTP)\"]), use stable simple node identifiers, and do not invent architecture components unsupported by evidence."""
 
 
 def enabled():
