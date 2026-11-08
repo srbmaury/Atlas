@@ -1,4 +1,6 @@
 'use client';
+import { useEffect, useState } from 'react';
+import { api } from '../../lib/api';
 import { ArrowUpRight, ChevronRight, Search, Sparkles } from 'lucide-react';
 import type { Doc, ChatSummary } from '../../lib/types';
 import { prettyBytes } from '../../utils/utils';
@@ -16,6 +18,7 @@ export function WorkspaceSearchDialog({
     onOpenChat,
     onNewChat,
     onNavigate,
+    workspaceId,
 }: {
     query: string;
     onQueryChange: (value: string) => void;
@@ -25,10 +28,22 @@ export function WorkspaceSearchDialog({
     documents: Doc[];
     canAsk: boolean;
     chats: ChatSummary[];
+    workspaceId: string;
     onOpenChat: (id: string) => void;
     onNewChat: () => void;
     onNavigate: (tab: 'documents' | 'sources') => void;
 }) {
+    const [messageMatches, setMessageMatches] = useState<{ chat_id: string; title: string; message_index: number; excerpt: string; role: string }[]>([]);
+    useEffect(() => {
+        if (query.trim().length < 2 || !workspaceId) { setMessageMatches([]); return; }
+        let cancelled = false;
+        const timer = window.setTimeout(() => {
+            api<{ results: typeof messageMatches }>(`/workspaces/${workspaceId}/conversations/search?q=${encodeURIComponent(query.trim())}`)
+                .then((data) => { if (!cancelled) setMessageMatches(data.results); })
+                .catch(() => { if (!cancelled) setMessageMatches([]); });
+        }, 300);
+        return () => { cancelled = true; window.clearTimeout(timer); };
+    }, [workspaceId, query]);
     const matches = documents.filter((doc) => doc.name.toLowerCase().includes(query.toLowerCase()));
     return (
         <Dialog title="Search & commands" onClose={onClose} className="search-dialog">
@@ -59,6 +74,20 @@ export function WorkspaceSearchDialog({
                     <button type="button" className="doc-item" key={chat.id} onClick={() => onOpenChat(chat.id)}><Search size={15} /><span>{chat.title}</span><ChevronRight size={15} /></button>
                 ))}
             </div>
+            {query.trim().length >= 2 && (
+                <>
+                    <div className="search-results-heading">Matching messages</div>
+                    <div className="search-results">
+                        {messageMatches.map((match) => (
+                            <button type="button" className="doc-item" key={match.chat_id + ':' + match.message_index} onClick={() => onOpenChat(match.chat_id)}>
+                                <Search size={15} />
+                                <span className="doc-item-info"><strong>{match.title}</strong><small>{match.role}: {match.excerpt}</small></span>
+                                <ChevronRight size={15} />
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
             <div className="search-results-heading">Documents in this workspace</div>
             {query.trim() && (
                 <button className="search-question" disabled={!canAsk} onClick={() => onAsk(query)}>
