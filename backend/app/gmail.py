@@ -550,24 +550,23 @@ def summarize(workspaceId: str, body: SummaryRequest, request: Request):
             502,
             'The AI provider returned an empty summary. Try fewer emails or another chat model.',
         )
-    return {
-        'summary': answer,
-        'mode': 'intelligence' if body.intelligence else 'summary',
-        'sources': [
-            {
-                'number': i + 1,
-                'id': m['id'],
-                'thread_id': m.get('thread_id'),
-                'subject': m['subject'],
-                'sender': m['sender'],
-                'date': m['date'],
-                'url': m['url'],
+    sources = [
+        {'number': i + 1, 'id': m['id'], 'subject': m['subject'], 'url': m['url']}
+        for i, m in enumerate(messages)
+    ]
+    if body.intelligence:
+        for i, (source, message) in enumerate(zip(sources, messages)):
+            source.update({
+                'thread_id': message.get('thread_id'),
+                'sender': message['sender'],
+                'date': message['date'],
                 'excerpt': excerpts[i]['text'],
-                'truncated': len(m['body'] or m['snippet']) > per_message,
-            }
-            for i, m in enumerate(messages)
-        ],
-    }
+                'truncated': len(message['body'] or message['snippet']) > per_message,
+            })
+    result = {'summary': answer, 'sources': sources}
+    if body.intelligence:
+        result['mode'] = 'intelligence'
+    return result
 
 
 class QuerySummaryRequest(BaseModel):
