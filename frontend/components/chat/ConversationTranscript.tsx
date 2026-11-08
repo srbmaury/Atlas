@@ -47,14 +47,14 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
             )}
             {messages.map((m, i) =>
                 m.role === 'user' ? (
-                    <div className="user-message" key={i}>
+                    <div className="user-message" key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
                             <div className="bubble">{m.content}</div>
                         </div>
                     </div>
                 ) : (
-                    <div className="answer-row" key={i}>
+                    <div className="answer-row" key={i} data-message-index={i}>
                         <span className="assistant-mark">A</span>
                         <div className="answer">
                             <div className="answer-head">
