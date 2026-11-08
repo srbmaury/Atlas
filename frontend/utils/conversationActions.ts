@@ -1,3 +1,4 @@
+import { chatLoadSequence } from '../lib/chatLoadSequence';
 import type { Dispatch, SetStateAction, RefObject } from 'react';
 import { api } from '../lib/api';
 import { conversationPlan } from '../lib/conversation';
@@ -80,9 +81,10 @@ export function createConversationActions({
 }: Options) {
     async function loadChat(id: string) {
         if (busy) return;
+        const sequence = chatLoadSequence.next();
         try {
             const item = await api<SavedChat>(`/workspaces/${workspaceId}/conversations/${id}`);
-            if (scope.current !== workspaceId) return;
+            if (scope.current !== workspaceId || !chatLoadSequence.isCurrent(sequence)) return;
             const answer = [...item.messages].reverse().find((message) => message.role === 'assistant' && message.result)?.result;
             if (answer?.scope) {
                 setIncludeDocuments(answer.scope.includes('documents'));
@@ -102,7 +104,7 @@ export function createConversationActions({
             setSource(null);
             navigate('chat');
         } catch (e) {
-            setError((e as Error).message);
+            if (chatLoadSequence.isCurrent(sequence)) setError((e as Error).message);
         }
     }
 
