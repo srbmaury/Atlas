@@ -1,10 +1,11 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { RotateCcw, Plus, MessageSquare, Trash2, Search, Pencil, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { RotateCcw, Plus, MessageSquare, Trash2, Search, Pencil, X, Pin, Archive, ArchiveRestore, MoreHorizontal } from 'lucide-react';
 import type { ChatSummary } from '../../lib/types';
 
 interface ConversationHistoryProps {
     chats: ChatSummary[];
+    workspaceId: string;
     chatId: string | null;
     busy: boolean;
     onRefresh: () => void;
@@ -22,11 +23,37 @@ function conversationDate(timestamp: number): string {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
 }
 
-export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat, onOpenChat, onRenameChat, onDeleteChat, onDeleteChats }: ConversationHistoryProps) {
+export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefresh, onNewChat, onOpenChat, onRenameChat, onDeleteChat, onDeleteChats }: ConversationHistoryProps) {
     const [search, setSearch] = useState('');
+    const [pinned, setPinned] = useState<string[]>([]);
+    const [archived, setArchived] = useState<string[]>([]);
+    const [showArchived, setShowArchived] = useState(false);
+    const [actionMenu, setActionMenu] = useState<string | null>(null);
+    useEffect(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem('atlas:chat-organize:' + workspaceId) || '{}');
+            setPinned(Array.isArray(stored.pinned) ? stored.pinned.filter((id: unknown) => typeof id === 'string') : []);
+            setArchived(Array.isArray(stored.archived) ? stored.archived.filter((id: unknown) => typeof id === 'string') : []);
+        } catch { setPinned([]); setArchived([]); }
+        setActionMenu(null);
+    }, [workspaceId]);
+    function updateOrganization(nextPinned: string[], nextArchived: string[]) {
+        setPinned(nextPinned);
+        setArchived(nextArchived);
+        try { localStorage.setItem('atlas:chat-organize:' + workspaceId, JSON.stringify({ pinned: nextPinned, archived: nextArchived })); }
+        catch { /* Storage may be disabled. */ }
+    }
+    function togglePin(id: string) {
+        updateOrganization(pinned.includes(id) ? pinned.filter((value) => value !== id) : [...pinned, id], archived.filter((value) => value !== id));
+        setActionMenu(null);
+    }
+    function toggleArchive(id: string) {
+        updateOrganization(pinned.filter((value) => value !== id), archived.includes(id) ? archived.filter((value) => value !== id) : [...archived, id]);
+        setActionMenu(null);
+    }
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
-    const filteredChats = useMemo(() => chats.filter((chat) => chat.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).sort((a, b) => b.updated - a.updated), [chats, search]);
+    const filteredChats = useMemo(() => chats.filter((chat) => (showArchived ? archived.includes(chat.id) : !archived.includes(chat.id)) && chat.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).sort((a, b) => Number(pinned.includes(b.id)) - Number(pinned.includes(a.id)) || b.updated - a.updated), [chats, search, pinned, archived, showArchived]);
 
     const selectedVisible = filteredChats.filter((chat) => selected.includes(chat.id));
     const allVisibleSelected = filteredChats.length > 0 && filteredChats.every((chat) => selected.includes(chat.id));
@@ -91,6 +118,10 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
                     </button>
                 )}
             </div>
+            <div className="chat-history-selection-toolbar">
+                <button type="button" aria-pressed={!showArchived} onClick={() => { setShowArchived(false); setSelected([]); }}>Active ({chats.filter((chat) => !archived.includes(chat.id)).length})</button>
+                <button type="button" aria-pressed={showArchived} onClick={() => { setShowArchived(true); setSelected([]); }}>Archived ({chats.filter((chat) => archived.includes(chat.id)).length})</button>
+            </div>
             <div className="chat-history-list" aria-label="Saved conversations">
                 {filteredChats.map((item) => (
                     <div className={`chat-history-item ${chatId === item.id ? 'current' : ''}`} key={item.id}>
@@ -105,19 +136,22 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
                         >
                             <MessageSquare size={15} aria-hidden="true" />
                             <span className="chat-history-details">
-                                <span className="chat-history-title">{item.title}</span>
+                                <span className="chat-history-title">{pinned.includes(item.id) && <Pin size={12} aria-label="Pinned" />} {item.title}</span>
                                 <span className="chat-history-date">{conversationDate(item.updated)}</span>
                             </span>
                         </button>
                         {!selecting && (
-                            <button type="button" className="chat-history-action" onClick={() => onRenameChat(item)} disabled={busy} aria-label={`Rename ${item.title}`} title="Rename">
-                                <Pencil size={14} />
-                            </button>
-                        )}
-                        {!selecting && (
-                            <button type="button" className="chat-history-action" onClick={() => onDeleteChat(item)} disabled={busy} aria-label={`Delete ${item.title}`} title="Delete">
-                                <Trash2 size={14} />
-                            </button>
+                            <div className="chat-history-menu-wrap">
+                                <button type="button" className="chat-history-action" aria-label={`Actions for ${item.title}`} aria-expanded={actionMenu === item.id} onClick={() => setActionMenu(actionMenu === item.id ? null : item.id)}><MoreHorizontal size={16} /></button>
+                                {actionMenu === item.id && (
+                                    <div className="chat-history-menu">
+                                        <button type="button" onClick={() => togglePin(item.id)}><Pin size={14} /> {pinned.includes(item.id) ? 'Unpin' : 'Pin'}</button>
+                                        <button type="button" onClick={() => toggleArchive(item.id)}>{archived.includes(item.id) ? <ArchiveRestore size={14} /> : <Archive size={14} />} {archived.includes(item.id) ? 'Restore' : 'Archive'}</button>
+                                        <button type="button" onClick={() => { setActionMenu(null); onRenameChat(item); }}><Pencil size={14} /> Rename</button>
+                                        <button type="button" onClick={() => { setActionMenu(null); onDeleteChat(item); }}><Trash2 size={14} /> Delete</button>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 ))}
