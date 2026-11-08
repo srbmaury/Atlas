@@ -73,8 +73,10 @@
 }
 .settings-main {
     width: 100%;
-    max-width: 1000px;
-    padding: 48px clamp(24px, 5vw, 72px) 72px;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 30px clamp(18px, 2.1vw, 36px) 48px;
 }
 .settings-heading {
     margin-bottom: 30px;
