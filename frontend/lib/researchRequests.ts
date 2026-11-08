@@ -9,12 +9,13 @@ export type ResearchRequest = {
     includeDocuments: boolean;
     includeGmail: boolean;
     gmailQuery: string;
+    gmailSourceIds?: string[];
     providers: string[];
     useConnected: boolean;
 };
 
 export async function requestResearchAnswer(request: ResearchRequest, signal: AbortSignal, onStatus: (text: string) => void, onDelta: (text: string) => void): Promise<Answer> {
-    const { workspaceId, question, history, documentIds, includeDocuments, includeGmail, gmailQuery, providers, useConnected } = request;
+    const { workspaceId, question, history, documentIds, includeDocuments, includeGmail, gmailQuery, gmailSourceIds, providers, useConnected } = request;
     if (useConnected) {
         return apiStream<Answer>(
             `/workspaces/${workspaceId}/connected-chat/stream`,
@@ -25,6 +26,7 @@ export async function requestResearchAnswer(request: ResearchRequest, signal: Ab
                 include_documents: includeDocuments,
                 include_gmail: includeGmail,
                 gmail_query: gmailQuery,
+                gmail_source_ids: gmailSourceIds || [],
                 providers,
             },
             (event) => {
