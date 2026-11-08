@@ -180,24 +180,31 @@ export function createConversationActions({
             if (useRepositoryEvidence) {
                 // Persist repository identity as conversation metadata on the existing answer.
                 // For older saved chats, infer it from a GitHub file source.
-                const priorRepository = [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))].reverse()
-                    .filter((message) => message.role === 'assistant')
-                    .map((message) => {
-                        if (message.result?.repository) return message.result.repository;
-                        const githubSource = message.result?.sources?.find((source) => source.provider === 'github');
-                        const match = githubSource?.name.match(/^([^/]+\/[^/]+)\//);
-                        return match?.[1] || null;
-                    })
-                    .find((value) => Boolean(value)) || null;
+                const priorRepository =
+                    [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))]
+                        .reverse()
+                        .filter((message) => message.role === 'assistant')
+                        .map((message) => {
+                            if (message.result?.repository) return message.result.repository;
+                            const githubSource = message.result?.sources?.find((source) => source.provider === 'github');
+                            const match = githubSource?.name.match(/^([^/]+\/[^/]+)\//);
+                            return match?.[1] || null;
+                        })
+                        .find((value) => Boolean(value)) || null;
                 const inspection = await api<{
-                    status: string; message?: string; answer?: string | null; answer_mode?: string;
+                    status: string;
+                    message?: string;
+                    answer?: string | null;
+                    answer_mode?: string;
                     repository?: string | null;
                     sources: { title: string; path: string; url?: string; excerpt: string }[];
                     web_sources?: { title: string; url: string; excerpt: string }[];
                 }>(`/workspaces/${target}/repository-evidence`, {
                     method: 'POST',
                     body: JSON.stringify({
-                        question, repository: priorRepository, include_web: false,
+                        question,
+                        repository: priorRepository,
+                        include_web: false,
                         history: history.slice(-6).map((item) => ({ role: item.role, content: item.content })),
                     }),
                     signal: controller.signal,
@@ -206,39 +213,49 @@ export function createConversationActions({
                     result = { answer: inspection.message || 'Select a repository by mentioning its name in your question.', sources: [], mode: 'select_repository', scope: ['github'] };
                 } else {
                     const sources = inspection.sources.map((source, index) => ({
-                        chunk_id: `github-${index}`, document_id: source.url || source.path,
-                        name: source.title, page: 1, text: source.excerpt,
-                        location_type: 'file', provider: 'github', url: source.url,
+                        chunk_id: `github-${index}`,
+                        document_id: source.url || source.path,
+                        name: source.title,
+                        page: 1,
+                        text: source.excerpt,
+                        location_type: 'file',
+                        provider: 'github',
+                        url: source.url,
                     }));
                     result = {
-                        answer: inspection.answer || (inspection.sources.length
-                            ? `I found ${inspection.sources.length} repository files, but could not generate a verified answer (${inspection.answer_mode || 'unavailable'}). Review the evidence sources.`
-                            : 'No matching repository files were found. Try naming a repository or asking a more specific question.'),
-                        sources, repository: inspection.repository || priorRepository, mode: inspection.answer ? 'ai' : inspection.answer_mode || 'no_evidence',
+                        answer:
+                            inspection.answer ||
+                            (inspection.sources.length
+                                ? `I found ${inspection.sources.length} repository files, but could not generate a verified answer (${inspection.answer_mode || 'unavailable'}). Review the evidence sources.`
+                                : 'No matching repository files were found. Try naming a repository or asking a more specific question.'),
+                        sources,
+                        repository: inspection.repository || priorRepository,
+                        mode: inspection.answer ? 'ai' : inspection.answer_mode || 'no_evidence',
                         scope: ['github'],
                     };
                 }
-            } else result = await requestResearchAnswer(
-                {
-                    workspaceId: target,
-                    question,
-                    history,
-                    documentIds: selected,
-                    includeDocuments: searchScope.includeDocuments,
-                    includeGmail: searchScope.includeGmail,
-                    gmailQuery: connectedGmailQuery,
-                    providers: searchScope.providers,
-                    useConnected,
-                },
-                controller.signal,
-                setAnswerProgress,
-                (delta) => {
-                    draft += delta;
-                    const live: Message[] = [...pending, { role: 'assistant', content: draft }];
-                    chatMessages.current = live;
-                    setMessages(live);
-                },
-            );
+            } else
+                result = await requestResearchAnswer(
+                    {
+                        workspaceId: target,
+                        question,
+                        history,
+                        documentIds: selected,
+                        includeDocuments: searchScope.includeDocuments,
+                        includeGmail: searchScope.includeGmail,
+                        gmailQuery: connectedGmailQuery,
+                        providers: searchScope.providers,
+                        useConnected,
+                    },
+                    controller.signal,
+                    setAnswerProgress,
+                    (delta) => {
+                        draft += delta;
+                        const live: Message[] = [...pending, { role: 'assistant', content: draft }];
+                        chatMessages.current = live;
+                        setMessages(live);
+                    },
+                );
             if (scope.current !== target) return;
             const completed: Message[] = [...pending, { role: 'assistant', content: result.answer, result }];
             chatMessages.current = completed;

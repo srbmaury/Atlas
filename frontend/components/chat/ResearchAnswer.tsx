@@ -65,7 +65,15 @@ export const ResearchAnswer = memo(function ResearchAnswer({
                 const language = /language-([\w-]+)/.exec(className || '')?.[1]?.toLowerCase();
                 const code = plainText(children).replace(/\n$/, '');
                 const diagram = language === 'mermaid' || (!language && /^(?:graph\s+(?:TB|TD|BT|LR|RL)|flowchart\s+(?:TB|TD|BT|LR|RL))\b/.test(code.trim()));
-                return diagram ? <MermaidDiagram chart={code} /> : className ? <pre><code className={className}>{children}</code></pre> : <code>{children}</code>;
+                return diagram ? (
+                    <MermaidDiagram chart={code} />
+                ) : className ? (
+                    <pre>
+                        <code className={className}>{children}</code>
+                    </pre>
+                ) : (
+                    <code>{children}</code>
+                );
             },
         };
     }, [result, onOpenSource]);
