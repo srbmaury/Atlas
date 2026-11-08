@@ -25,3 +25,11 @@ def test_topic_terms_remain_searchable():
     assert gmail_query_for_question('', 'Important invoices in the last 14 days') == (
         'is:important newer_than:14d invoices'
     )
+
+
+def test_sender_question_uses_sender_filter():
+    assert gmail_query_for_question('', 'Summarize all emails from CoinDCX') == 'from:coindcx'
+
+
+def test_other_mail_follow_up_does_not_inherit_sender_keywords():
+    assert gmail_query_for_question('', 'Any other email which needs my attention') == ''
