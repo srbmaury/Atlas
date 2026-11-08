@@ -2,9 +2,9 @@
 
 import os
 import re
+from difflib import SequenceMatcher
 
 import httpx
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -73,8 +73,6 @@ def resolve_repository(question, selected, repositories):
     A fuzzy match is accepted only when it is unique and clearly stronger than
     the next candidate; ambiguous matches require user selection.
     """
-    from difflib import SequenceMatcher
-
     available = {item['full_name'].lower(): item['full_name'] for item in repositories}
     explicit = re.search(r'\\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
     if explicit:
