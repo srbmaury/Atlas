@@ -142,6 +142,13 @@ QUERY_STOPWORDS = {
     'sentences',
     'words',
     'lines',
+    'other',
+    'else',
+    'needs',
+    'need',
+    'attention',
+    'mail',
+    'mails',
 }
 
 GITHUB_QUERY_STOPWORDS = {
@@ -244,6 +251,17 @@ def gmail_query_for_question(scope, question):
         filters.append('newer_than:30d')
     cleaned = re.sub(r'\\b(?:last|past|previous)\\s+(?:\\d{1,3}\\s+days?|week|month)\\b', ' ', text)
     cleaned = re.sub(r'\\b(?:important|unread|mails?|emails?|messages?)\\b', ' ', cleaned)
+    # A follow-up asking for other mail must not inherit an unrelated
+    # sender/topic constraint from the previous question.
+    if re.search(r'\\b(?:any|what|which)\\s+other\\b', text) and re.search(
+        r'\\b(?:emails?|mails?|messages?)\\b', text
+    ):
+        return ' '.join([scope.strip(), *filters]).strip()
+    # "from CoinDCX" is a sender filter, not a free-text conjunction.
+    sender = re.search(r'\\bfrom\\s+([a-z][a-z0-9._+-]{1,70})\\b', text)
+    if sender:
+        filters.append('from:' + sender.group(1))
+        cleaned = re.sub(r'\\bfrom\\s+' + re.escape(sender.group(1)) + r'\\b', ' ', cleaned)
     terms = natural_search_terms(cleaned)
     terms = [term for term in terms if term not in {'last', 'past', 'previous', 'days', 'day', 'week', 'month'}]
     return ' '.join([scope.strip(), *filters, *terms]).strip()
