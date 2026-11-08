@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { RotateCcw, Plus, MessageSquare, Trash2, Search, Pencil, X, Pin, Archive, ArchiveRestore, MoreHorizontal } from 'lucide-react';
 import type { ChatSummary } from '../../lib/types';
