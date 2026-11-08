@@ -159,6 +159,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             )}
             <div className={`chat-workspace ${props.historyOpen ? 'history-visible' : ''}`}>
                 <ConversationHistory
+                    workspaceId={props.workspaceId}
                     chats={props.chats}
                     chatId={props.chatId}
                     busy={props.busy}
