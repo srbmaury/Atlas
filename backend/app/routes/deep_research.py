@@ -22,7 +22,7 @@ from ..schemas import ConnectedQuestion
 log = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/research-runs')
 EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix='atlas-deep-research')
-STAGES = ('planning', 'retrieving', 'cross_checking', 'synthesizing')
+STAGES = ('planning', 'retrieving', 'citation_audit', 'synthesizing')
 TERMINAL = ('completed', 'failed', 'cancelled', 'insufficient_evidence')
 
 
@@ -129,9 +129,9 @@ def _investigate(run_id, actor_id):
         # the selected sources and uses the existing citation validation.
         repository = scope.get('repository')
         if repository and 'github' in scope.get('providers', []):
-            # The GitHub connector only performs repository-scoped code search
-            # when the query contains an explicit repo qualifier.
-            question = f'{question} repo:{repository}'
+            # Trigger repository-scoped code retrieval, rather than a generic
+            # GitHub issues or repository listing search.
+            question = f'Analyze source code for: {question} repo:{repository}'
         questions = [
             ('Key findings', question),
             (
@@ -199,10 +199,10 @@ def _investigate(run_id, actor_id):
                 findings.append({'title': title, 'question': subquestion, 'result': result})
             if not _save(run_id, findings=findings):
                 return
-        if not _save(run_id, status='running', stage='cross_checking'):
+        if not _save(run_id, status='running', stage='citation_audit'):
             return
-        # This stage checks presence of usable evidence; semantic conflict
-        # detection is a separate roadmap item, not represented as completed.
+        # Citation presence audit only; semantic contradiction detection is
+        # not implemented in this initial research release.
         for finding in findings:
             result = finding['result']
             finding['verified'] = (
