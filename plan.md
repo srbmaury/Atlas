@@ -32,8 +32,8 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 ### Incremental delivery
 - **Slice A — foundation (started):** Thread grouping/chronology helper with unit tests; expose thread metadata without breaking existing message fields.
 - **Slice B:** Bounded Gmail thread expansion and thread-aware search results.
-- **Slice C:** Evidence-backed decision, action, owner, and deadline summaries.
-- **Slice D:** Conversational follow-ups, UI thread evidence panel, and cross-source integration.
+- **Slice C — backend implemented, verification pending:** Opt-in decision, commitment, action, owner, and deadline analysis with source excerpts and message citations. Automated citation verification is still outstanding.
+- **Slice D — partially implemented:** Gmail UI analysis toggle and per-message evidence excerpts shipped on feature branch. Conversational follow-ups, dedicated thread navigation, and cross-source integration remain outstanding.
 - **Slice E:** End-to-end benchmarks, security checks, and performance tuning.
 
 ### Acceptance tests
