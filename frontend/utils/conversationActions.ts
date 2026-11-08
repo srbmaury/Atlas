@@ -174,7 +174,8 @@ export function createConversationActions({
             });
             const useConnected = searchScope.includeGmail || searchScope.providers.length > 0 || user?.mode === 'ai';
             let draft = '';
-            const githubOnly = connectedProviders.length === 1 && connectedProviders[0] === 'github' && !connectedGmail && !includeDocuments;
+            const repositoryIntent = /\brepo:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\b/i.test(question) || /\b(repository|repo)\b/i.test(question) || /\b(application flow|codebase|entry points)\b/i.test(question);
+            const githubOnly = connectedProviders.includes('github') && (repositoryIntent || (connectedProviders.length === 1 && !connectedGmail && !includeDocuments));
             let result;
             if (githubOnly) {
                 const repositoryContext = [...chatMessages.current].reverse().find((message) =>
