@@ -139,6 +139,10 @@ def connected_chat(
     """Retrieve evidence across workspace documents and optionally live Gmail."""
     from .ai import client, ollama_chat
 
+    clarification = connected_research.ambiguous_email_request(body)
+    if clarification:
+        return clarification
+    body = connected_research.effective_research_scope(body)
     retrieval_stats = {}
     evidence, document_evidence = collect_connected_evidence(
         workspaceId, body, actor, db, retrieval_stats
@@ -237,6 +241,11 @@ def connected_chat_stream(
     import json
 
     def events():
+        clarification = connected_research.ambiguous_email_request(body)
+        if clarification:
+            yield json.dumps({'type': 'done', 'result': clarification}, ensure_ascii=False) + '\\n'
+            return
+        effective_body = connected_research.effective_research_scope(body)
         provider_labels = {
             'documents': 'Documents',
             'gmail': 'Gmail',
@@ -251,7 +260,7 @@ def connected_chat_stream(
             'outlook': 'Outlook',
             'sharepoint': 'SharePoint',
         }
-        selected_sources = connected_scope(body)
+        selected_sources = connected_scope(effective_body)
         source_names = [provider_labels.get(provider, provider) for provider in selected_sources]
         search_status = (
             f'Searching {" and ".join(source_names)}…'
@@ -262,24 +271,24 @@ def connected_chat_stream(
         try:
             retrieval_stats = {}
             evidence, document_evidence = collect_connected_evidence(
-                workspaceId, body, actor, db, retrieval_stats
+                workspaceId, effective_body, actor, db, retrieval_stats
             )
             revalidate_access(workspaceId, actor, {item.provider for item in evidence})
             if not evidence:
                 yield (
                     json.dumps(
-                        {'type': 'done', 'result': no_evidence_result(body, retrieval_stats)},
+                        {'type': 'done', 'result': no_evidence_result(effective_body, retrieval_stats)},
                         ensure_ascii=False,
                     )
                     + '\n'
                 )
                 return
             direct_result = direct_connected_result(
-                body.question, body, evidence, document_evidence
+                effective_body.question, effective_body, evidence, document_evidence
             )
             if direct_result:
                 direct_result = attach_retrieval_trace(
-                    direct_result, body, evidence, retrieval_stats
+                    direct_result, effective_body, evidence, retrieval_stats
                 )
                 yield (
                     json.dumps({'type': 'done', 'result': direct_result}, ensure_ascii=False) + '\n'
@@ -305,11 +314,11 @@ def connected_chat_stream(
                     if item.provider == 'documents' and item.source_id in document_evidence
                 ]
                 result = generate(
-                    body.question, doc_sources, [t.model_dump() for t in body.history]
+                    effective_body.question, doc_sources, [t.model_dump() for t in body.history]
                 )
                 revalidate_access(workspaceId, actor)
-                result['scope'] = connected_scope(body)
-                attach_retrieval_trace(result, body, evidence, retrieval_stats)
+                result['scope'] = connected_scope(effective_body)
+                attach_retrieval_trace(result, effective_body, evidence, retrieval_stats)
                 if result.get('mode') in ('ai', 'connected') and result.get('sources'):
                     from .citation_audit import audit_citations
 
@@ -325,7 +334,7 @@ def connected_chat_stream(
 
             def answer_events(cancellation):
                 return stream_connected(
-                    body.question,
+                    effective_body.question,
                     evidence,
                     config.AI_PROVIDER,
                     config.API_KEY,
@@ -354,7 +363,7 @@ def connected_chat_stream(
                         'related_sources': related_sources(event['sources']),
                         'decision_timeline': decision_timeline(event['sources']),
                         'mode': event['mode'],
-                        'scope': connected_scope(body),
+                        'scope': connected_scope(effective_body),
                         'citation_audit': event.get('citation_audit'),
                         'coverage_note': event.get('coverage_note'),
                     }
@@ -369,7 +378,7 @@ def connected_chat_stream(
                             document_evidence,
                         )
                     attach_retrieval_trace(
-                        result, body, evidence, retrieval_stats, event['sources']
+                        result, effective_body, evidence, retrieval_stats, event['sources']
                     )
                     yield json.dumps({'type': 'done', 'result': result}, ensure_ascii=False) + '\n'
                 elif event['type'] == 'heartbeat':
