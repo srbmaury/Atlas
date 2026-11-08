@@ -160,7 +160,7 @@ export const ResearchAnswer = memo(function ResearchAnswer({
             )}
             {result.citation_audit && result.citation_audit.needs_review > 0 && (
                 <p className="answer-evidence-review" role="status">
-                    Some claims may need a closer look. Open the cited passages to check their support.
+                    <span>Some claims may need a closer look.</span> Open the cited passages to check their support.
                 </p>
             )}
             {result.retrieval && <AnswerTrace result={result} onOpenSource={onOpenSource} />}
