@@ -133,6 +133,13 @@ def inspect_repository(
     )
     answer = None
     answer_mode = 'no_evidence'
+    fallback = None
+    if evidence:
+        preferred = next((item for item in evidence if item['name'].lower().endswith('readme.md')), evidence[0])
+        source_index = evidence.index(preferred) + 1
+        text = preferred['text'].replace('Repository file retrieved via GitHub Contents API', '').strip()
+        fallback = {'text': text[:1800], 'source_id': source_index, 'path': preferred['name']}
+
     if evidence and ai_enabled():
         try:
             generated = generate(body.question, evidence)
@@ -152,6 +159,7 @@ def inspect_repository(
         'count': len(results),
         'answer': answer,
         'answer_mode': answer_mode,
+        'fallback': fallback if not answer else None,
         'web_sources': web_results,
         'sources': [
             {
