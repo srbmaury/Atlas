@@ -81,3 +81,38 @@ def test_explanatory_repository_question_is_not_a_listing():
     from app.evidence_quality import is_listing_question
 
     assert not is_listing_question('Tell me why my GitHub repo is failing')
+
+
+def test_gmail_fragment_urls_do_not_collapse_distinct_messages():
+    from app.evidence_quality import fingerprint
+
+    rows = [
+        item('gmail', f'm{i}', f'Important notice {i}', 'Please review',
+             f'https://mail.google.com/mail/u/0/#all/m{i}')
+        for i in range(25)
+    ]
+    # Every Gmail message URL differs only in its fragment; canonical_url removes it.
+    assert len({canonical_url(row.url) for row in rows}) == 1
+    assert len({fingerprint(row) for row in rows}) == 25
+    assert len(prepare_evidence('List all important emails', rows, per_provider=30)) == 25
+
+
+def test_gmail_same_message_id_is_still_deduplicated():
+    rows = [
+        item('gmail', 'same-id', 'Notice', 'Action required',
+             'https://mail.google.com/mail/u/0/#inbox/same-id'),
+        item('gmail', 'same-id', 'Notice', 'Action required',
+             'https://mail.google.com/mail/u/0/#all/same-id'),
+    ]
+    assert len(prepare_evidence('List important emails', rows)) == 1
+
+
+def test_mail_listing_and_rfc2822_dates_are_supported():
+    from app.evidence_quality import is_listing_question, activity_timestamp
+    assert is_listing_question('List all important mails')
+    assert is_listing_question('Any funds related emails')
+    assert is_listing_question('Any other email which needs my attention')
+    assert not is_listing_question('Explain the cited evidence in more detail')
+    assert activity_timestamp(
+        Evidence('gmail', 'm', 'Subject', 'Body', date='Sun, 08 Nov 2026 09:00:00 +0530')
+    ) > 0
