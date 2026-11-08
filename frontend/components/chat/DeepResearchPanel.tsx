@@ -28,7 +28,20 @@ type Props = {
     providers: string[];
 };
 
-const finished = new Set(['completed', 'cancelled', 'failed']);
+const finished = new Set(['completed', 'cancelled', 'failed', 'insufficient_evidence']);
+const displayStatus = (run: Run) =>
+    run.status === 'completed' && run.findings.length > 0 && run.findings.every((finding) => !finding.verified && !finding.result.sources?.length)
+        ? 'Insufficient evidence'
+        : run.status === 'insufficient_evidence'
+          ? 'Insufficient evidence'
+          : run.status;
+const displayStages = (run: Run) => {
+    // Recover the visual timeline for older runs whose JSON stage mutations were not persisted.
+    if (finished.has(run.status) && run.findings.length && run.stages.every((stage) => stage.status === 'queued')) {
+        return run.stages.map((stage) => ({ ...stage, status: run.status === 'failed' || run.status === 'cancelled' ? run.status : 'completed' }));
+    }
+    return run.stages;
+};
 
 export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, includeGmail, gmailQuery, providers }: Props) {
     const [question, setQuestion] = useState('');
@@ -150,7 +163,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                             <select id="deep-research-history" value={active?.id || ''} onChange={(event) => setActiveId(event.target.value)}>
                                 {runs.map((run) => (
                                     <option key={run.id} value={run.id}>
-                                        {run.question.slice(0, 85)} · {run.status}
+                                        {run.question.slice(0, 85)} · {displayStatus(run)}
                                     </option>
                                 ))}
                             </select>
@@ -158,7 +171,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                 <div className="deep-research-run">
                                     <div className="deep-research-run-heading">
                                         <strong>{active.question}</strong>
-                                        <span aria-live="polite">{active.status}</span>
+                                        <span aria-live="polite">{displayStatus(active)}</span>
                                         {!finished.has(active.status) && (
                                             <button type="button" className="btn" onClick={() => void cancel()}>
                                                 <StopCircle size={14} /> Cancel
@@ -166,7 +179,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                         )}
                                     </div>
                                     <ol className="deep-research-stages" aria-label="Research progress">
-                                        {active.stages.map((stage) => (
+                                        {displayStages(active).map((stage) => (
                                             <li key={stage.key} data-status={stage.status}>
                                                 {stage.status === 'completed' ? (
                                                     <CheckCircle2 size={17} />
@@ -182,6 +195,9 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             </li>
                                         ))}
                                     </ol>
+                                    {displayStatus(active) === 'Insufficient evidence' && (
+                                        <p role="status" className="deep-research-error">No cited findings were produced. Try a more specific question or connect relevant sources.</p>
+                                    )}
                                     {active.error && (
                                         <p role="alert" className="deep-research-error">
                                             {active.error}
@@ -215,7 +231,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             )}
                                         </article>
                                     ))}
-                                    {active.status === 'completed' && (
+                                    {active.status === 'completed' && active.findings.some((finding) => finding.verified) && (
                                         <p className="deep-research-disclaimer">
                                             These are independently retrieved, cited findings—not a guarantee of factual correctness. Review the original evidence before making decisions.
                                         </p>
