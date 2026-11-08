@@ -104,7 +104,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         const next = position < 0 ? (direction === 1 ? 0 : matches.length - 1) : (position + direction + matches.length) % matches.length;
         focusMatch(matches[next].index);
     }
-    const [evidenceWidth, setEvidenceWidth] = useState(340);
+    const [evidenceWidth, setEvidenceWidth] = useState(300);
     useEffect(() => {
         try {
             const saved = Number(localStorage.getItem('atlas:evidence-width'));
@@ -360,7 +360,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>
                                 +
                             </button>
-                            <button type="button" onClick={() => resizeEvidence(340)}>
+                            <button type="button" onClick={() => resizeEvidence(300)}>
                                 Reset
                             </button>
                         </div>
