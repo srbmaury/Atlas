@@ -1,3 +1,4 @@
+import { chatLoadSequence } from '../lib/chatLoadSequence';
 import type { Dispatch, SetStateAction, RefObject } from 'react';
 import { api } from '../lib/api';
 import { conversationPlan } from '../lib/conversation';
@@ -80,9 +81,10 @@ export function createConversationActions({
 }: Options) {
     async function loadChat(id: string) {
         if (busy) return;
+        const sequence = chatLoadSequence.next();
         try {
             const item = await api<SavedChat>(`/workspaces/${workspaceId}/conversations/${id}`);
-            if (scope.current !== workspaceId) return;
+            if (scope.current !== workspaceId || !chatLoadSequence.isCurrent(sequence)) return;
             const answer = [...item.messages].reverse().find((message) => message.role === 'assistant' && message.result)?.result;
             if (answer?.scope) {
                 setIncludeDocuments(answer.scope.includes('documents'));
@@ -102,7 +104,7 @@ export function createConversationActions({
             setSource(null);
             navigate('chat');
         } catch (e) {
-            setError((e as Error).message);
+            if (chatLoadSequence.isCurrent(sequence)) setError((e as Error).message);
         }
     }
 
@@ -130,6 +132,25 @@ export function createConversationActions({
         } catch (e) {
             setError((e as Error).message);
         }
+    }
+
+    async function deleteChats(items: ChatSummary[]) {
+        if (busy || !items.length || !window.confirm(`Delete ${items.length} selected conversation${items.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+        const deleted: string[] = [];
+        const failed: string[] = [];
+        for (const item of items) {
+            try {
+                await api(`/workspaces/${workspaceId}/conversations/${item.id}`, { method: 'DELETE' });
+                deleted.push(item.id);
+            } catch {
+                failed.push(item.title);
+            }
+        }
+        if (scope.current !== workspaceId) return;
+        setChats((old) => old.filter((chat) => !deleted.includes(chat.id)));
+        if (activeChat.current && deleted.includes(activeChat.current)) newChat();
+        if (failed.length) setError(`Could not delete ${failed.length} conversation(s). Please retry.`);
+        else if (deleted.length) setNotice(`Deleted ${deleted.length} conversation(s).`);
     }
 
     async function ask(question = query, startNewConversation = false) {
@@ -315,5 +336,5 @@ export function createConversationActions({
             setError('Could not copy the conversation.');
         }
     }
-    return { loadChat, renameChat, deleteChat, ask, refreshChats, copyConversation };
+    return { loadChat, renameChat, deleteChat, deleteChats, ask, refreshChats, copyConversation };
 }

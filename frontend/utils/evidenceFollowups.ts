@@ -15,7 +15,7 @@ export function previousEvidence(messages: Message[]): { sources: Source[]; veri
     // citation check must not erase the user's ability to inspect prior results.
     for (const message of [...messages].reverse()) {
         if (message.role !== 'assistant' || !message.result) continue;
-        if (message.result.sources.length) return { sources: message.result.sources, verified: true };
+        if (message.result.sources?.length) return { sources: message.result.sources, verified: true };
         if (message.result.evidence_sources?.length) {
             return { sources: message.result.evidence_sources, verified: false };
         }
@@ -28,7 +28,7 @@ function excerpt(source: Source): string {
 }
 
 export function inspectPreviousEvidence(intent: EvidenceIntent, previous: ReturnType<typeof previousEvidence>): Answer {
-    if (!previous) {
+    if (!previous || !previous.sources.length) {
         return {
             answer: 'No evidence was retained in this conversation. Run a source search first, then inspect its results.',
             sources: [],

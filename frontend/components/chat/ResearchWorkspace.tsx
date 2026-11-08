@@ -1,6 +1,7 @@
 'use client';
+import { useEffect, useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen } from 'lucide-react';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X, Activity } from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -15,6 +16,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     workspaceId: string;
+    searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
     onOpenSource: (source: Source) => void;
     userMode: string;
@@ -46,6 +48,7 @@ interface ResearchWorkspaceProps {
     onOpenChat: (id: string) => void;
     onRenameChat: (chat: ChatSummary) => void;
     onDeleteChat: (chat: ChatSummary) => void;
+    onDeleteChats: (chats: ChatSummary[]) => void;
     messages: Message[];
     uploadButton: ReactNode;
     onAsk: (question?: string) => void;
@@ -71,6 +74,61 @@ interface ResearchWorkspaceProps {
 }
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
+    const [messageSearch, setMessageSearch] = useState('');
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    function focusMatch(index: number) {
+        setFocusedIndex(index);
+        const node = props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${index}"]`);
+        node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    useEffect(() => {
+        if (!props.searchTarget || props.chatId !== props.searchTarget.chatId) return;
+        const target = props.searchTarget;
+        if (!props.messages[target.index] || !props.messages[target.index].content.toLocaleLowerCase().includes(target.phrase.toLocaleLowerCase())) return;
+        setMessageSearch(target.phrase);
+        setFocusedIndex(target.index);
+        const frame = window.requestAnimationFrame(() => {
+            props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${target.index}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return () => window.cancelAnimationFrame(frame);
+    }, [props.searchTarget?.token, props.chatId, props.messages]);
+    const [evidenceWidth, setEvidenceWidth] = useState(340);
+    useEffect(() => {
+        try {
+            const saved = Number(localStorage.getItem('atlas:evidence-width'));
+            if (saved >= 260 && saved <= 760) setEvidenceWidth(saved);
+        } catch {
+            /* Storage may be unavailable. */
+        }
+    }, []);
+    function resizeEvidence(next: number) {
+        const width = Math.max(260, Math.min(760, next));
+        setEvidenceWidth(width);
+        try {
+            localStorage.setItem('atlas:evidence-width', String(width));
+        } catch {
+            /* Ignore storage failure. */
+        }
+    }
+    useEffect(() => {
+        function onShortcut(event: KeyboardEvent) {
+            const target = event.target as HTMLElement | null;
+            const editing = target?.matches('input, textarea, [contenteditable="true"]');
+            if (event.key === '/' && !editing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+                event.preventDefault();
+                document.querySelector<HTMLTextAreaElement>('.chat-pane .composer textarea')?.focus();
+            }
+            if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
+                event.preventDefault();
+                document.querySelector<HTMLInputElement>('.message-search-input input')?.focus();
+            }
+        }
+        window.addEventListener('keydown', onShortcut);
+        return () => window.removeEventListener('keydown', onShortcut);
+    }, []);
+    const matches = messageSearch.trim()
+        ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase()))
+        : [];
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
     const allSelected =
@@ -155,6 +213,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             )}
             <div className={`chat-workspace ${props.historyOpen ? 'history-visible' : ''}`}>
                 <ConversationHistory
+                    workspaceId={props.workspaceId}
                     chats={props.chats}
                     chatId={props.chatId}
                     busy={props.busy}
@@ -163,10 +222,53 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onOpenChat={props.onOpenChat}
                     onRenameChat={props.onRenameChat}
                     onDeleteChat={props.onDeleteChat}
+                    onDeleteChats={props.onDeleteChats}
                 />
-                <div className="research">
+                <div className="research" style={{ ['--atlas-evidence-width' as string]: evidenceWidth + 'px' }}>
                     <div className="chat-pane">
+                        {props.messages.length > 0 && (
+                            <div className="message-search-panel">
+                                <label className="message-search-input">
+                                    <Search size={15} aria-hidden="true" />
+                                    <input
+                                        aria-label="Search messages in this conversation"
+                                        placeholder="Find in this conversation"
+                                        value={messageSearch}
+                                        onChange={(event) => {
+                                            setMessageSearch(event.target.value);
+                                            setFocusedIndex(null);
+                                        }}
+                                    />
+                                </label>
+                                {messageSearch && (
+                                    <button
+                                        type="button"
+                                        aria-label="Clear message search"
+                                        onClick={() => {
+                                            setMessageSearch('');
+                                            setFocusedIndex(null);
+                                        }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                                {messageSearch.trim() && (
+                                    <div className="message-search-results" role="status">
+                                        <span>
+                                            {matches.length} matching {matches.length === 1 ? 'message' : 'messages'}
+                                        </span>
+                                        {matches.map(({ message, index }) => (
+                                            <button type="button" key={index} onClick={() => focusMatch(index)}>
+                                                <strong>{message.role === 'user' ? 'You' : 'Atlas'}</strong> {message.content.slice(0, 160)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <ConversationTranscript
+                            searchPhrase={messageSearch}
+                            focusedIndex={focusedIndex}
                             messages={props.messages}
                             busy={props.busy}
                             readyCount={props.readyCount}
@@ -213,6 +315,51 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         </p>
                     </div>
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
+                        <div className="evidence-width-controls" aria-label="Evidence panel width">
+                            <button type="button" aria-label="Narrow evidence panel" onClick={() => resizeEvidence(evidenceWidth - 80)}>
+                                −
+                            </button>
+                            <span>{evidenceWidth}px</span>
+                            <button type="button" aria-label="Widen evidence panel" onClick={() => resizeEvidence(evidenceWidth + 80)}>
+                                +
+                            </button>
+                            <button type="button" onClick={() => resizeEvidence(340)}>
+                                Reset
+                            </button>
+                        </div>
+                        {latestAnswer?.retrieval && (
+                            <details className="investigation-timeline">
+                                <summary>
+                                    <Activity size={15} /> Investigation timeline
+                                </summary>
+                                <ol>
+                                    <li>
+                                        <strong>Research requested</strong>
+                                        <span>Atlas searched the selected sources.</span>
+                                    </li>
+                                    {latestAnswer.retrieval.sources.map((step, index) => (
+                                        <li key={index}>
+                                            <strong>{PROVIDER_LABELS[step.provider as keyof typeof PROVIDER_LABELS] || step.provider}</strong>
+                                            <span>{step.status === 'failed' ? 'Search failed' : `${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
+                                        </li>
+                                    ))}
+                                    <li>
+                                        <strong>Answer prepared</strong>
+                                        <span>
+                                            {latestAnswer.retrieval.passages_considered} passages considered; {latestAnswer.retrieval.passages_used} used.
+                                        </span>
+                                    </li>
+                                    {latestAnswer.citation_audit && (
+                                        <li>
+                                            <strong>Citation audit</strong>
+                                            <span>{latestAnswer.citation_audit.needs_review} claims flagged for review.</span>
+                                        </li>
+                                    )}
+                                </ol>
+                                <p className="caption">Recorded retrieval summary, not a live trace of internal model reasoning.</p>
+                            </details>
+                        )}
+
                         <div className="research-rail-heading">
                             <BookOpen size={17} />
                             <div>

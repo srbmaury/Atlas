@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 type Tab = 'overview' | 'chat' | 'documents' | 'sources';
@@ -14,6 +14,7 @@ interface WorkspaceSidebarProps {
     tab: Tab;
     onNavigate: (tab: Tab) => void;
     chats: ChatSummary[];
+    activeChatId?: string | null;
     onOpenChat: (id: string) => void;
     onAllChats: () => void;
     onRenameChat: (chat: ChatSummary) => void;
@@ -33,6 +34,7 @@ export function WorkspaceSidebar({
     tab,
     onNavigate,
     chats,
+    activeChatId,
     onOpenChat,
     onAllChats,
     onRenameChat,
@@ -45,7 +47,7 @@ export function WorkspaceSidebar({
 }: WorkspaceSidebarProps) {
     const now = new Date();
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const recent = [...chats].sort((a, b) => b.updated - a.updated).slice(0, 6);
+    const recent = chats.filter((chat) => !chat.archived).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updated - a.updated);
     const groups = [
         { label: 'Today', items: recent.filter((item) => (item.updated < 1e12 ? item.updated * 1000 : item.updated) >= dayStart) },
         { label: 'Earlier', items: recent.filter((item) => (item.updated < 1e12 ? item.updated * 1000 : item.updated) < dayStart) },
@@ -93,8 +95,13 @@ export function WorkspaceSidebar({
                                 <span className="sidebar-chat-date">{group.label}</span>
                                 {group.items.map((item) => (
                                     <div className="sidebar-chat-row" key={item.id}>
-                                        <button className="workspace-stat" onClick={() => onOpenChat(item.id)} title={item.title}>
-                                            <MessageSquare />
+                                        <button
+                                            className={`workspace-stat ${activeChatId === item.id ? 'active' : ''}`}
+                                            aria-current={activeChatId === item.id ? 'true' : undefined}
+                                            onClick={() => onOpenChat(item.id)}
+                                            title={item.title}
+                                        >
+                                            {item.pinned ? <Pin /> : <MessageSquare />}
                                             <span>{item.title}</span>
                                         </button>
                                         <div className="sidebar-chat-actions">

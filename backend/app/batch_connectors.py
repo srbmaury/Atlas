@@ -205,8 +205,10 @@ def search(provider, token, query):
         seen = set()
         for e in sorted(
             events,
-            key=lambda item: (item.get('start') or {}).get('dateTime')
-            or (item.get('start') or {}).get('date', ''),
+            key=lambda item: (
+                (item.get('start') or {}).get('dateTime')
+                or (item.get('start') or {}).get('date', '')
+            ),
         ):
             if e.get('id') in seen:
                 continue

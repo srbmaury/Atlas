@@ -1,4 +1,5 @@
 'use client';
+import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
@@ -124,6 +125,8 @@ export function AtlasWorkspace() {
     const [scopeOpen, setScopeOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [globalQuery, setGlobalQuery] = useState('');
+    const [searchTarget, setSearchTarget] = useState<{ chatId: string; index: number; phrase: string; token: number } | null>(null);
+    const searchToken = useRef(0);
     const [copied, setCopied] = useState(false);
     const input = useRef<HTMLInputElement>(null);
     const chatEnd = useRef<HTMLDivElement>(null);
@@ -144,6 +147,7 @@ export function AtlasWorkspace() {
     }, [boot]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
     useEffect(() => {
+        chatLoadSequence.invalidate();
         setDocs([]);
         setMessages([]);
         setChatId(null);
@@ -176,12 +180,19 @@ export function AtlasWorkspace() {
 
     function newChat(preserveSourceSelection = false) {
         if (busy) return;
+        setSearchTarget(null);
+        chatLoadSequence.invalidate();
+        try {
+            if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
+        } catch {
+            /* Storage unavailable. */
+        }
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
         chatMessages.current = [];
         setMessages([]);
-        setQuery('');
+        restoreDraft(null);
         setSource(null);
         if (!preserveSourceSelection) {
             setIncludeDocuments(true);
@@ -342,7 +353,7 @@ export function AtlasWorkspace() {
         setSource,
         setPreview,
     });
-    const { loadChat, renameChat, deleteChat, ask, refreshChats, copyConversation } = createConversationActions({
+    const { loadChat, renameChat, deleteChat, deleteChats, ask, refreshChats, copyConversation } = createConversationActions({
         workspaceId,
         query,
         busy,
@@ -376,6 +387,42 @@ export function AtlasWorkspace() {
         navigate,
         newChat,
     });
+
+    // Drafts are scoped to workspace and conversation, including the unsaved new chat.
+    const draftKey = (id: string | null) => `atlas:draft:${workspaceId}:${id || 'new'}`;
+    useEffect(() => {
+        if (!workspaceId) return;
+        const key = draftKey(chatId);
+        const timer = window.setTimeout(() => {
+            try {
+                if (query) sessionStorage.setItem(key, query);
+                else sessionStorage.removeItem(key);
+            } catch {
+                /* Private browsing can disable session storage. */
+            }
+        }, 250);
+        return () => window.clearTimeout(timer);
+    }, [workspaceId, chatId, query]);
+
+    function restoreDraft(id: string | null) {
+        try {
+            setQuery(sessionStorage.getItem(draftKey(id)) || '');
+        } catch {
+            setQuery('');
+        }
+    }
+
+    async function switchChat(id: string, target?: { index: number; phrase: string }) {
+        if (busy) return;
+        setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
+        try {
+            sessionStorage.setItem(draftKey(chatId), query);
+        } catch {
+            /* Storage unavailable. */
+        }
+        await loadChat(id);
+        if (activeChat.current === id) restoreDraft(id);
+    }
 
     const uploadButton = (
         <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>
@@ -436,7 +483,8 @@ export function AtlasWorkspace() {
                 tab={tab}
                 onNavigate={navigate}
                 chats={chats}
-                onOpenChat={(id) => void loadChat(id)}
+                activeChatId={chatId}
+                onOpenChat={(id) => void switchChat(id)}
                 onRenameChat={(item) => void renameChat(item)}
                 onDeleteChat={(item) => void deleteChat(item)}
                 onAllChats={() => {
@@ -564,6 +612,7 @@ export function AtlasWorkspace() {
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
                             workspaceId={workspaceId}
+                            searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
                             onOpenSource={openAnswerSource}
                             title={title}
                             userMode={user.mode}
@@ -592,9 +641,10 @@ export function AtlasWorkspace() {
                             chats={chats}
                             chatId={chatId}
                             onRefreshChats={() => void refreshChats()}
-                            onOpenChat={(id) => void loadChat(id)}
+                            onOpenChat={(id) => void switchChat(id)}
                             onRenameChat={(item) => void renameChat(item)}
                             onDeleteChat={(item) => void deleteChat(item)}
+                            onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
@@ -773,6 +823,24 @@ export function AtlasWorkspace() {
                         void inspect(doc);
                     }}
                     documents={docs}
+                    workspaceId={workspaceId}
+                    chats={chats}
+                    onOpenChat={(id) => {
+                        setSearchOpen(false);
+                        void switchChat(id);
+                    }}
+                    onOpenMessage={(id, index, phrase) => {
+                        setSearchOpen(false);
+                        void switchChat(id, { index, phrase });
+                    }}
+                    onNewChat={() => {
+                        setSearchOpen(false);
+                        newChat();
+                    }}
+                    onNavigate={(next) => {
+                        setSearchOpen(false);
+                        navigate(next);
+                    }}
                     canAsk={!busy && hasAskSources}
                 />
             )}
