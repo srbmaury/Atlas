@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 
 type Evidence = { title: string; path: string; url?: string; excerpt: string };
 type Repository = { full_name: string; private: boolean };
-type Inspection = { repository: string | null; status: string; count: number; sources: Evidence[]; web_sources?: { title: string; url: string; excerpt: string }[]; repositories?: Repository[]; message?: string };
+type Inspection = { repository: string | null; status: string; count: number; answer?: string | null; answer_mode?: string; sources: Evidence[]; web_sources?: { title: string; url: string; excerpt: string }[]; repositories?: Repository[]; message?: string };
 
 export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
     const [repository, setRepository] = useState('');
@@ -75,11 +75,13 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                         <div aria-live="polite">
                             <p><strong>{result.status === 'select_repository' ? 'Select a repository to continue' : `${result.count} real files retrieved`}</strong>{result.repository ? ` from ${result.repository}` : ''}</p>
                             {result.status === 'select_repository' && <p>{result.message}</p>}
+                            {result.answer && <article className="repository-evidence-answer"><h3>Answer</h3><p>{result.answer}</p><small>Citations [1], [2], etc. refer to the evidence files and web results below.</small></article>}
+                            {!result.answer && result.count > 0 && <p className="repository-evidence-notice">Evidence was retrieved, but no cited answer was generated ({result.answer_mode || 'unavailable'}). Expand the files below to inspect the sources.</p>}
                             {result.count === 0 && <p>No matching files. Try a more specific question or verify repository permissions.</p>}
-                            {!!result.web_sources?.length && <div className="repository-evidence-web-results"><strong>Public web results</strong>{result.web_sources.map((source) => <div key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title || source.url}</a><p>{source.excerpt}</p></div>)}</div>}
-                            {result.sources.map((source) => (
+                            {!!result.web_sources?.length && <div className="repository-evidence-web-results"><strong>Public web results</strong>{result.web_sources.map((source, index) => <div key={source.url}>[{result.sources.filter((item) => item.excerpt).length + index + 1}] <a href={source.url} target="_blank" rel="noreferrer">{source.title || source.url}</a><p>{source.excerpt}</p></div>)}</div>}
+                            {result.sources.map((source, index) => (
                                 <details key={source.path} className="repository-evidence-source">
-                                    <summary>{source.path || source.title}</summary>
+                                    <summary>[{index + 1}] {source.path || source.title}</summary>
                                     {source.url && <a href={source.url} target="_blank" rel="noreferrer">Open original file on GitHub</a>}
                                     <pre>{source.excerpt}</pre>
                                 </details>
