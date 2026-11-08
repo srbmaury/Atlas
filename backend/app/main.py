@@ -25,6 +25,7 @@ from .routes.access import router as access_router
 from .routes.auth import router as auth_router
 from .routes.conversations import router as conversations_router
 from .routes.documents import router as documents_router
+from .routes.repository_evidence import router as repository_evidence_router
 from .routes.source_health import router as source_health_router
 from .routes.workspaces import router as workspaces_router
 from .schemas import ConnectedQuestion, Question
@@ -61,6 +62,7 @@ app.include_router(connected_oauth_router)
 app.include_router(auth_router)
 app.include_router(conversations_router)
 app.include_router(documents_router)
+app.include_router(repository_evidence_router)
 app.include_router(workspaces_router)
 app.include_router(source_health_router)
 log = logging.getLogger('atlas.requests')

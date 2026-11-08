@@ -445,6 +445,10 @@ def github_repository_file_search(token, repository, query, limit=12):
         '.h',
         '.hpp',
         '.sql',
+        '.kt',
+        '.kts',
+        '.xml',
+        '.gradle',
         '.md',
         '.mdx',
         '.json',
@@ -500,7 +504,55 @@ def github_repository_file_search(token, repository, query, limit=12):
         if '/services/' in path_lower or '/components/' in path_lower:
             score += 1
         candidates.append((score, path))
-    candidates.sort(key=lambda item: (-item[0], item[1].count('/'), item[1].lower()))
+    # Rank repository files consistently regardless of how the question is phrased.
+    # Always include representative implementation files and documentation.
+    entry_names = {
+        'main.py',
+        'app.py',
+        'application.py',
+        'server.py',
+        'index.ts',
+        'index.tsx',
+        'main.ts',
+        'main.tsx',
+        'app.tsx',
+        'app.ts',
+        'page.tsx',
+        'routes.py',
+        'urls.py',
+        'manage.py',
+        'mainactivity.kt',
+        'application.kt',
+        'androidmanifest.xml',
+    }
+    code_suffixes = {'.py', '.ts', '.tsx', '.js', '.jsx', '.java', '.go', '.kt', '.kts'}
+    ranked = []
+    for score, path in candidates:
+        lower = path.lower()
+        base = lower.rsplit('/', 1)[-1]
+        suffix = '.' + base.rsplit('.', 1)[-1] if '.' in base else ''
+        if base in entry_names:
+            score += 15
+        elif suffix in code_suffixes:
+            score += 6
+        if any(part in lower for part in ('/src/', '/app/', '/backend/', '/frontend/')):
+            score += 3
+        ranked.append((score, path))
+    ranked.sort(key=lambda item: (-item[0], item[1].count('/'), item[1].lower()))
+    selected = []
+    seen_dirs = set()
+    readme = next((candidate for candidate in ranked if candidate[1].lower() == 'readme.md'), None)
+    if readme:
+        selected.append(readme)
+    for candidate in ranked:
+        directory = candidate[1].rsplit('/', 1)[0] if '/' in candidate[1] else ''
+        if candidate in selected or directory in seen_dirs:
+            continue
+        selected.append(candidate)
+        seen_dirs.add(directory)
+        if len(selected) >= limit:
+            break
+    candidates = selected + [candidate for candidate in ranked if candidate not in selected]
     results = []
     total_chars = 0
     for _, path in candidates[: limit * 3]:

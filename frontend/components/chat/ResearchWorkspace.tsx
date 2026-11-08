@@ -14,6 +14,7 @@ import { ResearchSourceSelector } from './ResearchSourceSelector';
 type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
+    workspaceId: string;
     title: string;
     onOpenSource: (source: Source) => void;
     userMode: string;

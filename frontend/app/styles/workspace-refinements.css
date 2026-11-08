@@ -1486,3 +1486,326 @@
         z-index: 2;
     }
 }
+
+.atlas-v3 .repository-evidence {
+    border: 1px solid var(--outline);
+    border-radius: 12px;
+    background: var(--panel);
+    margin: 12px 0 18px;
+}
+.atlas-v3 .repository-evidence-header {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+.atlas-v3 .repository-evidence-header strong {
+    font-size: 14px;
+}
+.atlas-v3 .repository-evidence-header p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+.atlas-v3 .repository-evidence-content {
+    border-top: 1px solid var(--outline);
+    padding: 16px;
+    display: grid;
+    gap: 10px;
+}
+.atlas-v3 .repository-evidence-content label {
+    font-size: 12px;
+    font-weight: 600;
+}
+.atlas-v3 .repository-evidence-content input,
+.atlas-v3 .repository-evidence-content textarea {
+    width: 100%;
+    border: 1px solid var(--outline);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    padding: 10px;
+    font: inherit;
+}
+.atlas-v3 .repository-evidence-content .primary {
+    justify-self: start;
+}
+.atlas-v3 .repository-evidence-error {
+    color: #b91c1c;
+    font-size: 12px;
+}
+.atlas-v3 .repository-evidence-source {
+    border-top: 1px solid var(--outline);
+    padding: 10px 0;
+}
+.atlas-v3 .repository-evidence-source summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.atlas-v3 .repository-evidence-source a {
+    display: inline-block;
+    margin: 8px 0;
+    font-size: 12px;
+}
+.atlas-v3 .repository-evidence-source pre {
+    overflow: auto;
+    max-height: 320px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.atlas-v3 .repository-evidence-content select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--outline);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+}
+.atlas-v3 .repository-evidence-web {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+}
+.atlas-v3 .repository-evidence-web input {
+    width: auto;
+}
+.atlas-v3 .repository-evidence-web-results {
+    border-top: 1px solid var(--outline);
+    padding-top: 12px;
+    display: grid;
+    gap: 8px;
+}
+.atlas-v3 .repository-evidence-web-results p {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.atlas-v3 .repository-evidence-answer {
+    border-top: 1px solid var(--outline);
+    padding: 16px 0;
+}
+.atlas-v3 .repository-evidence-answer h3 {
+    font-size: 15px;
+    margin: 0 0 10px;
+}
+.atlas-v3 .repository-evidence-answer p {
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-size: 14px;
+}
+.atlas-v3 .repository-evidence-answer small,
+.atlas-v3 .repository-evidence-notice {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* Keep every research field and source excerpt inside the workspace column. */
+.atlas-v3 .repository-evidence,
+.atlas-v3 .repository-evidence-content,
+.atlas-v3 .repository-evidence-content > div,
+.atlas-v3 .repository-evidence-answer,
+.atlas-v3 .repository-evidence-source {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.atlas-v3 .repository-evidence {
+    width: 100%;
+    overflow: hidden;
+}
+.atlas-v3 .repository-evidence-content {
+    grid-template-columns: minmax(0, 1fr);
+}
+.atlas-v3 .repository-evidence-content select,
+.atlas-v3 .repository-evidence-content textarea,
+.atlas-v3 .repository-evidence-content input:not([type='checkbox']) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.atlas-v3 .repository-evidence-source pre,
+.atlas-v3 .repository-evidence-answer pre {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.atlas-v3 .repository-evidence-header {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.atlas-v3 .repository-evidence-header > div {
+    min-width: 0;
+    flex: 1 1 260px;
+}
+
+.atlas-v3 .repository-evidence-markdown {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    line-height: 1.65;
+}
+.atlas-v3 .repository-evidence-markdown h1,
+.atlas-v3 .repository-evidence-markdown h2,
+.atlas-v3 .repository-evidence-markdown h3 {
+    margin: 14px 0 7px;
+    font-weight: 650;
+    line-height: 1.3;
+}
+.atlas-v3 .repository-evidence-markdown h1 {
+    font-size: 18px;
+}
+.atlas-v3 .repository-evidence-markdown h2 {
+    font-size: 16px;
+}
+.atlas-v3 .repository-evidence-markdown h3 {
+    font-size: 14px;
+}
+.atlas-v3 .repository-evidence-markdown p,
+.atlas-v3 .repository-evidence-markdown ul,
+.atlas-v3 .repository-evidence-markdown ol {
+    margin: 8px 0;
+}
+.atlas-v3 .repository-evidence-markdown ul,
+.atlas-v3 .repository-evidence-markdown ol {
+    padding-left: 22px;
+}
+.atlas-v3 .repository-evidence-markdown a {
+    color: var(--accent, #315f9a);
+    text-decoration: underline;
+}
+.atlas-v3 .repository-evidence-markdown pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 10px;
+    border-radius: 7px;
+    background: var(--hover);
+}
+.atlas-v3 .repository-evidence-markdown code {
+    overflow-wrap: anywhere;
+}
+.atlas-v3 .repository-evidence-markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+}
+.atlas-v3 .repository-evidence-markdown th,
+.atlas-v3 .repository-evidence-markdown td {
+    border: 1px solid var(--outline);
+    padding: 5px 9px;
+}
+
+.repository-evidence-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+.repository-evidence-turn {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+.repository-evidence-user {
+    align-self: flex-end;
+    max-width: 90%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: #edf1f5;
+    overflow-wrap: anywhere;
+}
+.repository-evidence-assistant {
+    min-width: 0;
+    padding: 12px 0;
+    border-bottom: 1px solid #dce1e7;
+    overflow-wrap: anywhere;
+}
+.repository-evidence-assistant > strong {
+    display: block;
+    margin-bottom: 8px;
+}
+.repository-evidence-assistant pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+
+/* Rendered Mermaid diagrams in the existing saved conversation transcript. */
+.atlas-diagram {
+    border: 1px solid #dce2e8;
+    border-radius: 12px;
+    background: #fff;
+    margin: 16px 0;
+    padding: 12px;
+    min-width: 0;
+}
+.atlas-diagram-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.atlas-diagram-toolbar > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.atlas-diagram-toolbar button {
+    border: 1px solid #dce2e8;
+    border-radius: 6px;
+    background: #f7f9fb;
+    padding: 5px 9px;
+    cursor: pointer;
+}
+.atlas-diagram-viewport {
+    overflow: auto;
+    max-height: 70vh;
+    min-height: 140px;
+}
+.atlas-diagram-svg {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.atlas-diagram-svg svg {
+    display: block;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 180px;
+}
+.atlas-diagram pre {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre;
+}
+.atlas-diagram-expanded {
+    position: fixed;
+    inset: 3vh 3vw;
+    z-index: 1000;
+    overflow: auto;
+    box-shadow: 0 10px 50px #0003;
+}
+.atlas-diagram-expanded .atlas-diagram-viewport {
+    max-height: 80vh;
+}
