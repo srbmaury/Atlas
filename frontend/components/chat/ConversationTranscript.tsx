@@ -1,13 +1,12 @@
 'use client';
 import { type ReactNode, type RefObject } from 'react';
-import { ArrowUpRight, LoaderCircle, GitBranch } from 'lucide-react';
+import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import type { Message, Answer } from '../../lib/types';
 import { SOURCE_LABELS } from '../../lib/providers';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
-    onBranchMessage: (index: number, mode?: 'branch' | 'edit' | 'regenerate') => void;
     busy: boolean;
     readyCount: number;
     uploadButton: ReactNode;
@@ -21,7 +20,7 @@ interface ChatMessagesProps {
     endRef: RefObject<HTMLDivElement | null>;
 }
 
-export function ConversationTranscript({ messages, onBranchMessage, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
+export function ConversationTranscript({ messages, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
     return (
         <div className="thread" ref={threadRef}>
             {!messages.length && (
@@ -54,9 +53,6 @@ export function ConversationTranscript({ messages, onBranchMessage, busy, readyC
                             <div className="bubble">
                                 <div className="message-content">{m.content}</div>
                                 <div className="message-turn-actions" role="group" aria-label={`Actions for message ${messages.slice(0, i + 1).filter((entry) => entry.role === 'user').length}`}>
-                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'branch')} title="Copy this message and its answer into a new conversation"><GitBranch size={13} /> Branch from here</button>
-                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'edit')} title="Copy earlier messages and put this prompt into the editor">Edit & branch</button>
-                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'regenerate')} title="Generate a new answer to this prompt in a separate conversation">Regenerate</button>
                                 </div></div>
                         </div>
                     </div>
