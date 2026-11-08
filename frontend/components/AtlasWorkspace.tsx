@@ -125,6 +125,8 @@ export function AtlasWorkspace() {
     const [scopeOpen, setScopeOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [globalQuery, setGlobalQuery] = useState('');
+    const [searchTarget, setSearchTarget] = useState<{ chatId: string; index: number; phrase: string; token: number } | null>(null);
+    const searchToken = useRef(0);
     const [copied, setCopied] = useState(false);
     const input = useRef<HTMLInputElement>(null);
     const chatEnd = useRef<HTMLDivElement>(null);
@@ -178,6 +180,7 @@ export function AtlasWorkspace() {
 
     function newChat(preserveSourceSelection = false) {
         if (busy) return;
+        setSearchTarget(null);
         chatLoadSequence.invalidate();
         try {
             if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
@@ -409,8 +412,9 @@ export function AtlasWorkspace() {
         }
     }
 
-    async function switchChat(id: string) {
+    async function switchChat(id: string, target?: { index: number; phrase: string }) {
         if (busy) return;
+        setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
         try {
             sessionStorage.setItem(draftKey(chatId), query);
         } catch {
@@ -608,6 +612,7 @@ export function AtlasWorkspace() {
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
                             workspaceId={workspaceId}
+                            searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
                             onOpenSource={openAnswerSource}
                             title={title}
                             userMode={user.mode}
@@ -823,6 +828,10 @@ export function AtlasWorkspace() {
                     onOpenChat={(id) => {
                         setSearchOpen(false);
                         void switchChat(id);
+                    }}
+                    onOpenMessage={(id, index, phrase) => {
+                        setSearchOpen(false);
+                        void switchChat(id, { index, phrase });
                     }}
                     onNewChat={() => {
                         setSearchOpen(false);
