@@ -6,6 +6,7 @@ These utilities preserve original source IDs and URLs for citation integrity.
 
 import re
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit, urlunsplit
 
 from .retrieval import tokens
@@ -82,6 +83,7 @@ def is_listing_question(question):
         'file',
         'document',
         'email',
+        'mail',
         'message',
         'conversation',
         'page',
@@ -99,7 +101,10 @@ def is_listing_question(question):
         'request',
         'pr',
     }
-    return (asks_to_list and bool(words & record_terms)) or bool(
+    asks_for_email_matches = bool(re.search(
+        r'\b(?:any|which|what)\b.{0,65}\b(?:emails?|mails?|messages?)\b', question, re.I
+    ))
+    return (asks_to_list and bool(words & record_terms)) or asks_for_email_matches or bool(
         re.fullmatch(r'(?:my|our) (?:pull requests?|prs?)\s*[?.]?', question.strip(), re.I)
     )
 
@@ -124,7 +129,13 @@ def activity_timestamp(item):
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.timestamp()
     except ValueError:
-        return float('-inf')
+        try:
+            parsed = parsedate_to_datetime(str(value))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.timestamp()
+        except (TypeError, ValueError, IndexError):
+            return float('-inf')
 
 
 def prepare_evidence(question, items, *, limit=60, per_provider=20):
