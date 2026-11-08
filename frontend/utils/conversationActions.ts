@@ -195,8 +195,29 @@ export function createConversationActions({
                 !searchScope.includeDocuments &&
                 !searchScope.includeGmail &&
                 (Boolean(priorRepository) || repositoryIntent);
+            // Explain only evidence cited in the previous answer. Never turn
+            // "cited evidence" into an unrelated mailbox-wide keyword search.
+            const citationFollowup = !startNewConversation && searchScope.includeGmail &&
+                /\b(?:explain|expand|elaborate|clarify|details?)\b.{0,100}\b(?:cited|citations?|evidence|sources?|passages?)\b/i.test(question);
+            const previousAssistant = [...chatMessages.current.slice(0, -1)]
+                .reverse().find((message) => message.role === 'assistant');
+            const priorAnswer = previousAssistant?.result;
+            const citedNumbers = citationFollowup && priorAnswer
+                ? Array.from(new Set(Array.from(priorAnswer.answer.matchAll(/\[(\d+)\]/g), (match) => Number(match[1]))))
+                : [];
+            const gmailSourceIds = citedNumbers
+                .map((number) => priorAnswer?.sources[number - 1])
+                .filter((source): source is Source => !!source && source.provider === 'gmail' && !!source.gmail_message_id)
+                .map((source) => source.gmail_message_id!);
             let result;
-            if (useRepositoryEvidence) {
+            if (citationFollowup && !gmailSourceIds.length) {
+                result = {
+                    answer: 'The immediately preceding answer has no cited Gmail messages to explain. Run a Gmail search and open a cited message first.',
+                    sources: [],
+                    mode: 'insufficient_evidence',
+                    scope: ['gmail'],
+                };
+            } else if (useRepositoryEvidence) {
                 const inspection = await api<{
                     status: string;
                     message?: string;
@@ -250,6 +271,7 @@ export function createConversationActions({
                         includeDocuments: searchScope.includeDocuments,
                         includeGmail: searchScope.includeGmail,
                         gmailQuery: connectedGmailQuery,
+                        gmailSourceIds: citationFollowup ? gmailSourceIds : [],
                         providers: searchScope.providers,
                         useConnected,
                     },
