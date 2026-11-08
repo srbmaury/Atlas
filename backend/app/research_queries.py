@@ -227,8 +227,26 @@ def natural_search_terms(question, *, extra_stopwords=()):
 
 
 def gmail_query_for_question(scope, question):
-    terms = natural_search_terms(question)
-    return ' '.join([scope.strip(), *terms]).strip()
+    """Translate common mailbox intents into Gmail operators, not literal words."""
+    text = question.lower()
+    filters = []
+    # Gmail importance is a provider flag, not a semantic ranking of significance.
+    if re.search(r'\\bimportant\\b', text):
+        filters.append('is:important')
+    if re.search(r'\\bunread\\b', text):
+        filters.append('is:unread')
+    relative = re.search(r'\\b(?:last|past|previous)\\s+(\\d{1,3})\\s+days?\\b', text)
+    if relative:
+        filters.append(f'newer_than:{relative.group(1)}d')
+    elif re.search(r'\\b(?:last|past|previous)\\s+week\\b', text):
+        filters.append('newer_than:7d')
+    elif re.search(r'\\b(?:last|past|previous)\\s+month\\b', text):
+        filters.append('newer_than:30d')
+    cleaned = re.sub(r'\\b(?:last|past|previous)\\s+(?:\\d{1,3}\\s+days?|week|month)\\b', ' ', text)
+    cleaned = re.sub(r'\\b(?:important|unread|mails?|emails?|messages?)\\b', ' ', cleaned)
+    terms = natural_search_terms(cleaned)
+    terms = [term for term in terms if term not in {'last', 'past', 'previous', 'days', 'day', 'week', 'month'}]
+    return ' '.join([scope.strip(), *filters, *terms]).strip()
 
 
 def drive_query_for_question(question):
