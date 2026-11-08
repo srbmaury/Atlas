@@ -9,6 +9,7 @@ type Finding = {
     title: string;
     question: string;
     verified?: boolean;
+    diagnostics?: { outcome: string; passages_considered: number; passages_used: number; providers: { provider: string; status: string; found: number; considered: number; used: number }[] };
     result: { answer?: string; sources?: { name?: string; title?: string; url?: string }[]; mode?: string };
 };
 type Run = {
@@ -45,6 +46,7 @@ const displayStages = (run: Run) => {
 
 export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, includeGmail, gmailQuery, providers }: Props) {
     const [question, setQuestion] = useState('');
+    const [repository, setRepository] = useState('');
     const [depth, setDepth] = useState<'standard' | 'deep'>('standard');
     const [runs, setRuns] = useState<Run[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -89,6 +91,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                     include_gmail: includeGmail,
                     gmail_query: gmailQuery,
                     providers,
+                    ...(repository.trim() ? { repository: repository.trim() } : {}),
                 }),
             });
             setRuns((old) => [run, ...old]);
@@ -141,6 +144,13 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                             onChange={(event) => setQuestion(event.target.value)}
                             placeholder="What changed in our architecture, and what risks remain?"
                         />
+                        {providers.includes('github') && (
+                            <div className="deep-research-repository">
+                                <label htmlFor="deep-research-repository">GitHub repository (optional)</label>
+                                <input id="deep-research-repository" value={repository} onChange={(event) => setRepository(event.target.value)} placeholder="owner/repository" pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+" title="Use owner/repository, for example srbmaury/Atlas" />
+                                <small>Use an exact repository to avoid searching unrelated issues and files.</small>
+                            </div>
+                        )}
                         <div className="deep-research-controls">
                             <label htmlFor="deep-research-depth">Depth</label>
                             <select id="deep-research-depth" value={depth} onChange={(event) => setDepth(event.target.value as 'standard' | 'deep')}>
@@ -209,6 +219,15 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             <p className="deep-research-subquestion">{finding.question}</p>
                                             <p className="deep-research-answer">{finding.result.answer || 'No answer was returned.'}</p>
                                             {finding.result.mode === 'citation_check_failed' && <p className="deep-research-evidence-label">Retrieved passages could not be converted into a citation-valid answer.</p>}
+                                            {finding.diagnostics && (
+                                                <details className="deep-research-diagnostics" open={!finding.verified}>
+                                                    <summary>Retrieval diagnostics · {finding.diagnostics.outcome.replaceAll('_', ' ')}</summary>
+                                                    <p>Passages considered: {finding.diagnostics.passages_considered} · cited: {finding.diagnostics.passages_used}</p>
+                                                    <ul>{finding.diagnostics.providers.map((provider) => (
+                                                        <li key={provider.provider}>{provider.provider}: {provider.status}; found {provider.found}, considered {provider.considered}, cited {provider.used}</li>
+                                                    ))}</ul>
+                                                </details>
+                                            )}
                                             <span className="deep-research-evidence-label">
                                                 {finding.verified ? 'Evidence cited' : 'Evidence not verified'} · {finding.result.sources?.length || 0} sources
                                             </span>
