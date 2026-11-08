@@ -165,6 +165,8 @@ def inspect_repository(
     actor=Depends(user),
     db=Depends(database),
 ):
+    if body.repository is not None and not REPOSITORY.fullmatch(body.repository):
+        raise HTTPException(422, 'Repository must be owner/name.')
     _, token = read_connection(db, actor, workspaceId, 'github')
     repositories = accessible_repositories(token)
     repository = resolve_repository(body.question, body.repository, repositories)
