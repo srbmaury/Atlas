@@ -153,3 +153,23 @@ def test_followup_passes_bounded_history_and_retrieves_fresh_evidence(monkeypatc
     assert len(searches) == 1
     assert 'Explain the app' in searches[0]
     assert captured[0][0]['role'] == 'user'
+
+
+def test_repository_followup_reuses_selected_repository():
+    repositories = [{'full_name': 'srbmaury/Ecommerce-Search'},
+                    {'full_name': 'srbmaury/Atlas'}]
+    assert module.resolve_repository(
+        'also write file names with each box',
+        'srbmaury/Ecommerce-Search',
+        repositories,
+    ) == 'srbmaury/Ecommerce-Search'
+
+
+def test_explicit_repository_overrides_conversation_context():
+    repositories = [{'full_name': 'srbmaury/Ecommerce-Search'},
+                    {'full_name': 'srbmaury/Atlas'}]
+    assert module.resolve_repository(
+        'Explain repo:srbmaury/Atlas',
+        'srbmaury/Ecommerce-Search',
+        repositories,
+    ) == 'srbmaury/Atlas'
