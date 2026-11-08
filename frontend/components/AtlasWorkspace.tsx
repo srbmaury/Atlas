@@ -431,21 +431,16 @@ export function AtlasWorkspace() {
             if (scope.current !== workspaceId) return;
             chatLoadSequence.invalidate();
             setChats((old) => [{ id: saved.id, title: saved.title, updated: saved.updated }, ...old]);
+            activeChat.current = saved.id;
             setChatId(saved.id);
             chatTitle.current = saved.title;
+            chatMessages.current = history;
             setMessages(history);
             setQuery(regenerate ? '' : prompt);
             setSource(null);
             setNotice(regenerate ? 'Regenerating in a new branch; the original answer is preserved.' : 'Branch created. Edit the copied prompt and send it to explore a different direction.');
             navigate('chat');
-            if (regenerate) {
-                // React has not committed the new chat state yet; avoid sending into the previous chat.
-                window.setTimeout(() => {
-                    document.querySelector<HTMLTextAreaElement>('.chat-pane .composer textarea')?.focus();
-                }, 0);
-                setQuery(prompt);
-                setNotice('Branch created. Send the copied prompt to regenerate; the original answer remains intact.');
-            }
+            if (regenerate) await ask(prompt);
         } catch (e) {
             setError((e as Error).message);
         }
