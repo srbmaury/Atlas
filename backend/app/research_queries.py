@@ -243,10 +243,43 @@ def natural_search_terms(question, *, extra_stopwords=()):
     return terms[:8]
 
 
+def email_request_scope(question):
+    """Recognize explicit email-only requests independent of enabled connectors."""
+    return bool(
+        re.search(r'\\b(?:emails?|mails?|inbox)\\b', question, re.I)
+        and re.search(r'\\b(?:list|show|find|search|summarize|summary|important|unread|which|what|any)\\b', question, re.I)
+    )
+
+
+def excluded_mail_sender(question):
+    """An excluded provider name in an email request denotes a sender, not a source."""
+    match = re.search(
+        r'\\b(?:exclud(?:e|ing)|except|without|other than)\\s+'
+        r'(?:(?:the|all|any)\\s+)?'
+        r'(github|gitlab|linkedin|facebook|amazon|google|microsoft)\\b'
+        r'(?:\\s+(?:emails?|mails?|ones|notifications?))?',
+        question,
+        re.I,
+    )
+    return match.group(1).lower() if match else None
+
+
+def excludes_gmail_messages(question):
+    """An email request excluding Gmail itself is ambiguous, not a Drive query."""
+    return bool(re.search(
+        r'\\b(?:exclud(?:e|ing)|except|without|other than)\\s+'
+        r'(?:(?:the|all|any)\\s+)?gmail\\b',
+        question, re.I,
+    ))
+
+
 def gmail_query_for_question(scope, question):
     """Translate common mailbox intents into Gmail operators, not literal words."""
     text = question.lower()
     filters = []
+    excluded_sender = excluded_mail_sender(question)
+    if excluded_sender:
+        filters.append('-from:' + excluded_sender)
     # Gmail importance is a provider flag, not a semantic ranking of significance.
     if re.search(r'\bimportant\b', text):
         filters.append('is:important')
