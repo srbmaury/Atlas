@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X } from 'lucide-react';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X, Activity } from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -256,6 +256,24 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         </p>
                     </div>
                     <aside className="research-evidence-rail" aria-label="Supporting evidence">
+                        {latestAnswer?.retrieval && (
+                            <details className="investigation-timeline">
+                                <summary><Activity size={15} /> Investigation timeline</summary>
+                                <ol>
+                                    <li><strong>Research requested</strong><span>Atlas searched the selected sources.</span></li>
+                                    {latestAnswer.retrieval.sources.map((step, index) => (
+                                        <li key={index}>
+                                            <strong>{PROVIDER_LABELS[step.provider as keyof typeof PROVIDER_LABELS] || step.provider}</strong>
+                                            <span>{step.status === 'failed' ? 'Search failed' : `${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
+                                        </li>
+                                    ))}
+                                    <li><strong>Answer prepared</strong><span>{latestAnswer.retrieval.passages_considered} passages considered; {latestAnswer.retrieval.passages_used} used.</span></li>
+                                    {latestAnswer.citation_audit && <li><strong>Citation audit</strong><span>{latestAnswer.citation_audit.needs_review} claims flagged for review.</span></li>}
+                                </ol>
+                                <p className="caption">Recorded retrieval summary, not a live trace of internal model reasoning.</p>
+                            </details>
+                        )}
+
                         <div className="research-rail-heading">
                             <BookOpen size={17} />
                             <div>
