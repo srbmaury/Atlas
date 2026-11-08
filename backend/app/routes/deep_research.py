@@ -44,7 +44,12 @@ class ResearchRun(Base):
 
 
 class ResearchRequest(ConnectedQuestion):
-    depth: str = Field(default='standard', pattern='^(standard|deep)
+    depth: str = Field(default='standard', pattern='^(standard|deep)$')
+    repository: str | None = Field(
+        default=None, max_length=150, pattern=r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+    )
+
+
 def initialize_research_runs():
     # Isolated additive table for this MVP. Move to a versioned Alembic
     # revision before enabling production deployments with multiple replicas.
