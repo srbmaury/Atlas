@@ -132,6 +132,25 @@ export function createConversationActions({
         }
     }
 
+    async function deleteChats(items: ChatSummary[]) {
+        if (busy || !items.length || !window.confirm(`Delete ${items.length} selected conversation${items.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+        const deleted: string[] = [];
+        const failed: string[] = [];
+        for (const item of items) {
+            try {
+                await api(`/workspaces/${workspaceId}/conversations/${item.id}`, { method: 'DELETE' });
+                deleted.push(item.id);
+            } catch {
+                failed.push(item.title);
+            }
+        }
+        if (scope.current !== workspaceId) return;
+        setChats((old) => old.filter((chat) => !deleted.includes(chat.id)));
+        if (activeChat.current && deleted.includes(activeChat.current)) newChat();
+        if (failed.length) setError(`Could not delete ${failed.length} conversation(s). Please retry.`);
+        else if (deleted.length) setNotice(`Deleted ${deleted.length} conversation(s).`);
+    }
+
     async function ask(question = query, startNewConversation = false) {
         if (!workspaceId || !question.trim() || busy) return;
         if (!hasAskSources) return;
