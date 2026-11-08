@@ -358,6 +358,16 @@ def connected_chat_stream(
                         'citation_audit': event.get('citation_audit'),
                         'coverage_note': event.get('coverage_note'),
                     }
+                    if event['mode'] == 'citation_check_failed':
+                        # Preserve retrieved provenance separately from validated
+                        # citations. Never label these passages as cited claims.
+                        result['evidence_sources'] = connected_sources_for_payload(
+                            [
+                                item.as_prompt(index) | {'origin_id': item.source_id}
+                                for index, item in enumerate(evidence[:30], 1)
+                            ],
+                            document_evidence,
+                        )
                     attach_retrieval_trace(
                         result, body, evidence, retrieval_stats, event['sources']
                     )
