@@ -33,7 +33,9 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
     useEffect(() => {
         if (!actionMenu) return;
         const dismiss = () => setActionMenu(null);
-        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') dismiss(); };
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') dismiss();
+        };
         const outside = (event: PointerEvent) => {
             const target = event.target as Element | null;
             if (!target?.closest('.chat-history-menu-portal, .chat-history-action')) dismiss();
@@ -50,7 +52,10 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
         };
     }, [actionMenu]);
     function toggleMenu(id: string, element: HTMLButtonElement) {
-        if (actionMenu === id) { setActionMenu(null); return; }
+        if (actionMenu === id) {
+            setActionMenu(null);
+            return;
+        }
         const rect = element.getBoundingClientRect();
         const height = 176;
         const top = window.innerHeight - rect.bottom >= height + 12 ? rect.bottom + 6 : Math.max(8, rect.top - height - 6);
@@ -210,23 +215,44 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                                 >
                                     <MoreHorizontal size={16} />
                                 </button>
-                                {actionMenu === item.id && menuPosition && typeof document !== 'undefined' && createPortal(
-                                    <div className="chat-history-menu chat-history-menu-portal" role="menu" style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, width: 176 }}>
-                                        <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'pinned')}>
-                                            <Pin size={14} /> {item.pinned ? 'Unpin' : 'Pin'}
-                                        </button>
-                                        <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'archived')}>
-                                            {item.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />} {item.archived ? 'Restore' : 'Archive'}
-                                        </button>
-                                        <button type="button" role="menuitem" onClick={() => { setActionMenu(null); onRenameChat(item); }}>
-                                            <Pencil size={14} /> Rename
-                                        </button>
-                                        <button type="button" role="menuitem" onClick={() => { setActionMenu(null); onDeleteChat(item); }}>
-                                            <Trash2 size={14} /> Delete
-                                        </button>
-                                    </div>,
-                                    document.body,
-                                )}
+                                {actionMenu === item.id &&
+                                    menuPosition &&
+                                    typeof document !== 'undefined' &&
+                                    createPortal(
+                                        <div
+                                            className="chat-history-menu chat-history-menu-portal"
+                                            role="menu"
+                                            style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, width: 176 }}
+                                        >
+                                            <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'pinned')}>
+                                                <Pin size={14} /> {item.pinned ? 'Unpin' : 'Pin'}
+                                            </button>
+                                            <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'archived')}>
+                                                {item.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />} {item.archived ? 'Restore' : 'Archive'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                onClick={() => {
+                                                    setActionMenu(null);
+                                                    onRenameChat(item);
+                                                }}
+                                            >
+                                                <Pencil size={14} /> Rename
+                                            </button>
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                onClick={() => {
+                                                    setActionMenu(null);
+                                                    onDeleteChat(item);
+                                                }}
+                                            >
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        </div>,
+                                        document.body,
+                                    )}
                             </div>
                         )}
                     </div>

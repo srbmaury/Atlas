@@ -55,7 +55,9 @@ export function AtlasWorkspace() {
     const [docs, setDocs] = useState<Doc[]>([]);
     const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources'>('chat');
     const [historyOpen, setHistoryOpen] = useState(false);
-    const [branchRequest, setBranchRequest] = useState<{ index: number; mode: 'branch' | 'edit' | 'regenerate'; sourceId: string | null; workspace: string; prompt: string; turn: number } | null>(null);
+    const [branchRequest, setBranchRequest] = useState<{ index: number; mode: 'branch' | 'edit' | 'regenerate'; sourceId: string | null; workspace: string; prompt: string; turn: number } | null>(
+        null,
+    );
     const [branchSaving, setBranchSaving] = useState(false);
     const branchInFlight = useRef(false);
     const [selected, setSelected] = useState<string[]>([]);
@@ -455,11 +457,17 @@ export function AtlasWorkspace() {
             // Preserve the draft from the source chat before switching context.
             try {
                 if (query.trim()) sessionStorage.setItem(draftKey(sourceId), query);
-            } catch { /* Storage can be disabled. */ }
+            } catch {
+                /* Storage can be disabled. */
+            }
             const saved = await persistConversation(targetWorkspace, null, branchTitle, history);
             if (scope.current !== targetWorkspace || activeChat.current !== sourceId) return;
             chatLoadSequence.invalidate();
-            try { sessionStorage.removeItem(draftKey(saved.id)); } catch { /* Storage can be disabled. */ }
+            try {
+                sessionStorage.removeItem(draftKey(saved.id));
+            } catch {
+                /* Storage can be disabled. */
+            }
             flushSync(() => {
                 activeChat.current = saved.id;
                 chatMessages.current = history;
@@ -905,9 +913,16 @@ export function AtlasWorkspace() {
                 />
             )}
             {branchRequest && (
-                <Dialog title={branchRequest.mode === 'branch' ? 'Branch from selected message' : branchRequest.mode === 'edit' ? 'Edit in a new branch' : 'Regenerate in a new branch'} onClose={() => { if (!branchSaving) setBranchRequest(null); }}>
+                <Dialog
+                    title={branchRequest.mode === 'branch' ? 'Branch from selected message' : branchRequest.mode === 'edit' ? 'Edit in a new branch' : 'Regenerate in a new branch'}
+                    onClose={() => {
+                        if (!branchSaving) setBranchRequest(null);
+                    }}
+                >
                     <div className="branch-preview">
-                        <p className="dialog-intro">Selected message <strong>#{branchRequest.turn}</strong> of {messages.filter((message) => message.role === 'user').length}:</p>
+                        <p className="dialog-intro">
+                            Selected message <strong>#{branchRequest.turn}</strong> of {messages.filter((message) => message.role === 'user').length}:
+                        </p>
                         <blockquote className="branch-preview-prompt">{branchRequest.prompt}</blockquote>
                         <p>
                             {branchRequest.mode === 'branch'
@@ -918,7 +933,9 @@ export function AtlasWorkspace() {
                         </p>
                         <p className="branch-preview-note">The original conversation will not be modified.</p>
                         <div className="branch-preview-actions">
-                            <button type="button" className="btn" disabled={branchSaving} onClick={() => setBranchRequest(null)}>Cancel</button>
+                            <button type="button" className="btn" disabled={branchSaving} onClick={() => setBranchRequest(null)}>
+                                Cancel
+                            </button>
                             <button type="button" className="btn primary" disabled={branchSaving} onClick={() => void branchConversation()}>
                                 {branchSaving ? 'Creating branch…' : branchRequest.mode === 'branch' ? 'Create branch' : branchRequest.mode === 'edit' ? 'Edit in branch' : 'Regenerate in branch'}
                             </button>
