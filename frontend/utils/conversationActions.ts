@@ -174,12 +174,7 @@ export function createConversationActions({
             });
             const useConnected = searchScope.includeGmail || searchScope.providers.length > 0 || user?.mode === 'ai';
             let draft = '';
-            // Source selection, not question wording, determines the research engine.
-            const useRepositoryEvidence = connectedProviders.includes('github');
-            let result;
-            if (useRepositoryEvidence) {
-                // Persist repository identity as conversation metadata on the existing answer.
-                // For older saved chats, infer it from a GitHub file source.
+            // Reuse repository identity from prior answers, including saved conversations.
                 const priorRepository =
                     [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))]
                         .reverse()
@@ -191,6 +186,17 @@ export function createConversationActions({
                             return match?.[1] || null;
                         })
                         .find((value) => Boolean(value)) || null;
+            // General GitHub issues and pull requests still use connected research.
+            // File-level inspection is reserved for repository-focused questions.
+            const repositoryIntent = /\b(repositor(?:y|ies)|repo|codebase|architecture|flowchart)\b/i.test(question);
+            const useRepositoryEvidence =
+                connectedProviders.includes('github') &&
+                searchScope.providers.length === 1 &&
+                !searchScope.includeDocuments &&
+                !searchScope.includeGmail &&
+                (Boolean(priorRepository) || repositoryIntent);
+            let result;
+            if (useRepositoryEvidence) {
                 const inspection = await api<{
                     status: string;
                     message?: string;
