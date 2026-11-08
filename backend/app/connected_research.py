@@ -167,7 +167,34 @@ def collect_connected_evidence(
         raise HTTPException(502, 'Could not retrieve connected sources.') from exc
     from .evidence_quality import is_listing_question, prepare_evidence
 
-    per_provider = 30 if body.include_gmail and is_listing_question(body.question) else 20
+    listing = is_listing_question(body.question)
+    if body.include_gmail and not listing and not getattr(body, 'gmail_source_ids', []):
+        # Gmail is normally responsible for lexical matching. If a connector or
+        # Gmail query returns a mix of obvious matches and unrelated messages,
+        # ignore only those missing all explicit topic words. Never apply this
+        # to mailbox-wide listings or previously cited messages.
+        query_words = [
+            word.lower()
+            for word in gmail_query_for_question('', body.question).split()
+            if ':' not in word and len(word) >= 3
+        ]
+        gmail_hits = [item for item in evidence if item.provider == 'gmail']
+        if len(gmail_hits) > 1 and query_words:
+            relevant_ids = {
+                item.source_id
+                for item in gmail_hits
+                if any(
+                    word in f'{item.title} {item.excerpt} {item.owner or ""}'.lower()
+                    for word in query_words
+                )
+            }
+            if relevant_ids:
+                evidence = [
+                    item
+                    for item in evidence
+                    if item.provider != 'gmail' or item.source_id in relevant_ids
+                ]
+    per_provider = 30 if body.include_gmail and listing else 20
     return prepare_evidence(body.question, evidence, per_provider=per_provider), document_evidence
 
 
