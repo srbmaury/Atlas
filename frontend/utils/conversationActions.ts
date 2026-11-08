@@ -334,5 +334,5 @@ export function createConversationActions({
             setError('Could not copy the conversation.');
         }
     }
-    return { loadChat, renameChat, deleteChat, ask, refreshChats, copyConversation };
+    return { loadChat, renameChat, deleteChat, deleteChats, ask, refreshChats, copyConversation };
 }
