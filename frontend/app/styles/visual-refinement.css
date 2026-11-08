@@ -365,3 +365,24 @@
         transition: none;
     }
 }
+
+/* Match the actual rail width to the grid track on wide displays. */
+@media (min-width: 1160px) {
+    .atlas-v3 .content-research .chat-workspace .research:not(.evidence-collapsed) {
+        grid-template-columns: minmax(0, 1fr) minmax(260px, var(--atlas-evidence-width, 300px));
+    }
+    .atlas-v3 .content-research .research-evidence-rail {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        overflow-x: hidden;
+    }
+}
+@media (max-width: 1159px) {
+    .atlas-v3 .content-research .chat-workspace .research {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .atlas-v3 .content-research .research-evidence-rail {
+        display: none;
+    }
+}
