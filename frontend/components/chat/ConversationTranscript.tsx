@@ -52,8 +52,7 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
                             <span className="circle">{initials}</span>
                             <div className="bubble">
                                 <div className="message-content">{m.content}</div>
-                                <div className="message-turn-actions" role="group" aria-label={`Actions for message ${messages.slice(0, i + 1).filter((entry) => entry.role === 'user').length}`}>
-                                </div></div>
+                            </div>
                         </div>
                     </div>
                 ) : (
