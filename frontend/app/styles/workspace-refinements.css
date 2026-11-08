@@ -1666,3 +1666,10 @@
         padding: 12px;
     }
 }
+
+.atlas-v3 .deep-research-repository { display: grid; gap: 7px; }
+.atlas-v3 .deep-research-repository input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; }
+.atlas-v3 .deep-research-repository small { color: var(--muted); font-size: 11px; }
+.atlas-v3 .deep-research-diagnostics { margin: 10px 0; padding: 9px 11px; border: 1px solid var(--outline); border-radius: 8px; color: var(--muted); font-size: 12px; }
+.atlas-v3 .deep-research-diagnostics summary { cursor: pointer; font-weight: 600; }
+.atlas-v3 .deep-research-diagnostics ul { padding-left: 18px; }
