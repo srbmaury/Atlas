@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X, Activity } from 'lucide-react';
+import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X, Activity, PanelRightClose, PanelRightOpen, ChevronUp } from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -76,6 +76,7 @@ interface ResearchWorkspaceProps {
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const [messageSearch, setMessageSearch] = useState('');
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    const [evidenceOpen, setEvidenceOpen] = useState(true);
     function focusMatch(index: number) {
         setFocusedIndex(index);
         const node = props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${index}"]`);
@@ -92,6 +93,17 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         });
         return () => window.cancelAnimationFrame(frame);
     }, [props.searchTarget?.token, props.chatId, props.messages]);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    function moveMatch(direction: -1 | 1) {
+        if (!matches.length) return;
+        const position = matches.findIndex(({ index }) => index === focusedIndex);
+        const next = position < 0 ? (direction === 1 ? 0 : matches.length - 1) : (position + direction + matches.length) % matches.length;
+        focusMatch(matches[next].index);
+    }
+    useEffect(() => {
+        setFocusedIndex(null);
+        setMessageSearch('');
+    }, [props.chatId]);
     const [evidenceWidth, setEvidenceWidth] = useState(340);
     useEffect(() => {
         try {
@@ -120,7 +132,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             }
             if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
                 event.preventDefault();
-                document.querySelector<HTMLInputElement>('.message-search-input input')?.focus();
+                searchInputRef.current?.focus();
             }
         }
         window.addEventListener('keydown', onShortcut);
@@ -224,14 +236,19 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onDeleteChat={props.onDeleteChat}
                     onDeleteChats={props.onDeleteChats}
                 />
-                <div className="research" style={{ ['--atlas-evidence-width' as string]: evidenceWidth + 'px' }}>
+                <div className={`research ${evidenceOpen ? '' : 'evidence-collapsed'}`} style={{ ['--atlas-evidence-width' as string]: evidenceWidth + 'px' }}>
                     <div className="chat-pane">
                         {props.messages.length > 0 && (
                             <div className="message-search-panel">
                                 <label className="message-search-input">
                                     <Search size={15} aria-hidden="true" />
                                     <input
+                                        ref={searchInputRef}
                                         aria-label="Search messages in this conversation"
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') { event.preventDefault(); moveMatch(event.shiftKey ? -1 : 1); }
+                                            if (event.key === 'Escape') { setMessageSearch(''); setFocusedIndex(null); event.currentTarget.blur(); }
+                                        }}
                                         placeholder="Find in this conversation"
                                         value={messageSearch}
                                         onChange={(event) => {
@@ -253,17 +270,16 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                     </button>
                                 )}
                                 {messageSearch.trim() && (
-                                    <div className="message-search-results" role="status">
-                                        <span>
-                                            {matches.length} matching {matches.length === 1 ? 'message' : 'messages'}
-                                        </span>
-                                        {matches.map(({ message, index }) => (
-                                            <button type="button" key={index} onClick={() => focusMatch(index)}>
-                                                <strong>{message.role === 'user' ? 'You' : 'Atlas'}</strong> {message.content.slice(0, 160)}
-                                            </button>
-                                        ))}
+                                    <div className="message-search-navigation" role="status" aria-live="polite">
+                                        <span>{matches.length ? `${Math.max(0, matches.findIndex(({ index }) => index === focusedIndex)) + 1} of ${matches.length}` : 'No matches'}</span>
+                                        <button type="button" aria-label="Previous match" disabled={!matches.length} onClick={() => moveMatch(-1)}><ChevronUp size={15} /></button>
+                                        <button type="button" aria-label="Next match" disabled={!matches.length} onClick={() => moveMatch(1)}><ChevronDown size={15} /></button>
                                     </div>
                                 )}
+                                <button type="button" className="evidence-toggle-inline" aria-expanded={evidenceOpen} aria-controls="atlas-evidence-panel" onClick={() => setEvidenceOpen((open) => !open)} title={evidenceOpen ? 'Hide evidence' : 'Show evidence'}>
+                                    {evidenceOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+                                    <span>{evidenceOpen ? 'Hide evidence' : 'Evidence'}</span>
+                                </button>
                             </div>
                         )}
                         <ConversationTranscript
@@ -314,7 +330,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             {props.messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
                         </p>
                     </div>
-                    <aside className="research-evidence-rail" aria-label="Supporting evidence">
+                    <aside id="atlas-evidence-panel" className="research-evidence-rail" aria-label="Supporting evidence" hidden={!evidenceOpen}>
                         <div className="evidence-width-controls" aria-label="Evidence panel width">
                             <button type="button" aria-label="Narrow evidence panel" onClick={() => resizeEvidence(evidenceWidth - 80)}>
                                 −
