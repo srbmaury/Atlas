@@ -201,10 +201,8 @@ export function createConversationActions({
             const followupIntent = startNewConversation ? null : evidenceIntent(question);
             let result;
             if (followupIntent) {
-                result = inspectPreviousEvidence(
-                    followupIntent,
-                    previousEvidence(chatMessages.current.slice(0, -1)),
-                );            } else if (useRepositoryEvidence) {
+                result = inspectPreviousEvidence(followupIntent, previousEvidence(chatMessages.current.slice(0, -1)));
+            } else if (useRepositoryEvidence) {
                 const inspection = await api<{
                     status: string;
                     message?: string;
