@@ -98,3 +98,28 @@ def test_failed_citation_still_exposes_original_readme(monkeypatch):
     assert result['answer_mode'] == 'citation_check_failed'
     assert result['fallback']['source_id'] == 1
     assert 'actual features' in result['fallback']['text']
+
+
+def test_citation_failure_retries_with_explicit_source_instructions(monkeypatch):
+    monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'token'))
+    monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/NEET'}])
+    monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
+    monkeypatch.setattr(module, 'ai_enabled', lambda: True)
+    monkeypatch.setattr(module, 'github_repository_file_search', lambda *args, **kwargs: [
+        {'title': 'owner/NEET/README.md', 'excerpt': 'A study app for NEET students.',
+         'metadata': {'path': 'README.md'}, 'url': 'https://github.com/owner/NEET/blob/main/README.md'}
+    ])
+    calls = []
+    def generate_answer(question, evidence):
+        calls.append(question)
+        if len(calls) == 1:
+            return {'mode': 'citation_check_failed'}
+        return {'mode': 'ai', 'answer': 'NEET is a study app [1].'}
+    monkeypatch.setattr(module, 'generate', generate_answer)
+    result = module.inspect_repository(
+        'workspace', module.RepositoryInspection(question='What does NEET do?'),
+        Mock(), actor=Mock(), db=Mock(),
+    )
+    assert len(calls) == 2
+    assert 'Cite each factual' in calls[1]
+    assert result['answer'] == 'NEET is a study app [1].'
