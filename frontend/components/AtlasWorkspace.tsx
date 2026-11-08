@@ -1,5 +1,6 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
+import { branchHistory } from '../lib/branching';
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
@@ -427,9 +428,7 @@ export function AtlasWorkspace() {
         const prompt = original.content;
         // A branch from message N must include that turn, not stop at N - 1.
         // Edit/regenerate intentionally replace that turn's answer instead.
-        const end = mode === 'branch' && messages[index + 1]?.role === 'assistant'
-            ? index + 2 : index + 1;
-        const history = mode === 'branch' ? messages.slice(0, end) : messages.slice(0, index);
+        const history = branchHistory(messages, index, mode);
         const branchTitle = ('Branch: ' + prompt).slice(0, 100);
         const targetWorkspace = workspaceId;
         try {
