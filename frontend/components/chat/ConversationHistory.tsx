@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '../../lib/api';
 import { RotateCcw, Plus, MessageSquare, Trash2, Search, Pencil, X, Pin, Archive, ArchiveRestore, MoreHorizontal } from 'lucide-react';
 import type { ChatSummary } from '../../lib/types';
 
@@ -25,44 +26,29 @@ function conversationDate(timestamp: number): string {
 
 export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefresh, onNewChat, onOpenChat, onRenameChat, onDeleteChat, onDeleteChats }: ConversationHistoryProps) {
     const [search, setSearch] = useState('');
-    const [pinned, setPinned] = useState<string[]>([]);
-    const [archived, setArchived] = useState<string[]>([]);
     const [showArchived, setShowArchived] = useState(false);
     const [actionMenu, setActionMenu] = useState<string | null>(null);
-    useEffect(() => {
+    const [actionError, setActionError] = useState('');
+    const [saving, setSaving] = useState<string | null>(null);
+    async function updateOrganization(item: ChatSummary, field: 'pinned' | 'archived') {
+        if (saving) return;
+        setSaving(item.id);
+        setActionError('');
         try {
-            const stored = JSON.parse(localStorage.getItem('atlas:chat-organize:' + workspaceId) || '{}');
-            setPinned(Array.isArray(stored.pinned) ? stored.pinned.filter((id: unknown) => typeof id === 'string') : []);
-            setArchived(Array.isArray(stored.archived) ? stored.archived.filter((id: unknown) => typeof id === 'string') : []);
-        } catch {
-            setPinned([]);
-            setArchived([]);
-        }
-        setActionMenu(null);
-    }, [workspaceId]);
-    function updateOrganization(nextPinned: string[], nextArchived: string[]) {
-        setPinned(nextPinned);
-        setArchived(nextArchived);
-        try {
-            localStorage.setItem('atlas:chat-organize:' + workspaceId, JSON.stringify({ pinned: nextPinned, archived: nextArchived }));
-        } catch {
-            /* Storage may be disabled. */
+            await api(`/workspaces/${workspaceId}/conversations/${item.id}/organization`, {
+                method: 'PATCH',
+                body: JSON.stringify({ [field]: !item[field] }),
+            });
+            onRefresh();
+            setActionMenu(null);
+        } catch (error) {
+            setActionError((error as Error).message);
+        } finally {
+            setSaving(null);
         }
     }
-    function togglePin(id: string) {
-        updateOrganization(
-            pinned.includes(id) ? pinned.filter((value) => value !== id) : [...pinned, id],
-            archived.filter((value) => value !== id),
-        );
-        setActionMenu(null);
-    }
-    function toggleArchive(id: string) {
-        updateOrganization(
-            pinned.filter((value) => value !== id),
-            archived.includes(id) ? archived.filter((value) => value !== id) : [...archived, id],
-        );
-        setActionMenu(null);
-    }
+    const pinned = chats.filter((chat) => chat.pinned).map((chat) => chat.id);
+    const archived = chats.filter((chat) => chat.archived).map((chat) => chat.id);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
     const filteredChats = useMemo(
@@ -127,6 +113,7 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                     )}
                 </div>
             )}
+            {actionError && <p role="alert" className="caption">{actionError}</p>}
             <div className="chat-history-search">
                 <Search size={15} aria-hidden="true" />
                 <input type="text" aria-label="Search conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
@@ -191,10 +178,10 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                                 </button>
                                 {actionMenu === item.id && (
                                     <div className="chat-history-menu">
-                                        <button type="button" onClick={() => togglePin(item.id)}>
+                                        <button type="button" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'pinned')}>
                                             <Pin size={14} /> {pinned.includes(item.id) ? 'Unpin' : 'Pin'}
                                         </button>
-                                        <button type="button" onClick={() => toggleArchive(item.id)}>
+                                        <button type="button" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'archived')}>
                                             {archived.includes(item.id) ? <ArchiveRestore size={14} /> : <Archive size={14} />} {archived.includes(item.id) ? 'Restore' : 'Archive'}
                                         </button>
                                         <button
