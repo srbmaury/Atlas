@@ -851,9 +851,18 @@ export function AtlasWorkspace() {
                     }}
                     documents={docs}
                     chats={chats}
-                    onOpenChat={(id) => { setSearchOpen(false); void switchChat(id); }}
-                    onNewChat={() => { setSearchOpen(false); newChat(); }}
-                    onNavigate={(next) => { setSearchOpen(false); navigate(next); }}
+                    onOpenChat={(id) => {
+                        setSearchOpen(false);
+                        void switchChat(id);
+                    }}
+                    onNewChat={() => {
+                        setSearchOpen(false);
+                        newChat();
+                    }}
+                    onNavigate={(next) => {
+                        setSearchOpen(false);
+                        navigate(next);
+                    }}
                     canAsk={!busy && hasAskSources}
                 />
             )}
