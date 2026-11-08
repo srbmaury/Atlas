@@ -1,6 +1,9 @@
 """Evidence-first GitHub inspection using only the connected account's permissions."""
 
+import os
 import re
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -11,9 +14,34 @@ from ..rbac import revalidate_access, workspace_permission
 
 router = APIRouter(prefix='/api')
 REPOSITORY = re.compile(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
+def search_public_web(query: str) -> list[dict]:
+    """Optional public web search; requires an explicitly configured server API key."""
+    key = os.getenv('BRAVE_SEARCH_API_KEY', '').strip()
+    if not key:
+        raise HTTPException(503, 'Web search is not configured. Set BRAVE_SEARCH_API_KEY on the server.')
+    try:
+        with httpx.Client(timeout=12, follow_redirects=False, trust_env=False) as client:
+            response = client.get(
+                'https://api.search.brave.com/res/v1/web/search',
+                params={'q': query, 'count': 5},
+                headers={'X-Subscription-Token': key, 'Accept': 'application/json'},
+            )
+            response.raise_for_status()
+            items = response.json().get('web', {}).get('results', [])
+    except (httpx.HTTPError, ValueError, KeyError) as exc:
+        raise HTTPException(502, 'Public web search failed. Check the configured search provider.') from exc
+    return [
+        {'title': str(item.get('title', ''))[:240],
+         'url': str(item.get('url', ''))[:2048],
+         'excerpt': str(item.get('description', ''))[:1000]}
+        for item in items[:5] if str(item.get('url', '')).startswith('https://')
+    ]
+
+
 class RepositoryInspection(BaseModel):
     question: str = Field(min_length=3, max_length=400)
     repository: str | None = Field(default=None, max_length=150)
+    include_web: bool = False
 
 
 def accessible_repositories(token):
@@ -92,12 +120,14 @@ def inspect_repository(
             'message': 'Select a repository from your connected GitHub account.',
         }
     results = github_repository_file_search(token, repository, body.question, limit=8)
+    web_results = search_public_web(body.question) if body.include_web else []
     revalidate_access(workspaceId, actor, {'github'})
     return {
         'repository': repository,
         'question': body.question,
         'status': 'evidence_found' if results else 'no_matches',
         'count': len(results),
+        'web_sources': web_results,
         'sources': [
             {
                 'title': item['title'],
