@@ -1,12 +1,13 @@
 'use client';
 import { type ReactNode, type RefObject } from 'react';
-import { ArrowUpRight, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight, LoaderCircle, GitBranch } from 'lucide-react';
 import type { Message, Answer } from '../../lib/types';
 import { SOURCE_LABELS } from '../../lib/providers';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
+    onBranchMessage: (index: number) => void;
     busy: boolean;
     readyCount: number;
     uploadButton: ReactNode;
@@ -20,7 +21,7 @@ interface ChatMessagesProps {
     endRef: RefObject<HTMLDivElement | null>;
 }
 
-export function ConversationTranscript({ messages, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
+export function ConversationTranscript({ messages, onBranchMessage, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
     return (
         <div className="thread" ref={threadRef}>
             {!messages.length && (
@@ -50,7 +51,7 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
                     <div className="user-message" key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
-                            <div className="bubble">{m.content}</div>
+                            <div className="bubble">{m.content}<button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i)} title="Create a new conversation from this point"><GitBranch size={13} /> Branch</button></div>
                         </div>
                     </div>
                 ) : (
