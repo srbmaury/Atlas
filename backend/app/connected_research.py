@@ -167,7 +167,10 @@ def collect_connected_evidence(
         raise HTTPException(502, 'Could not retrieve connected sources.') from exc
     from .evidence_quality import prepare_evidence
 
-    return prepare_evidence(body.question, evidence), document_evidence
+    from .evidence_quality import is_listing_question
+
+    per_provider = 30 if body.include_gmail and is_listing_question(body.question) else 20
+    return prepare_evidence(body.question, evidence, per_provider=per_provider), document_evidence
 
 
 def retrieval_trace(body, evidence, stats, used_sources, scope=None):
@@ -212,7 +215,7 @@ def attach_retrieval_trace(result, body, evidence, stats, used_sources=None):
 
 
 def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_query_for_question):
-    matches = gmail_get(
+    search_result = gmail_get(
         token,
         gmail_api + '/messages',
         {
@@ -221,7 +224,9 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
             ),
             'maxResults': 30,
         },
-    ).get('messages', [])
+    )
+    matches = search_result.get('messages', [])
+    search_limited = bool(search_result.get('nextPageToken'))
     from .sources import Evidence
 
     def read_message(item):
@@ -235,6 +240,8 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
             (message['body'] or message['snippet'])[:8000],
             message['url'],
             message['date'],
+            owner=message.get('sender'),
+            metadata={'search_limited': search_limited},
         )
 
     with ThreadPoolExecutor(max_workers=min(len(matches), 6) or 1) as executor:
@@ -373,6 +380,10 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
         )
         else 12
     )
+    if 'gmail' in scope and re.search(r'\b(?:all|every)\b', question, re.I):
+        default_limit = 30
+    elif 'gmail' in scope and default_limit == 12:
+        default_limit = 30
     limit = requested_result_limit(question, default=default_limit, max_limit=30)
     shown = matches[:limit]
     payload = [
@@ -401,11 +412,17 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
         lines.append(f'No matching items from {empty_labels}.')
     for index, item in enumerate(shown, 1):
         line = f'- **{item.title}** · {labels.get(item.provider, item.provider)} [{index}]'
+        if item.provider == 'gmail':
+            details = [str(value) for value in (item.owner, item.date) if value]
+            if details:
+                line += ' — ' + ' · '.join(details)
         if item.provider == 'github' and item.url and '/pull/' in item.url and item.excerpt:
             line += f' — {item.excerpt[:300]}'
         lines.append(line)
     if len(matches) > len(shown):
         lines.append(f'Showing the first {len(shown)} of {len(matches)} matches.')
+    if any(item.provider == 'gmail' and item.metadata.get('search_limited') for item in matches):
+        lines.append('Gmail has additional matches beyond this bounded search. Narrow the query or date range to see more.')
     return {
         'answer': '\n'.join(lines),
         'sources': connected_sources_for_payload(payload, document_evidence),
