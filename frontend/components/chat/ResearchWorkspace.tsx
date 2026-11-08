@@ -49,7 +49,7 @@ interface ResearchWorkspaceProps {
     onDeleteChat: (chat: ChatSummary) => void;
     onDeleteChats: (chats: ChatSummary[]) => void;
     messages: Message[];
-    onBranchMessage: (index: number) => void;
+    onBranchMessage: (index: number, regenerate?: boolean) => void;
     uploadButton: ReactNode;
     onAsk: (question?: string) => void;
     initials: string;
