@@ -243,7 +243,7 @@ def connected_chat_stream(
     def events():
         clarification = connected_research.ambiguous_email_request(body)
         if clarification:
-            yield json.dumps({'type': 'done', 'result': clarification}, ensure_ascii=False) + '\\n'
+            yield json.dumps({'type': 'done', 'result': clarification}, ensure_ascii=False) + '\n'
             return
         effective_body = connected_research.effective_research_scope(body)
         provider_labels = {
@@ -307,7 +307,7 @@ def connected_chat_stream(
             # Document-only questions use the dedicated citation-checked answer generator.
             # This avoids the cross-source streaming model's short timeout and keeps
             # ordinary document Q&A focused on the user's requested answer.
-            if body.include_documents and not body.include_gmail and not body.providers:
+            if effective_body.include_documents and not effective_body.include_gmail and not effective_body.providers:
                 doc_sources = [
                     document_evidence[item.source_id]
                     for item in evidence
