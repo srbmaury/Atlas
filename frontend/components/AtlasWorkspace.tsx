@@ -421,7 +421,7 @@ export function AtlasWorkspace() {
         if (activeChat.current === id) restoreDraft(id);
     }
 
-    async function branchConversation(index: number) {
+    async function branchConversation(index: number, regenerate = false) {
         if (busy || !workspaceId || messages[index]?.role !== 'user') return;
         const prompt = messages[index].content;
         const history = messages.slice(0, index);
@@ -434,10 +434,11 @@ export function AtlasWorkspace() {
             setChatId(saved.id);
             chatTitle.current = saved.title;
             setMessages(history);
-            setQuery(prompt);
+            setQuery(regenerate ? '' : prompt);
             setSource(null);
-            setNotice('Branch created. Edit the copied prompt and send it to explore a different direction.');
+            setNotice(regenerate ? 'Regenerating in a new branch; the original answer is preserved.' : 'Branch created. Edit the copied prompt and send it to explore a different direction.');
             navigate('chat');
+            if (regenerate) await ask(prompt);
         } catch (e) {
             setError((e as Error).message);
         }
@@ -664,7 +665,7 @@ export function AtlasWorkspace() {
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
-                            onBranchMessage={(index) => void branchConversation(index)}
+                            onBranchMessage={(index, regenerate) => void branchConversation(index, regenerate)}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
                             initials={initials}
