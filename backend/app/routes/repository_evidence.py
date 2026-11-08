@@ -43,6 +43,7 @@ class RepositoryInspection(BaseModel):
     question: str = Field(min_length=3, max_length=400)
     repository: str | None = Field(default=None, max_length=150)
     include_web: bool = False
+    history: list[dict[str, str]] = Field(default_factory=list, max_length=12)
 
 
 def accessible_repositories(token):
@@ -120,7 +121,13 @@ def inspect_repository(
             'count': 0, 'sources': [], 'repositories': repositories,
             'message': 'Select a repository from your connected GitHub account.',
         }
-    results = github_repository_file_search(token, repository, body.question, limit=8)
+    # History supplies conversational context, but fresh evidence is retrieved for every turn.
+    recent = [item for item in body.history[-6:]
+              if item.get('role') in {'user', 'assistant'}
+              and isinstance(item.get('content'), str)][:6]
+    recent = [{'role': item['role'], 'content': item['content'][:1200]} for item in recent]
+    retrieval_query = ' '.join([body.question] + [item['content'][:160] for item in recent if item['role'] == 'user'][-2:])[:600]
+    results = github_repository_file_search(token, repository, retrieval_query, limit=8)
     web_results = search_public_web(body.question) if body.include_web else []
     evidence = [
         {'name': item.get('metadata', {}).get('path', item['title']),
@@ -142,7 +149,7 @@ def inspect_repository(
 
     if evidence and ai_enabled():
         try:
-            generated = generate(body.question, evidence)
+            generated = generate(body.question, evidence, history=recent)
             answer_mode = generated.get('mode', 'unknown')
             if answer_mode == 'citation_check_failed':
                 # Retry once with explicit source IDs and a bounded factual scope.
@@ -153,7 +160,7 @@ def inspect_repository(
                     'statement with a source marker like [1] or [2]. '
                     'If a detailed flow cannot be established, say what is unknown.'
                 )
-                generated = generate(retry_question, evidence[:6])
+                generated = generate(retry_question, evidence[:6], history=recent)
                 answer_mode = generated.get('mode', 'unknown')
             if answer_mode == 'ai':
                 answer = generated.get('answer')
