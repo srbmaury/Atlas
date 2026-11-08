@@ -430,3 +430,15 @@
         padding: 20px 14px 36px;
     }
 }
+
+/* Full-width functional surfaces; prose within them keeps its own line length. */
+.atlas-v3 .content .home-ask,
+.atlas-v3 .content .gmail-summary {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .home-ask > p,
+.atlas-v3 .content .gmail-summary > p {
+    max-width: 780px;
+}
