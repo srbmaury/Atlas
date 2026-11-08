@@ -632,3 +632,75 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
   expect(requests[1].follow_up).toBe('What is the deadline?');
   expect(requests[1].message_ids).toEqual(['m1','m2']);
 });
+
+
+test('cited Gmail explanation reloads prior source IDs instead of keyword-searching', async ({page}) => {
+  await page.route('**/api/gmail/status*', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({connected: true, email: 'test@example.com', configured: true}),
+  }));
+  const requests: Array<{question: string; gmail_source_ids?: string[]}> = [];
+  const sources = [
+    {chunk_id: '1', gmail_message_id: 'mailA', document_id: '', name: 'Account action',
+     page: 0, text: 'Action: enable two-factor authentication.', location_type: 'gmail',
+     provider: 'gmail', url: 'https://mail.google.com/mail/u/0/#all/mailA'},
+    {chunk_id: '2', gmail_message_id: 'mailB', document_id: '', name: 'Payment notice',
+     page: 0, text: 'Payment details updated.', location_type: 'gmail',
+     provider: 'gmail', url: 'https://mail.google.com/mail/u/0/#all/mailB'},
+  ];
+  await page.route('**/api/workspaces/w1/connected-chat/stream', async route => {
+    const data = route.request().postDataJSON();
+    requests.push(data);
+    const result = requests.length === 1
+      ? {answer: 'Found 2 matching items in Gmail: \n- **Account action** [1]\n- **Payment notice** [2]',
+         sources, mode: 'source_results', scope: ['gmail']}
+      : {answer: 'Enable two-factor authentication [1].', sources, mode: 'connected', scope: ['gmail']};
+    await route.fulfill({status: 200, contentType: 'application/x-ndjson',
+      body: JSON.stringify({type: 'done', result}) + '\n'});
+  });
+  await page.reload();
+  await openSourcePicker(page);
+  await page.getByRole('checkbox', {name: 'Documents'}).uncheck();
+  await openSourcePicker(page);
+  await page.getByRole('checkbox', {name: 'Gmail'}).check();
+  await page.getByRole('textbox', {name: 'Your question'}).fill('List all important emails');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(page.locator('.answer-row').last()).toContainText('Account action');
+  await page.getByRole('textbox', {name: 'Your question'}).fill('Explain the cited evidence in more detail');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect.poll(() => requests.length).toBe(2);
+  expect(requests[1].gmail_source_ids).toEqual(['mailA', 'mailB']);
+  await expect(page.locator('.answer-row').last()).toContainText('two-factor');
+});
+
+test('Gmail evidence explanation without preceding citations gives a clear answer', async ({page}) => {
+  await page.route('**/api/gmail/status*', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({connected: true, email: 'test@example.com', configured: true}),
+  }));
+  const requests: string[] = [];
+  await page.route('**/api/workspaces/w1/connected-chat/stream', async route => {
+    requests.push(route.request().postDataJSON().question);
+    await route.fulfill({
+      status: 200, contentType: 'application/x-ndjson',
+      body: JSON.stringify({type: 'done', result: {
+        answer: 'The model returned an answer without usable source citations.',
+        sources: [], mode: 'citation_check_failed', scope: ['gmail'],
+      }}) + '\n',
+    });
+  });
+  await page.reload();
+  await openSourcePicker(page);
+  await page.getByRole('checkbox', {name: 'Documents'}).uncheck();
+  await openSourcePicker(page);
+  await page.getByRole('checkbox', {name: 'Gmail'}).check();
+  await page.getByRole('textbox', {name: 'Your question'}).fill('What do the funds emails say?');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(page.locator('.answer-row').last()).toContainText('without usable source citations');
+  await page.getByRole('textbox', {name: 'Your question'}).fill('Explain the cited evidence in more detail');
+  await page.getByRole('button', {name: 'Send question'}).click();
+  await expect(page.locator('.answer-row').last()).toContainText('no cited Gmail messages');
+  expect(requests).toHaveLength(1);
+});
