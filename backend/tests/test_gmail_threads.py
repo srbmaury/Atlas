@@ -36,3 +36,48 @@ def test_gmail_json_retains_internal_date_and_source_link():
     assert message['internal_date'] == '1700000000000'
     assert message['thread_id'] == 'thread123'
     assert message['url'].endswith('/abc123')
+
+
+def test_expand_threads_bounds_requests_and_preserves_message_order(monkeypatch):
+    from app import gmail
+
+    calls = []
+
+    def fake_get(token, url, params=None):
+        calls.append(url)
+        thread_id = url.rsplit('/', 1)[-1]
+        return {
+            'messages': [
+                {
+                    'id': f'{thread_id}-{n}',
+                    'threadId': thread_id,
+                    'internalDate': str(n),
+                    'payload': {'headers': []},
+                }
+                for n in range(25, 0, -1)
+            ]
+        }
+
+    monkeypatch.setattr(gmail, 'gmail_get', fake_get)
+    matches = [
+        {'id': str(i), 'thread_id': f't{i}', 'subject': 'Test'}
+        for i in range(8)
+    ]
+    matches.insert(1, {'id': 'duplicate', 'thread_id': 't0'})
+    expanded = gmail.expand_gmail_threads('token', matches)
+    assert len(calls) == 5
+    assert set(expanded) == {'t0', 't1', 't2', 't3', 't4'}
+    assert expanded['t0']['message_count'] == 25
+    assert expanded['t0']['truncated'] is True
+    assert len(expanded['t0']['messages']) == 20
+    assert expanded['t0']['messages'][0]['id'] == 't0-6'
+    assert expanded['t0']['messages'][-1]['id'] == 't0-25'
+
+
+def test_expand_threads_skips_missing_thread_ids(monkeypatch):
+    from app import gmail
+
+    calls = []
+    monkeypatch.setattr(gmail, 'gmail_get', lambda *args, **kwargs: calls.append(args))
+    assert gmail.expand_gmail_threads('token', [{'id': 'only'}]) == {}
+    assert calls == []
