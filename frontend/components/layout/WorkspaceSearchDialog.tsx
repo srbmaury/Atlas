@@ -16,6 +16,7 @@ export function WorkspaceSearchDialog({
     canAsk,
     chats,
     onOpenChat,
+    onOpenMessage,
     onNewChat,
     onNavigate,
     workspaceId,
@@ -30,6 +31,7 @@ export function WorkspaceSearchDialog({
     chats: ChatSummary[];
     workspaceId: string;
     onOpenChat: (id: string) => void;
+    onOpenMessage: (id: string, messageIndex: number, phrase: string) => void;
     onNewChat: () => void;
     onNavigate: (tab: 'documents' | 'sources') => void;
 }) {
@@ -79,7 +81,7 @@ export function WorkspaceSearchDialog({
                     <div className="search-results-heading">Matching messages</div>
                     <div className="search-results">
                         {messageMatches.map((match) => (
-                            <button type="button" className="doc-item" key={match.chat_id + ':' + match.message_index} onClick={() => onOpenChat(match.chat_id)}>
+                            <button type="button" className="doc-item" key={match.chat_id + ':' + match.message_index} onClick={() => onOpenMessage(match.chat_id, match.message_index, query.trim())}>
                                 <Search size={15} />
                                 <span className="doc-item-info"><strong>{match.title}</strong><small>{match.role}: {match.excerpt}</small></span>
                                 <ChevronRight size={15} />
