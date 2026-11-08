@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
 from sqlalchemy import JSON, Column, Float, ForeignKey, String, Text
+from sqlalchemy.orm.attributes import flag_modified
 
 from ..api_dependencies import database, user, workspace
 from ..db import Base, Session, User, engine, uid
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/research-runs')
 EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix='atlas-deep-research')
 STAGES = ('planning', 'retrieving', 'cross_checking', 'synthesizing')
-TERMINAL = ('completed', 'failed', 'cancelled')
+TERMINAL = ('completed', 'failed', 'cancelled', 'insufficient_evidence')
 
 
 class ResearchRun(Base):
@@ -82,15 +83,16 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
         if status:
             run.status = status
         if stage:
-            stages = list(run.stages or [])
+            stages = [{**item} for item in (run.stages or [])]
             reached = False
             for item in stages:
                 if item['key'] == stage:
-                    item['status'] = 'completed' if status == 'completed' else 'running'
+                    item['status'] = 'completed' if status in ('completed', 'insufficient_evidence') else 'running'
                     reached = True
                 elif not reached:
                     item['status'] = 'completed'
             run.stages = stages
+            flag_modified(run, 'stages')
         if findings is not None:
             run.findings = findings
         if status == 'failed':
@@ -98,6 +100,7 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
                 {**item, 'status': 'failed' if item['status'] == 'running' else item['status']}
                 for item in run.stages
             ]
+            flag_modified(run, 'stages')
         if error is not None:
             run.error = error
         run.updated = time.time()
@@ -174,7 +177,16 @@ def _investigate(run_id, actor_id):
             )
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
             return
-        _save(run_id, status='completed', stage='synthesizing', findings=findings)
+        if not any(finding['verified'] for finding in findings):
+            _save(
+                run_id,
+                status='insufficient_evidence',
+                stage='synthesizing',
+                findings=findings,
+                error='No usable citations were found. Check the selected sources and try a more specific research question.',
+            )
+        else:
+            _save(run_id, status='completed', stage='synthesizing', findings=findings)
     except Exception as exc:
         log.exception('Deep research run %s failed', run_id)
         _save(run_id, status='failed', error=str(exc)[:250])
@@ -277,6 +289,7 @@ def cancel_research(workspaceId: str, runId: str, actor=Depends(user), db=Depend
             {**item, 'status': 'cancelled' if item['status'] == 'running' else item['status']}
             for item in run.stages
         ]
+        flag_modified(run, 'stages')
         run.updated = time.time()
         db.commit()
     return public_run(run)
