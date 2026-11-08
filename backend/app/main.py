@@ -192,6 +192,8 @@ def connected_chat(
                 'answer': 'The model returned an answer without usable source citations. Please retry; no unverified answer is shown.',
                 'sources': [],
                 'mode': 'citation_check_failed',
+                'evidence_sources': connected_sources_for_payload(payload, document_evidence),
+                'citation_note': 'Retrieved passages are available for inspection, but none were verified as supporting the generated answer.',
                 'scope': connected_scope(body),
             },
             body,
