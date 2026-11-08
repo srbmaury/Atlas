@@ -217,9 +217,9 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
         gmail_api + '/messages',
         {
             'q': gmail_query_for_question(
-                body.gmail_query, retrieval_query(body.question, body.history)
+                body.gmail_query, body.question
             ),
-            'maxResults': 8,
+            'maxResults': 30,
         },
     ).get('messages', [])
     from .sources import Evidence
@@ -237,7 +237,7 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
             message['date'],
         )
 
-    with ThreadPoolExecutor(max_workers=min(len(matches), 4) or 1) as executor:
+    with ThreadPoolExecutor(max_workers=min(len(matches), 6) or 1) as executor:
         return list(executor.map(read_message, matches))
 
 
