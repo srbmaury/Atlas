@@ -503,7 +503,7 @@ def github_repository_file_search(token, repository, query, limit=12):
     # Architecture questions need representative application code, not only READMEs
     # and manifests. Prefer likely entry points and diversify by directory.
     architecture = bool(re.search(
-        r'\\b(architecture|flow|flowchart|diagram|entry.point|how.*work|what.*do)\\b',
+        r'\b(architecture|flow|flowchart|diagram|entry.point|how.*work|what.*do)\b',
         query, re.I,
     ))
     if architecture:
