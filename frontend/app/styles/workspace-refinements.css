@@ -1595,3 +1595,10 @@
 .atlas-v3 .repository-evidence-markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
 .atlas-v3 .repository-evidence-markdown th,
 .atlas-v3 .repository-evidence-markdown td { border: 1px solid var(--outline); padding: 5px 9px; }
+
+.repository-evidence-thread { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.repository-evidence-turn { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.repository-evidence-user { align-self: flex-end; max-width: 90%; padding: 10px 14px; border-radius: 14px; background: #edf1f5; overflow-wrap: anywhere; }
+.repository-evidence-assistant { min-width: 0; padding: 12px 0; border-bottom: 1px solid #dce1e7; overflow-wrap: anywhere; }
+.repository-evidence-assistant > strong { display: block; margin-bottom: 8px; }
+.repository-evidence-assistant pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
