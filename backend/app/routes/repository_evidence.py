@@ -75,7 +75,7 @@ def resolve_repository(question, selected, repositories):
         if not match:
             raise HTTPException(404, 'Repository not found in the connected GitHub account.')
         return match
-    explicit = re.search(r'\\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
+    explicit = re.search(r'\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
     if explicit:
         return resolve_repository(question, explicit.group(1), repositories)
     words = {word.lower() for word in re.findall(r'[A-Za-z0-9_.-]+', question)}
