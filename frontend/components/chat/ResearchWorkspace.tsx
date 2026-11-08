@@ -49,7 +49,6 @@ interface ResearchWorkspaceProps {
     onDeleteChat: (chat: ChatSummary) => void;
     onDeleteChats: (chats: ChatSummary[]) => void;
     messages: Message[];
-    onBranchMessage: (index: number, mode?: 'branch' | 'edit' | 'regenerate') => void;
     uploadButton: ReactNode;
     onAsk: (question?: string) => void;
     initials: string;
@@ -222,7 +221,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         )}
                         <ConversationTranscript
                             messages={props.messages}
-                            onBranchMessage={props.onBranchMessage}
                             busy={props.busy}
                             readyCount={props.readyCount}
                             uploadButton={props.uploadButton}
