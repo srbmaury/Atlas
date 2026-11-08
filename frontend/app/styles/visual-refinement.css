@@ -386,3 +386,47 @@
         display: none;
     }
 }
+
+/* App-wide responsive page canvas. Keep text lines readable, not entire pages narrow. */
+.atlas-v3 .main {
+    min-width: 0;
+}
+.atlas-v3 .content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-inline: 0;
+    padding: 26px clamp(18px, 2.1vw, 36px) 46px;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .atlas-home,
+.atlas-v3 .content .connected-page,
+.atlas-v3 .content .gmail-page,
+.atlas-v3 .content .document-library-v3 {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+}
+.atlas-v3 .content .atlas-home .home-hero-copy,
+.atlas-v3 .content .home-hero p,
+.atlas-v3 .content .library-intro p,
+.atlas-v3 .content .subtitle {
+    max-width: 780px;
+}
+.atlas-v3 .content .integrations-grid,
+.atlas-v3 .content .library-workspace,
+.atlas-v3 .content .home-grid {
+    min-width: 0;
+}
+@media (min-width: 1600px) {
+    .atlas-v3 .content {
+        padding-inline: clamp(28px, 2.2vw, 48px);
+    }
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content {
+        padding: 20px 14px 36px;
+    }
+}
