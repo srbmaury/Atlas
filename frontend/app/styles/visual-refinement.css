@@ -163,3 +163,33 @@
     .atlas-v3 .chat-history-item,
     .atlas-v3 .research-rail-item { transition: none; }
 }
+
+/* Research uses the available viewport rather than a centered 1280px page. */
+.atlas-v3 .content.content-research {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 26px clamp(18px, 2.1vw, 36px) 42px;
+    box-sizing: border-box;
+}
+.atlas-v3 .content-research .chat-workspace,
+.atlas-v3 .content-research .chat-workspace .research {
+    width: 100%;
+    min-width: 0;
+}
+.atlas-v3 .content-research .chat-workspace .research {
+    box-sizing: border-box;
+}
+.atlas-v3 .content-research .research-heading h1 {
+    max-width: min(100%, 940px);
+}
+@media (min-width: 1500px) {
+    .atlas-v3 .content.content-research {
+        padding-inline: clamp(24px, 2vw, 42px);
+    }
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content.content-research {
+        padding: 20px 14px 36px;
+    }
+}
