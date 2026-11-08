@@ -158,7 +158,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <span className="eyebrow">ASK ATLAS</span>
                     <h1 title={props.title}>{props.title}</h1>
                     <p className="subtitle">Answers grounded in your knowledge, with citations you can verify.</p>
                 </div>
@@ -178,11 +177,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                 </div>
             </div>
             <div className="research-source-toolbar">
-                <button className="research-document-scope" type="button" onClick={props.onOpenScope}>
-                    <FileText size={15} />
-                    {props.selectedCount ? `${props.selectedCount} selected documents` : 'All documents'}
-                    <ChevronDown size={14} />
-                </button>
                 <ResearchSourceSelector
                     includeDocuments={props.includeDocuments}
                     onIncludeDocuments={props.setIncludeDocuments}
@@ -442,8 +436,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         ) : (
                             <div className="research-rail-empty">
-                                <p>Evidence from your answers appears here.</p>
-                                <span>Choose a citation to inspect the original passage and surrounding context.</span>
+                                <p>No evidence yet</p>
+                                <span>Cited passages will appear here when Atlas answers a question.</span>
                             </div>
                         )}
                     </aside>
