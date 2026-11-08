@@ -3,6 +3,19 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 
+// Repair unquoted Mermaid flowchart labels without changing diagram structure.
+export function normalizeMermaidFlowchart(input: string): string {
+    const text = input.trim().replace(/^```(?:mermaid)?\s*\n/i, '').replace(/\n```\s*$/, '').trim();
+    if (!/^(graph|flowchart)\s+(TB|TD|BT|LR|RL)\b/i.test(text)) return text;
+    return text.split('\n').map(line => line.replace(
+        /(\b[A-Za-z_][\w-]*)(\[)([^\]\n]*)(\])/g,
+        (full, id: string, open: string, label: string, close: string) => {
+            if (!label.trim() || /^["']/.test(label.trim())) return full;
+            return id + open + '"' + label.replace(/"/g, '#quot;') + '"' + close;
+        },
+    )).join('\n');
+}
+
 export function MermaidDiagram({ chart }: { chart: string }) {
     const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
     const [svg, setSvg] = useState('');
@@ -11,7 +24,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
     const [scale, setScale] = useState(1);
     const [expanded, setExpanded] = useState(false);
     const root = useRef<HTMLDivElement>(null);
-    const normalizedChart = chart.trim().replace(/^```(?:mermaid)?\s*\n/i, '').replace(/\n```\s*$/, '').trim();
+    const normalizedChart = normalizeMermaidFlowchart(chart);
 
     useEffect(() => {
         let active = true;
