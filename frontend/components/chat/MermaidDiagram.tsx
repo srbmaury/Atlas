@@ -11,6 +11,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
     const [scale, setScale] = useState(1);
     const [expanded, setExpanded] = useState(false);
     const root = useRef<HTMLDivElement>(null);
+    const normalizedChart = chart.trim().replace(/^```(?:mermaid)?\s*\n/i, '').replace(/\n```\s*$/, '').trim();
 
     useEffect(() => {
         let active = true;
@@ -18,13 +19,18 @@ export function MermaidDiagram({ chart }: { chart: string }) {
         setError('');
         import('mermaid').then(async ({ default: mermaid }) => {
             mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutral' });
-            const output = await mermaid.render('atlas-mermaid-' + id, chart);
+            await mermaid.parse(normalizedChart);
+            const output = await mermaid.render('atlas-mermaid-' + id, normalizedChart);
             if (active) setSvg(output.svg);
-        }).catch(() => {
-            if (active) setError('Unable to render this diagram. View its source below.');
+        }).catch((reason: unknown) => {
+            if (active) {
+                const detail = reason instanceof Error ? reason.message : String(reason);
+                setError(`Unable to render diagram: ${detail}`);
+                console.error('Atlas Mermaid rendering failed', reason);
+            }
         });
         return () => { active = false; };
-    }, [chart, id]);
+    }, [normalizedChart, id]);
 
     return (
         <div className={expanded ? 'atlas-diagram atlas-diagram-expanded' : 'atlas-diagram'} ref={root}>
