@@ -34,10 +34,16 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
         if (!actionMenu) return;
         const dismiss = () => setActionMenu(null);
         const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') dismiss(); };
+        const outside = (event: PointerEvent) => {
+            const target = event.target as Element | null;
+            if (!target?.closest('.chat-history-menu-portal, .chat-history-action')) dismiss();
+        };
+        document.addEventListener('pointerdown', outside);
         window.addEventListener('scroll', dismiss, true);
         window.addEventListener('resize', dismiss);
         window.addEventListener('keydown', onKey);
         return () => {
+            document.removeEventListener('pointerdown', outside);
             window.removeEventListener('scroll', dismiss, true);
             window.removeEventListener('resize', dismiss);
             window.removeEventListener('keydown', onKey);
