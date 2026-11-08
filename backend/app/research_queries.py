@@ -149,6 +149,16 @@ QUERY_STOPWORDS = {
     'attention',
     'mail',
     'mails',
+    'may',
+    'might',
+    'possibly',
+    'potentially',
+    'related',
+    'regarding',
+    'cited',
+    'evidence',
+    'more',
+    'further',
 }
 
 GITHUB_QUERY_STOPWORDS = {
