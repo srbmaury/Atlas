@@ -1,9 +1,10 @@
+'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
-('use client');
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
 import { createConversationActions } from '../utils/conversationActions';
+import { persistConversation } from '../lib/researchRequests';
 import { IntegrationsGallery } from './sources/IntegrationsGallery';
 import { SourceConnectionDialog } from './sources/SourceConnectionDialog';
 import { GmailWorkspaceView } from './sources/gmail/GmailWorkspaceView';
@@ -420,6 +421,26 @@ export function AtlasWorkspace() {
         if (activeChat.current === id) restoreDraft(id);
     }
 
+    async function branchConversation(index: number) {
+        if (busy || !workspaceId || messages[index]?.role !== 'user') return;
+        const prompt = messages[index].content;
+        const history = messages.slice(0, index);
+        const branchTitle = ('Branch: ' + prompt).slice(0, 100);
+        try {
+            const saved = await persistConversation(workspaceId, null, branchTitle, history);
+            if (scope.current !== workspaceId) return;
+            chatLoadSequence.invalidate();
+            setChats((old) => [{ id: saved.id, title: saved.title, updated: saved.updated }, ...old]);
+            setChatId(saved.id);
+            chatTitle.current = saved.title;
+            setMessages(history);
+            setQuery(prompt);
+            setSource(null);
+            setNotice('Branch created. Edit the copied prompt and send it to explore a different direction.');
+            navigate('chat');
+        } catch (e) { setError((e as Error).message); }
+    }
+
     const uploadButton = (
         <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>
             {uploading ? <LoaderCircle className="spin" /> : <Plus />}
@@ -641,6 +662,7 @@ export function AtlasWorkspace() {
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
+                            onBranchMessage={(index) => void branchConversation(index)}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
                             initials={initials}
