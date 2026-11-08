@@ -1,0 +1,39 @@
+name: Format research branch
+on:
+  push:
+    branches: [feat/evidence-first-repository]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/evidence-first-repository
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Format Python
+        run: |
+          pip install ruff
+          ruff check --select I --fix backend/app/routes/repository_evidence.py
+          ruff format backend/app/routes/repository_evidence.py
+      - name: Format frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run format
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add backend/app/routes/repository_evidence.py frontend
+            git commit -m "style: apply Ruff and Prettier to repository research changes"
+            git push origin HEAD:feat/evidence-first-repository
+          fi
