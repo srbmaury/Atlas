@@ -252,7 +252,11 @@ def email_request_scope(question):
     """Recognize explicit email-only requests independent of enabled connectors."""
     return bool(
         re.search(r'\\b(?:emails?|mails?|inbox)\\b', question, re.I)
-        and re.search(r'\\b(?:list|show|find|search|summarize|summary|important|unread|which|what|any)\\b', question, re.I)
+        and re.search(
+            r'\\b(?:list|show|find|search|summarize|summary|important|unread|which|what|any)\\b',
+            question,
+            re.I,
+        )
     )
 
 
@@ -271,11 +275,14 @@ def excluded_mail_sender(question):
 
 def excludes_gmail_messages(question):
     """An email request excluding Gmail itself is ambiguous, not a Drive query."""
-    return bool(re.search(
-        r'\\b(?:exclud(?:e|ing)|except|without|other than)\\s+'
-        r'(?:(?:the|all|any)\\s+)?gmail\\b',
-        question, re.I,
-    ))
+    return bool(
+        re.search(
+            r'\\b(?:exclud(?:e|ing)|except|without|other than)\\s+'
+            r'(?:(?:the|all|any)\\s+)?gmail\\b',
+            question,
+            re.I,
+        )
+    )
 
 
 def gmail_query_for_question(scope, question):

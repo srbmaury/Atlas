@@ -277,7 +277,10 @@ def connected_chat_stream(
             if not evidence:
                 yield (
                     json.dumps(
-                        {'type': 'done', 'result': no_evidence_result(effective_body, retrieval_stats)},
+                        {
+                            'type': 'done',
+                            'result': no_evidence_result(effective_body, retrieval_stats),
+                        },
                         ensure_ascii=False,
                     )
                     + '\n'
@@ -307,7 +310,11 @@ def connected_chat_stream(
             # Document-only questions use the dedicated citation-checked answer generator.
             # This avoids the cross-source streaming model's short timeout and keeps
             # ordinary document Q&A focused on the user's requested answer.
-            if effective_body.include_documents and not effective_body.include_gmail and not effective_body.providers:
+            if (
+                effective_body.include_documents
+                and not effective_body.include_gmail
+                and not effective_body.providers
+            ):
                 doc_sources = [
                     document_evidence[item.source_id]
                     for item in evidence

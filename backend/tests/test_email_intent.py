@@ -31,7 +31,9 @@ def test_github_mail_exclusion_targets_gmail_sender_not_github_provider():
     from app.schemas import ConnectedQuestion
 
     request = ConnectedQuestion(
-        question=question, include_gmail=True, include_documents=True,
+        question=question,
+        include_gmail=True,
+        include_documents=True,
         providers=['drive', 'github'],
     )
     scoped = effective_research_scope(request)
@@ -50,7 +52,9 @@ def test_other_cross_source_questions_keep_original_scope():
 
     request = ConnectedQuestion(
         question='Compare project documents and GitHub issues',
-        include_documents=True, include_gmail=True, providers=['drive', 'github'],
+        include_documents=True,
+        include_gmail=True,
+        providers=['drive', 'github'],
     )
     assert effective_research_scope(request) is request
     assert ambiguous_email_request(request) is None
