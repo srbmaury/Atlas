@@ -38,6 +38,12 @@ def canonical_url(url):
 
 
 def fingerprint(item):
+    # Gmail message URLs encode the *message identity in the fragment*:
+    # https://mail.google.com/mail/u/0/#all/<message_id>.
+    # canonical_url strips fragments, so URL-based deduplication used to collapse
+    # every Gmail message in a search into a single evidence passage.
+    if item.provider == 'gmail':
+        return ('gmail', str(item.source_id))
     url = canonical_url(item.url)
     if url:
         return ('url', url)
