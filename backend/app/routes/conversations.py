@@ -49,6 +49,51 @@ def list_conversations(workspaceId: str, actor=Depends(user), db=Depends(databas
     return [{'id': item.id, 'title': item.title, 'updated': item.updated} for item in items]
 
 
+@router.get(
+    '/api/workspaces/{workspaceId}/conversations/search',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
+def search_conversation_messages(
+    workspaceId: str, q: str = '', actor=Depends(user), db=Depends(database)
+):
+    """Search only the requesting user's conversations; return bounded excerpts."""
+    workspace(workspaceId, actor, db)
+    needle = q.strip().casefold()
+    if len(needle) < 2:
+        return {'results': []}
+    if len(needle) > 200:
+        raise HTTPException(422, 'Search query must be at most 200 characters.')
+    items = (
+        db.query(Conversation)
+        .filter_by(workspace_id=workspaceId, author_id=actor.id)
+        .order_by(Conversation.updated.desc())
+        .limit(500)
+        .all()
+    )
+    results = []
+    for item in items:
+        for index, message in enumerate(item.messages or []):
+            if not isinstance(message, dict):
+                continue
+            content = message.get('content')
+            if not isinstance(content, str):
+                continue
+            offset = content.casefold().find(needle)
+            if offset < 0:
+                continue
+            start = max(0, offset - 75)
+            results.append({
+                'chat_id': item.id,
+                'title': item.title,
+                'message_index': index,
+                'role': message.get('role', ''),
+                'excerpt': content[start:start + 220],
+            })
+            if len(results) >= 50:
+                return {'results': results}
+    return {'results': results}
+
+
 @router.post(
     '/api/workspaces/{workspaceId}/conversations',
     dependencies=[Depends(workspace_permission('viewer'))],
