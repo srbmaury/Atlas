@@ -298,7 +298,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         try {
             const result = await api<GmailSummary>(`/workspaces/${workspaceId}/gmail/summarize`, {
                 method: 'POST',
-                body: JSON.stringify({ message_ids: gmailSelected }),
+                body: JSON.stringify({ message_ids: selectedForSummary, intelligence: gmailState.gmailIntelligence }),
             });
             setGmailSummary(result);
             setGmailSummaryIds(selectedForSummary);
