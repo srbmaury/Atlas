@@ -850,6 +850,7 @@ export function AtlasWorkspace() {
                         void inspect(doc);
                     }}
                     documents={docs}
+                    workspaceId={workspaceId}
                     chats={chats}
                     onOpenChat={(id) => {
                         setSearchOpen(false);
