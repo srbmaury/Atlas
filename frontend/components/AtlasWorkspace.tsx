@@ -342,7 +342,7 @@ export function AtlasWorkspace() {
         setSource,
         setPreview,
     });
-    const { loadChat, renameChat, deleteChat, ask, refreshChats, copyConversation } = createConversationActions({
+    const { loadChat, renameChat, deleteChat, deleteChats, ask, refreshChats, copyConversation } = createConversationActions({
         workspaceId,
         query,
         busy,
@@ -595,6 +595,7 @@ export function AtlasWorkspace() {
                             onOpenChat={(id) => void loadChat(id)}
                             onRenameChat={(item) => void renameChat(item)}
                             onDeleteChat={(item) => void deleteChat(item)}
+                        onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
