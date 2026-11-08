@@ -200,9 +200,46 @@ def group_email_threads(messages):
     ]
 
 
+def expand_gmail_threads(token, matching_messages, *, max_threads=5, max_messages=20):
+    """Expand only matching threads with strict request and result bounds.
+
+    Gmail thread.get returns the whole thread; only the newest max_messages
+    are exposed. This prevents a broad search from multiplying API calls.
+    """
+    selected = []
+    seen = set()
+    for message in matching_messages:
+        thread_id = message.get('thread_id')
+        if thread_id and thread_id not in seen:
+            selected.append(thread_id)
+            seen.add(thread_id)
+        if len(selected) >= max_threads:
+            break
+
+    expanded = {}
+    for thread_id in selected:
+        data = gmail_get(
+            token, GMAIL_API + '/threads/' + thread_id, {'format': 'full'}
+        )
+        raw = data.get('messages') or []
+        parsed = [email_from_json(item) for item in raw if item.get('id')]
+        ordered = group_email_threads(parsed)
+        if ordered:
+            messages = ordered[0]['messages']
+            expanded[thread_id] = {
+                'thread_id': thread_id,
+                'subject': messages[0]['subject'],
+                'message_count': len(messages),
+                'truncated': len(messages) > max_messages,
+                'messages': messages[-max_messages:],
+            }
+    return expanded
+
+
 class SearchRequest(BaseModel):
     query: str = Field(default=DEFAULT_QUERY, max_length=400)
     limit: int = Field(default=15, ge=1, le=30)
+    expand_threads: bool = False
 
 
 class SummaryRequest(BaseModel):
@@ -344,7 +381,11 @@ def search(workspaceId: str, body: SearchRequest, request: Request):
                 )
                 for mid in ids
             ]
-            return {'messages': items, 'threads': group_email_threads(items), 'email': entry.email}
+            threads = group_email_threads(items)
+            if body.expand_threads:
+                expanded = expand_gmail_threads(token, items)
+                threads = [expanded.get(t['thread_id'], t) for t in threads]
+            return {'messages': items, 'threads': threads, 'email': entry.email}
     except HTTPException:
         raise
     except Exception as exc:
