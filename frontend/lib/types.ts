@@ -38,6 +38,8 @@ export type Answer = {
     answer: string;
     repository?: string | null;
     sources: Source[];
+    /** Retrieved passages retained after citation verification fails; not citations. */
+    evidence_sources?: Source[];
     related_sources?: { left: number; right: number; references: string[]; status: string }[];
     decision_timeline?: {
         date: string;
