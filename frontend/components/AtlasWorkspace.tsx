@@ -185,7 +185,7 @@ export function AtlasWorkspace() {
     }, [messages.length, busy, tab]);
 
     function newChat(preserveSourceSelection = false) {
-        if (busy) return;
+        if (busy || branchInFlight.current) return;
         chatLoadSequence.invalidate();
         try {
             if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
@@ -418,7 +418,7 @@ export function AtlasWorkspace() {
     }
 
     async function switchChat(id: string) {
-        if (busy) return;
+        if (busy || branchInFlight.current) return;
         try {
             sessionStorage.setItem(draftKey(chatId), query);
         } catch {
