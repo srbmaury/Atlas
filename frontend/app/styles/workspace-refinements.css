@@ -1609,8 +1609,8 @@
 .atlas-diagram-toolbar > div { display: flex; flex-wrap: wrap; gap: 6px; }
 .atlas-diagram-toolbar button { border: 1px solid #dce2e8; border-radius: 6px; background: #f7f9fb; padding: 5px 9px; cursor: pointer; }
 .atlas-diagram-viewport { overflow: auto; max-height: 70vh; min-height: 140px; }
-.atlas-diagram-svg { width: max-content; min-width: 100%; }
-.atlas-diagram-svg svg { max-width: none; height: auto; }
+.atlas-diagram-svg { display: block; width: 100%; min-width: 0; }
+.atlas-diagram-svg svg { display: block; width: 100% !important; max-width: none !important; height: auto !important; min-height: 180px; }
 .atlas-diagram pre { max-width: 100%; overflow-x: auto; white-space: pre; }
 .atlas-diagram-expanded { position: fixed; inset: 3vh 3vw; z-index: 1000; overflow: auto; box-shadow: 0 10px 50px #0003; }
 .atlas-diagram-expanded .atlas-diagram-viewport { max-height: 80vh; }
