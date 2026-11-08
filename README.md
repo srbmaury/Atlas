@@ -210,72 +210,9 @@ Set `AI_PROVIDER=none` and leave `OPENAI_API_KEY` empty. Atlas returns matching 
 
 ## Connect data sources
 
-Google Calendar, OneDrive, Outlook and SharePoint OAuth setup is described in [Connected source setup](docs/FIVE_SOURCE_CONNECTORS.md). Their integrations remain read-only, and live consent flows require provider configuration.
+See the [Source setup guide](docs/SOURCE_SETUP.md) for credentials, OAuth callbacks, and search limits for all providers.
 
-
-Connections are workspace-scoped and retrieved on demand. Connect a provider in **Sources**, then select it above the prompt in **Ask Atlas**. Source data is not automatically copied into the document library. Disconnecting removes Atlas's saved credential; revoke the token or app authorization at the provider as well when appropriate.
-
-Atlas encrypts saved provider credentials with `GMAIL_TOKEN_ENCRYPTION_KEY`. Do not commit `.env`, share credentials, or paste a bot token where a user token is required.
-
-### Gmail
-
-1. In [Google Cloud Console](https://console.cloud.google.com/), create or choose a project, enable the **Gmail API**, configure the OAuth consent screen, and create an OAuth client of type **Web application**.
-2. Add this Authorized redirect URI for local development:
-
-   ```text
-   http://localhost:3000/api/gmail/callback
-   ```
-
-3. Add the client ID and secret to `.env`:
-
-   ```dotenv
-   GOOGLE_CLIENT_ID=your-client-id
-   GOOGLE_CLIENT_SECRET=your-client-secret
-   GOOGLE_REDIRECT_URI=http://localhost:3000/api/gmail/callback
-   ```
-
-4. Make sure `GMAIL_TOKEN_ENCRYPTION_KEY` is set, restart the API and frontend, then open **Sources → Gmail → Connect Gmail** and authorize read-only access.
-
-Gmail search is opt-in per Ask Atlas question. Email is fetched on demand, not indexed automatically. The connector uses the restricted `gmail.readonly` scope; public deployments may need Google's verification and security assessment. Review Google's current requirements before publishing.
-
-### Google Drive
-
-Use the same Google Cloud project and OAuth Web application as Gmail. Enable the **Google Drive API** and add this additional Authorized redirect URI:
-
-```text
-http://localhost:3000/api/drive/callback
-```
-
-Set the Drive redirect in `.env` and restart:
-
-```dotenv
-GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/drive/callback
-```
-
-Connect from **Sources → Google Drive**. Atlas uses read-only Drive access and reads files on demand. It can extract text from Google Docs, Sheets (CSV), PDF, DOCX, and supported text files. Slides and image-only Drive PDFs are not supported as Drive evidence. Drive access uses the restricted `drive.readonly` scope; review Google's verification and security-assessment requirements before public launch.
-
-### GitHub
-
-Create a fine-grained personal access token scoped to the repositories Atlas should access, with read-only **Metadata**, **Issues**, **Pull requests**, and **Contents** permissions. Contents access is needed for source-code search. Add it under **Sources → GitHub**.
-
-Atlas can search repositories, issues, pull requests, and source-code files. Code searches are scoped to the connected account by default; add an explicit `repo:owner/name` qualifier to narrow a search to one repository. Results and file snippets are limited to repositories and records visible to the token. Atlas never writes to connected repositories.
-
-### Notion
-
-Create an internal integration in [Notion My integrations](https://www.notion.so/profile/integrations), copy its secret, and share the pages or parent pages you want Atlas to read with that integration. Add the token under **Sources → Notion**.
-
-Notion integrations only see pages shared with them. Atlas searches accessible page titles and reads page blocks on demand; a valid token does not grant automatic access to every workspace page.
-
-### Slack
-
-Slack message search requires a **user-scoped OAuth token** with the `search:read` user token scope. Bot tokens may authenticate but cannot use message search.
-
-1. Create or open the Atlas app in the [Slack API console](https://api.slack.com/apps).
-2. Under **OAuth & Permissions → User Token Scopes**, add `search:read`.
-3. Reinstall the app to the intended workspace and authorize the requested access.
-4. Copy the **User OAuth Token** (not the Bot User OAuth Token) and add it under **Sources → Slack**.
-
-The user token can search content that the authorizing Slack user can access. Slack may require you to reauthorize Atlas after changing scopes.
+Open **Sources** to connect a provider, then select it above the prompt in **Ask Atlas**. Connections are workspace-scoped and Atlas reads source content on demand.
 
 ## Run with Docker Compose
 
@@ -346,7 +283,7 @@ npx playwright test
 - PDF, DOCX, TXT, Markdown, CSV, JSON, and HTML ingestion. Individual files can be up to 250 MB; scanned PDF text extraction uses Tesseract OCR.
 - Durable document processing with retry and reindex controls.
 - Keyword search, optional vector search, and source-grounded answers.
-- On-demand Gmail, Drive, GitHub, Notion, and Slack retrieval when each source is connected.
+- [On-demand retrieval from connected sources](docs/SOURCE_SETUP.md), including Google Workspace, Microsoft 365, and engineering tools.
 
 Connected sources use permission checks at the provider and do not sync in the background. AI answers can miss details; review cited passages before relying on them. Atlas validates citation references but does not prove every claim is supported by its citation.
 

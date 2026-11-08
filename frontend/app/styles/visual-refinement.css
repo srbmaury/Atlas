@@ -17,7 +17,9 @@
 .atlas-v3 .nav button {
     border-radius: 10px;
     min-height: 42px;
-    transition: background 150ms ease, color 150ms ease;
+    transition:
+        background 150ms ease,
+        color 150ms ease;
 }
 .atlas-v3 .nav button.active {
     background: color-mix(in srgb, var(--mint) 70%, var(--panel));
@@ -165,18 +167,18 @@
 }
 @media (max-width: 760px) {
     .atlas-v3 .chat-workspace .thread {
-    padding: 18px 14px;
-}
+        padding: 18px 14px;
+    }
     .atlas-v3 .user-message .bubble {
-    padding: 11px 13px;
-}
+        padding: 11px 13px;
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .atlas-v3 .nav button,
     .atlas-v3 .chat-history-item,
     .atlas-v3 .research-rail-item {
-    transition: none;
-}
+        transition: none;
+    }
 }
 
 /* Research uses the available viewport rather than a centered 1280px page. */
