@@ -123,3 +123,33 @@ def test_citation_failure_retries_with_explicit_source_instructions(monkeypatch)
     assert len(calls) == 2
     assert 'Cite each factual' in calls[1]
     assert result['answer'] == 'NEET is a study app [1].'
+
+
+def test_followup_passes_bounded_history_and_retrieves_fresh_evidence(monkeypatch):
+    monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'token'))
+    monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/repo'}])
+    monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
+    monkeypatch.setattr(module, 'ai_enabled', lambda: True)
+    searches = []
+    monkeypatch.setattr(module, 'github_repository_file_search', lambda token, repo, query, limit: (
+        searches.append(query) or [{'title': 'owner/repo/src/main.py', 'excerpt': 'def main(): pass',
+                                   'metadata': {'path': 'src/main.py'}}]
+    ))
+    captured = []
+    def fake_generate(question, evidence, history=None):
+        captured.append(history)
+        return {'mode': 'ai', 'answer': 'The entry point is main [1].'}
+    monkeypatch.setattr(module, 'generate', fake_generate)
+    result = module.inspect_repository(
+        'workspace',
+        module.RepositoryInspection(
+            repository='owner/repo', question='Where does it start?',
+            history=[{'role': 'user', 'content': 'Explain the app'},
+                     {'role': 'assistant', 'content': 'The app starts here [1].'}],
+        ),
+        Mock(), actor=Mock(), db=Mock(),
+    )
+    assert result['answer'] == 'The entry point is main [1].'
+    assert len(searches) == 1
+    assert 'Explain the app' in searches[0]
+    assert captured[0][0]['role'] == 'user'
