@@ -25,11 +25,15 @@ def owned_conversation(workspace_id, conversation_id, actor, db):
     return item
 
 
+def visible_messages(item):
+    return [dict(message) for message in (item.messages or []) if not message.get('_atlas_metadata')]
+
+
 def conversation_data(item):
     return {
         'id': item.id,
         'title': item.title,
-        'messages': item.messages or [],
+        'messages': visible_messages(item),
         'created': item.created,
         'updated': item.updated,
         'pinned': bool((item.messages or [{}])[0].get('_atlas_pinned')) if item.messages else False,
@@ -71,6 +75,8 @@ def organize_conversation(
     # schema migration. Metadata is not exposed to the language model.
     if not messages:
         messages = [{'_atlas_metadata': True}]
+    if not first.get('_atlas_metadata'):
+        messages.insert(0, {'_atlas_metadata': True})
     first = messages[0]
     if body.pinned is not None:
         first['_atlas_pinned'] = body.pinned
@@ -166,7 +172,9 @@ def update_conversation(
 ):
     item = owned_conversation(workspaceId, cid, actor, db)
     item.title = body.title.strip()
-    item.messages = body.messages
+    metadata = (item.messages or [{}])[0]
+    prefix = [{key: metadata[key] for key in ('_atlas_pinned', '_atlas_archived') if key in metadata} | {'_atlas_metadata': True}] if any(key in metadata for key in ('_atlas_pinned', '_atlas_archived')) else []
+    item.messages = prefix + body.messages
     item.updated = time.time()
     db.commit()
     return conversation_data(item)
