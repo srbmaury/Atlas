@@ -1,5 +1,6 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../../lib/api';
 import { RotateCcw, Plus, MessageSquare, Trash2, Search, Pencil, X, Pin, Archive, ArchiveRestore, MoreHorizontal } from 'lucide-react';
 import type { ChatSummary } from '../../lib/types';
@@ -28,6 +29,29 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
     const [search, setSearch] = useState('');
     const [showArchived, setShowArchived] = useState(false);
     const [actionMenu, setActionMenu] = useState<string | null>(null);
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+    useEffect(() => {
+        if (!actionMenu) return;
+        const dismiss = () => setActionMenu(null);
+        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') dismiss(); };
+        window.addEventListener('scroll', dismiss, true);
+        window.addEventListener('resize', dismiss);
+        window.addEventListener('keydown', onKey);
+        return () => {
+            window.removeEventListener('scroll', dismiss, true);
+            window.removeEventListener('resize', dismiss);
+            window.removeEventListener('keydown', onKey);
+        };
+    }, [actionMenu]);
+    function toggleMenu(id: string, element: HTMLButtonElement) {
+        if (actionMenu === id) { setActionMenu(null); return; }
+        const rect = element.getBoundingClientRect();
+        const height = 176;
+        const top = window.innerHeight - rect.bottom >= height + 12 ? rect.bottom + 6 : Math.max(8, rect.top - height - 6);
+        const left = Math.max(8, Math.min(rect.right - 176, window.innerWidth - 184));
+        setMenuPosition({ top, left });
+        setActionMenu(id);
+    }
     const [actionError, setActionError] = useState('');
     const [saving, setSaving] = useState<string | null>(null);
     async function updateOrganization(item: ChatSummary, field: 'pinned' | 'archived') {
@@ -176,37 +200,26 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                                     className="chat-history-action"
                                     aria-label={`Actions for ${item.title}`}
                                     aria-expanded={actionMenu === item.id}
-                                    onClick={() => setActionMenu(actionMenu === item.id ? null : item.id)}
+                                    onClick={(event) => toggleMenu(item.id, event.currentTarget)}
                                 >
                                     <MoreHorizontal size={16} />
                                 </button>
-                                {actionMenu === item.id && (
-                                    <div className="chat-history-menu">
-                                        <button type="button" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'pinned')}>
-                                            <Pin size={14} /> {pinned.includes(item.id) ? 'Unpin' : 'Pin'}
+                                {actionMenu === item.id && menuPosition && typeof document !== 'undefined' && createPortal(
+                                    <div className="chat-history-menu chat-history-menu-portal" role="menu" style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, width: 176 }}>
+                                        <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'pinned')}>
+                                            <Pin size={14} /> {item.pinned ? 'Unpin' : 'Pin'}
                                         </button>
-                                        <button type="button" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'archived')}>
-                                            {archived.includes(item.id) ? <ArchiveRestore size={14} /> : <Archive size={14} />} {archived.includes(item.id) ? 'Restore' : 'Archive'}
+                                        <button type="button" role="menuitem" disabled={saving === item.id} onClick={() => void updateOrganization(item, 'archived')}>
+                                            {item.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />} {item.archived ? 'Restore' : 'Archive'}
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setActionMenu(null);
-                                                onRenameChat(item);
-                                            }}
-                                        >
+                                        <button type="button" role="menuitem" onClick={() => { setActionMenu(null); onRenameChat(item); }}>
                                             <Pencil size={14} /> Rename
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setActionMenu(null);
-                                                onDeleteChat(item);
-                                            }}
-                                        >
+                                        <button type="button" role="menuitem" onClick={() => { setActionMenu(null); onDeleteChat(item); }}>
                                             <Trash2 size={14} /> Delete
                                         </button>
-                                    </div>
+                                    </div>,
+                                    document.body,
                                 )}
                             </div>
                         )}
