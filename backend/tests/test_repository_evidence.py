@@ -10,6 +10,7 @@ from app.routes import repository_evidence as module
 
 def test_inspection_returns_real_file_metadata(monkeypatch):
     monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'fake-token'))
+    monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/repo'}])
     monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
     monkeypatch.setattr(
         module,
@@ -44,6 +45,7 @@ def test_inspection_rejects_invalid_repository(monkeypatch):
 
 def test_inspection_does_not_invent_evidence(monkeypatch):
     monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'fake-token'))
+    monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/empty'}])
     monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
     monkeypatch.setattr(module, 'github_repository_file_search', lambda *args, **kwargs: [])
     result = module.inspect_repository(
@@ -52,3 +54,22 @@ def test_inspection_does_not_invent_evidence(monkeypatch):
     )
     assert result['status'] == 'no_matches'
     assert result['sources'] == []
+
+
+def test_infer_connected_repository_from_question():
+    repos = [{'full_name': 'srbmaury/Atlas'}, {'full_name': 'srbmaury/Other'}]
+    assert module.resolve_repository('Explain my Atlas repository', None, repos) == 'srbmaury/Atlas'
+    assert module.resolve_repository('Explain the architecture', None, repos) is None
+
+
+def test_repository_must_belong_to_connected_account():
+    with pytest.raises(HTTPException) as error:
+        module.resolve_repository('Explain architecture', 'someone/private', [{'full_name': 'owner/repo'}])
+    assert error.value.status_code == 404
+
+
+def test_web_search_requires_server_configuration(monkeypatch):
+    monkeypatch.delenv('BRAVE_SEARCH_API_KEY', raising=False)
+    with pytest.raises(HTTPException) as error:
+        module.search_public_web('latest documentation')
+    assert error.value.status_code == 503
