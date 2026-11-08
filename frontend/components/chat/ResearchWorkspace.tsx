@@ -138,6 +138,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onManage={props.onManageSources}
                 />
             </div>
+            <RepositoryEvidence workspaceId={props.workspaceId} />
             {props.connectedGmail && (
                 <div className="unified-gmail-scope">
                     <label>
