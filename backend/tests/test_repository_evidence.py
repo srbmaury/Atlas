@@ -11,6 +11,8 @@ from app.routes import repository_evidence as module
 def test_inspection_returns_real_file_metadata(monkeypatch):
     monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'fake-token'))
     monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/repo'}])
+    monkeypatch.setattr(module, 'ai_enabled', lambda: True)
+    monkeypatch.setattr(module, 'generate', lambda question, evidence: {'mode': 'ai', 'answer': 'Atlas is an application [1].'})
     monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
     monkeypatch.setattr(
         module,
@@ -32,6 +34,7 @@ def test_inspection_returns_real_file_metadata(monkeypatch):
     assert result['count'] == 1
     assert result['sources'][0]['path'] == 'README.md'
     assert result['sources'][0]['excerpt'] == 'Actual file contents'
+    assert result['answer'] == 'Atlas is an application [1].'
 
 
 def test_inspection_rejects_invalid_repository(monkeypatch):
@@ -46,6 +49,7 @@ def test_inspection_rejects_invalid_repository(monkeypatch):
 def test_inspection_does_not_invent_evidence(monkeypatch):
     monkeypatch.setattr(module, 'read_connection', lambda *args: (None, 'fake-token'))
     monkeypatch.setattr(module, 'accessible_repositories', lambda *args: [{'full_name': 'owner/empty'}])
+    monkeypatch.setattr(module, 'ai_enabled', lambda: True)
     monkeypatch.setattr(module, 'revalidate_access', lambda *args: None)
     monkeypatch.setattr(module, 'github_repository_file_search', lambda *args, **kwargs: [])
     result = module.inspect_repository(
@@ -54,6 +58,7 @@ def test_inspection_does_not_invent_evidence(monkeypatch):
     )
     assert result['status'] == 'no_matches'
     assert result['sources'] == []
+    assert result['answer'] is None
 
 
 def test_infer_connected_repository_from_question():
