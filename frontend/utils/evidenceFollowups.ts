@@ -4,7 +4,7 @@ export type EvidenceIntent = 'explain' | 'compare' | null;
 
 /** Evidence follow-ups are source-independent: never require a Gmail citation. */
 export function evidenceIntent(question: string): EvidenceIntent {
-    if (!/\b(?:cited|citations?|evidence|sources?|passages?)\b/i.test(question)) return null;
+    if (!/\b(?:cited|citations?|evidence|passages?)\b/i.test(question)) return null;
     if (/\b(?:compare|contrast|differences?|agreements?|conflicts?)\b/i.test(question)) return 'compare';
     if (/\b(?:explain|expand|elaborate|clarify|details?|describe)\b/i.test(question)) return 'explain';
     return null;
