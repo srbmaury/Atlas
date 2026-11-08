@@ -46,6 +46,7 @@ interface ResearchWorkspaceProps {
     onOpenChat: (id: string) => void;
     onRenameChat: (chat: ChatSummary) => void;
     onDeleteChat: (chat: ChatSummary) => void;
+    onDeleteChats: (chats: ChatSummary[]) => void;
     messages: Message[];
     uploadButton: ReactNode;
     onAsk: (question?: string) => void;
@@ -163,6 +164,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     onOpenChat={props.onOpenChat}
                     onRenameChat={props.onRenameChat}
                     onDeleteChat={props.onDeleteChat}
+                    onDeleteChats={props.onDeleteChats}
                 />
                 <div className="research">
                     <div className="chat-pane">
