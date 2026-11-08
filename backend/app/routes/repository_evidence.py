@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..api_dependencies import database, user
-from ..external_sources import connection, github_repository_file_search
+from ..external_sources import read_connection, github_repository_file_search
 from ..rbac import revalidate_access, workspace_permission
 
 router = APIRouter(prefix='/api')
@@ -33,7 +33,7 @@ def inspect_repository(
     repository = body.repository.strip()
     if not REPOSITORY.fullmatch(repository):
         raise HTTPException(422, 'Repository must be owner/name.')
-    _, token = connection(db, actor, workspaceId, 'github')
+    _, token = read_connection(db, actor, workspaceId, 'github')
     results = github_repository_file_search(token, repository, body.question, limit=8)
     revalidate_access(workspaceId, actor, {'github'})
     return {
