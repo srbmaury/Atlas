@@ -625,7 +625,7 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
   await expect(page.getByText('Decision: approved')).toBeVisible();
   await expect(page.getByText(/1 message references resolved/)).toBeVisible();
   await page.getByText('View cited message evidence').first().click();
-  await expect(page.getByText('Ship Friday', {exact:true})).toBeVisible();
+  await expect(page.getByLabel('Email summary', {exact:true}).getByText('Ship Friday', {exact:true})).toBeVisible();
   await page.getByLabel('Ask a follow-up about these emails').fill('What is the deadline?');
   await page.getByRole('button',{name:'Ask follow-up'}).click();
   await expect(page.getByText(/deadline remains Friday/)).toBeVisible();
