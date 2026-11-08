@@ -972,3 +972,38 @@
     outline: 2px solid var(--focus-ring, #2563eb);
     outline-offset: 2px;
 }
+
+.chat-history-search .chat-history-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 2px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.chat-history-details {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+.chat-history-title {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.chat-history-date {
+    font-size: 11px;
+    opacity: 0.7;
+    font-weight: 400;
+}
+.chat-history-open[aria-current="page"] {
+    font-weight: 650;
+}
