@@ -32,9 +32,9 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 ### Incremental delivery
 - **Slice A — foundation (started):** Thread grouping/chronology helper with unit tests; expose thread metadata without breaking existing message fields.
 - **Slice B:** Bounded Gmail thread expansion and thread-aware search results.
-- **Slice C — backend implemented, verification pending:** Opt-in decision, commitment, action, owner, and deadline analysis with source excerpts and message citations. Automated citation verification is still outstanding.
-- **Slice D — partially implemented:** Gmail UI analysis toggle and per-message evidence excerpts shipped on feature branch. Conversational follow-ups, dedicated thread navigation, and cross-source integration remain outstanding.
-- **Slice E:** End-to-end benchmarks, security checks, and performance tuning.
+- **Slice C — backend implemented, verification pending:** Opt-in decision, commitment, action, owner, and deadline analysis with source excerpts and message citations. Deterministic citation-number validation is implemented; semantic claim-to-evidence verification is still outstanding.
+- **Slice D — implemented on feature branch, verification pending:** Gmail UI analysis toggle, per-message evidence excerpts, expandable thread navigation, and follow-up questions scoped to the same selected emails. Cross-source integration and persistent multi-turn history remain outstanding.
+- **Slice E — tests added, not yet verified:** Backend citation-reference and request-validation tests plus Playwright Gmail thread/evidence/follow-up test. Semantic claim-to-passage verification, full benchmark runs, security review, and performance tuning remain outstanding.
 
 ### Acceptance tests
 - Messages from the same thread are grouped and sorted by timestamp even if the API returns them out of order.
