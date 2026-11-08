@@ -393,3 +393,7 @@
 :root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence .document-markdown * {
     color: #e6e8eb !important;
 }
+
+:root[data-theme='dark'] .atlas-v3 .evidence-inspector .cited-sentence mark {
+    background: #5b481f;
+}
