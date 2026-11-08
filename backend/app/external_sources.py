@@ -500,7 +500,50 @@ def github_repository_file_search(token, repository, query, limit=12):
         if '/services/' in path_lower or '/components/' in path_lower:
             score += 1
         candidates.append((score, path))
+    # Architecture questions need representative application code, not only READMEs
+    # and manifests. Prefer likely entry points and diversify by directory.
+    architecture = bool(re.search(
+        r'\\b(architecture|flow|flowchart|diagram|entry.point|how.*work|what.*do)\\b',
+        query, re.I,
+    ))
+    if architecture:
+        entry_names = {'main.py', 'app.py', 'application.py', 'server.py', 'index.ts',
+                       'index.tsx', 'main.ts', 'main.tsx', 'app.tsx', 'app.ts',
+                       'page.tsx', 'routes.py', 'urls.py', 'manage.py'}
+        code_suffixes = {'.py', '.ts', '.tsx', '.js', '.jsx', '.java', '.go', '.kt'}
+        rescored = []
+        for score, path in candidates:
+            lower = path.lower()
+            base = lower.rsplit('/', 1)[-1]
+            suffix = '.' + base.rsplit('.', 1)[-1] if '.' in base else ''
+            if base in entry_names:
+                score += 15
+            elif suffix in code_suffixes:
+                score += 6
+            if any(part in lower for part in ('/src/', '/app/', '/backend/', '/frontend/')):
+                score += 3
+            if base in {'dockerfile', 'package.json', 'pyproject.toml'}:
+                score -= 7
+            rescored.append((score, path))
+        candidates = rescored
     candidates.sort(key=lambda item: (-item[0], item[1].count('/'), item[1].lower()))
+    if architecture:
+        # Reserve space for README plus code from distinct directories.
+        selected = []
+        seen_dirs = set()
+        readme = next((c for c in candidates if c[1].lower() == 'readme.md'), None)
+        if readme:
+            selected.append(readme)
+        for candidate in candidates:
+            path = candidate[1]
+            directory = path.rsplit('/', 1)[0] if '/' in path else ''
+            if candidate in selected or directory in seen_dirs:
+                continue
+            selected.append(candidate)
+            seen_dirs.add(directory)
+            if len(selected) >= limit:
+                break
+        candidates = selected + [candidate for candidate in candidates if candidate not in selected]
     results = []
     total_chars = 0
     for _, path in candidates[: limit * 3]:
