@@ -51,7 +51,7 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
                     </button>
                     {selecting && (
                         <>
-                            <label><input type="checkbox" checked={allVisibleSelected} disabled={busy || !filteredChats.length} onChange={(event) => setSelected((current) => event.target.checked ? [...new Set([...current, ...filteredChats.map((chat) => chat.id)])] : current.filter((id) => !filteredChats.some((chat) => chat.id === id))} /> Select all shown</label>
+                            <label><input type="checkbox" checked={allVisibleSelected} disabled={busy || !filteredChats.length} onChange={(event) => setSelected((current) => event.target.checked ? [...new Set([...current, ...filteredChats.map((chat) => chat.id)])] : current.filter((id) => !filteredChats.some((chat) => chat.id === id)))} /> Select all shown</label>
                             <button type="button" disabled={busy || !selectedVisible.length} onClick={() => { onDeleteChats(selectedVisible); }}>
                                 <Trash2 size={14} aria-hidden="true" /> Delete ({selectedVisible.length})
                             </button>
