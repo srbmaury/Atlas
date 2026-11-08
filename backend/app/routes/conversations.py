@@ -75,7 +75,7 @@ def organize_conversation(
     # schema migration. Metadata is not exposed to the language model.
     if not messages:
         messages = [{'_atlas_metadata': True}]
-    if not first.get('_atlas_metadata'):
+    if not messages[0].get('_atlas_metadata'):
         messages.insert(0, {'_atlas_metadata': True})
     first = messages[0]
     if body.pinned is not None:
