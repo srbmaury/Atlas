@@ -1007,3 +1007,38 @@
 .chat-history-open[aria-current="page"] {
     font-weight: 650;
 }
+
+/* The wrapper owns the single keyboard focus indicator. */
+.atlas-v3 .chat-history-search input:focus,
+.atlas-v3 .chat-history-search input:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border: 0;
+}
+.chat-history-selection-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 8px 0;
+    font-size: 12px;
+}
+.chat-history-selection-toolbar button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border: 1px solid var(--outline);
+    border-radius: 6px;
+    background: var(--panel);
+    cursor: pointer;
+}
+.chat-history-selection-toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.chat-history-item > input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-left: 5px;
+}
