@@ -81,3 +81,28 @@ def test_expand_threads_skips_missing_thread_ids(monkeypatch):
     monkeypatch.setattr(gmail, 'gmail_get', lambda *args, **kwargs: calls.append(args))
     assert gmail.expand_gmail_threads('token', [{'id': 'only'}]) == {}
     assert calls == []
+
+
+def test_citation_audit_resolves_references_and_rejects_invalid_numbers():
+    from app.gmail import audit_gmail_citations
+
+    result = audit_gmail_citations('Decision approved [2]. Deadline [1].', 2)
+    assert result['status'] == 'references_present'
+    assert result['cited_numbers'] == [1, 2]
+    assert result['semantic_support_verified'] is False
+
+    invalid = audit_gmail_citations('Approved [3], discussed [1].', 2)
+    assert invalid['status'] == 'invalid_references'
+    assert invalid['invalid_numbers'] == [3]
+    assert audit_gmail_citations('No citations.', 2)['status'] == 'no_references'
+
+
+def test_follow_up_request_validation():
+    import pytest
+    from pydantic import ValidationError
+    from app.gmail import SummaryRequest
+
+    request = SummaryRequest(message_ids=['abc'], intelligence=True, follow_up='Who owns this?')
+    assert request.follow_up == 'Who owns this?'
+    with pytest.raises(ValidationError):
+        SummaryRequest(message_ids=['abc'], follow_up='x' * 501)
