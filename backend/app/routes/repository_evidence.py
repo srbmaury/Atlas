@@ -144,6 +144,17 @@ def inspect_repository(
         try:
             generated = generate(body.question, evidence)
             answer_mode = generated.get('mode', 'unknown')
+            if answer_mode == 'citation_check_failed':
+                # Retry once with explicit source IDs and a bounded factual scope.
+                # Never promote an answer that fails the existing citation validator.
+                retry_question = (
+                    body.question
+                    + '\\nAnswer only from the supplied passages. Cite each factual '
+                    'statement with a source marker like [1] or [2]. '
+                    'If a detailed flow cannot be established, say what is unknown.'
+                )
+                generated = generate(retry_question, evidence[:6])
+                answer_mode = generated.get('mode', 'unknown')
             if answer_mode == 'ai':
                 answer = generated.get('answer')
         except Exception:
