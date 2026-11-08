@@ -14,9 +14,49 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 - Keep evaluation reproducible and expose meaningful errors.
 - Ship incrementally with tests, instrumentation, and accessible UI.
 
-## Active workstream — Gmail Intelligence (P0)
+## Immediate priority — Chat management (P0)
 
-**Status:** In progress on `feat/gmail-intelligence`. This workstream takes priority over the proposed general-purpose roadmap while preserving the existing document and GitHub pipelines.
+**Goal:** Make conversations easy to find, organize, resume, and trust before adding agent-generated investigations.
+
+### Delivery slices
+1. **Find and navigate:** Search saved conversations by title; show useful empty states, timestamps, and stable active-conversation indication. Preserve keyboard and screen-reader access.
+2. **Organize:** Rename, delete with confirmation, and pin/archive conversations; make actions discoverable without cluttering the list.
+3. **Reliability:** Preserve drafts and selected source scope when switching conversations; prevent stale asynchronous saves from overwriting newer messages; surface save/retry failures.
+4. **Scale:** Server-side search, pagination, and indexes for large histories; avoid loading full transcripts for the list.
+5. **Research continuity:** Resume with evidence and source selections intact; distinguish verified citations from retained unverified passages.
+
+### Acceptance criteria
+- Searching, renaming, deleting, and resuming conversations work with keyboard and assistive technology.
+- Workspace/user access checks apply to every conversation operation.
+- Switching chats during a save cannot silently overwrite another conversation.
+- Large histories remain responsive; regression tests cover empty, loading, error, and concurrent-update states.
+
+## Next priority — Evidence-aware Investigation Agent (P1)
+
+**Goal:** Turn a user goal into a bounded, auditable multi-step investigation, not a swarm of autonomous agents.
+
+### Delivery slices
+1. **Structured planner:** Produce a typed plan of objectives, permitted source scopes, filters, exclusions, and investigation steps; no company-name or prompt-specific routing conditions.
+2. **Tool orchestration:** Reuse provider-independent search interfaces and normalized evidence IDs; enforce permissions, tool budgets, deadlines, retries, and cancellation.
+3. **Evidence evaluation:** Verify claims against retrieved passages, identify conflicting or stale evidence, and explicitly state gaps and uncertainty.
+4. **Investigation UI:** Show step-by-step progress, source provenance, tool failures, and a resumable investigation trace alongside the answer.
+5. **Evaluation:** Benchmark multi-hop retrieval, citation correctness, abstention, permissions, latency, and cost against normal single-pass research.
+
+### Later agents (P2)
+- **Watchdog Agent:** Opt-in monitoring of specific projects and material evidence changes, with clear notification controls.
+- **Decision Memory Agent:** Track evidence-backed decisions and revisions over time.
+- **Release Readiness Agent:** Evaluate GitHub status and corroborating release evidence with explicit unknowns.
+- **Action Agent:** Prepare proposed changes, drafts, or issues; require user approval before external writes.
+
+### Agent guardrails
+- Keep Quick Answer and Investigate as separate user-selectable modes.
+- Treat retrieved content as untrusted instructions; never expand access beyond the user's authorized sources.
+- Do not claim a task was executed or verified without a recorded tool result.
+- Require explicit confirmation for consequential writes; log actions and preserve source lineage.
+
+## Previous workstream — Gmail Intelligence (P0)
+
+**Status:** Feature branch merged into `main` on 2026-11-08; production verification and remaining quality gaps are tracked separately. Chat management now takes priority.
 
 **Goal:** Answer questions about Gmail conversations with reliable chronology, traceable message-level evidence, and actionable conclusions.
 
@@ -165,13 +205,13 @@ Make Atlas a trustworthy, evidence-first research workspace that can explain whe
 ## Implementation sequence
 | Order | Feature | Priority | Depends on |
 | --- | --- | --- | --- |
-| 1 | Citation verification engine | P0 | Existing citation/audit model |
-| 2 | Retrieval inspector | P0 | Retrieval traces and source IDs |
-| 3 | Automated RAG evaluations | P0 | Stable evidence and trace contracts |
-| 4 | Source collections | P1 | Document metadata and workspace RBAC |
-| 5 | Document comparison | P1 | Source versioning |
-| 6 | Reports and exports | P1 | Verified citations and report model |
-| 7 | Scheduled source sync | P2 | Safe ingestion, versioning, background jobs |
+| 1 | Chat management | P0 | Existing conversation persistence and UI |\n| 2 | Citation verification engine | P0 | Existing citation/audit model |
+| 3 | Retrieval inspector | P0 | Retrieval traces and source IDs |
+| 4 | Automated RAG evaluations | P0 | Stable evidence and trace contracts |
+| 5 | Investigation Agent | P1 | Structured planning, retrieval, citation verification |\n| 6 | Source collections | P1 | Document metadata and workspace RBAC |
+| 7 | Document comparison | P1 | Source versioning |
+| 8 | Reports and exports | P1 | Verified citations and report model |
+| 9 | Scheduled source sync | P2 | Safe ingestion, versioning, background jobs |
 
 ## Suggested initial vertical slice
 **Question:** “Is FastAPI BackgroundTasks suitable for long-running distributed jobs? Explain the limitations using my sources.”
