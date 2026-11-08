@@ -23,9 +23,7 @@ function conversationDate(timestamp: number): string {
 
 export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat, onOpenChat, onRenameChat, onDeleteChat }: ConversationHistoryProps) {
     const [search, setSearch] = useState('');
-    const filteredChats = useMemo(() => chats.filter((chat) =>
-        chat.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
-    ).sort((a, b) => b.updated - a.updated), [chats, search]);
+    const filteredChats = useMemo(() => chats.filter((chat) => chat.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).sort((a, b) => b.updated - a.updated), [chats, search]);
 
     return (
         <aside className="chat-history" aria-label="Conversation history">
@@ -41,14 +39,28 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
             <div className="chat-history-search">
                 <Search size={15} aria-hidden="true" />
                 <input type="search" aria-label="Search conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
-                {search && <button type="button" className="chat-history-clear" aria-label="Clear conversation search" onClick={() => setSearch('')}><X size={14} /></button>}
+                {search && (
+                    <button type="button" className="chat-history-clear" aria-label="Clear conversation search" onClick={() => setSearch('')}>
+                        <X size={14} />
+                    </button>
+                )}
             </div>
             <div className="chat-history-list" aria-label="Saved conversations">
                 {filteredChats.map((item) => (
                     <div className={`chat-history-item ${chatId === item.id ? 'current' : ''}`} key={item.id}>
-                        <button type="button" className="chat-history-open" onClick={() => onOpenChat(item.id)} disabled={busy} aria-current={chatId === item.id ? 'page' : undefined} title={item.title}>
+                        <button
+                            type="button"
+                            className="chat-history-open"
+                            onClick={() => onOpenChat(item.id)}
+                            disabled={busy}
+                            aria-current={chatId === item.id ? 'page' : undefined}
+                            title={item.title}
+                        >
                             <MessageSquare size={15} aria-hidden="true" />
-                            <span className="chat-history-details"><span className="chat-history-title">{item.title}</span><span className="chat-history-date">{conversationDate(item.updated)}</span></span>
+                            <span className="chat-history-details">
+                                <span className="chat-history-title">{item.title}</span>
+                                <span className="chat-history-date">{conversationDate(item.updated)}</span>
+                            </span>
                         </button>
                         <button type="button" className="chat-history-action" onClick={() => onRenameChat(item)} disabled={busy} aria-label={`Rename ${item.title}`} title="Rename">
                             <Pencil size={14} />
@@ -59,7 +71,11 @@ export function ConversationHistory({ chats, chatId, busy, onRefresh, onNewChat,
                     </div>
                 ))}
                 {!chats.length && <p className="caption chat-history-empty">Your saved conversations will appear here.</p>}
-                {!!chats.length && !filteredChats.length && <p className="caption chat-history-empty" role="status">No conversations match your search.</p>}
+                {!!chats.length && !filteredChats.length && (
+                    <p className="caption chat-history-empty" role="status">
+                        No conversations match your search.
+                    </p>
+                )}
             </div>
         </aside>
     );
