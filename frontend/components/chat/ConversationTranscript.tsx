@@ -78,6 +78,11 @@ export function ConversationTranscript({ messages, searchPhrase = '', focusedInd
                     <div className={`answer-row ${focusedIndex === i ? "message-search-focused" : ""}`} key={i} data-message-index={i}>
                         <span className="assistant-mark">A</span>
                         <div className="answer">
+                            {focusedIndex === i && searchPhrase.trim() && m.content.toLocaleLowerCase().includes(searchPhrase.trim().toLocaleLowerCase()) && (
+                                <div className="message-search-context" aria-label="Matching answer text">
+                                    {highlight(m.content.slice(Math.max(0, m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) - 90), m.content.toLocaleLowerCase().indexOf(searchPhrase.trim().toLocaleLowerCase()) + searchPhrase.trim().length + 140))}
+                                </div>
+                            )}
                             <div className="answer-head">
                                 <strong>Atlas</strong>
                                 <span>
