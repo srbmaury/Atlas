@@ -618,7 +618,7 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
   await page.getByRole('button',{name:'Find emails'}).click();
   await expect(page.getByRole('navigation',{name:'Gmail conversations'})).toBeVisible();
   await page.getByRole('button',{name:/Launch · 2 messages/}).click();
-  await expect(page.getByRole('button',{name:/A · Monday/})).toBeVisible();
+  await expect(page.getByRole('button',{name:'A · Monday',exact:true})).toBeVisible();
   await page.getByRole('button',{name:/Select all/}).click();
   await page.getByLabel('Analyze decisions, commitments, owners and deadlines').check();
   await page.getByRole('button',{name:'Analyze selected'}).click();
