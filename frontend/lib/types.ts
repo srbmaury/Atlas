@@ -75,6 +75,8 @@ export type GmailMessage = {
     snippet: string;
     body: string;
     url: string;
+    thread_id?: string;
+    internal_date?: string;
 };
 export type GmailStatus = { connected: boolean; email: string | null; configured: boolean };
 export type OAuthAuthorizationResponse = { authorization_url: string };
@@ -122,7 +124,8 @@ export type GmailSearchResponse = { messages: GmailMessage[] };
 export type GmailQuerySummary = GmailSummary & { count: number; limited: boolean };
 export type GmailSummary = {
     summary: string;
-    sources: { number: number; id: string; subject: string; url: string }[];
+    mode?: 'intelligence';
+    sources: { number: number; id: string; subject: string; url: string; sender?: string; date?: string; excerpt?: string; truncated?: boolean; thread_id?: string }[];
 };
 export type ChatSummary = { id: string; title: string; updated: number };
 export type SavedChat = ChatSummary & { messages: Message[] };
