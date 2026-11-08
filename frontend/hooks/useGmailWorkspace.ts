@@ -11,6 +11,7 @@ export function useGmailWorkspace() {
     const [gmailQueryLimit, setGmailQueryLimit] = useState(30);
     const [gmailQuerySummaryLabel, setGmailQuerySummaryLabel] = useState('');
     const [gmailSelected, setGmailSelected] = useState<string[]>([]);
+    const [gmailIntelligence, setGmailIntelligence] = useState(false);
     const [gmailSummary, setGmailSummary] = useState<GmailSummary | null>(null);
     const [gmailBusy, setGmailBusy] = useState(false);
     const [gmailSummarizing, setGmailSummarizing] = useState(false);
@@ -32,6 +33,8 @@ export function useGmailWorkspace() {
         gmailQuerySummaryLabel,
         setGmailQuerySummaryLabel,
         gmailSelected,
+        gmailIntelligence,
+        setGmailIntelligence,
         setGmailSelected,
         gmailSummary,
         setGmailSummary,
