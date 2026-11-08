@@ -507,10 +507,23 @@ def github_repository_file_search(token, repository, query, limit=12):
     # Rank repository files consistently regardless of how the question is phrased.
     # Always include representative implementation files and documentation.
     entry_names = {
-        'main.py', 'app.py', 'application.py', 'server.py', 'index.ts',
-        'index.tsx', 'main.ts', 'main.tsx', 'app.tsx', 'app.ts',
-        'page.tsx', 'routes.py', 'urls.py', 'manage.py', 'mainactivity.kt',
-        'application.kt', 'androidmanifest.xml',
+        'main.py',
+        'app.py',
+        'application.py',
+        'server.py',
+        'index.ts',
+        'index.tsx',
+        'main.ts',
+        'main.tsx',
+        'app.tsx',
+        'app.ts',
+        'page.tsx',
+        'routes.py',
+        'urls.py',
+        'manage.py',
+        'mainactivity.kt',
+        'application.kt',
+        'androidmanifest.xml',
     }
     code_suffixes = {'.py', '.ts', '.tsx', '.js', '.jsx', '.java', '.go', '.kt', '.kts'}
     ranked = []
