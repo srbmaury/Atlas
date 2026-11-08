@@ -1512,3 +1512,50 @@
 .atlas-v3 .repository-evidence-answer h3 { font-size: 15px; margin: 0 0 10px; }
 .atlas-v3 .repository-evidence-answer p { white-space: pre-wrap; line-height: 1.7; font-size: 14px; }
 .atlas-v3 .repository-evidence-answer small, .atlas-v3 .repository-evidence-notice { color: var(--muted); font-size: 12px; }
+
+/* Keep every research field and source excerpt inside the workspace column. */
+.atlas-v3 .repository-evidence,
+.atlas-v3 .repository-evidence-content,
+.atlas-v3 .repository-evidence-content > div,
+.atlas-v3 .repository-evidence-answer,
+.atlas-v3 .repository-evidence-source {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.atlas-v3 .repository-evidence {
+    width: 100%;
+    overflow: hidden;
+}
+.atlas-v3 .repository-evidence-content {
+    grid-template-columns: minmax(0, 1fr);
+}
+.atlas-v3 .repository-evidence-content select,
+.atlas-v3 .repository-evidence-content textarea,
+.atlas-v3 .repository-evidence-content input:not([type="checkbox"]) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.atlas-v3 .repository-evidence-source pre,
+.atlas-v3 .repository-evidence-answer pre {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.atlas-v3 .repository-evidence-header {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.atlas-v3 .repository-evidence-header > div {
+    min-width: 0;
+    flex: 1 1 260px;
+}
