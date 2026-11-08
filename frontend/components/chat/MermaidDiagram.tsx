@@ -58,7 +58,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
                 </div>
             </div>
             {error && <p role="alert">{error}</p>}
-            {svg && !error && <div className="atlas-diagram-viewport"><div className="atlas-diagram-svg" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>}
+            {svg && !error && <div className="atlas-diagram-viewport"><div className="atlas-diagram-svg" style={{ width: `${scale * 100}%` }} dangerouslySetInnerHTML={{ __html: svg }} /></div>}
             {!svg && !error && <p role="status">Rendering diagram…</p>}
             {(sourceVisible || error) && <pre><code>{chart}</code></pre>}
         </div>
