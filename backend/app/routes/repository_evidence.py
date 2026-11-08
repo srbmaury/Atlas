@@ -67,11 +67,47 @@ def accessible_repositories(token):
 
 
 def resolve_repository(question, selected, repositories):
+    """Resolve a named repository first; otherwise retain conversation context.
+
+    Matching is based on accessible repository names, never prompt-specific phrases.
+    A fuzzy match is accepted only when it is unique and clearly stronger than
+    the next candidate; ambiguous matches require user selection.
+    """
+    from difflib import SequenceMatcher
+
     available = {item['full_name'].lower(): item['full_name'] for item in repositories}
-    # An explicit repository reference in the current message overrides saved context.
-    explicit = re.search(r'\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
+    explicit = re.search(r'\\brepo:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)', question, re.I)
     if explicit:
-        selected = explicit.group(1)
+        requested = explicit.group(1)
+        match = available.get(requested.lower())
+        if not match:
+            raise HTTPException(404, 'Repository not found in the connected GitHub account.')
+        return match
+
+    def normalize(value):
+        return re.sub(r'[^a-z0-9]', '', value.casefold())
+
+    # A repo name may be written with different separators or a small typo.
+    # Extract whole identifier-like spans rather than matching generic words.
+    tokens = re.findall(r'[A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)*', question)
+    scored = []
+    for item in repositories:
+        full = item['full_name']
+        name = full.split('/')[-1]
+        key = normalize(name)
+        if not key:
+            continue
+        exact = any(normalize(token) == key for token in tokens)
+        similarity = max((SequenceMatcher(None, normalize(token), key).ratio()
+                          for token in tokens if len(normalize(token)) >= 4), default=0.0)
+        score = 1.0 if exact else similarity
+        if score >= 0.84:
+            scored.append((score, full))
+    scored.sort(key=lambda pair: (-pair[0], pair[1].lower()))
+    if scored and (len(scored) == 1 or scored[0][0] - scored[1][0] >= 0.08):
+        return scored[0][1]
+
+    # Follow-ups with no identifiable new repository stay on the prior one.
     if selected:
         if not REPOSITORY.fullmatch(selected):
             raise HTTPException(422, 'Repository must be owner/name.')
@@ -79,12 +115,6 @@ def resolve_repository(question, selected, repositories):
         if not match:
             raise HTTPException(404, 'Repository not found in the connected GitHub account.')
         return match
-    words = {word.lower() for word in re.findall(r'[A-Za-z0-9_.-]+', question)}
-    candidates = [item['full_name'] for item in repositories
-                  if item['full_name'].split('/')[-1].lower() in words
-                  or item['full_name'].lower() in question.lower()]
-    if len(candidates) == 1:
-        return candidates[0]
     if len(repositories) == 1:
         return repositories[0]['full_name']
     return None
