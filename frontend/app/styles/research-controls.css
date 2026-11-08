@@ -512,3 +512,20 @@ input[type='checkbox'] {
 .home-ask-footer .caption {
     font-size: 11px;
 }
+
+
+/* Conversation message search */
+.message-search-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; margin-bottom: 10px; background: var(--panel); }
+.message-search-input { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px; color: var(--sub); }
+.message-search-input input { width: 100%; min-width: 0; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 12px; }
+.message-search-panel > button { border: 0; background: transparent; color: var(--sub); cursor: pointer; }
+.message-search-results { flex-basis: 100%; display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; font-size: 11px; }
+.message-search-results > span { color: var(--sub); padding: 4px 0; }
+.message-search-results button { border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); text-align: left; padding: 8px; cursor: pointer; overflow-wrap: anywhere; }
+.message-search-results button:hover { background: var(--hover); }
+.thread [data-message-index] { scroll-margin-block: 24px; }
+/* Let users widen the supporting evidence rail without changing its content. */
+@media (min-width: 1050px) {
+  .research-evidence-rail { resize: horizontal; overflow: auto; min-width: 250px; max-width: min(55vw, 800px); }
+}
+.workspace-stat.active { background: var(--active); color: var(--text); font-weight: 600; }
