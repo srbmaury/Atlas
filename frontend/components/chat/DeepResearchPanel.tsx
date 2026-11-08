@@ -195,7 +195,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             </li>
                                         ))}
                                     </ol>
-                                    {displayStatus(active) === 'Insufficient evidence' && (
+                                    {displayStatus(active) === 'Insufficient evidence' && !active.error && (
                                         <p role="status" className="deep-research-error">No cited findings were produced. Try a more specific question or connect relevant sources.</p>
                                     )}
                                     {active.error && (
@@ -208,6 +208,7 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             <h3>{finding.title}</h3>
                                             <p className="deep-research-subquestion">{finding.question}</p>
                                             <p className="deep-research-answer">{finding.result.answer || 'No answer was returned.'}</p>
+                                            {finding.result.mode === 'citation_check_failed' && <p className="deep-research-evidence-label">Retrieved passages could not be converted into a citation-valid answer.</p>}
                                             <span className="deep-research-evidence-label">
                                                 {finding.verified ? 'Evidence cited' : 'Evidence not verified'} · {finding.result.sources?.length || 0} sources
                                             </span>
