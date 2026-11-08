@@ -162,10 +162,42 @@ def email_from_json(item):
         'subject': headers.get('subject', '(no subject)'),
         'sender': headers.get('from', ''),
         'date': headers.get('date', ''),
+        'internal_date': item.get('internalDate', ''),
         'snippet': item.get('snippet', '')[:400],
         'body': text_body(item.get('payload', {})),
         'url': 'https://mail.google.com/mail/u/0/#all/' + item['id'],
     }
+
+
+def group_email_threads(messages):
+    """Group Gmail messages by thread ID and preserve chronological provenance.
+
+    Gmail internalDate is milliseconds since epoch. Messages without a usable
+    timestamp retain their input order; they must not be assigned a fake date.
+    """
+    threads = {}
+    for message in messages:
+        thread_id = message.get('thread_id') or message['id']
+        if thread_id not in threads:
+            threads[thread_id] = []
+        threads[thread_id].append(message)
+
+    def chronology(message):
+        value = message.get('internal_date')
+        try:
+            return (0, int(value))
+        except (TypeError, ValueError):
+            return (1, 0)
+
+    return [
+        {
+            'thread_id': thread_id,
+            'subject': items[0].get('subject', '(no subject)'),
+            'message_count': len(items),
+            'messages': sorted(items, key=chronology),
+        }
+        for thread_id, items in threads.items()
+    ]
 
 
 class SearchRequest(BaseModel):
@@ -312,7 +344,7 @@ def search(workspaceId: str, body: SearchRequest, request: Request):
                 )
                 for mid in ids
             ]
-            return {'messages': items, 'email': entry.email}
+            return {'messages': items, 'threads': group_email_threads(items), 'email': entry.email}
     except HTTPException:
         raise
     except Exception as exc:
