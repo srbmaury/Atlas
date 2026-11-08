@@ -1,11 +1,14 @@
 'use client';
 import { useRef, useState } from 'react';
-import type { GmailStatus, GmailMessage, GmailSummary } from '../lib/types';
+import type { GmailStatus, GmailMessage, GmailSummary, GmailThread } from '../lib/types';
 
 /** Gmail search, selection, preview and summary state. */
 export function useGmailWorkspace() {
     const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
     const [gmailMessages, setGmailMessages] = useState<GmailMessage[]>([]);
+    const [gmailThreads, setGmailThreads] = useState<GmailThread[]>([]);
+    const [gmailActiveThread, setGmailActiveThread] = useState<string | null>(null);
+    const [gmailFollowUp, setGmailFollowUp] = useState('');
     const [gmailQuery, setGmailQuery] = useState('in:inbox newer_than:30d');
     const [gmailSummarizeQuery, setGmailSummarizeQuery] = useState('');
     const [gmailQueryLimit, setGmailQueryLimit] = useState(30);
@@ -23,6 +26,12 @@ export function useGmailWorkspace() {
         gmailStatus,
         setGmailStatus,
         gmailMessages,
+        gmailThreads,
+        setGmailThreads,
+        gmailActiveThread,
+        setGmailActiveThread,
+        gmailFollowUp,
+        setGmailFollowUp,
         setGmailMessages,
         gmailQuery,
         setGmailQuery,
