@@ -173,3 +173,39 @@ def test_explicit_repository_overrides_conversation_context():
         'srbmaury/Ecommerce-Search',
         repositories,
     ) == 'srbmaury/Atlas'
+
+
+def test_repository_name_with_different_separators():
+    repositories = [{'full_name': 'owner/YAML-Visualizer'},
+                    {'full_name': 'owner/Another-Project'}]
+    assert module.resolve_repository(
+        'What does my YAML_Visualizer repository do?',
+        None, repositories,
+    ) == 'owner/YAML-Visualizer'
+
+
+def test_repository_name_minor_typo_is_resolved():
+    repositories = [{'full_name': 'owner/YAML-Visualizer'},
+                    {'full_name': 'owner/Another-Project'}]
+    assert module.resolve_repository(
+        'Explain my YAML-Vizualizer repository',
+        None, repositories,
+    ) == 'owner/YAML-Visualizer'
+
+
+def test_new_repository_name_overrides_previous_context():
+    repositories = [{'full_name': 'owner/YAML-Visualizer'},
+                    {'full_name': 'owner/Ecommerce-Search'}]
+    assert module.resolve_repository(
+        'Explain YAML-Visualizer architecture',
+        'owner/Ecommerce-Search', repositories,
+    ) == 'owner/YAML-Visualizer'
+
+
+def test_ambiguous_repository_name_does_not_guess():
+    repositories = [{'full_name': 'owner/YAML-Visualizer'},
+                    {'full_name': 'owner/YAML-Vizualizer'}]
+    assert module.resolve_repository(
+        'Explain YAML-Vizualizr',
+        None, repositories,
+    ) is None
