@@ -72,9 +72,12 @@
     height: 40px;
 }
 .atlas-v3 .content {
-    max-width: 1280px;
-    margin: auto;
-    padding: 40px clamp(20px, 4.3vw, 66px) 70px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 26px clamp(18px, 2.1vw, 36px) 46px;
 }
 .atlas-v3 .crumb {
     font-size: 11px;
@@ -110,8 +113,10 @@
     border-radius: 9px;
 }
 .atlas-home {
-    max-width: 1020px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
 }
 .home-hero {
     display: flex;
@@ -448,8 +453,10 @@
     margin: 3px 0 0;
 }
 .atlas-v3 .connected-page {
-    max-width: 1050px;
-    margin: auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
 }
 .integration-overview {
     margin: 30px 0 15px;
@@ -676,8 +683,10 @@
     padding-bottom: 15px;
 }
 .atlas-v3 .gmail-page {
-    max-width: 1080px;
-    margin: auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
 }
 .atlas-v3 .gmail-intro {
     border-color: var(--outline);
@@ -775,8 +784,10 @@
 }
 
 .document-library-v3 {
-    max-width: 1080px;
-    margin: auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
 }
 .library-intro {
     display: flex;
