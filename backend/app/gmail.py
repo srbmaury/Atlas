@@ -4,8 +4,8 @@ import base64
 import hashlib
 import json
 import logging
-import re
 import os
+import re
 import secrets
 import time
 from urllib.parse import urlencode
@@ -219,9 +219,7 @@ def expand_gmail_threads(token, matching_messages, *, max_threads=5, max_message
 
     expanded = {}
     for thread_id in selected:
-        data = gmail_get(
-            token, GMAIL_API + '/threads/' + thread_id, {'format': 'full'}
-        )
+        data = gmail_get(token, GMAIL_API + '/threads/' + thread_id, {'format': 'full'})
         raw = data.get('messages') or []
         parsed = [email_from_json(item) for item in raw if item.get('id')]
         ordered = group_email_threads(parsed)
@@ -244,7 +242,9 @@ def audit_gmail_citations(answer, source_count):
     cited = sorted({n for n in references if 1 <= n <= source_count})
     # Do not claim that merely citing a message proves a factual statement.
     return {
-        'status': 'invalid_references' if invalid else ('references_present' if cited else 'no_references'),
+        'status': 'invalid_references'
+        if invalid
+        else ('references_present' if cited else 'no_references'),
         'cited_numbers': cited,
         'invalid_numbers': invalid,
         'semantic_support_verified': False,
@@ -472,9 +472,11 @@ def summarize(workspaceId: str, body: SummaryRequest, request: Request):
         )
         messages = sorted(
             messages,
-            key=lambda m: (0, int(m['internal_date']))
-            if str(m.get('internal_date', '')).isdigit()
-            else (1, 0),
+            key=lambda m: (
+                (0, int(m['internal_date']))
+                if str(m.get('internal_date', '')).isdigit()
+                else (1, 0)
+            ),
         )
         excerpts = [
             {
@@ -578,13 +580,15 @@ def summarize(workspaceId: str, body: SummaryRequest, request: Request):
     ]
     if body.intelligence or body.follow_up:
         for i, (source, message) in enumerate(zip(sources, messages)):
-            source.update({
-                'thread_id': message.get('thread_id'),
-                'sender': message['sender'],
-                'date': message['date'],
-                'excerpt': excerpts[i]['text'],
-                'truncated': len(message['body'] or message['snippet']) > per_message,
-            })
+            source.update(
+                {
+                    'thread_id': message.get('thread_id'),
+                    'sender': message['sender'],
+                    'date': message['date'],
+                    'excerpt': excerpts[i]['text'],
+                    'truncated': len(message['body'] or message['snippet']) > per_message,
+                }
+            )
     result = {'summary': answer, 'sources': sources}
     if body.intelligence or body.follow_up:
         result['mode'] = 'intelligence'

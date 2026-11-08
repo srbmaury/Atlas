@@ -165,9 +165,7 @@ def collect_connected_evidence(
     except Exception as exc:
         log.exception('Connected retrieval failed')
         raise HTTPException(502, 'Could not retrieve connected sources.') from exc
-    from .evidence_quality import prepare_evidence
-
-    from .evidence_quality import is_listing_question
+    from .evidence_quality import is_listing_question, prepare_evidence
 
     per_provider = 30 if body.include_gmail and is_listing_question(body.question) else 20
     return prepare_evidence(body.question, evidence, per_provider=per_provider), document_evidence
@@ -277,7 +275,9 @@ def connected_sources_for_payload(payload, document_evidence):
         sources.append(
             {
                 'chunk_id': original['chunk_id'] if original else str(entry['source_id']),
-                'gmail_message_id': entry.get('origin_id') if entry.get('provider') == 'gmail' else None,
+                'gmail_message_id': entry.get('origin_id')
+                if entry.get('provider') == 'gmail'
+                else None,
                 'sender': entry.get('owner') if entry.get('provider') == 'gmail' else None,
                 'document_id': original['document_id'] if original else '',
                 'name': entry['title'],
@@ -431,7 +431,9 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
     if len(matches) > len(shown):
         lines.append(f'Showing the first {len(shown)} of {len(matches)} matches.')
     if any(item.provider == 'gmail' and item.metadata.get('search_limited') for item in matches):
-        lines.append('Gmail has additional matches beyond this bounded search. Narrow the query or date range to see more.')
+        lines.append(
+            'Gmail has additional matches beyond this bounded search. Narrow the query or date range to see more.'
+        )
     return {
         'answer': '\n'.join(lines),
         'sources': connected_sources_for_payload(payload, document_evidence),

@@ -101,11 +101,13 @@ def is_listing_question(question):
         'request',
         'pr',
     }
-    asks_for_email_matches = bool(re.search(
-        r'\b(?:any|which|what)\b.{0,65}\b(?:emails?|mails?|messages?)\b', question, re.I
-    ))
-    return (asks_to_list and bool(words & record_terms)) or asks_for_email_matches or bool(
-        re.fullmatch(r'(?:my|our) (?:pull requests?|prs?)\s*[?.]?', question.strip(), re.I)
+    asks_for_email_matches = bool(
+        re.search(r'\b(?:any|which|what)\b.{0,65}\b(?:emails?|mails?|messages?)\b', question, re.I)
+    )
+    return (
+        (asks_to_list and bool(words & record_terms))
+        or asks_for_email_matches
+        or bool(re.fullmatch(r'(?:my|our) (?:pull requests?|prs?)\s*[?.]?', question.strip(), re.I))
     )
 
 

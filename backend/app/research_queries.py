@@ -273,7 +273,11 @@ def gmail_query_for_question(scope, question):
         filters.append('from:' + sender.group(1))
         cleaned = re.sub(r'\bfrom\s+' + re.escape(sender.group(1)) + r'\b', ' ', cleaned)
     terms = natural_search_terms(cleaned)
-    terms = [term for term in terms if term not in {'last', 'past', 'previous', 'days', 'day', 'week', 'month'}]
+    terms = [
+        term
+        for term in terms
+        if term not in {'last', 'past', 'previous', 'days', 'day', 'week', 'month'}
+    ]
     return ' '.join([scope.strip(), *filters, *terms]).strip()
 
 

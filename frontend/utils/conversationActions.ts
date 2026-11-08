@@ -197,14 +197,11 @@ export function createConversationActions({
                 (Boolean(priorRepository) || repositoryIntent);
             // Explain only evidence cited in the previous answer. Never turn
             // "cited evidence" into an unrelated mailbox-wide keyword search.
-            const citationFollowup = !startNewConversation && searchScope.includeGmail &&
-                /\b(?:explain|expand|elaborate|clarify|details?)\b.{0,100}\b(?:cited|citations?|evidence|sources?|passages?)\b/i.test(question);
-            const previousAssistant = [...chatMessages.current.slice(0, -1)]
-                .reverse().find((message) => message.role === 'assistant');
+            const citationFollowup =
+                !startNewConversation && searchScope.includeGmail && /\b(?:explain|expand|elaborate|clarify|details?)\b.{0,100}\b(?:cited|citations?|evidence|sources?|passages?)\b/i.test(question);
+            const previousAssistant = [...chatMessages.current.slice(0, -1)].reverse().find((message) => message.role === 'assistant');
             const priorAnswer = previousAssistant?.result;
-            const citedNumbers = citationFollowup && priorAnswer
-                ? Array.from(new Set(Array.from(priorAnswer.answer.matchAll(/\[(\d+)\]/g), (match) => Number(match[1]))))
-                : [];
+            const citedNumbers = citationFollowup && priorAnswer ? Array.from(new Set(Array.from(priorAnswer.answer.matchAll(/\[(\d+)\]/g), (match) => Number(match[1])))) : [];
             const gmailSourceIds = citedNumbers
                 .map((number) => priorAnswer?.sources[number - 1])
                 .filter((source): source is Source => !!source && source.provider === 'gmail' && !!source.gmail_message_id)

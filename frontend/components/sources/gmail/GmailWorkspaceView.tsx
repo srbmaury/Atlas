@@ -170,15 +170,24 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
                                     <strong>Conversations</strong>
                                     {gmailThreads.map((thread) => (
                                         <div key={thread.thread_id}>
-                                            <button type="button" className="btn" aria-expanded={gmailActiveThread === thread.thread_id} onClick={() => setGmailActiveThread(gmailActiveThread === thread.thread_id ? null : thread.thread_id)}>
+                                            <button
+                                                type="button"
+                                                className="btn"
+                                                aria-expanded={gmailActiveThread === thread.thread_id}
+                                                onClick={() => setGmailActiveThread(gmailActiveThread === thread.thread_id ? null : thread.thread_id)}
+                                            >
                                                 {thread.subject} · {thread.message_count} messages{thread.truncated ? ' (partial)' : ''}
                                             </button>
                                             {gmailActiveThread === thread.thread_id && (
                                                 <ol>
                                                     {thread.messages.map((message) => (
                                                         <li key={message.id}>
-                                                            <button type="button" onClick={() => setGmailPreview(message)}>{message.sender || 'Unknown sender'} · {message.date || 'Date unavailable'}</button>
-                                                            {' '}<a href={message.url} target="_blank" rel="noopener noreferrer" aria-label={`Open message ${message.id} in Gmail`}>Original</a>
+                                                            <button type="button" onClick={() => setGmailPreview(message)}>
+                                                                {message.sender || 'Unknown sender'} · {message.date || 'Date unavailable'}
+                                                            </button>{' '}
+                                                            <a href={message.url} target="_blank" rel="noopener noreferrer" aria-label={`Open message ${message.id} in Gmail`}>
+                                                                Original
+                                                            </a>
                                                         </li>
                                                     ))}
                                                 </ol>
@@ -279,7 +288,10 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
                                                 {item.excerpt && (
                                                     <details className="caption" style={{ marginTop: 6, overflowWrap: 'anywhere' }}>
                                                         <summary>View cited message evidence{item.truncated ? ' (excerpt truncated)' : ''}</summary>
-                                                        <p>{item.sender}{item.date ? ` · ${item.date}` : ''}</p>
+                                                        <p>
+                                                            {item.sender}
+                                                            {item.date ? ` · ${item.date}` : ''}
+                                                        </p>
                                                         <p style={{ whiteSpace: 'pre-wrap' }}>{item.excerpt}</p>
                                                     </details>
                                                 )}
@@ -291,19 +303,33 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
                                     </div>
                                     {gmailSummary.mode === 'intelligence' && gmailSummary.citation_audit && (
                                         <p role="status" className="caption">
-                                            Citation references: {gmailSummary.citation_audit.status === 'invalid_references'
+                                            Citation references:{' '}
+                                            {gmailSummary.citation_audit.status === 'invalid_references'
                                                 ? `Invalid references: ${gmailSummary.citation_audit.invalid_numbers.join(', ')}`
                                                 : gmailSummary.citation_audit.status === 'no_references'
-                                                    ? 'No message citations found'
-                                                    : `${gmailSummary.citation_audit.cited_numbers.length} message references resolved`}.
-                                            {' '}Reference validation does not verify factual support.
+                                                  ? 'No message citations found'
+                                                  : `${gmailSummary.citation_audit.cited_numbers.length} message references resolved`}
+                                            . Reference validation does not verify factual support.
                                         </p>
                                     )}
                                     {gmailSummary.mode === 'intelligence' && (
-                                        <form onSubmit={(event) => { event.preventDefault(); if (gmailFollowUp.trim()) onFollowUp(gmailFollowUp.trim()); }}>
+                                        <form
+                                            onSubmit={(event) => {
+                                                event.preventDefault();
+                                                if (gmailFollowUp.trim()) onFollowUp(gmailFollowUp.trim());
+                                            }}
+                                        >
                                             <label htmlFor="gmail-follow-up">Ask a follow-up about these emails</label>
-                                            <input id="gmail-follow-up" value={gmailFollowUp} maxLength={500} onChange={(event) => setGmailFollowUp(event.target.value)} placeholder="What remains unresolved?" />
-                                            <button className="btn" type="submit" disabled={gmailBusy || !gmailFollowUp.trim()}>Ask follow-up</button>
+                                            <input
+                                                id="gmail-follow-up"
+                                                value={gmailFollowUp}
+                                                maxLength={500}
+                                                onChange={(event) => setGmailFollowUp(event.target.value)}
+                                                placeholder="What remains unresolved?"
+                                            />
+                                            <button className="btn" type="submit" disabled={gmailBusy || !gmailFollowUp.trim()}>
+                                                Ask follow-up
+                                            </button>
                                         </form>
                                     )}
                                     <div className="gmail-summary-footer">

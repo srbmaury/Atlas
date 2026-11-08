@@ -36,9 +36,9 @@ def test_other_mail_follow_up_does_not_inherit_sender_keywords():
 
 
 def test_important_attention_request_is_not_narrowed_by_modal_words():
-    assert gmail_query_for_question('newer_than:30d', 'List all important emails which may need my attention') == (
-        'newer_than:30d is:important'
-    )
+    assert gmail_query_for_question(
+        'newer_than:30d', 'List all important emails which may need my attention'
+    ) == ('newer_than:30d is:important')
 
 
 def test_funds_related_email_request_keeps_only_topic():

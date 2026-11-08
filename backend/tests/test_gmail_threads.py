@@ -17,22 +17,26 @@ def test_threads_group_by_id_and_order_by_internal_date():
 
 
 def test_missing_thread_and_timestamp_remain_safe():
-    threads = group_email_threads([
-        {'id': 'a', 'subject': 'Hello'},
-        {'id': 'b', 'thread_id': 't', 'internal_date': 'not-a-date'},
-        {'id': 'c', 'thread_id': 't', 'internal_date': '10'},
-    ])
+    threads = group_email_threads(
+        [
+            {'id': 'a', 'subject': 'Hello'},
+            {'id': 'b', 'thread_id': 't', 'internal_date': 'not-a-date'},
+            {'id': 'c', 'thread_id': 't', 'internal_date': '10'},
+        ]
+    )
     assert threads[0]['thread_id'] == 'a'
     assert [m['id'] for m in threads[1]['messages']] == ['c', 'b']
 
 
 def test_gmail_json_retains_internal_date_and_source_link():
-    message = email_from_json({
-        'id': 'abc123',
-        'threadId': 'thread123',
-        'internalDate': '1700000000000',
-        'payload': {'headers': [{'name': 'Subject', 'value': 'Decision'}]},
-    })
+    message = email_from_json(
+        {
+            'id': 'abc123',
+            'threadId': 'thread123',
+            'internalDate': '1700000000000',
+            'payload': {'headers': [{'name': 'Subject', 'value': 'Decision'}]},
+        }
+    )
     assert message['internal_date'] == '1700000000000'
     assert message['thread_id'] == 'thread123'
     assert message['url'].endswith('/abc123')
@@ -59,10 +63,7 @@ def test_expand_threads_bounds_requests_and_preserves_message_order(monkeypatch)
         }
 
     monkeypatch.setattr(gmail, 'gmail_get', fake_get)
-    matches = [
-        {'id': str(i), 'thread_id': f't{i}', 'subject': 'Test'}
-        for i in range(8)
-    ]
+    matches = [{'id': str(i), 'thread_id': f't{i}', 'subject': 'Test'} for i in range(8)]
     matches.insert(1, {'id': 'duplicate', 'thread_id': 't0'})
     expanded = gmail.expand_gmail_threads('token', matches)
     assert len(calls) == 5
@@ -100,6 +101,7 @@ def test_citation_audit_resolves_references_and_rejects_invalid_numbers():
 def test_follow_up_request_validation():
     import pytest
     from pydantic import ValidationError
+
     from app.gmail import SummaryRequest
 
     request = SummaryRequest(message_ids=['abc'], intelligence=True, follow_up='Who owns this?')

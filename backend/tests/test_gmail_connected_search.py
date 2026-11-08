@@ -18,8 +18,11 @@ def test_connected_search_does_not_reuse_previous_sender():
 
     def fake_parse(raw):
         return {
-            'id': raw['id'], 'subject': 'Notice', 'body': 'Please review',
-            'snippet': '', 'url': 'https://mail.google.com/#all/' + raw['id'],
+            'id': raw['id'],
+            'subject': 'Notice',
+            'body': 'Please review',
+            'snippet': '',
+            'url': 'https://mail.google.com/#all/' + raw['id'],
             'date': '2026-11-01',
         }
 
@@ -28,7 +31,9 @@ def test_connected_search_does_not_reuse_previous_sender():
         history=[SimpleNamespace(role='user', content='Summarize all emails from CoinDCX')],
         gmail_query='',
     )
-    hits = _search_gmail('token', body, 'https://example.test', fake_get, fake_parse, gmail_query_for_question)
+    hits = _search_gmail(
+        'token', body, 'https://example.test', fake_get, fake_parse, gmail_query_for_question
+    )
     assert seen == [{'q': '', 'maxResults': 30}]
     assert len(hits) == 2
 
@@ -45,7 +50,12 @@ def test_sender_search_uses_gmail_sender_operator():
         queries.append(params)
         return {'messages': []}
 
-    assert _search_gmail('token', body, 'https://example.test', fake_get, lambda x: x, gmail_query_for_question) == []
+    assert (
+        _search_gmail(
+            'token', body, 'https://example.test', fake_get, lambda x: x, gmail_query_for_question
+        )
+        == []
+    )
     assert queries == [{'q': 'from:coindcx', 'maxResults': 30}]
 
 
@@ -58,9 +68,12 @@ def test_cited_evidence_follow_up_fetches_exact_message_ids():
 
     def fake_parse(raw):
         return {
-            'id': raw['id'], 'subject': 'Security notice', 'sender': 'CoinDCX',
-            'body': 'Enable two-factor authentication.', 'snippet': '',
-            'url': f"https://mail.google.com/mail/u/0/#all/{raw['id']}",
+            'id': raw['id'],
+            'subject': 'Security notice',
+            'sender': 'CoinDCX',
+            'body': 'Enable two-factor authentication.',
+            'snippet': '',
+            'url': f'https://mail.google.com/mail/u/0/#all/{raw["id"]}',
             'date': 'Sun, 08 Nov 2026 09:00:00 +0530',
         }
 
@@ -70,7 +83,9 @@ def test_cited_evidence_follow_up_fetches_exact_message_ids():
         gmail_query='newer_than:30d',
         gmail_source_ids=['abc1', 'def2'],
     )
-    hits = _search_gmail('token', body, 'https://example.test', fake_get, fake_parse, gmail_query_for_question)
+    hits = _search_gmail(
+        'token', body, 'https://example.test', fake_get, fake_parse, gmail_query_for_question
+    )
     assert [hit.source_id for hit in hits] == ['abc1', 'def2']
     assert all('/messages/' in url for url, _ in seen)
     assert all(params == {'format': 'full'} for _, params in seen)
@@ -82,10 +97,19 @@ def test_cited_evidence_rejects_invalid_message_ids():
     from fastapi import HTTPException
 
     body = SimpleNamespace(
-        question='Explain citation', gmail_query='', gmail_source_ids=['../threads/abc'],
+        question='Explain citation',
+        gmail_query='',
+        gmail_source_ids=['../threads/abc'],
     )
     with pytest.raises(HTTPException) as exc:
-        _search_gmail('token', body, 'https://example.test', lambda *_: None, lambda x: x, gmail_query_for_question)
+        _search_gmail(
+            'token',
+            body,
+            'https://example.test',
+            lambda *_: None,
+            lambda x: x,
+            gmail_query_for_question,
+        )
     assert exc.value.status_code == 422
 
 
@@ -95,9 +119,15 @@ def test_gmail_listing_uses_every_distinct_message():
     from app.source_contract import Evidence
 
     rows = [
-        Evidence('gmail', f'm{i}', f'Important email {i}', f'Message {i}',
-                 f'https://mail.google.com/mail/u/0/#all/m{i}',
-                 'Sun, 08 Nov 2026 09:00:00 +0530', owner='Sender')
+        Evidence(
+            'gmail',
+            f'm{i}',
+            f'Important email {i}',
+            f'Message {i}',
+            f'https://mail.google.com/mail/u/0/#all/m{i}',
+            'Sun, 08 Nov 2026 09:00:00 +0530',
+            owner='Sender',
+        )
         for i in range(25)
     ]
     kept = prepare_evidence('List all important emails', rows, per_provider=30)
@@ -110,6 +140,9 @@ def test_gmail_listing_uses_every_distinct_message():
     assert [item['gmail_message_id'] for item in result['sources']] == [f'm{i}' for i in range(25)]
     trace = retrieval_trace(body, kept, {'found': {'gmail': 25}}, result['sources'])
     assert trace['sources'][0] == {
-        'provider': 'gmail', 'status': 'searched', 'found': 25,
-        'considered': 25, 'used': 25,
+        'provider': 'gmail',
+        'status': 'searched',
+        'found': 25,
+        'considered': 25,
+        'used': 25,
     }
