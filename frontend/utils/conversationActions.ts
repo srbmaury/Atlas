@@ -180,7 +180,7 @@ export function createConversationActions({
             if (useRepositoryEvidence) {
                 // Persist repository identity as conversation metadata on the existing answer.
                 // For older saved chats, infer it from a GitHub file source.
-                const priorRepository = [...history].reverse()
+                const priorRepository = [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))].reverse()
                     .filter((message) => message.role === 'assistant')
                     .map((message) => {
                         if (message.result?.repository) return message.result.repository;
