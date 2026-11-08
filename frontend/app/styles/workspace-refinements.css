@@ -1602,3 +1602,15 @@
 .repository-evidence-assistant { min-width: 0; padding: 12px 0; border-bottom: 1px solid #dce1e7; overflow-wrap: anywhere; }
 .repository-evidence-assistant > strong { display: block; margin-bottom: 8px; }
 .repository-evidence-assistant pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
+
+/* Rendered Mermaid diagrams in the existing saved conversation transcript. */
+.atlas-diagram { border: 1px solid #dce2e8; border-radius: 12px; background: #fff; margin: 16px 0; padding: 12px; min-width: 0; }
+.atlas-diagram-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.atlas-diagram-toolbar > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.atlas-diagram-toolbar button { border: 1px solid #dce2e8; border-radius: 6px; background: #f7f9fb; padding: 5px 9px; cursor: pointer; }
+.atlas-diagram-viewport { overflow: auto; max-height: 70vh; min-height: 140px; }
+.atlas-diagram-svg { width: max-content; min-width: 100%; }
+.atlas-diagram-svg svg { max-width: none; height: auto; }
+.atlas-diagram pre { max-width: 100%; overflow-x: auto; white-space: pre; }
+.atlas-diagram-expanded { position: fixed; inset: 3vh 3vw; z-index: 1000; overflow: auto; box-shadow: 0 10px 50px #0003; }
+.atlas-diagram-expanded .atlas-diagram-viewport { max-height: 80vh; }
