@@ -5,12 +5,13 @@ import { api } from '../../lib/api';
 
 type Evidence = { title: string; path: string; url?: string; excerpt: string };
 type Repository = { full_name: string; private: boolean };
-type Inspection = { repository: string | null; status: string; count: number; sources: Evidence[]; repositories?: Repository[]; message?: string };
+type Inspection = { repository: string | null; status: string; count: number; sources: Evidence[]; web_sources?: { title: string; url: string; excerpt: string }[]; repositories?: Repository[]; message?: string };
 
 export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
     const [repository, setRepository] = useState('');
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [loaded, setLoaded] = useState(false);
+    const [includeWeb, setIncludeWeb] = useState(false);
     const [question, setQuestion] = useState('Explain the architecture and main entry points');
     const [result, setResult] = useState<Inspection | null>(null);
     const [error, setError] = useState('');
@@ -25,7 +26,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
         try {
             const data = await api<Inspection>(`/workspaces/${workspaceId}/repository-evidence`, {
                 method: 'POST',
-                body: JSON.stringify({ repository: repository.trim(), question: question.trim() }),
+                body: JSON.stringify({ repository: repository.trim() || null, question: question.trim(), include_web: includeWeb }),
             });
             setResult(data);
             if (data.repositories) setRepositories(data.repositories);
@@ -67,6 +68,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                     </select>
                     <label htmlFor="evidence-question">What are you looking for?</label>
                     <textarea id="evidence-question" rows={2} maxLength={400} value={question} onChange={(event) => setQuestion(event.target.value)} />
+                    <label className="repository-evidence-web"><input type="checkbox" checked={includeWeb} onChange={(event) => setIncludeWeb(event.target.checked)} /> Include public web search (requires server configuration)</label>
                     <button className="btn primary" type="button" onClick={() => void inspect()} disabled={busy || !question.trim()}>{busy ? 'Retrieving files…' : 'Find evidence'}</button>
                     {error && <p role="alert" className="repository-evidence-error">{error}</p>}
                     {result && (
@@ -74,6 +76,7 @@ export function RepositoryEvidence({ workspaceId }: { workspaceId: string }) {
                             <p><strong>{result.status === 'select_repository' ? 'Select a repository to continue' : `${result.count} real files retrieved`}</strong>{result.repository ? ` from ${result.repository}` : ''}</p>
                             {result.status === 'select_repository' && <p>{result.message}</p>}
                             {result.count === 0 && <p>No matching files. Try a more specific question or verify repository permissions.</p>}
+                            {!!result.web_sources?.length && <div className="repository-evidence-web-results"><strong>Public web results</strong>{result.web_sources.map((source) => <div key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title || source.url}</a><p>{source.excerpt}</p></div>)}</div>}
                             {result.sources.map((source) => (
                                 <details key={source.path} className="repository-evidence-source">
                                     <summary>{source.path || source.title}</summary>
