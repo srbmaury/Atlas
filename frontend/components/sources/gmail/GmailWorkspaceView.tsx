@@ -29,6 +29,8 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
         setGmailQueryLimit,
         gmailQuerySummaryLabel,
         gmailSelected,
+        gmailIntelligence,
+        setGmailIntelligence,
         setGmailSelected,
         gmailSummary,
         setGmailSummary,
@@ -181,15 +183,19 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
                                 ))}
                             </div>
                             <div className="gmail-mail-footer">
+                                <label className="caption" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                    <input type="checkbox" checked={gmailIntelligence} onChange={(e) => setGmailIntelligence(e.target.checked)} disabled={gmailBusy} />
+                                    Analyze decisions, commitments, owners and deadlines
+                                </label>
                                 <button className="btn primary" disabled={gmailBusy || !gmailSelected.length} onClick={onSummarizeSelected}>
-                                    {gmailSummarizing ? 'Generating summary…' : 'Summarize selected'}
+                                    {gmailSummarizing ? 'Analyzing emails…' : gmailIntelligence ? 'Analyze selected' : 'Summarize selected'}
                                 </button>
                             </div>
                         </div>
                         <section className={`gmail-summary-panel ${gmailMobileView === 'summary' ? 'mobile-active' : ''}`} aria-label="Email summary" aria-busy={gmailSummarizing}>
                             <div className="gmail-panel-head">
                                 <h2 ref={gmailSummaryHeading} tabIndex={-1}>
-                                    AI Summary
+                                    {gmailSummary?.mode === 'intelligence' ? 'Gmail Intelligence' : 'AI Summary'}
                                 </h2>
                                 {gmailSummary && !gmailSummarizing && (
                                     <button
@@ -242,6 +248,13 @@ export function GmailWorkspaceView({ state, onBack, onDisconnect, onConnect, onS
                                                 >
                                                     [{item.number}] {item.subject}
                                                 </button>
+                                                {item.excerpt && (
+                                                    <details className="caption" style={{ marginTop: 6, overflowWrap: 'anywhere' }}>
+                                                        <summary>View cited message evidence{item.truncated ? ' (excerpt truncated)' : ''}</summary>
+                                                        <p>{item.sender}{item.date ? ` · ${item.date}` : ''}</p>
+                                                        <p style={{ whiteSpace: 'pre-wrap' }}>{item.excerpt}</p>
+                                                    </details>
+                                                )}
                                                 <a href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${item.subject} in Gmail`}>
                                                     <ArrowUpRight size={14} />
                                                 </a>
