@@ -1,0 +1,26 @@
+name: Temporary chat formatter
+on:
+  push:
+    branches: [feat/chat-management-agent-roadmap]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/chat-management-agent-roadmap
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: cd frontend && npm ci && npx prettier --write components/chat/ConversationHistory.tsx
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add frontend/components/chat/ConversationHistory.tsx
+            git commit -m "style(chat): format conversation history"
+            git push origin HEAD:feat/chat-management-agent-roadmap
+          fi
