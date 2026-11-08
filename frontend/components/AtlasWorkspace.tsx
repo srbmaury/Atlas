@@ -421,26 +421,42 @@ export function AtlasWorkspace() {
         if (activeChat.current === id) restoreDraft(id);
     }
 
-    async function branchConversation(index: number, regenerate = false) {
+    async function branchConversation(index: number, mode: 'branch' | 'edit' | 'regenerate' = 'branch') {
         if (busy || !workspaceId || messages[index]?.role !== 'user') return;
-        const prompt = messages[index].content;
-        const history = messages.slice(0, index);
+        const original = messages[index];
+        const prompt = original.content;
+        // A branch from message N must include that turn, not stop at N - 1.
+        // Edit/regenerate intentionally replace that turn's answer instead.
+        const end = mode === 'branch' && messages[index + 1]?.role === 'assistant'
+            ? index + 2 : index + 1;
+        const history = mode === 'branch' ? messages.slice(0, end) : messages.slice(0, index);
         const branchTitle = ('Branch: ' + prompt).slice(0, 100);
+        const targetWorkspace = workspaceId;
         try {
-            const saved = await persistConversation(workspaceId, null, branchTitle, history);
-            if (scope.current !== workspaceId) return;
+            const saved = await persistConversation(targetWorkspace, null, branchTitle, history);
+            if (scope.current !== targetWorkspace) return;
             chatLoadSequence.invalidate();
+            // Flush state so draft persistence cannot associate the old prompt
+            // with the newly created conversation.
+            flushSync(() => {
+                activeChat.current = saved.id;
+                chatMessages.current = history;
+                chatTitle.current = saved.title;
+                setChatId(saved.id);
+                setMessages(history);
+                setQuery(mode === 'edit' ? prompt : '');
+                setSource(null);
+                setTab('chat');
+            });
             setChats((old) => [{ id: saved.id, title: saved.title, updated: saved.updated }, ...old]);
-            activeChat.current = saved.id;
-            setChatId(saved.id);
-            chatTitle.current = saved.title;
-            chatMessages.current = history;
-            setMessages(history);
-            setQuery(regenerate ? '' : prompt);
-            setSource(null);
-            setNotice(regenerate ? 'Regenerating in a new branch; the original answer is preserved.' : 'Branch created. Edit the copied prompt and send it to explore a different direction.');
-            navigate('chat');
-            if (regenerate) await ask(prompt);
+            if (mode === 'regenerate') {
+                setNotice('Regenerating this message in a separate branch. The original conversation is unchanged.');
+                await ask(prompt);
+            } else if (mode === 'edit') {
+                setNotice('Edit the selected message below, then send it. Earlier messages were retained.');
+            } else {
+                setNotice('Branch created from the selected message, including its answer when available.');
+            }
         } catch (e) {
             setError((e as Error).message);
         }
@@ -667,7 +683,7 @@ export function AtlasWorkspace() {
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
-                            onBranchMessage={(index, regenerate) => void branchConversation(index, regenerate)}
+                            onBranchMessage={(index, mode) => void branchConversation(index, mode)}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
                             initials={initials}
