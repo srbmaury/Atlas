@@ -595,7 +595,7 @@ export function AtlasWorkspace() {
                             onOpenChat={(id) => void loadChat(id)}
                             onRenameChat={(item) => void renameChat(item)}
                             onDeleteChat={(item) => void deleteChat(item)}
-                        onDeleteChats={(items) => void deleteChats(items)}
+                            onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
