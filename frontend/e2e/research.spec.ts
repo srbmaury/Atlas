@@ -588,3 +588,47 @@ test('settings fit a narrow screen and preserve workspace on return', async ({ p
     await page.getByRole('button',{name:'Sign out',exact:true}).click();
     await expect(page.getByRole('heading',{name:'You’re signed out',exact:true})).toBeVisible();
 });
+
+
+test('Gmail intelligence navigates threads, audits citations and supports follow-ups', async ({page}) => {
+  const requests: Array<Record<string, unknown>> = [];
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    const json = (data: unknown) => route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(data)});
+    const messages = [
+      {id:'m1', thread_id:'thread1', internal_date:'100', subject:'Launch', sender:'A', date:'Monday', snippet:'Ship Friday', body:'Ship Friday', url:'https://mail.google.com/mail/u/0/#all/m1'},
+      {id:'m2', thread_id:'thread1', internal_date:'200', subject:'Launch', sender:'B', date:'Tuesday', snippet:'Approved', body:'Approved', url:'https://mail.google.com/mail/u/0/#all/m2'}
+    ];
+    if (path === '/api/gmail/status') return json({connected:true,email:'demo@example.com',configured:true});
+    if (path.endsWith('/gmail/search')) return json({messages, threads:[{thread_id:'thread1',subject:'Launch',message_count:2,messages}]});
+    if (path.endsWith('/gmail/summarize')) {
+      const body = route.request().postDataJSON();
+      requests.push(body);
+      return json({
+        mode:'intelligence', summary:body.follow_up ? 'The deadline remains Friday [1].' : 'Decision: approved [2].',
+        sources:messages.map((m,i)=>({number:i+1,id:m.id,subject:m.subject,url:m.url,excerpt:m.body,sender:m.sender,date:m.date})),
+        citation_audit:{status:'references_present',cited_numbers:[body.follow_up?1:2],invalid_numbers:[],semantic_support_verified:false}
+      });
+    }
+    return route.fallback();
+  });
+  await page.getByRole('button',{name:'Connected sources',exact:true}).click();
+  await page.locator('.integration-tile').filter({hasText:'Gmail'}).click();
+  await page.getByRole('button',{name:'Find emails'}).click();
+  await expect(page.getByRole('navigation',{name:'Gmail conversations'})).toBeVisible();
+  await page.getByRole('button',{name:/Launch · 2 messages/}).click();
+  await expect(page.getByRole('button',{name:/A · Monday/})).toBeVisible();
+  await page.getByRole('button',{name:/Select all/}).click();
+  await page.getByLabel('Analyze decisions, commitments, owners and deadlines').check();
+  await page.getByRole('button',{name:'Analyze selected'}).click();
+  await expect(page.getByText('Decision: approved')).toBeVisible();
+  await expect(page.getByText(/1 message references resolved/)).toBeVisible();
+  await page.getByText('View cited message evidence').first().click();
+  await expect(page.getByText('Ship Friday', {exact:true})).toBeVisible();
+  await page.getByLabel('Ask a follow-up about these emails').fill('What is the deadline?');
+  await page.getByRole('button',{name:'Ask follow-up'}).click();
+  await expect(page.getByText(/deadline remains Friday/)).toBeVisible();
+  expect(requests).toHaveLength(2);
+  expect(requests[1].follow_up).toBe('What is the deadline?');
+  expect(requests[1].message_ids).toEqual(['m1','m2']);
+});
