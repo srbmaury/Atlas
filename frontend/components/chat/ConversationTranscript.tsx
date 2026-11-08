@@ -7,7 +7,7 @@ import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
-    onBranchMessage: (index: number) => void;
+    onBranchMessage: (index: number, regenerate?: boolean) => void;
     busy: boolean;
     readyCount: number;
     uploadButton: ReactNode;
@@ -51,7 +51,7 @@ export function ConversationTranscript({ messages, onBranchMessage, busy, readyC
                     <div className="user-message" key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
-                            <div className="bubble">{m.content}<button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i)} title="Create a new conversation from this point"><GitBranch size={13} /> Branch</button></div>
+                            <div className="bubble">{m.content}<button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i)} title="Create a new conversation from this point"><GitBranch size={13} /> Edit & branch</button><button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, true)} title="Generate a fresh answer in a new branch">Regenerate</button></div>
                         </div>
                     </div>
                 ) : (
