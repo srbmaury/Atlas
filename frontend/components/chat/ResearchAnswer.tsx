@@ -60,10 +60,12 @@ export const ResearchAnswer = memo(function ResearchAnswer({
         return {
             p: ({ children }: { children?: ReactNode }) => <p>{renderCitations(children)}</p>,
             li: ({ children }: { children?: ReactNode }) => <li>{renderCitations(children)}</li>,
+            pre: ({ children }: { children?: ReactNode }) => <>{children}</>,
             code: ({ className, children }: { className?: string; children?: ReactNode }) => {
                 const language = /language-([\w-]+)/.exec(className || '')?.[1]?.toLowerCase();
                 const code = plainText(children).replace(/\n$/, '');
-                return language === 'mermaid' ? <MermaidDiagram chart={code} /> : <code className={className}>{children}</code>;
+                const diagram = language === 'mermaid' || (!language && /^(?:graph\s+(?:TB|TD|BT|LR|RL)|flowchart\s+(?:TB|TD|BT|LR|RL))\b/.test(code.trim()));
+                return diagram ? <MermaidDiagram chart={code} /> : className ? <pre><code className={className}>{children}</code></pre> : <code>{children}</code>;
             },
         };
     }, [result, onOpenSource]);
