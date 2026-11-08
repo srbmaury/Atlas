@@ -16,6 +16,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     workspaceId: string;
+    searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
     onOpenSource: (source: Source) => void;
     userMode: string;
@@ -74,6 +75,23 @@ interface ResearchWorkspaceProps {
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const [messageSearch, setMessageSearch] = useState('');
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    function focusMatch(index: number) {
+        setFocusedIndex(index);
+        const node = props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${index}"]`);
+        node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    useEffect(() => {
+        if (!props.searchTarget || props.chatId !== props.searchTarget.chatId) return;
+        const target = props.searchTarget;
+        if (!props.messages[target.index] || !props.messages[target.index].content.toLocaleLowerCase().includes(target.phrase.toLocaleLowerCase())) return;
+        setMessageSearch(target.phrase);
+        setFocusedIndex(target.index);
+        const frame = window.requestAnimationFrame(() => {
+            props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${target.index}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return () => window.cancelAnimationFrame(frame);
+    }, [props.searchTarget?.token, props.chatId, props.messages]);
     const [evidenceWidth, setEvidenceWidth] = useState(340);
     useEffect(() => {
         try {
@@ -204,14 +222,14 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             <div className="message-search-panel">
                                 <label className="message-search-input">
                                     <Search size={15} aria-hidden="true" />
-                                    <input aria-label="Search messages in this conversation" placeholder="Find in this conversation" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} />
+                                    <input aria-label="Search messages in this conversation" placeholder="Find in this conversation" value={messageSearch} onChange={(event) => { setMessageSearch(event.target.value); setFocusedIndex(null); }} />
                                 </label>
-                                {messageSearch && <button type="button" aria-label="Clear message search" onClick={() => setMessageSearch('')}><X size={14} /></button>}
+                                {messageSearch && <button type="button" aria-label="Clear message search" onClick={() => { setMessageSearch(''); setFocusedIndex(null); }}><X size={14} /></button>}
                                 {messageSearch.trim() && (
                                     <div className="message-search-results" role="status">
                                         <span>{matches.length} matching {matches.length === 1 ? 'message' : 'messages'}</span>
                                         {matches.map(({ message, index }) => (
-                                            <button type="button" key={index} onClick={() => props.threadRef.current?.querySelector('[data-message-index="' + index + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                                            <button type="button" key={index} onClick={() => focusMatch(index)}>
                                                 <strong>{message.role === 'user' ? 'You' : 'Atlas'}</strong> {message.content.slice(0, 160)}
                                             </button>
                                         ))}
@@ -220,6 +238,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         )}
                         <ConversationTranscript
+                            searchPhrase={messageSearch}
+                            focusedIndex={focusedIndex}
                             messages={props.messages}
                             busy={props.busy}
                             readyCount={props.readyCount}
