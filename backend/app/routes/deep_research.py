@@ -164,7 +164,7 @@ def _investigate(run_id, actor_id):
                     # Match the working document-only chat path instead of routing
                     # through the stricter cross-provider synthesis model.
                     from ..ai import generate
-                    from ..connected_research import (
+                    from ..main import (
                         attach_retrieval_trace,
                         collect_connected_evidence,
                         connected_scope,
