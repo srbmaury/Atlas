@@ -113,7 +113,11 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                     )}
                 </div>
             )}
-            {actionError && <p role="alert" className="caption">{actionError}</p>}
+            {actionError && (
+                <p role="alert" className="caption">
+                    {actionError}
+                </p>
+            )}
             <div className="chat-history-search">
                 <Search size={15} aria-hidden="true" />
                 <input type="text" aria-label="Search conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
