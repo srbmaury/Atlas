@@ -7,6 +7,8 @@ import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
+    searchPhrase?: string;
+    focusedIndex?: number | null;
     busy: boolean;
     readyCount: number;
     uploadButton: ReactNode;
@@ -20,7 +22,24 @@ interface ChatMessagesProps {
     endRef: RefObject<HTMLDivElement | null>;
 }
 
-export function ConversationTranscript({ messages, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
+export function ConversationTranscript({ messages, searchPhrase = '', focusedIndex = null, busy, readyCount, uploadButton, prompts, onPrompt, initials, renderAnswer, answerProgress, onStop, threadRef, endRef }: ChatMessagesProps) {
+    const highlight = (content: string) => {
+        const phrase = searchPhrase.trim();
+        if (!phrase) return content;
+        const parts = [];
+        let cursor = 0;
+        const lowered = content.toLocaleLowerCase();
+        const needle = phrase.toLocaleLowerCase();
+        while (cursor < content.length) {
+            const index = lowered.indexOf(needle, cursor);
+            if (index < 0) break;
+            parts.push(content.slice(cursor, index));
+            parts.push(<mark className="message-search-highlight" key={index}>{content.slice(index, index + phrase.length)}</mark>);
+            cursor = index + phrase.length;
+        }
+        parts.push(content.slice(cursor));
+        return parts;
+    };
     return (
         <div className="thread" ref={threadRef}>
             {!messages.length && (
@@ -47,16 +66,16 @@ export function ConversationTranscript({ messages, busy, readyCount, uploadButto
             )}
             {messages.map((m, i) =>
                 m.role === 'user' ? (
-                    <div className="user-message" key={i} data-message-index={i}>
+                    <div className={`user-message ${focusedIndex === i ? "message-search-focused" : ""}`} key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
                             <div className="bubble">
-                                <div className="message-content">{m.content}</div>
+                                <div className="message-content">{highlight(m.content)}</div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="answer-row" key={i} data-message-index={i}>
+                    <div className={`answer-row ${focusedIndex === i ? "message-search-focused" : ""}`} key={i} data-message-index={i}>
                         <span className="assistant-mark">A</span>
                         <div className="answer">
                             <div className="answer-head">
