@@ -179,7 +179,7 @@ export function createConversationActions({
             if (githubOnly) {
                 const repositoryContext = [...chatMessages.current].reverse().find((message) =>
                     message.role === 'assistant' && message.result?.sources?.some((source) => source.provider === 'github')
-                )?.result?.sources?.find((source) => source.provider === 'github')?.name.match(/^([^/]+\\/[^/]+)\\//)?.[1];
+                )?.result?.sources?.find((source) => source.provider === 'github')?.name.split('/').slice(0, 2).join('/');
                 const inspection = await api<{
                     status: string; message?: string; answer?: string | null; answer_mode?: string;
                     repository?: string | null;
