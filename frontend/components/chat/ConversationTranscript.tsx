@@ -66,8 +66,7 @@ export function ConversationTranscript({
                     <span className="welcome-mark">
                         <AtlasMark />
                     </span>
-                    <span className="eyebrow">EVIDENCE-BASED RESEARCH</span>
-                    <h2>Find the answer. Check the source.</h2>
+                    <h2>Ask anything. Verify the answer.</h2>
                     <p>{readyCount ? 'Explore a topic, compare sources, or trace a claim back to the original passage.' : 'Add your first documents to explore them with Atlas.'}</p>
                     {!readyCount ? (
                         uploadButton
