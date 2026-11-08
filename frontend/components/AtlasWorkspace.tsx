@@ -179,6 +179,7 @@ export function AtlasWorkspace() {
     function newChat(preserveSourceSelection = false) {
         if (busy) return;
         chatLoadSequence.invalidate();
+        try { if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query); } catch { /* Storage unavailable. */ }
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
