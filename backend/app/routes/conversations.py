@@ -3,6 +3,7 @@
 import time
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from ..api_dependencies import database, user, workspace
 from ..db import Conversation
@@ -31,6 +32,8 @@ def conversation_data(item):
         'messages': item.messages or [],
         'created': item.created,
         'updated': item.updated,
+        'pinned': bool((item.messages or [{}])[0].get('_atlas_pinned')) if item.messages else False,
+        'archived': bool((item.messages or [{}])[0].get('_atlas_archived')) if item.messages else False,
     }
 
 
@@ -46,7 +49,40 @@ def list_conversations(workspaceId: str, actor=Depends(user), db=Depends(databas
         .order_by(Conversation.updated.desc())
         .all()
     )
-    return [{'id': item.id, 'title': item.title, 'updated': item.updated} for item in items]
+    return [{'id': item.id, 'title': item.title, 'updated': item.updated, 'pinned': bool(item.messages and item.messages[0].get('_atlas_pinned')), 'archived': bool(item.messages and item.messages[0].get('_atlas_archived'))} for item in items]
+
+
+class ConversationOrganization(BaseModel):
+    pinned: bool | None = None
+    archived: bool | None = None
+
+
+@router.patch(
+    '/api/workspaces/{workspaceId}/conversations/{cid}/organization',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
+def organize_conversation(
+    workspaceId: str, cid: str, body: ConversationOrganization,
+    actor=Depends(user), db=Depends(database),
+):
+    item = owned_conversation(workspaceId, cid, actor, db)
+    messages = [dict(message) for message in (item.messages or [])]
+    # Preserve organization in the existing JSON column without a destructive
+    # schema migration. Metadata is not exposed to the language model.
+    if not messages:
+        messages = [{'_atlas_metadata': True}]
+    first = messages[0]
+    if body.pinned is not None:
+        first['_atlas_pinned'] = body.pinned
+        if body.pinned:
+            first['_atlas_archived'] = False
+    if body.archived is not None:
+        first['_atlas_archived'] = body.archived
+        if body.archived:
+            first['_atlas_pinned'] = False
+    item.messages = messages
+    db.commit()
+    return conversation_data(item)
 
 
 @router.get(
