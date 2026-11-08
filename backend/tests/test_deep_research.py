@@ -49,7 +49,10 @@ def test_stage_transitions_persist_across_sessions():
     with Session() as db:
         run = db.get(ResearchRun, run_id)
         assert [step['status'] for step in run.stages] == [
-            'completed', 'running', 'queued', 'queued'
+            'completed',
+            'running',
+            'queued',
+            'queued',
         ]
 
     assert _save(run_id, status='insufficient_evidence', stage='synthesizing')
