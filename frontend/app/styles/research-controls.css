@@ -559,3 +559,9 @@ input[type='checkbox'] {
 .evidence-width-controls { display: flex; justify-content: flex-end; align-items: center; gap: 5px; padding: 5px 10px; font-size: 11px; color: var(--sub); }
 .evidence-width-controls button { border: 1px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--text); padding: 2px 8px; cursor: pointer; }
 @media (max-width: 1049px) { .evidence-width-controls { display: none; } }
+
+.message-turn-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; border-top: 1px solid var(--line); padding-top: 7px; }
+.message-turn-actions .message-branch-action { margin: 0; font-size: 11px; border-radius: 6px; padding: 4px 7px; }
+.message-turn-actions .message-branch-action:first-child { font-weight: 650; }
+.message-turn-actions .message-branch-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) { .message-turn-actions { opacity: .65; transition: opacity .15s ease; } .user-message:hover .message-turn-actions, .user-message:focus-within .message-turn-actions { opacity: 1; } }
