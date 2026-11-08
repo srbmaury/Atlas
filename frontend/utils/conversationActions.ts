@@ -174,7 +174,42 @@ export function createConversationActions({
             });
             const useConnected = searchScope.includeGmail || searchScope.providers.length > 0 || user?.mode === 'ai';
             let draft = '';
-            const result = await requestResearchAnswer(
+            const githubOnly = connectedProviders.length === 1 && connectedProviders[0] === 'github' && !connectedGmail && !includeDocuments;
+            let result;
+            if (githubOnly) {
+                const repositoryContext = [...chatMessages.current].reverse().find((message) =>
+                    message.role === 'assistant' && message.result?.sources?.some((source) => source.provider === 'github')
+                )?.result?.sources?.find((source) => source.provider === 'github')?.name.match(/^([^/]+\\/[^/]+)\\//)?.[1];
+                const inspection = await api<{
+                    status: string; message?: string; answer?: string | null; answer_mode?: string;
+                    repository?: string | null;
+                    sources: { title: string; path: string; url?: string; excerpt: string }[];
+                    web_sources?: { title: string; url: string; excerpt: string }[];
+                }>(`/workspaces/${target}/repository-evidence`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        question, repository: repositoryContext || null, include_web: false,
+                        history: history.slice(-6).map((item) => ({ role: item.role, content: item.content })),
+                    }),
+                    signal: controller.signal,
+                });
+                if (inspection.status === 'select_repository') {
+                    result = { answer: inspection.message || 'Select a repository by mentioning its name in your question.', sources: [], mode: 'select_repository', scope: ['github'] };
+                } else {
+                    const sources = inspection.sources.map((source, index) => ({
+                        chunk_id: `github-${index}`, document_id: source.url || source.path,
+                        name: source.title, page: 1, text: source.excerpt,
+                        location_type: 'file', provider: 'github', url: source.url,
+                    }));
+                    result = {
+                        answer: inspection.answer || (inspection.sources.length
+                            ? `I found ${inspection.sources.length} repository files, but could not generate a verified answer (${inspection.answer_mode || 'unavailable'}). Review the evidence sources.`
+                            : 'No matching repository files were found. Try naming a repository or asking a more specific question.'),
+                        sources, mode: inspection.answer ? 'ai' : inspection.answer_mode || 'no_evidence',
+                        scope: ['github'],
+                    };
+                }
+            } else result = await requestResearchAnswer(
                 {
                     workspaceId: target,
                     question,
