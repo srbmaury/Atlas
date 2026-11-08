@@ -7,6 +7,7 @@ import type { Answer, Source } from '../../lib/types';
 import { visibleEvidence, sourceDisplayName, sourceLocation } from '../../lib/evidence';
 import { SOURCE_LABELS } from '../../lib/providers';
 import { FileBadge } from '../ui/WorkspacePrimitives';
+import { MermaidDiagram } from './MermaidDiagram';
 
 function plainText(children: ReactNode): string {
     return Children.toArray(children)
@@ -59,6 +60,11 @@ export const ResearchAnswer = memo(function ResearchAnswer({
         return {
             p: ({ children }: { children?: ReactNode }) => <p>{renderCitations(children)}</p>,
             li: ({ children }: { children?: ReactNode }) => <li>{renderCitations(children)}</li>,
+            code: ({ className, children }: { className?: string; children?: ReactNode }) => {
+                const language = /language-([\w-]+)/.exec(className || '')?.[1]?.toLowerCase();
+                const code = plainText(children).replace(/\n$/, '');
+                return language === 'mermaid' ? <MermaidDiagram chart={code} /> : <code className={className}>{children}</code>;
+            },
         };
     }, [result, onOpenSource]);
     return (
