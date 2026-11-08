@@ -160,7 +160,35 @@ def _investigate(run_id, actor_id):
                     | ({'gmail'} if scope.get('include_gmail') else set()),
                 )
                 body = ConnectedQuestion(**{**scope, 'question': subquestion})
-                result = connected_chat(workspace_id, body, None, actor=actor, db=db)
+                if body.include_documents and not body.include_gmail and not body.providers:
+                    # Match the working document-only chat path instead of routing
+                    # through the stricter cross-provider synthesis model.
+                    from ..ai import generate
+                    from ..connected_research import (
+                        attach_retrieval_trace,
+                        collect_connected_evidence,
+                        connected_scope,
+                        no_evidence_result,
+                    )
+
+                    stats = {}
+                    evidence, document_evidence = collect_connected_evidence(
+                        workspace_id, body, actor, db, stats
+                    )
+                    revalidate_access(workspace_id, actor, {item.provider for item in evidence})
+                    if not evidence:
+                        result = no_evidence_result(body, stats)
+                    else:
+                        document_sources = [
+                            document_evidence[item.source_id]
+                            for item in evidence
+                            if item.provider == 'documents' and item.source_id in document_evidence
+                        ]
+                        result = generate(subquestion, document_sources, [])
+                        result['scope'] = connected_scope(body)
+                        attach_retrieval_trace(result, body, evidence, stats)
+                else:
+                    result = connected_chat(workspace_id, body, None, actor=actor, db=db)
                 # Results remain scoped to this workspace and are re-authorized
                 # whenever read. Each section preserves its own citation IDs.
                 findings.append({'title': title, 'question': subquestion, 'result': result})
@@ -173,7 +201,8 @@ def _investigate(run_id, actor_id):
         for finding in findings:
             result = finding['result']
             finding['verified'] = (
-                bool(result.get('sources')) and result.get('mode') != 'citation_check_failed'
+                bool(result.get('sources'))
+                and result.get('mode') in ('ai', 'connected', 'local_excerpts', 'source_results')
             )
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
             return
