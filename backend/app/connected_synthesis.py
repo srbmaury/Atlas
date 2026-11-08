@@ -374,13 +374,14 @@ def stream_connected(
     if provider != 'ollama' and not (provider == 'openai' and api_key):
         raise HTTPException(409, 'Configure an AI provider for connected answers.')
     if provider == 'ollama':
+        gmail_only = bool(evidence) and all(item.provider == 'gmail' for item in evidence)
         sources = bounded_payload(
             evidence,
             max_items=18,
-            per_source=1800,
-            max_total=10000,
+            per_source=900 if gmail_only else 1800,
+            max_total=11000 if gmail_only else 10000,
             question=question,
-            per_provider=3,
+            per_provider=12 if gmail_only else 3,
         )
     else:
         sources = bounded_payload(evidence, per_source=3000, max_total=16000, question=question)
@@ -410,7 +411,12 @@ def stream_connected(
         raw_answer = _openai_stream_text(client_factory, model, SYSTEM, prompt, cancellation)
     answer = '' if timed_out else _normalize_citations(final_answer_text(raw_answer))
     valid_refs = has_valid_citations(answer, sources)
-    coverage_note = None
+    coverage_note = (
+        f'Only {len(sources)} of {len(evidence)} retrieved passages fit the model context. '
+        'The answer does not cover every matching message.'
+        if len(evidence) > len(sources)
+        else None
+    )
     if answer and not valid_refs:
         evidence_cited, omitted_claims = _cite_supported_statements(answer, sources)
         if evidence_cited and not omitted_claims:
@@ -466,7 +472,8 @@ def stream_connected(
                 answer = evidence_cited
                 valid_refs = True
                 if omitted_claims:
-                    coverage_note = 'Some claims were omitted because the selected passages did not support them.'
+                    warning = 'Some claims were omitted because the selected passages did not support them.'
+                    coverage_note = ' '.join(filter(None, [coverage_note, warning]))
 
     if not answer:
         answer = (
