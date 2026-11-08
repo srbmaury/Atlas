@@ -529,3 +529,12 @@ input[type='checkbox'] {
   .research-evidence-rail { resize: horizontal; overflow: auto; min-width: 250px; max-width: min(55vw, 800px); }
 }
 .workspace-stat.active { background: var(--active); color: var(--text); font-weight: 600; }
+
+
+/* Conversation action menus and organization */
+.chat-history-menu-wrap { position: relative; display: flex; align-items: center; }
+.chat-history-menu { position: absolute; right: 0; top: 100%; z-index: 30; min-width: 135px; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: 0 8px 24px #0002; }
+.chat-history-menu button { width: 100%; display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--text); padding: 8px; text-align: left; font-size: 12px; border-radius: 5px; cursor: pointer; }
+.chat-history-menu button:hover { background: var(--hover); }
+.chat-history-selection-toolbar button[aria-pressed='true'] { color: var(--brand); font-weight: 700; }
+.chat-history-title svg { display: inline; vertical-align: middle; color: var(--brand); }
