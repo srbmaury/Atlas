@@ -147,7 +147,14 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                         {providers.includes('github') && (
                             <div className="deep-research-repository">
                                 <label htmlFor="deep-research-repository">GitHub repository (optional)</label>
-                                <input id="deep-research-repository" value={repository} onChange={(event) => setRepository(event.target.value)} placeholder="owner/repository" pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+" title="Use owner/repository, for example srbmaury/Atlas" />
+                                <input
+                                    id="deep-research-repository"
+                                    value={repository}
+                                    onChange={(event) => setRepository(event.target.value)}
+                                    placeholder="owner/repository"
+                                    pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
+                                    title="Use owner/repository, for example srbmaury/Atlas"
+                                />
                                 <small>Use an exact repository to avoid searching unrelated issues and files.</small>
                             </div>
                         )}
@@ -206,7 +213,9 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                         ))}
                                     </ol>
                                     {displayStatus(active) === 'Insufficient evidence' && !active.error && (
-                                        <p role="status" className="deep-research-error">No cited findings were produced. Try a more specific question or connect relevant sources.</p>
+                                        <p role="status" className="deep-research-error">
+                                            No cited findings were produced. Try a more specific question or connect relevant sources.
+                                        </p>
                                     )}
                                     {active.error && (
                                         <p role="alert" className="deep-research-error">
@@ -218,14 +227,22 @@ export function DeepResearchPanel({ workspaceId, documentIds, includeDocuments, 
                                             <h3>{finding.title}</h3>
                                             <p className="deep-research-subquestion">{finding.question}</p>
                                             <p className="deep-research-answer">{finding.result.answer || 'No answer was returned.'}</p>
-                                            {finding.result.mode === 'citation_check_failed' && <p className="deep-research-evidence-label">Retrieved passages could not be converted into a citation-valid answer.</p>}
+                                            {finding.result.mode === 'citation_check_failed' && (
+                                                <p className="deep-research-evidence-label">Retrieved passages could not be converted into a citation-valid answer.</p>
+                                            )}
                                             {finding.diagnostics && (
                                                 <details className="deep-research-diagnostics" open={!finding.verified}>
                                                     <summary>Retrieval diagnostics · {finding.diagnostics.outcome.replaceAll('_', ' ')}</summary>
-                                                    <p>Passages considered: {finding.diagnostics.passages_considered} · cited: {finding.diagnostics.passages_used}</p>
-                                                    <ul>{finding.diagnostics.providers.map((provider) => (
-                                                        <li key={provider.provider}>{provider.provider}: {provider.status}; found {provider.found}, considered {provider.considered}, cited {provider.used}</li>
-                                                    ))}</ul>
+                                                    <p>
+                                                        Passages considered: {finding.diagnostics.passages_considered} · cited: {finding.diagnostics.passages_used}
+                                                    </p>
+                                                    <ul>
+                                                        {finding.diagnostics.providers.map((provider) => (
+                                                            <li key={provider.provider}>
+                                                                {provider.provider}: {provider.status}; found {provider.found}, considered {provider.considered}, cited {provider.used}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </details>
                                             )}
                                             <span className="deep-research-evidence-label">

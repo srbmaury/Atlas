@@ -90,7 +90,11 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
             reached = False
             for item in stages:
                 if item['key'] == stage:
-                    item['status'] = 'completed' if status in ('completed', 'insufficient_evidence') else 'running'
+                    item['status'] = (
+                        'completed'
+                        if status in ('completed', 'insufficient_evidence')
+                        else 'running'
+                    )
                     reached = True
                 elif not reached:
                     item['status'] = 'completed'
@@ -208,9 +212,11 @@ def _investigate(run_id, actor_id):
         # not implemented in this initial research release.
         for finding in findings:
             result = finding['result']
-            finding['verified'] = (
-                bool(result.get('sources'))
-                and result.get('mode') in ('ai', 'connected', 'local_excerpts', 'source_results')
+            finding['verified'] = bool(result.get('sources')) and result.get('mode') in (
+                'ai',
+                'connected',
+                'local_excerpts',
+                'source_results',
             )
             trace = result.get('retrieval') or {}
             searched = trace.get('sources') or []
@@ -219,11 +225,15 @@ def _investigate(run_id, actor_id):
                 'passages_considered': trace.get('passages_considered', 0),
                 'passages_used': trace.get('passages_used', 0),
                 'outcome': (
-                    'verified' if finding['verified'] else
-                    'citation_rejected' if result.get('mode') == 'citation_check_failed' else
-                    'provider_failure' if any(item.get('status') == 'failed' for item in searched) else
-                    'no_matches' if not any(item.get('found', 0) for item in searched) else
-                    'unverified'
+                    'verified'
+                    if finding['verified']
+                    else 'citation_rejected'
+                    if result.get('mode') == 'citation_check_failed'
+                    else 'provider_failure'
+                    if any(item.get('status') == 'failed' for item in searched)
+                    else 'no_matches'
+                    if not any(item.get('found', 0) for item in searched)
+                    else 'unverified'
                 ),
             }
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
