@@ -215,18 +215,25 @@ def attach_retrieval_trace(result, body, evidence, stats, used_sources=None):
 
 
 def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_query_for_question):
-    search_result = gmail_get(
-        token,
-        gmail_api + '/messages',
-        {
-            'q': gmail_query_for_question(
-                body.gmail_query, body.question
-            ),
-            'maxResults': 30,
-        },
-    )
-    matches = search_result.get('messages', [])
-    search_limited = bool(search_result.get('nextPageToken'))
+    cited_ids = list(dict.fromkeys(getattr(body, 'gmail_source_ids', []) or []))
+    if cited_ids:
+        if len(cited_ids) > 30 or any(not mid.isalnum() or len(mid) > 64 for mid in cited_ids):
+            raise HTTPException(422, 'Invalid Gmail message ID in cited evidence.')
+        # Cite follow-ups should reload the exact authorized messages from Gmail,
+        # not issue a fresh keyword search that loses the previous sources.
+        matches = [{'id': mid} for mid in cited_ids]
+        search_limited = False
+    else:
+        search_result = gmail_get(
+            token,
+            gmail_api + '/messages',
+            {
+                'q': gmail_query_for_question(body.gmail_query, body.question),
+                'maxResults': 30,
+            },
+        )
+        matches = search_result.get('messages', [])
+        search_limited = bool(search_result.get('nextPageToken'))
     from .sources import Evidence
 
     def read_message(item):
@@ -270,6 +277,8 @@ def connected_sources_for_payload(payload, document_evidence):
         sources.append(
             {
                 'chunk_id': original['chunk_id'] if original else str(entry['source_id']),
+                'gmail_message_id': entry.get('origin_id') if entry.get('provider') == 'gmail' else None,
+                'sender': entry.get('owner') if entry.get('provider') == 'gmail' else None,
                 'document_id': original['document_id'] if original else '',
                 'name': entry['title'],
                 'page': original['page'] if original else 0,
