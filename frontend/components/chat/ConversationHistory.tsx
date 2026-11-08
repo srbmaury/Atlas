@@ -16,7 +16,7 @@ interface ConversationHistoryProps {
 }
 
 function conversationDate(timestamp: number): string {
-    if (!Number.isFinite(timestamp)) return '';
+    if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
     const date = new Date(timestamp * 1000);
     if (Number.isNaN(date.getTime())) return '';
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
