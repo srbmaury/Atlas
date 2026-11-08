@@ -34,6 +34,7 @@ export type Source = {
 };
 export type Answer = {
     answer: string;
+    repository?: string | null;
     sources: Source[];
     related_sources?: { left: number; right: number; references: string[]; status: string }[];
     decision_timeline?: {
