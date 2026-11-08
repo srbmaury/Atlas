@@ -7,7 +7,7 @@ import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
-    onBranchMessage: (index: number, regenerate?: boolean) => void;
+    onBranchMessage: (index: number, mode?: 'branch' | 'edit' | 'regenerate') => void;
     busy: boolean;
     readyCount: number;
     uploadButton: ReactNode;
@@ -51,7 +51,13 @@ export function ConversationTranscript({ messages, onBranchMessage, busy, readyC
                     <div className="user-message" key={i} data-message-index={i}>
                         <div className="bubble-row">
                             <span className="circle">{initials}</span>
-                            <div className="bubble">{m.content}<button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i)} title="Create a new conversation from this point"><GitBranch size={13} /> Edit & branch</button><button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, true)} title="Generate a fresh answer in a new branch">Regenerate</button></div>
+                            <div className="bubble">
+                                <div className="message-content">{m.content}</div>
+                                <div className="message-turn-actions" role="group" aria-label={`Actions for message ${messages.slice(0, i + 1).filter((entry) => entry.role === 'user').length}`}>
+                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'branch')} title="Copy this message and its answer into a new conversation"><GitBranch size={13} /> Branch from here</button>
+                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'edit')} title="Copy earlier messages and put this prompt into the editor">Edit & branch</button>
+                                    <button type="button" className="message-branch-action" disabled={busy} onClick={() => onBranchMessage(i, 'regenerate')} title="Generate a new answer to this prompt in a separate conversation">Regenerate</button>
+                                </div></div>
                         </div>
                     </div>
                 ) : (
