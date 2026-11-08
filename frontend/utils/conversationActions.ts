@@ -175,17 +175,17 @@ export function createConversationActions({
             const useConnected = searchScope.includeGmail || searchScope.providers.length > 0 || user?.mode === 'ai';
             let draft = '';
             // Reuse repository identity from prior answers, including saved conversations.
-                const priorRepository =
-                    [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))]
-                        .reverse()
-                        .filter((message) => message.role === 'assistant')
-                        .map((message) => {
-                            if (message.result?.repository) return message.result.repository;
-                            const githubSource = message.result?.sources?.find((source) => source.provider === 'github');
-                            const match = githubSource?.name.match(/^([^/]+\/[^/]+)\//);
-                            return match?.[1] || null;
-                        })
-                        .find((value) => Boolean(value)) || null;
+            const priorRepository =
+                [...(startNewConversation ? [] : chatMessages.current.slice(0, -1))]
+                    .reverse()
+                    .filter((message) => message.role === 'assistant')
+                    .map((message) => {
+                        if (message.result?.repository) return message.result.repository;
+                        const githubSource = message.result?.sources?.find((source) => source.provider === 'github');
+                        const match = githubSource?.name.match(/^([^/]+\/[^/]+)\//);
+                        return match?.[1] || null;
+                    })
+                    .find((value) => Boolean(value)) || null;
             // General GitHub issues and pull requests still use connected research.
             // File-level inspection is reserved for repository-focused questions.
             const repositoryIntent = /\b(repositor(?:y|ies)|repo|codebase|architecture|flowchart)\b/i.test(question);
