@@ -55,6 +55,9 @@ export function AtlasWorkspace() {
     const [docs, setDocs] = useState<Doc[]>([]);
     const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources'>('chat');
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [branchRequest, setBranchRequest] = useState<{ index: number; mode: 'branch' | 'edit' | 'regenerate'; sourceId: string | null; workspace: string; prompt: string; turn: number } | null>(null);
+    const [branchSaving, setBranchSaving] = useState(false);
+    const branchInFlight = useRef(false);
     const [selected, setSelected] = useState<string[]>([]);
     const [includeDocuments, setIncludeDocuments] = useState(true);
     const [query, setQuery] = useState('');
@@ -148,6 +151,7 @@ export function AtlasWorkspace() {
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
     useEffect(() => {
         chatLoadSequence.invalidate();
+        setBranchRequest(null);
         setDocs([]);
         setMessages([]);
         setChatId(null);
@@ -422,21 +426,40 @@ export function AtlasWorkspace() {
         if (activeChat.current === id) restoreDraft(id);
     }
 
-    async function branchConversation(index: number, mode: 'branch' | 'edit' | 'regenerate' = 'branch') {
-        if (busy || !workspaceId || messages[index]?.role !== 'user') return;
-        const original = messages[index];
-        const prompt = original.content;
-        // A branch from message N must include that turn, not stop at N - 1.
-        // Edit/regenerate intentionally replace that turn's answer instead.
+    function requestBranch(index: number, mode: 'branch' | 'edit' | 'regenerate' = 'branch') {
+        if (busy || branchInFlight.current || messages[index]?.role !== 'user') return;
+        setBranchRequest({
+            index,
+            mode,
+            sourceId: activeChat.current,
+            workspace: workspaceId,
+            prompt: messages[index].content,
+            turn: messages.slice(0, index + 1).filter((message) => message.role === 'user').length,
+        });
+    }
+
+    async function branchConversation() {
+        const request = branchRequest;
+        if (!request || busy || branchInFlight.current || !workspaceId) return;
+        const { index, mode, sourceId, workspace: targetWorkspace, prompt } = request;
+        if (targetWorkspace !== workspaceId || sourceId !== activeChat.current || messages[index]?.role !== 'user' || messages[index].content !== prompt) {
+            setBranchRequest(null);
+            setError('The conversation changed. Please select the message again.');
+            return;
+        }
+        branchInFlight.current = true;
+        setBranchSaving(true);
         const history = branchHistory(messages, index, mode);
         const branchTitle = ('Branch: ' + prompt).slice(0, 100);
-        const targetWorkspace = workspaceId;
         try {
+            // Preserve the draft from the source chat before switching context.
+            try {
+                if (query.trim()) sessionStorage.setItem(draftKey(sourceId), query);
+            } catch { /* Storage can be disabled. */ }
             const saved = await persistConversation(targetWorkspace, null, branchTitle, history);
-            if (scope.current !== targetWorkspace) return;
+            if (scope.current !== targetWorkspace || activeChat.current !== sourceId) return;
             chatLoadSequence.invalidate();
-            // Flush state so draft persistence cannot associate the old prompt
-            // with the newly created conversation.
+            try { sessionStorage.removeItem(draftKey(saved.id)); } catch { /* Storage can be disabled. */ }
             flushSync(() => {
                 activeChat.current = saved.id;
                 chatMessages.current = history;
@@ -446,18 +469,22 @@ export function AtlasWorkspace() {
                 setQuery(mode === 'edit' ? prompt : '');
                 setSource(null);
                 setTab('chat');
+                setBranchRequest(null);
             });
             setChats((old) => [{ id: saved.id, title: saved.title, updated: saved.updated }, ...old]);
             if (mode === 'regenerate') {
-                setNotice('Regenerating this message in a separate branch. The original conversation is unchanged.');
+                setNotice('Regenerating turn ' + request.turn + ' in a new conversation. The original is unchanged.');
                 await ask(prompt);
             } else if (mode === 'edit') {
-                setNotice('Edit the selected message below, then send it. Earlier messages were retained.');
+                setNotice('Editing turn ' + request.turn + ' in a new branch. Earlier turns are retained.');
             } else {
-                setNotice('Branch created from the selected message, including its answer when available.');
+                setNotice('Branched through turn ' + request.turn + '. Later turns were excluded.');
             }
         } catch (e) {
             setError((e as Error).message);
+        } finally {
+            branchInFlight.current = false;
+            setBranchSaving(false);
         }
     }
 
@@ -682,7 +709,7 @@ export function AtlasWorkspace() {
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
-                            onBranchMessage={(index, mode) => void branchConversation(index, mode)}
+                            onBranchMessage={requestBranch}
                             uploadButton={uploadButton}
                             onAsk={(question) => void ask(question)}
                             initials={initials}
@@ -876,6 +903,28 @@ export function AtlasWorkspace() {
                     }}
                     canAsk={!busy && hasAskSources}
                 />
+            )}
+            {branchRequest && (
+                <Dialog title={branchRequest.mode === 'branch' ? 'Branch from selected message' : branchRequest.mode === 'edit' ? 'Edit in a new branch' : 'Regenerate in a new branch'} onClose={() => { if (!branchSaving) setBranchRequest(null); }}>
+                    <div className="branch-preview">
+                        <p className="dialog-intro">Selected message <strong>#{branchRequest.turn}</strong> of {messages.filter((message) => message.role === 'user').length}:</p>
+                        <blockquote className="branch-preview-prompt">{branchRequest.prompt}</blockquote>
+                        <p>
+                            {branchRequest.mode === 'branch'
+                                ? 'Keep this message and its existing answer. Exclude all later messages.'
+                                : branchRequest.mode === 'edit'
+                                  ? 'Keep earlier messages, then open this prompt in the editor. Its original answer is not copied.'
+                                  : 'Keep earlier messages, then generate a fresh answer to this exact prompt.'}
+                        </p>
+                        <p className="branch-preview-note">The original conversation will not be modified.</p>
+                        <div className="branch-preview-actions">
+                            <button type="button" className="btn" disabled={branchSaving} onClick={() => setBranchRequest(null)}>Cancel</button>
+                            <button type="button" className="btn primary" disabled={branchSaving} onClick={() => void branchConversation()}>
+                                {branchSaving ? 'Creating branch…' : branchRequest.mode === 'branch' ? 'Create branch' : branchRequest.mode === 'edit' ? 'Edit in branch' : 'Regenerate in branch'}
+                            </button>
+                        </div>
+                    </div>
+                </Dialog>
             )}
             {scopeOpen && (
                 <Dialog title="Choose your sources" onClose={() => setScopeOpen(false)}>
