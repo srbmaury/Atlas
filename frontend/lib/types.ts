@@ -21,6 +21,8 @@ export type DocumentPreview = {
 };
 export type Source = {
     chunk_id: string;
+    gmail_message_id?: string;
+    sender?: string;
     document_id: string;
     name: string;
     page: number;
