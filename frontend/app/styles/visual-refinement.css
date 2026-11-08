@@ -193,3 +193,119 @@
         padding: 20px 14px 36px;
     }
 }
+
+/* Research composition: quieter hierarchy, centered welcome, secondary evidence. */
+.atlas-v3 .content-research .crumb {
+    margin-bottom: 12px;
+    color: var(--sub);
+}
+.atlas-v3 .content-research .heading-row {
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 14px;
+}
+.atlas-v3 .content-research .research-heading h1 {
+    font-size: clamp(24px, 2vw, 30px);
+    letter-spacing: -0.045em;
+    margin-bottom: 5px;
+}
+.atlas-v3 .content-research .research-heading .subtitle {
+    font-size: 12px;
+    line-height: 1.55;
+}
+.atlas-v3 .content-research .heading-row .actions {
+    gap: 7px;
+}
+.atlas-v3 .content-research .research-source-toolbar {
+    margin-bottom: 15px;
+    padding: 0;
+    min-height: 34px;
+}
+.atlas-v3 .content-research .chat-workspace .chat-pane {
+    min-height: 590px;
+}
+.atlas-v3 .content-research .chat-workspace .thread:has(.research-welcome) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.atlas-v3 .content-research .research-welcome {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 32px 16px 42px;
+    margin: auto;
+}
+.atlas-v3 .content-research .research-welcome .welcome-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    margin-bottom: 18px;
+}
+.atlas-v3 .content-research .research-welcome .welcome-mark svg {
+    width: 27px;
+    height: 27px;
+}
+.atlas-v3 .content-research .research-welcome h2 {
+    font-size: clamp(24px, 2.2vw, 32px);
+    letter-spacing: -0.04em;
+    line-height: 1.25;
+    max-width: 620px;
+    margin: 0 auto 11px;
+}
+.atlas-v3 .content-research .research-welcome > p {
+    font-size: 13px;
+    line-height: 1.65;
+    margin: 0 auto 22px;
+    max-width: 490px;
+}
+.atlas-v3 .content-research .research-welcome .suggestions,
+.atlas-v3 .content-research .research-welcome .prompt-grid {
+    max-width: 580px;
+    margin-inline: auto;
+}
+.atlas-v3 .content-research .research-evidence-rail {
+    background: color-mix(in srgb, var(--wash) 28%, var(--panel));
+}
+.atlas-v3 .content-research .research-rail-heading {
+    padding: 18px 16px;
+}
+.atlas-v3 .content-research .research-rail-empty {
+    padding: 24px 18px;
+    text-align: left;
+    color: var(--sub);
+}
+.atlas-v3 .content-research .research-rail-empty p {
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text);
+}
+.atlas-v3 .content-research .research-rail-empty span {
+    display: block;
+    font-size: 12px;
+    line-height: 1.65;
+}
+.atlas-v3 .content-research .evidence-width-controls {
+    opacity: 0.6;
+}
+.atlas-v3 .content-research .evidence-width-controls:hover,
+.atlas-v3 .content-research .evidence-width-controls:focus-within {
+    opacity: 1;
+}
+.atlas-v3 .content-research .research-composer-v2 {
+    margin-top: 8px;
+}
+@media (max-width: 790px) {
+    .atlas-v3 .content-research .heading-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .atlas-v3 .content-research .research-welcome {
+        padding: 32px 10px;
+    }
+    .atlas-v3 .content-research .research-welcome h2 {
+        font-size: clamp(23px, 5vw, 29px);
+    }
+}
