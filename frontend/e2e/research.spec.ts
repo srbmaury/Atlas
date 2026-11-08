@@ -612,6 +612,7 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
     }
     return route.fallback();
   });
+  await page.reload();
   await page.getByRole('button',{name:'Connected sources',exact:true}).click();
   await page.locator('.integration-tile').filter({hasText:'Gmail'}).click();
   await page.getByRole('button',{name:'Find emails'}).click();
