@@ -246,8 +246,15 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                         ref={searchInputRef}
                                         aria-label="Search messages in this conversation"
                                         onKeyDown={(event) => {
-                                            if (event.key === 'Enter') { event.preventDefault(); moveMatch(event.shiftKey ? -1 : 1); }
-                                            if (event.key === 'Escape') { setMessageSearch(''); setFocusedIndex(null); event.currentTarget.blur(); }
+                                            if (event.key === 'Enter') {
+                                                event.preventDefault();
+                                                moveMatch(event.shiftKey ? -1 : 1);
+                                            }
+                                            if (event.key === 'Escape') {
+                                                setMessageSearch('');
+                                                setFocusedIndex(null);
+                                                event.currentTarget.blur();
+                                            }
                                         }}
                                         placeholder="Find in this conversation"
                                         value={messageSearch}
@@ -271,12 +278,32 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 )}
                                 {messageSearch.trim() && (
                                     <div className="message-search-navigation" role="status" aria-live="polite">
-                                        <span>{matches.length ? `${Math.max(0, matches.findIndex(({ index }) => index === focusedIndex)) + 1} of ${matches.length}` : 'No matches'}</span>
-                                        <button type="button" aria-label="Previous match" disabled={!matches.length} onClick={() => moveMatch(-1)}><ChevronUp size={15} /></button>
-                                        <button type="button" aria-label="Next match" disabled={!matches.length} onClick={() => moveMatch(1)}><ChevronDown size={15} /></button>
+                                        <span>
+                                            {matches.length
+                                                ? `${
+                                                      Math.max(
+                                                          0,
+                                                          matches.findIndex(({ index }) => index === focusedIndex),
+                                                      ) + 1
+                                                  } of ${matches.length}`
+                                                : 'No matches'}
+                                        </span>
+                                        <button type="button" aria-label="Previous match" disabled={!matches.length} onClick={() => moveMatch(-1)}>
+                                            <ChevronUp size={15} />
+                                        </button>
+                                        <button type="button" aria-label="Next match" disabled={!matches.length} onClick={() => moveMatch(1)}>
+                                            <ChevronDown size={15} />
+                                        </button>
                                     </div>
                                 )}
-                                <button type="button" className="evidence-toggle-inline" aria-expanded={evidenceOpen} aria-controls="atlas-evidence-panel" onClick={() => setEvidenceOpen((open) => !open)} title={evidenceOpen ? 'Hide evidence' : 'Show evidence'}>
+                                <button
+                                    type="button"
+                                    className="evidence-toggle-inline"
+                                    aria-expanded={evidenceOpen}
+                                    aria-controls="atlas-evidence-panel"
+                                    onClick={() => setEvidenceOpen((open) => !open)}
+                                    title={evidenceOpen ? 'Hide evidence' : 'Show evidence'}
+                                >
                                     {evidenceOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
                                     <span>{evidenceOpen ? 'Hide evidence' : 'Evidence'}</span>
                                 </button>

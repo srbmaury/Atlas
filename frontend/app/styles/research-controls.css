@@ -789,7 +789,10 @@ input[type='checkbox'] {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
-.message-search-navigation > span { min-width: 55px; text-align: right; }
+.message-search-navigation > span {
+    min-width: 55px;
+    text-align: right;
+}
 .message-search-navigation button,
 .evidence-toggle-inline {
     display: inline-flex;
@@ -807,19 +810,44 @@ input[type='checkbox'] {
     font-size: 11px;
 }
 .message-search-navigation button:hover:not(:disabled),
-.evidence-toggle-inline:hover { background: var(--hover); color: var(--text); }
+.evidence-toggle-inline:hover {
+    background: var(--hover);
+    color: var(--text);
+}
 .message-search-navigation button:focus-visible,
-.evidence-toggle-inline:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.atlas-v3 .research.evidence-collapsed { grid-template-columns: minmax(0, 1fr) !important; }
-.atlas-v3 .research.evidence-collapsed .chat-pane { width: 100%; min-width: 0; }
-.atlas-v3 .research-evidence-rail[hidden] { display: none !important; }
+.evidence-toggle-inline:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+.atlas-v3 .research.evidence-collapsed {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+.atlas-v3 .research.evidence-collapsed .chat-pane {
+    width: 100%;
+    min-width: 0;
+}
+.atlas-v3 .research-evidence-rail[hidden] {
+    display: none !important;
+}
 @media (max-width: 650px) {
-    .atlas-v3 .message-search-panel { margin: 8px 8px 12px; gap: 4px; }
-    .message-search-input { min-width: 95px; }
-    .evidence-toggle-inline span { display: none; }
-    .message-search-navigation > span { min-width: 42px; }
+    .atlas-v3 .message-search-panel {
+        margin: 8px 8px 12px;
+        gap: 4px;
+    }
+    .message-search-input {
+        min-width: 95px;
+    }
+    .evidence-toggle-inline span {
+        display: none;
+    }
+    .message-search-navigation > span {
+        min-width: 42px;
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .atlas-v3 .message-search-panel,
-    .message-search-focused { scroll-behavior: auto; transition: none; }
+    .message-search-focused {
+        scroll-behavior: auto;
+        transition: none;
+    }
 }
