@@ -563,6 +563,7 @@ export function AtlasWorkspace() {
                     )}
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
+                            workspaceId={workspaceId}
                             onOpenSource={openAnswerSource}
                             title={title}
                             userMode={user.mode}
