@@ -87,8 +87,7 @@ this configuration for users.
 
 ## Backups and recovery
 
-Atlas needs **both** its database and its uploaded files in `DATA_DIR/files`.
-Backing up one without the other may cause missing or orphaned documents.
+Atlas needs **both** its database and its uploaded originals. Originals live in `DATA_DIR/files` for local storage or the private bucket when Supabase Storage is enabled. Back up both together so document records still point to existing files.
 
 For local SQLite: `python ops/backup_sqlite.py data/atlas.db backups/atlas.db`.
 The script refuses to overwrite an existing backup and checks SQLite integrity.
@@ -98,8 +97,10 @@ directory, and verifying documents, credentials and readiness. Do not restore ov
 running database.
 
 For PostgreSQL, use your infrastructure's supported `pg_dump`/`pg_restore`
-or snapshot procedure, paired with a consistent file-storage snapshot. Validate
-restores in a separate environment before relying on them.
+or snapshot procedure, paired with a consistent file-storage snapshot. When using
+Supabase Auth, verify that your recovery procedure also preserves the corresponding
+Auth identities. Test sign-in and document downloads in a separate environment
+before relying on the backup.
 
 ## Security and deployment
 

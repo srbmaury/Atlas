@@ -108,6 +108,8 @@ Atlas also requests `openid`, `profile`, and `offline_access`. SharePoint and On
 
 ## OAuth callbacks
 
+These callbacks authorize Atlas to read connected sources. For Google account sign-in, use the separate [Supabase Auth setup](OPERATIONS.md#verified-sign-in-with-supabase-auth).
+
 | Source | Local callback | Hosted callback path |
 | --- | --- | --- |
 | Gmail | `http://localhost:3000/api/gmail/callback` | `/api/gmail/callback` |
