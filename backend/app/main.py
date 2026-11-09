@@ -6,7 +6,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from . import config, connected_research
 from .ai import generate
@@ -18,6 +18,7 @@ from .drive import router as drive_router
 from .external_sources import router as external_router
 from .gmail import router as gmail_router
 from .health import router as health_router
+from .original_storage import StorageError
 from .query_context import retrieval_query
 from .rbac import revalidate_access, workspace_permission
 from .retrieval import retrieve
@@ -97,6 +98,11 @@ async def request_diagnostics(request: Request, call_next):
         elapsed_ms,
     )
     return response
+
+
+@app.exception_handler(StorageError)
+async def storage_unavailable(request: Request, error: StorageError):
+    return JSONResponse({'detail': str(error)}, status_code=503)
 
 
 @app.get('/api/health')

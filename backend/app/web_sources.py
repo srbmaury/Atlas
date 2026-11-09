@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from . import original_storage
 from .config import DATA, MAX_FILE_BYTES
 from .db import Document, Session, uid
 from .rbac import workspace_permission
@@ -344,12 +345,14 @@ def save_webpage(workspaceId: str, url: str, db) -> dict:
             size=len(data),
             digest=digest,
         )
+        original_storage.store_original(did, path)
         db.add(doc)
         db.commit()
     except Exception:
         db.rollback()
-        path.unlink(missing_ok=True)
+        original_storage.delete_original(did)
         raise
+    original_storage.remove_staging(path)
     return {'id': did, 'name': doc.name, 'status': doc.status, 'url': url, 'duplicate': False}
 
 

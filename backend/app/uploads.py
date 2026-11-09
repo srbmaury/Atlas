@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 
+from . import original_storage
 from .config import DATA
 from .db import Document, uid
 
@@ -126,11 +127,12 @@ def finish(upload_id, workspaceId, owner, db):
         )
         os.replace(part, destination)
         try:
+            original_storage.store_original(did, destination)
             db.add(doc)
             db.commit()
         except IntegrityError:
             db.rollback()
-            destination.unlink(missing_ok=True)
+            original_storage.delete_original(did)
             existing = (
                 db.query(Document)
                 .filter_by(workspace_id=workspaceId, digest=digest.hexdigest())
@@ -143,7 +145,9 @@ def finish(upload_id, workspaceId, owner, db):
         except Exception:
             db.rollback()
             os.replace(destination, part)
+            original_storage.delete_original(did)
             raise
+        original_storage.remove_staging(destination)
         meta.unlink()
         return doc, False
 

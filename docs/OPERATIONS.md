@@ -5,6 +5,29 @@ the current Alembic revision. Liveness: `GET /api/health/live`.
 Workspace owners can inspect ingestion and source-health counts with
 `GET /api/workspaces/{workspaceId}/operations`.
 
+## Supabase on Render
+
+Use a dedicated Supabase project with the Data API disabled and the `vector`
+extension enabled. In Render, set `DATABASE_URL` to the Supabase **Session
+pooler** URI on port 5432. Use the `postgresql+psycopg://` scheme and
+`sslmode=require`. Atlas runs Alembic migrations at startup.
+
+For original documents, create a **private** Storage bucket and set these
+backend variables:
+
+| Variable | Value |
+| --- | --- |
+| `ATLAS_STORAGE_URL` | Supabase project HTTPS origin, without a path |
+| `ATLAS_STORAGE_BUCKET` | Private bucket name, such as `atlas-documents` |
+| `ATLAS_STORAGE_KEY` | Supabase server-side secret key |
+
+Store the database URL and storage key in Render's environment settings. Keep
+the storage key out of browser code and Git. If all three storage variables are
+unset, Atlas uses local files. Configure all three on the API and on any
+separate ingestion worker. Temporary uploads remain local until finalized.
+Use the same `GMAIL_TOKEN_ENCRYPTION_KEY` across deploys to keep saved connector
+credentials readable.
+
 ## Backups and recovery
 
 Atlas needs **both** its database and its uploaded files in `DATA_DIR/files`.

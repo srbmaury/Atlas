@@ -7,7 +7,6 @@ from sqlalchemy import func
 
 from ..access_audit import record
 from ..api_dependencies import database, user, workspace
-from ..config import DATA
 from ..db import (
     Chunk,
     ConnectedOAuthState,
@@ -21,6 +20,7 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
+from ..original_storage import delete_original
 from ..rbac import require_organisation, require_workspace, workspace_permission, workspace_role
 from ..schemas import DeleteWorkspaceRequest, Named
 
@@ -125,5 +125,5 @@ def delete_workspace(
     db.delete(item)
     db.commit()
     for did in ids:
-        (DATA / 'files' / did).unlink(missing_ok=True)
+        delete_original(did)
     return {'ok': True}

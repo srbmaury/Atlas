@@ -8,8 +8,8 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 
 from .ai import embed, embedding_model_id
-from .config import DATA
 from .db import Chunk, Document, Session
+from .original_storage import original_path
 from .structured_text import extract_structured
 
 SUPPORTED = {'.pdf', '.docx', '.txt', '.md', '.csv', '.json', '.html', '.htm'}
@@ -137,7 +137,8 @@ def ingest(document_id, generation, heartbeat):
             return
         name, workspace_id = doc.name, doc.workspace_id
     ocr_pages = []
-    pages = extract(DATA / 'files' / document_id, name, heartbeat, ocr_pages)
+    with original_path(document_id) as path:
+        pages = extract(path, name, heartbeat, ocr_pages)
     parts = [(page, value) for page, text in pages for value in split_text(text)]
     if not parts:
         raise ValueError('No readable text was found.')
