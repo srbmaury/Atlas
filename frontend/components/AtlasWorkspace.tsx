@@ -46,6 +46,7 @@ export function AtlasWorkspace() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [register, setRegister] = useState(true);
+    const [authNotice, setAuthNotice] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -326,6 +327,7 @@ export function AtlasWorkspace() {
         setWorkspaceId,
         setBusy,
         setError,
+        setAuthNotice,
         setPassword,
         setDocs,
         setMessages,
@@ -447,12 +449,14 @@ export function AtlasWorkspace() {
                 email={email}
                 password={password}
                 error={error}
+                notice={authNotice}
                 busy={busy}
                 onSubmit={authenticate}
                 onEmailChange={setEmail}
                 onPasswordChange={setPassword}
                 onToggleMode={() => {
                     setRegister(!register);
+                    setAuthNotice('');
                     setError('');
                 }}
             />

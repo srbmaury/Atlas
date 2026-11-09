@@ -28,6 +28,63 @@ separate ingestion worker. Temporary uploads remain local until finalized.
 Use the same `GMAIL_TOKEN_ENCRYPTION_KEY` across deploys to keep saved connector
 credentials readable.
 
+## Verified sign-in with Supabase Auth
+
+Atlas uses its own workspace permissions and session cookie. Supabase Auth
+handles email verification, password reset and Google authentication. Keep the
+Supabase Data API disabled for the Atlas database.
+
+In the backend environment, configure:
+
+| Variable | Value |
+| --- | --- |
+| `ATLAS_AUTH_URL` | Supabase project HTTPS origin |
+| `ATLAS_AUTH_KEY` | Supabase publishable key (`sb_publishable_…`) |
+| `ATLAS_AUTH_ORIGIN` | Atlas public HTTPS origin |
+
+These are separate from the database URL and private Storage key. Configure all
+three before deploying with `COOKIE_SECURE=true`. With no auth variables, local
+development with `COOKIE_SECURE=false` can still use local sign-in.
+
+In the Supabase dashboard:
+
+1. Under **Authentication**, enable email signup and **Confirm email**. Keep
+   email confirmation enabled. Atlas only provisions workspaces after Supabase
+   reports a verified address.
+2. Set the **Site URL** to the Atlas public origin. Allow these redirect URLs
+   under **Authentication → URL Configuration**, using your own origin:
+
+   ```text
+   https://atlas.example.com/auth/complete?mode=confirm
+   https://atlas.example.com/auth/complete?mode=reset
+   https://atlas.example.com/api/auth/google/callback
+   ```
+
+3. Set the **Confirm signup** and **Reset password** email templates to use
+   the corresponding link below. The token is in the URL fragment, which
+   keeps it out of HTTP request URLs. Turn off click tracking for these links.
+
+   ```html
+   <a href="{{ .RedirectTo }}#token_hash={{ .TokenHash }}">Verify your email</a>
+   ```
+
+   ```html
+   <a href="{{ .RedirectTo }}#token_hash={{ .TokenHash }}">Reset your password</a>
+   ```
+
+4. Enable **Google** under Auth providers. Create a Google OAuth web client
+   and add the callback Supabase shows as an authorized redirect URI in
+   Google Cloud. The URL ends in `/auth/v1/callback` on the Supabase project
+   domain. Enter the Google client ID and secret in Supabase. This is separate
+   from Atlas's Gmail and Calendar connector callbacks.
+5. Set up **custom SMTP in Supabase Auth** for real users. The built-in sender
+   is suitable for testing with project team addresses.
+
+Existing Atlas-only accounts need an explicit migration. Atlas refuses to link
+a Supabase identity to an older account based solely on a matching email.
+Verify signup, reset, and Google sign-in on a test deployment before enabling
+this configuration for users.
+
 ## Backups and recovery
 
 Atlas needs **both** its database and its uploaded files in `DATA_DIR/files`.
