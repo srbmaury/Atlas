@@ -17,10 +17,25 @@ from .. import supabase_auth
 from ..ai import enabled
 from ..api_dependencies import database, user
 from ..config import COOKIE_SECURE, MAX_FILE_BYTES
-from ..db import Login, User, Workspace
+from ..db import (
+    Conversation,
+    Document,
+    ExternalConnection,
+    GmailConnection,
+    Login,
+    Organisation,
+    User,
+    Workspace,
+    WorkspaceMember,
+)
+from ..original_storage import delete_original
+from ..rbac import lock_resource
 from ..schemas import Credentials
 
 router = APIRouter()
+SESSION_SECONDS = 604800
+DELETE_AUTH_WINDOW = 600
+SUPABASE_PASSWORD_MARKER = 'supabase-auth'
 
 
 def password_hash(password, salt=None):
@@ -35,14 +50,14 @@ def issue_login(actor, response, db):
         Login(
             token=hashlib.sha256(token.encode()).hexdigest(),
             user_id=actor.id,
-            expires=time.time() + 604800,
+            expires=time.time() + SESSION_SECONDS,
         )
     )
     db.commit()
     response.set_cookie(
         'atlas_session',
         token,
-        max_age=604800,
+        max_age=SESSION_SECONDS,
         httponly=True,
         secure=COOKIE_SECURE,
         samesite='strict',
@@ -138,7 +153,7 @@ def verified_account(result, db):
         return actor
     if actor or db.query(User.id).filter_by(email=email).first():
         raise HTTPException(409, 'This email is associated with a different Atlas account.')
-    actor = User(id=identifier, email=email, password='supabase-auth')
+    actor = User(id=identifier, email=email, password=SUPABASE_PASSWORD_MARKER)
     db.add(actor)
     try:
         db.flush()
@@ -259,3 +274,63 @@ def google_callback(request: Request, code: str = '', db=Depends(database)):
     except HTTPException:
         response.headers['Location'] = f'{config.origin}/?auth_error=google'
     return response
+
+
+class DeleteAccountRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+@router.delete('/api/me')
+def delete_account(
+    body: DeleteAccountRequest,
+    request: Request,
+    response: Response,
+    actor=Depends(user),
+    db=Depends(database),
+):
+    if body.email != actor.email:
+        raise HTTPException(422, 'Type your exact account email to confirm deletion.')
+    token = request.cookies.get('atlas_session', '')
+    login = db.get(Login, hashlib.sha256(token.encode()).hexdigest())
+    if not login or login.expires < time.time() + SESSION_SECONDS - DELETE_AUTH_WINDOW:
+        raise HTTPException(403, 'Sign out and sign in again before deleting your account.')
+
+    actor_id = actor.id
+    actor = lock_resource(db, User, actor_id)
+    if not actor:
+        raise HTTPException(401, 'Sign in to continue.')
+    if db.query(Organisation.id).filter_by(owner_id=actor_id).first():
+        raise HTTPException(409, 'Transfer or delete the organisations you own first.')
+    owned = db.query(Workspace).filter_by(owner_id=actor_id).with_for_update().all()
+    ids = [item.id for item in owned]
+    if (
+        any(item.organisation_id for item in owned)
+        or db.query(WorkspaceMember)
+        .filter(WorkspaceMember.workspace_id.in_(ids), WorkspaceMember.user_id != actor_id)
+        .first()
+    ):
+        raise HTTPException(409, 'Transfer or delete the shared workspaces you own first.')
+    documents = db.query(Document).filter(Document.workspace_id.in_(ids)).all()
+    if any(item.status in ('queued', 'processing') for item in documents):
+        raise HTTPException(
+            409, 'Wait for document processing to finish before deleting your account.'
+        )
+    originals = [item.id for item in documents]
+    for model, field in (
+        (Conversation, Conversation.author_id),
+        (GmailConnection, GmailConnection.connected_by),
+        (ExternalConnection, ExternalConnection.connected_by),
+    ):
+        db.query(model).filter(field == actor_id).delete(synchronize_session=False)
+    for item in owned:
+        db.delete(item)
+    db.flush()
+    db.delete(actor)
+    db.flush()
+    if actor.password == SUPABASE_PASSWORD_MARKER:
+        supabase_auth.delete_identity(require_supabase(), str(UUID(actor_id)))
+    db.commit()
+    for identifier in originals:
+        delete_original(identifier)
+    response.delete_cookie('atlas_session', path='/')
+    return {'ok': True}

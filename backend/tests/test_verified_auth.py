@@ -105,3 +105,46 @@ def test_google_pkce_and_reset_invalidate_existing_atlas_session(auth_client, mo
         ).status_code
         == 401
     )
+
+
+def test_account_deletion_removes_verified_identity_and_rolls_back_on_provider_error(
+    auth_client, monkeypatch
+):
+    from fastapi import HTTPException
+
+    identifier = str(uuid4())
+    email = f'{identifier}@example.com'
+    deleted = []
+
+    def provider(config, path, **kwargs):
+        if path == 'verify':
+            return {'user': {'id': identifier, 'email': email, 'email_confirmed_at': 'verified'}}
+        assert path == f'admin/users/{identifier}'
+        assert kwargs['method'] == 'DELETE' and kwargs['allow_missing']
+        assert config.key == 'sb_secret_test'
+        if not deleted:
+            deleted.append('first attempt')
+            raise HTTPException(503, 'Simulated provider failure')
+        deleted.append(identifier)
+        return {}
+
+    monkeypatch.setattr(supabase_auth, 'request', provider)
+    monkeypatch.delenv('ATLAS_AUTH_ADMIN_KEY', raising=False)
+    monkeypatch.setenv('ATLAS_STORAGE_URL', 'https://example.supabase.co')
+    monkeypatch.setenv('ATLAS_STORAGE_KEY', 'sb_secret_test')
+    assert (
+        auth_client.post('/api/auth/confirm', json={'token_hash': 'test-confirm-token'}).status_code
+        == 200
+    )
+    assert (
+        auth_client.request('DELETE', '/api/me', json={'email': 'wrong@example.com'}).status_code
+        == 422
+    )
+    assert auth_client.request('DELETE', '/api/me', json={'email': email}).status_code == 503
+    assert auth_client.get('/api/me').json()['id'] == identifier
+    assert len(auth_client.get('/api/workspaces').json()) == 1
+    assert auth_client.request('DELETE', '/api/me', json={'email': email}).status_code == 200
+    assert deleted == ['first attempt', identifier]
+    assert auth_client.get('/api/me').status_code == 401
+    with Session() as db:
+        assert db.get(User, identifier) is None

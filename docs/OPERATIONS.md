@@ -85,6 +85,19 @@ a Supabase identity to an older account based solely on a matching email.
 Verify signup, reset, and Google sign-in on a test deployment before enabling
 this configuration for users.
 
+### Account deletion
+
+**Settings → Account → Delete account** requires a sign-in within the previous
+10 minutes and confirmation of the account email. Transfer or delete any owned
+organisations and shared workspaces first. Atlas removes the private workspaces,
+saved conversations, connector credentials, sessions, and the Supabase Auth identity.
+
+For Supabase Auth accounts, Atlas uses the existing `ATLAS_STORAGE_KEY` if
+Storage and Auth point at the same project. Otherwise configure
+`ATLAS_AUTH_ADMIN_KEY` with a server-side `sb_secret_…` key from the Auth project.
+Keep it private. Provider grants and prior backups have their own retention
+and revocation procedures.
+
 ## Backups and recovery
 
 Atlas needs **both** its database and its uploaded originals. Originals live in `DATA_DIR/files` for local storage or the private bucket when Supabase Storage is enabled. Back up both together so document records still point to existing files.

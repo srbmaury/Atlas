@@ -7,6 +7,7 @@ import type { User, Workspace } from '../../lib/types';
 import { useAtlasTheme } from '../../hooks/useAtlasTheme';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 import { AccessManagement } from '../layout/AccessManagement';
+import { AccountDeletion } from './AccountDeletion';
 import { WorkspaceDeletion } from './WorkspaceDeletion';
 import '../../app/rebuild.css';
 import '../../app/styles/settings.css';
@@ -26,6 +27,7 @@ export function AccountSettings() {
     const [section, setSection] = useState<Section>('profile');
     const [loading, setLoading] = useState(true);
     const [signedOut, setSignedOut] = useState(false);
+    const [deleted, setDeleted] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
@@ -114,7 +116,7 @@ export function AccountSettings() {
         return (
             <main className="settings-signed-out">
                 <AtlasMark />
-                <h1>{signedOut ? 'You’re signed out' : 'Sign in to manage your account'}</h1>
+                <h1>{deleted ? 'Account deleted' : signedOut ? 'You’re signed out' : 'Sign in to manage your account'}</h1>
                 {error && <p role="alert">{error}</p>}
                 <Link className="btn primary" href="/">
                     Return to Atlas
@@ -260,6 +262,13 @@ export function AccountSettings() {
                                 </button>
                             </div>
                         </section>
+                        <AccountDeletion
+                            email={user.email}
+                            onDeleted={() => {
+                                setDeleted(true);
+                                setUser(null);
+                            }}
+                        />
                     </>
                 ) : (
                     <>
