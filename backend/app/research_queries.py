@@ -222,7 +222,22 @@ CALENDAR_QUERY_STOPWORDS = {
 }
 
 
+def search_topic(question):
+    """Remove an explicit writing format while keeping the topic and source filters."""
+    return re.sub(
+        r'^\s*(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?'
+        r'(?:write|draft|compose|generate|create)\s+(?:me\s+)?'
+        r'(?:(?:a|an|the)\s+)?(?:(?:short|brief|long|detailed)\s+)*'
+        r'(?:essay|article|report|paragraph|summary)\s+(?:on|about|regarding)\s+(?=\S)',
+        '',
+        question,
+        count=1,
+        flags=re.I,
+    )
+
+
 def natural_search_terms(question, *, extra_stopwords=()):
+    question = search_topic(question)
     requested_counts = {
         match.group(1).lower()
         for match in re.finditer(

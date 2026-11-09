@@ -60,9 +60,7 @@ def collect_connected_evidence(
 
     try:
         if body.include_documents:
-            retrieved_documents = retrieve_chunks(
-                workspaceId, retrieval_query(body.question, body.history), body.document_ids
-            )[:6]
+            retrieved_documents = retrieve_chunks(workspaceId, query, body.document_ids)[:6]
             stats['found']['documents'] = len(retrieved_documents)
             for item in retrieved_documents:
                 evidence.append(
