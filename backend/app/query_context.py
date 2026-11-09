@@ -2,6 +2,8 @@
 
 import re
 
+from .research_queries import search_topic
+
 
 def retrieval_query(question, history):
     """Carry the last user topic only when the new question explicitly refers back."""
@@ -12,8 +14,8 @@ def retrieval_query(question, history):
         re.I,
     )
     if prior and refers_back:
-        return question + ' ' + prior[0]
-    return question
+        return search_topic(question) + ' ' + search_topic(prior[0])
+    return search_topic(question)
 
 
 def bounded_history(history):

@@ -269,10 +269,12 @@ def connected_chat_stream(
         }
         selected_sources = connected_scope(effective_body)
         source_names = [provider_labels.get(provider, provider) for provider in selected_sources]
+        if len(source_names) > 2:
+            sources_label = f'{", ".join(source_names[:-1])}, and {source_names[-1]}'
+        else:
+            sources_label = ' and '.join(source_names)
         search_status = (
-            f'Searching {" and ".join(source_names)}…'
-            if source_names
-            else 'Choose sources to search…'
+            f'Searching {sources_label}…' if sources_label else 'Choose sources to search…'
         )
         yield (json.dumps({'type': 'status', 'text': search_status}, ensure_ascii=False) + '\n')
         try:
