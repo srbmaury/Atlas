@@ -4,6 +4,7 @@ import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { api } from '../../lib/api';
 import { PublicFooter } from '../public/PublicFooter';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
+import { AuthToast } from './AuthToast';
 
 interface AuthViewProps {
     themeButton: ReactNode;
@@ -49,6 +50,9 @@ export function AuthView({ themeButton, register, email, password, error, notice
         }
     }
 
+    const authError = forgot ? recoveryError : error || (googleError ? 'Google sign-in couldn’t be completed. Try again.' : '');
+    const authMessage = authError || (forgot ? recoveryMessage : notice);
+
     return (
         <div className="auth-page auth-page-with-footer">
             <header>
@@ -59,7 +63,17 @@ export function AuthView({ themeButton, register, email, password, error, notice
                 {themeButton}
             </header>
             <div className="auth-grid">
-                <form className="auth-form" onSubmit={forgot ? requestReset : onSubmit}>
+                <form
+                    className="auth-form"
+                    onSubmit={(event) => {
+                        if (forgot) {
+                            void requestReset(event);
+                        } else {
+                            setGoogleError(false);
+                            onSubmit(event);
+                        }
+                    }}
+                >
                     <h2>{forgot ? 'Reset your password' : register ? 'Create your workspace' : 'Welcome back'}</h2>
                     <p>{forgot ? 'Enter your email to request a reset link.' : register ? 'Create an account to upload documents and start researching.' : 'Sign in to your research workspace.'}</p>
                     <label>
@@ -81,12 +95,6 @@ export function AuthView({ themeButton, register, email, password, error, notice
                             />
                         </label>
                     )}
-                    {(forgot ? recoveryError : error || (googleError ? 'Google sign-in couldn’t be completed. Try again.' : '')) && (
-                        <div className="feedback error" role="alert">
-                            {forgot ? recoveryError : error || 'Google sign-in couldn’t be completed. Try again.'}
-                        </div>
-                    )}
-                    {(forgot ? recoveryMessage : notice) && <p role="status">{forgot ? recoveryMessage : notice}</p>}
                     <button className="btn primary" disabled={busy || sending}>
                         {busy || sending ? <LoaderCircle className="spin" /> : <ArrowUpRight />}
                         {forgot ? 'Send reset link' : register ? 'Create account' : 'Sign in'}
@@ -98,7 +106,14 @@ export function AuthView({ themeButton, register, email, password, error, notice
                     )}
                     {verifiedAuth && !forgot && !register && (
                         <div className="auth-switch">
-                            <button type="button" onClick={() => setForgot(true)}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setRecoveryError('');
+                                    setRecoveryMessage('');
+                                    setForgot(true);
+                                }}
+                            >
                                 Forgot password?
                             </button>
                         </div>
@@ -119,6 +134,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
                     )}
                 </form>
             </div>
+            {authMessage && <AuthToast key={`${forgot}:${Boolean(authError)}:${authMessage}`} error={Boolean(authError)} message={authMessage} />}
             <PublicFooter />
         </div>
     );

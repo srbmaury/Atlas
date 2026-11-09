@@ -554,8 +554,13 @@ test('authentication failure stays actionable and announced', async ({ page }, t
     await page.getByLabel('Email address').fill('test@example.com');
     await page.getByLabel('Password', { exact: true }).fill('wrong-password');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(page.locator('.auth-form').getByRole('alert')).toContainText('Incorrect email or password.');
+    const alert = page.getByRole('alert').filter({ hasText: 'Incorrect email or password.' });
+    await expect(alert).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('after-auth.png'), animations: 'disabled' });
+    await page.getByRole('button', { name: 'Dismiss notification' }).click();
+    await expect(alert).toHaveCount(0);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(alert).toBeVisible();
 });
 
 test('workspace creation, settings deletion and sign out preserve the selected workspace', async ({ page }) => {

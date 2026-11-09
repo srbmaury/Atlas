@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from '../../lib/api';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
+import { AuthToast } from './AuthToast';
 import '../../app/rebuild.css';
 
 export function CompleteAuth() {
@@ -28,6 +29,9 @@ export function CompleteAuth() {
 
     const reset = link?.mode === 'reset';
     const valid = link && (link.token || link.code) && (reset || link.mode === 'confirm');
+
+    const linkError = link && !valid ? 'This link is missing its verification token. Request a new email from Atlas.' : error;
+    const message = done ? 'Password updated. Sign in with your new password.' : linkError;
 
     async function submit(event: FormEvent) {
         event.preventDefault();
@@ -63,11 +67,8 @@ export function CompleteAuth() {
             <div className="auth-grid">
                 <form className="auth-form" onSubmit={(event) => void submit(event)}>
                     <h2>{reset ? 'Choose a new password' : 'Verify your email'}</h2>
-                    {done ? (
-                        <p role="status">Password updated. Sign in with your new password.</p>
-                    ) : !link ? (
-                        <p>Checking your link…</p>
-                    ) : valid ? (
+                    {!link && <p>Checking your link…</p>}
+                    {valid && !done && (
                         <>
                             {reset && (
                                 <label>
@@ -75,21 +76,15 @@ export function CompleteAuth() {
                                     <input type="password" required minLength={10} maxLength={200} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
                                 </label>
                             )}
-                            {error && (
-                                <p role="alert" className="feedback error">
-                                    {error}
-                                </p>
-                            )}
                             <button className="btn primary" disabled={busy}>
                                 {reset ? 'Update password' : 'Verify email'}
                             </button>
                         </>
-                    ) : (
-                        <p role="alert">This link is missing its verification token. Request a new email from Atlas.</p>
                     )}
                     <Link href="/">Back to Atlas</Link>
                 </form>
             </div>
+            {message && <AuthToast key={message} error={Boolean(linkError)} message={message} />}
         </main>
     );
 }
