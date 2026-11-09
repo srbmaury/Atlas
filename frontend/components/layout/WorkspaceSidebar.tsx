@@ -23,6 +23,7 @@ interface WorkspaceSidebarProps {
     storageLabel: string;
     initials: string;
     email: string;
+    displayName?: string | null;
     onSignOut: () => void;
 }
 export function WorkspaceSidebar({
@@ -43,6 +44,7 @@ export function WorkspaceSidebar({
     storageLabel,
     initials,
     email,
+    displayName,
     onSignOut,
 }: WorkspaceSidebarProps) {
     const now = new Date();
@@ -135,7 +137,7 @@ export function WorkspaceSidebar({
                     <Link className="profile-settings-link" aria-label="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`}>
                         <span className="avatar">{initials}</span>
                         <div>
-                            <strong>{email.split('@')[0]}</strong>
+                            <strong>{displayName || email.split('@')[0]}</strong>
                             <small>{email}</small>
                         </div>
                     </Link>

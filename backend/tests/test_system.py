@@ -1710,3 +1710,15 @@ def test_private_storage_keeps_original_available_without_local_copy(client, mon
         client.delete(f'/api/workspaces/{workspace_id}/documents/{identifier}').status_code == 200
     )
     assert not objects
+
+
+def test_profile_display_name_can_be_saved_and_cleared(client):
+    original = client.get('/api/me').json()
+    response = client.patch('/api/me', json={'display_name': '  Saurabh Maurya  '})
+    assert response.status_code == 200
+    assert response.json()['email'] == original['email']
+    assert response.json()['id'] == original['id']
+    assert client.get('/api/me').json()['display_name'] == 'Saurabh Maurya'
+    assert client.patch('/api/me', json={'display_name': 'x' * 101}).status_code == 422
+    assert client.patch('/api/me', json={'display_name': 'name\nline'}).status_code == 422
+    assert client.patch('/api/me', json={'display_name': ''}).json()['display_name'] is None

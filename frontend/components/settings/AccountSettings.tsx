@@ -22,6 +22,8 @@ const sections = [
 export function AccountSettings() {
     const { theme, toggleTheme } = useAtlasTheme();
     const [user, setUser] = useState<User | null>(null);
+    const [name, setName] = useState('');
+    const [savingName, setSavingName] = useState(false);
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [workspaceId, setWorkspaceId] = useState('');
     const [section, setSection] = useState<Section>('profile');
@@ -51,6 +53,7 @@ export function AccountSettings() {
             .then(([actor, list]) => {
                 if (!active) return;
                 setUser(actor);
+                setName(actor.display_name || '');
                 setWorkspaces(list);
                 setWorkspaceId(list.some((item) => item.id === query.get('workspaceId')) ? query.get('workspaceId')! : list[0]?.id || '');
             })
@@ -89,6 +92,24 @@ export function AccountSettings() {
         const list = await api<Workspace[]>('/workspaces');
         setWorkspaces(list);
         setWorkspaceId((current) => (list.some((item) => item.id === current) ? current : list[0]?.id || ''));
+    }
+    async function saveProfile() {
+        setSavingName(true);
+        setError('');
+        setNotice('');
+        try {
+            const profile = await api<User>('/me', {
+                method: 'PATCH',
+                body: JSON.stringify({ display_name: name }),
+            });
+            setUser(profile);
+            setName(profile.display_name || '');
+            setNotice('Display name saved.');
+        } catch (failure) {
+            setError((failure as Error).message);
+        } finally {
+            setSavingName(false);
+        }
     }
     async function signOut() {
         setBusy(true);
@@ -150,8 +171,8 @@ export function AccountSettings() {
                     ))}
                 </nav>
                 <div className="settings-identity">
-                    <span className="avatar">{user.email.slice(0, 2).toUpperCase()}</span>
-                    <span>{user.email}</span>
+                    <span className="avatar">{(user.display_name || user.email).slice(0, 2).toUpperCase()}</span>
+                    <span>{user.display_name || user.email}</span>
                 </div>
             </aside>
             <main className="settings-main">
@@ -185,9 +206,9 @@ export function AccountSettings() {
                                     <p>Information associated with your Atlas account.</p>
                                 </div>
                                 <div className="settings-profile">
-                                    <span className="settings-avatar">{user.email.slice(0, 2).toUpperCase()}</span>
+                                    <span className="settings-avatar">{(user.display_name || user.email).slice(0, 2).toUpperCase()}</span>
                                     <div>
-                                        <strong>{user.email.split('@')[0]}</strong>
+                                        <strong>{user.display_name || user.email.split('@')[0]}</strong>
                                         <p>Atlas account</p>
                                     </div>
                                 </div>
@@ -201,7 +222,29 @@ export function AccountSettings() {
                                         <dd>{workspaces.length}</dd>
                                     </div>
                                 </dl>
-                                <p className="settings-help">Profile editing is not available for this account yet.</p>
+                                <form
+                                    className="settings-profile-form"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        if (!savingName) void saveProfile();
+                                    }}
+                                >
+                                    <label>
+                                        Display name
+                                        <input
+                                            name="display_name"
+                                            autoComplete="name"
+                                            maxLength={100}
+                                            value={name}
+                                            disabled={savingName}
+                                            onChange={(event) => setName(event.target.value)}
+                                            placeholder={user.email.split('@')[0]}
+                                        />
+                                    </label>
+                                    <button className="btn" disabled={savingName || name.trim() === (user.display_name || '')}>
+                                        {savingName ? 'Saving…' : 'Save name'}
+                                    </button>
+                                </form>
                             </section>
                         )}
                         <section className="settings-card">

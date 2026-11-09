@@ -48,6 +48,7 @@ class User(Base):
     id = Column(String, primary_key=True, default=uid)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+    display_name = Column(String(100), nullable=True)
 
 
 class Login(Base):
