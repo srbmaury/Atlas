@@ -305,6 +305,13 @@
     min-height: 100dvh;
     background: var(--bg);
 }
+.auth-page-with-footer {
+    display: flex;
+    flex-direction: column;
+}
+.auth-page-with-footer .auth-grid {
+    width: 100%;
+}
 .auth-page > header {
     display: flex;
     align-items: center;

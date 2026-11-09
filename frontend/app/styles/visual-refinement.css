@@ -376,7 +376,7 @@
 }
 @media (max-width: 790px) {
     .atlas-v3 .content-research .chat-workspace .chat-pane {
-        height: clamp(420px, calc(100dvh - 220px), 760px);
+        height: clamp(490px, calc(100dvh - 150px), 860px);
     }
     .atlas-v3 .content-research .research-welcome .starter-questions {
         grid-template-columns: minmax(0, 1fr);
@@ -468,4 +468,50 @@
 .atlas-v3 .content .home-ask > p,
 .atlas-v3 .content .gmail-summary > p {
     max-width: 780px;
+}
+
+@media (max-width: 600px) {
+    .atlas-v3 .content.content-research {
+        padding-top: 12px;
+    }
+    .atlas-v3 .content-research .crumb {
+        margin-bottom: 6px;
+    }
+    .atlas-v3 .content-research .heading-row {
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .atlas-v3 .content-research .research-source-toolbar {
+        margin-block: 6px 10px;
+    }
+    .atlas-v3 .content-research .chat-workspace .prompt-row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-block: 3px;
+    }
+    .atlas-v3 .content-research .chat-workspace .prompt-row button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+    .atlas-v3 .sidebar.open {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    .atlas-v3 .sidebar.open > .brand-row {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+    .atlas-v3 .sidebar.open > .nav {
+        margin-top: 10px;
+        gap: 2px;
+    }
+    .atlas-v3 .sidebar.open > .nav button {
+        min-height: 40px;
+        padding-block: 7px;
+    }
+    .atlas-v3 .sidebar.open > .sidebar-research {
+        min-height: 160px;
+        margin-top: 10px;
+        padding-top: 8px;
+    }
 }

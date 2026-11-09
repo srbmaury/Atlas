@@ -1,0 +1,71 @@
+.site {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.header,
+.content {
+    width: min(100% - 40px, 780px);
+    margin-inline: auto;
+}
+
+.header {
+    padding-block: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 20px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.content {
+    flex: 1;
+    padding-block: clamp(36px, 8vw, 78px);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.content h1 {
+    margin-bottom: 16px;
+    font-size: clamp(32px, 6vw, 50px);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+}
+
+.content h2 {
+    margin-top: 32px;
+    margin-bottom: 8px;
+    font-size: 21px;
+    line-height: 1.35;
+}
+
+.content p + p {
+    margin-top: 12px;
+}
+
+.content ul {
+    margin-block: 12px;
+    padding-inline-start: 24px;
+}
+
+.content li + li {
+    margin-top: 8px;
+}
+
+.site a:not(.brand) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}

@@ -1076,6 +1076,112 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
     assert 'forest fires' in captured['excerpt']
 
 
+@pytest.mark.parametrize('all_sources', [False, True])
+def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sources):
+    import json
+
+    from app import batch_connectors, connected_synthesis, drive, external_sources, gmail, main
+    from app.db import ExternalConnection
+
+    question = 'Write an essay on  deforestation'
+    slack_url = 'https://slack.test/archives/environment/p1'
+
+    def retrieve_documents(_workspace, query, _document_ids):
+        assert query == 'deforestation'
+        return []
+
+    def gmail_get(_token, _url, params):
+        assert params['q'] == 'newer_than:30d deforestation'
+        return {'messages': []}
+
+    def drive_request(_url, _token, params):
+        assert "fullText contains 'deforestation'" in params['q']
+        assert 'essay' not in params['q']
+        return {'files': []}
+
+    def calendar_request(provider, _token, url, *, params):
+        assert provider == 'calendar'
+        if url.endswith('/events'):
+            assert params['q'] == 'deforestation'
+        return {'items': []}
+
+    def external_request(url, _token, provider, params=None, **_kwargs):
+        if provider == 'slack':
+            matches = []
+            if params['query'] == 'deforestation':
+                matches.append(
+                    {
+                        'ts': '1',
+                        'text': 'Deforestation – A Detailed Note. Agricultural expansion clears forests.',
+                        'permalink': slack_url,
+                    }
+                )
+            return {'ok': True, 'messages': {'matches': matches}}
+        if provider == 'github':
+            if url.endswith('/user'):
+                return {'login': 'test-user'}
+            assert params['q'] == 'deforestation is:issue user:test-user'
+            return {'items': []}
+        assert provider == 'notion'
+        assert params.get('query', 'deforestation') == 'deforestation'
+        return {'results': []}
+
+    def stream_answer(prompt, evidence, *_args, **_kwargs):
+        assert prompt == question
+        assert [item.provider for item in evidence] == ['slack']
+        item = evidence[0]
+        yield {
+            'type': 'complete',
+            'answer': 'Agricultural expansion contributes to deforestation [1].',
+            'sources': [item.as_prompt(1) | {'origin_id': item.source_id}],
+            'mode': 'connected',
+        }
+
+    monkeypatch.setattr(main, 'retrieve', retrieve_documents)
+    monkeypatch.setattr(gmail, 'connection', lambda *_: None)
+    monkeypatch.setattr(gmail, 'access_token', lambda *_: 'token')
+    monkeypatch.setattr(gmail, 'gmail_get', gmail_get)
+    monkeypatch.setattr(drive, 'access_token', lambda *_: 'token')
+    monkeypatch.setattr(drive, 'request_google', drive_request)
+    monkeypatch.setattr(external_sources, 'read_connection', lambda *_: (None, 'token'))
+    monkeypatch.setattr(external_sources, 'http_json', external_request)
+    monkeypatch.setattr(batch_connectors, '_request', calendar_request)
+    monkeypatch.setattr(connected_synthesis, 'stream_connected', stream_answer)
+
+    providers = ['drive', 'github', 'notion', 'slack', 'calendar'] if all_sources else ['slack']
+    w = workspaceId(client)
+    with Session() as db:
+        db.add(
+            ExternalConnection(workspace_id=w, provider='slack', account='test', secret='mocked')
+        )
+        db.commit()
+    response = client.post(
+        f'/api/workspaces/{w}/connected-chat/stream',
+        json={
+            'question': question,
+            'include_documents': all_sources,
+            'include_gmail': all_sources,
+            'providers': providers,
+        },
+    )
+    assert response.status_code == 200, response.text
+    events = [json.loads(line) for line in response.text.splitlines() if line]
+    status = (
+        'Searching Documents, Gmail, Google Drive, GitHub, Notion, Slack, and Calendar…'
+        if all_sources
+        else 'Searching Slack…'
+    )
+    assert events[0] == {'type': 'status', 'text': status}
+    assert events[-1]['type'] == 'done', response.text
+    result = events[-1]['result']
+    assert result['mode'] == 'connected'
+    assert [source['url'] for source in result['sources']] == [slack_url]
+    expected_scope = ['documents', 'gmail', *providers] if all_sources else providers
+    assert [source['provider'] for source in result['retrieval']['sources']] == expected_scope
+    assert all(source['status'] == 'searched' for source in result['retrieval']['sources'])
+    assert result['retrieval']['passages_used'] == 1
+
+
 def test_natural_language_connected_queries_are_simplified():
     from app.research_queries import drive_query_for_question, gmail_query_for_question
 
@@ -1085,6 +1191,8 @@ def test_natural_language_connected_queries_are_simplified():
         )
         == 'newer_than:30d project updates'
     )
+    assert drive_query_for_question('Find the essay on deforestation') == 'essay deforestation'
+    assert drive_query_for_question('Draft a short report on deforestation') == 'deforestation'
     assert (
         gmail_query_for_question('newer_than:30d', 'Are there any credit card offers?')
         == 'newer_than:30d credit card offers'

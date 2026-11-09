@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { api } from '../../lib/api';
+import { PublicFooter } from '../public/PublicFooter';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 import { AuthToast } from './AuthToast';
 
@@ -53,7 +54,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
     const authMessage = authError || (forgot ? recoveryMessage : notice);
 
     return (
-        <div className="auth-page">
+        <div className="auth-page auth-page-with-footer">
             <header>
                 <div className="brand-row">
                     <AtlasMark />
@@ -134,6 +135,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
                 </form>
             </div>
             {authMessage && <AuthToast key={`${forgot}:${Boolean(authError)}:${authMessage}`} error={Boolean(authError)} message={authMessage} />}
+            <PublicFooter />
         </div>
     );
 }
