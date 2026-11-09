@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { api } from '../../lib/api';
+import { PublicFooter } from '../public/PublicFooter';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface AuthViewProps {
@@ -118,6 +119,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
                     )}
                 </form>
             </div>
+            <PublicFooter />
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { AtlasMark } from '../../components/ui/WorkspacePrimitives';
+import { PublicFooter } from '../../components/public/PublicFooter';
 import styles from './public.module.css';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
@@ -14,13 +15,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 <Link href="/">Open workspace</Link>
             </header>
             <main className={styles.content}>{children}</main>
-            <footer className={styles.footer}>
-                <nav aria-label="Atlas information">
-                    <Link href="/about">About Atlas</Link>
-                    <Link href="/privacy">Privacy policy</Link>
-                    <Link href="/terms">Terms of service</Link>
-                </nav>
-            </footer>
+            <PublicFooter />
         </div>
     );
 }

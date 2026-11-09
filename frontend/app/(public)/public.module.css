@@ -7,19 +7,14 @@
 }
 
 .header,
-.footer,
 .content {
     width: min(100% - 40px, 780px);
     margin-inline: auto;
 }
 
-.header,
-.footer {
+.header {
     padding-block: 20px;
     font-size: 14px;
-}
-
-.header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -73,14 +68,4 @@
 .site a:not(.brand) {
     text-decoration: underline;
     text-underline-offset: 0.2em;
-}
-
-.footer {
-    border-top: 1px solid var(--line);
-}
-
-.footer nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 24px;
 }
