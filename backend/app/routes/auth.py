@@ -5,12 +5,13 @@ import hashlib
 import hmac
 import secrets
 import time
+from typing import Optional
 from urllib.parse import urlencode
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.exc import IntegrityError
 
 from .. import supabase_auth
@@ -70,10 +71,11 @@ def issue_login(actor, response, db):
 def register(body: Credentials, response: Response, db=Depends(database)):
     config = supabase_auth.settings()
     if config:
+        pkce = email_pkce(response, 'confirm')
         supabase_auth.request(
             config,
             'signup',
-            payload=body.model_dump(),
+            payload={**body.model_dump(), **pkce},
             params={'redirect_to': f'{config.origin}/auth/complete?mode=confirm'},
         )
         return {'verification_required': True}
@@ -174,7 +176,14 @@ class EmailRequest(BaseModel):
 
 
 class EmailToken(BaseModel):
-    token_hash: str = Field(min_length=8, max_length=512)
+    token_hash: Optional[str] = Field(default=None, min_length=8, max_length=512)
+    code: Optional[str] = Field(default=None, min_length=8, max_length=512)
+
+    @model_validator(mode='after')
+    def exactly_one_token(self):
+        if bool(self.token_hash) == bool(self.code):
+            raise ValueError('Provide exactly one email verification token.')
+        return self
 
 
 class PasswordReset(EmailToken):
@@ -187,14 +196,57 @@ def auth_options():
     return {'verified_auth': configured}
 
 
+def pkce_pair():
+    verifier = secrets.token_urlsafe(48)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+    return verifier, challenge.decode().rstrip('=')
+
+
+def email_pkce(response, mode):
+    verifier, challenge = pkce_pair()
+    response.set_cookie(
+        f'atlas_email_{mode}_pkce',
+        verifier,
+        max_age=3600,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite='strict',
+        path=f'/api/auth/{mode}',
+    )
+    return {'code_challenge': challenge, 'code_challenge_method': 's256'}
+
+
+def complete_email(config, request, response, body, mode):
+    cookie = f'atlas_email_{mode}_pkce'
+    if body.code:
+        verifier = request.cookies.get(cookie)
+        if not verifier:
+            raise HTTPException(
+                400, 'Open the link in the browser where you requested it, or request a new email.'
+            )
+        result = supabase_auth.request(
+            config,
+            'token?grant_type=pkce',
+            payload={'auth_code': body.code, 'code_verifier': verifier},
+        )
+    else:
+        kind = 'recovery' if mode == 'reset' else 'email'
+        result = supabase_auth.request(
+            config, 'verify', payload={'type': kind, 'token_hash': body.token_hash}
+        )
+    response.delete_cookie(cookie, path=f'/api/auth/{mode}')
+    return result
+
+
 @router.post('/api/auth/forgot')
-def forgot(body: EmailRequest):
+def forgot(body: EmailRequest, response: Response):
     config = require_supabase()
+    pkce = email_pkce(response, 'reset')
     try:
         supabase_auth.request(
             config,
             'recover',
-            payload=body.model_dump(),
+            payload={**body.model_dump(), **pkce},
             params={'redirect_to': f'{config.origin}/auth/complete?mode=reset'},
         )
     except HTTPException as error:
@@ -204,19 +256,15 @@ def forgot(body: EmailRequest):
 
 
 @router.post('/api/auth/confirm')
-def confirm(body: EmailToken, response: Response, db=Depends(database)):
-    result = supabase_auth.request(
-        require_supabase(), 'verify', payload={'type': 'email', 'token_hash': body.token_hash}
-    )
+def confirm(body: EmailToken, request: Request, response: Response, db=Depends(database)):
+    result = complete_email(require_supabase(), request, response, body, 'confirm')
     return issue_login(verified_account(result, db), response, db)
 
 
 @router.post('/api/auth/reset')
-def reset(body: PasswordReset, response: Response, db=Depends(database)):
+def reset(body: PasswordReset, request: Request, response: Response, db=Depends(database)):
     config = require_supabase()
-    result = supabase_auth.request(
-        config, 'verify', payload={'type': 'recovery', 'token_hash': body.token_hash}
-    )
+    result = complete_email(config, request, response, body, 'reset')
     identifier, _ = verified_identity(result)
     access_token = result.get('access_token')
     if not access_token:
@@ -233,10 +281,7 @@ def reset(body: PasswordReset, response: Response, db=Depends(database)):
 @router.get('/api/auth/google')
 def google():
     config = require_supabase()
-    verifier = secrets.token_urlsafe(48)
-    challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
-    )
+    verifier, challenge = pkce_pair()
     params = urlencode(
         {
             'provider': 'google',

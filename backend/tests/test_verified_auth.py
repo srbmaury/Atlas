@@ -148,3 +148,53 @@ def test_account_deletion_removes_verified_identity_and_rolls_back_on_provider_e
     assert auth_client.get('/api/me').status_code == 401
     with Session() as db:
         assert db.get(User, identifier) is None
+
+
+@pytest.mark.parametrize('mode,start_path', [('confirm', 'register'), ('reset', 'forgot')])
+def test_default_email_link_uses_browser_bound_pkce(auth_client, monkeypatch, mode, start_path):
+    import base64
+    import hashlib
+
+    identifier = str(uuid4())
+    email = f'{identifier}@example.com'
+    challenge = None
+    provider_calls = []
+
+    def provider(config, path, **kwargs):
+        nonlocal challenge
+        provider_calls.append(path)
+        payload = kwargs['payload']
+        if path in ('signup', 'recover'):
+            assert kwargs['params']['redirect_to'].endswith(f'mode={mode}')
+            assert payload['code_challenge_method'] == 's256'
+            challenge = payload['code_challenge']
+        elif path == 'token?grant_type=pkce':
+            assert payload['auth_code'] == 'email-provider-code'
+            digest = hashlib.sha256(payload['code_verifier'].encode()).digest()
+            assert base64.urlsafe_b64encode(digest).decode().rstrip('=') == challenge
+        else:
+            assert path == 'user'
+            assert mode == 'reset'
+            assert kwargs['token'] == 'recovery-access-token'
+        return {
+            'user': {'id': identifier, 'email': email, 'email_confirmed_at': 'verified'},
+            'access_token': 'recovery-access-token',
+        }
+
+    monkeypatch.setattr(supabase_auth, 'request', provider)
+    completion = {'code': 'email-provider-code'}
+    if mode == 'reset':
+        completion['password'] = 'new-long-password'
+
+    assert auth_client.post(f'/api/auth/{mode}', json=completion).status_code == 400
+    assert not provider_calls
+    data = {'email': email}
+    if mode == 'confirm':
+        data['password'] = 'long-test-password'
+    start = auth_client.post(f'/api/auth/{start_path}', json=data)
+    assert start.status_code == 200
+    assert 'HttpOnly' in start.headers['set-cookie']
+    assert f'Path=/api/auth/{mode}' in start.headers['set-cookie']
+    assert auth_client.post(f'/api/auth/{mode}', json=completion).status_code == 200
+    assert auth_client.post(f'/api/auth/{mode}', json=completion).status_code == 400
+    assert provider_calls.count('token?grant_type=pkce') == 1
