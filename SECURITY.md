@@ -11,8 +11,12 @@ or production approval.
   remain an additional boundary.
 - Connected-source credentials and OAuth refresh tokens are encrypted at rest using
   the configured Fernet key. The key must be stable, backed up, and kept outside Git.
-- OAuth uses random state, hashed state storage, expiry, single-use consumption, and
-  PKCE. Redirects require HTTPS outside localhost/127.0.0.1.
+- Connector OAuth uses expiring, single-use state, with PKCE where supported.
+  Google account sign-in through Supabase Auth uses PKCE.
+- Hosted sign-in requires configured Supabase Auth. Atlas provisions accounts after
+  Supabase reports a verified email and revokes Atlas sessions after password reset.
+- Private Supabase Storage requests use a server-side key after Atlas workspace
+  authorization. Keep this key separate from the Auth publishable key.
 - Outbound page fetching validates public addresses, rejects mixed/private DNS
   answers, pins the connection to the validated address, disables proxy inheritance,
   and does not follow redirects.
@@ -33,8 +37,9 @@ has matching configuration or that every threat has been independently assessed.
 - [ ] Use least-privilege provider scopes and verify Google/Microsoft app consent,
       redirect URIs, tenant policy, refresh-token behavior, revocation, and reconnect
       flows using dedicated test tenants.
-- [ ] Perform end-to-end OAuth tests against real provider test applications in
-      staging. Mocked HTTP tests are not provider verification.
+- [ ] Verify real signup and reset email delivery, rejection of unverified sign-in,
+      Google sign-in, and session revocation in staging. Test connector OAuth
+      against real provider test applications as well.
 - [ ] Restrict database/network access, require managed database TLS, configure
       backups and restore drills, and review migration rollback procedures.
 - [ ] Add rate limits and abuse controls for authentication, uploads, web fetching,

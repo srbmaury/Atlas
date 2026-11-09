@@ -2,7 +2,7 @@
 
 Atlas is a private, workspace-based research app. Upload documents, connect read-only data sources, ask questions across selected sources, and inspect citations that link back to the evidence.
 
-The app uses a Next.js/TypeScript frontend and a FastAPI backend. Local development uses SQLite; Docker Compose runs PostgreSQL with pgvector. You can generate answers with Ollama on your machine, OpenAI, or use source excerpts without an AI provider.
+The app uses a Next.js/TypeScript frontend and a FastAPI backend. Local development uses SQLite, Docker Compose runs PostgreSQL with pgvector, and Render can use Supabase Postgres and private Storage. You can generate answers with Ollama on your machine, OpenAI, or use source excerpts without an AI provider.
 
 ## Architecture and request flows
 
@@ -15,8 +15,8 @@ flowchart LR
   User["Browser user"] --> UI["Next.js frontend<br/>frontend/app and components"]
   UI --> Proxy["Next.js /api proxy"]
   Proxy --> API["FastAPI<br/>backend/app/main.py"]
-  API --> DB[("SQLite in local dev<br/>PostgreSQL / pgvector in Compose")]
-  API --> Files[("Original uploaded files")]
+  API --> DB[("SQLite in local dev<br/>PostgreSQL / pgvector in Compose or Supabase")]
+  API --> Files[("Original uploaded files<br/>Local disk or private Supabase Storage")]
   API --> Conn["On-demand provider adapters<br/>Google · Microsoft · GitHub · Notion · Slack · Jira · Linear"]
   Conn --> Providers["External provider APIs"]
   API --> Retrieval["Keyword / vector retrieval<br/>backend/app/retrieval.py"]
@@ -159,7 +159,7 @@ npm ci
 npm run dev
 ```
 
-Open <http://localhost:3000>, create an account, and use the default workspace or create another. The API docs are at <http://127.0.0.1:8000/docs>.
+Open <http://localhost:3000>, create a local development account, and use the default workspace or create another. The API docs are at <http://127.0.0.1:8000/docs>. For verified email signup, password reset, or Google sign-in, configure [Supabase Auth](docs/OPERATIONS.md#verified-sign-in-with-supabase-auth).
 
 For scanned PDFs, install Tesseract locally (`brew install tesseract` on macOS or `sudo apt-get install tesseract-ocr` on Debian/Ubuntu). To turn OCR off and accept searchable PDFs only, set `OCR_ENABLED=false` in `.env`.
 
@@ -239,12 +239,18 @@ Pull the models on the host before connecting. `host.docker.internal` lets the A
 
 The default Compose PostgreSQL password is for local development only. Changing `POSTGRES_PASSWORD` after PostgreSQL has initialized does not change the existing database user's password; recreate or update the database credentials deliberately. Do not expose this development stack directly to the public internet.
 
+## Deploy on Render
+
+The Render Dockerfile is at `ops/render/Dockerfile`. See [Supabase on Render](docs/OPERATIONS.md#supabase-on-render) to persist database records and original files across redeploys. Configure [verified sign-in](docs/OPERATIONS.md#verified-sign-in-with-supabase-auth) before deploying with `COOKIE_SECURE=true`.
+
 ## Troubleshooting
 
 - **Atlas only shows excerpts, not an answer:** Check `AI_PROVIDER`, the API logs, and that Ollama is running or the OpenAI key is valid. Restart the API after changing `.env`.
 - **Ollama is unreachable in Docker:** `127.0.0.1` inside a container refers to that container. Use `http://host.docker.internal:11434` on macOS/Windows or a host-reachable address on Linux.
 - **A saved connection cannot be decrypted:** `GMAIL_TOKEN_ENCRYPTION_KEY` changed or is missing. Restore the original key; otherwise reconnect each provider. Back up the key with the database.
-- **Google OAuth returns a redirect error:** The callback URL must match the URI registered in Google Cloud exactly, including scheme, host, port, and path.
+- **Google sign-in returns a redirect error:** Google Cloud must allow Supabase’s `/auth/v1/callback`, and Supabase must allow Atlas’s `/api/auth/google/callback`.
+- **A Gmail, Drive, or Calendar connection returns a redirect error:** Register the corresponding Atlas connector callback directly in Google Cloud. See the [connector callback table](docs/SOURCE_SETUP.md#oauth-callbacks).
+- **Signup or password-reset email never arrives:** Verify the Supabase email templates and sender configuration. The built-in sender is limited to project team addresses. For other users, configure custom SMTP in Supabase.
 - **Google OAuth says access is blocked:** In OAuth consent-screen testing mode, add the account as a test user. Check that the required Gmail or Drive API is enabled and review verification status.
 - **Slack says token type is not allowed:** Reconnect with the User OAuth Token after adding `search:read` and reinstalling the app.
 - **Notion search returns no pages:** Confirm Atlas was shared with the page or a parent page. The token alone cannot see unshared content.
@@ -279,7 +285,7 @@ npx playwright test
 
 ## What Atlas supports
 
-- Workspace accounts, private documents, saved conversations, and source citations.
+- Workspace accounts, private documents, saved conversations, and source citations. Supabase Auth adds verified email signup, password reset, and Google sign-in.
 - PDF, DOCX, TXT, Markdown, CSV, JSON, and HTML ingestion. Individual files can be up to 250 MB; scanned PDF text extraction uses Tesseract OCR.
 - Durable document processing with retry and reindex controls.
 - Keyword search, optional vector search, and source-grounded answers.

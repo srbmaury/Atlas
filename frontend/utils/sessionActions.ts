@@ -15,6 +15,7 @@ type Options = {
     setWorkspaceId: Setter<string>;
     setBusy: Setter<boolean>;
     setError: Setter<string>;
+    setAuthNotice: Setter<string>;
     setPassword: Setter<string>;
     setDocs: Setter<Doc[]>;
     setMessages: (messages: Message[]) => void;
@@ -88,6 +89,7 @@ export function createSessionActions({
     setWorkspaceId,
     setBusy,
     setError,
+    setAuthNotice,
     setPassword,
     setDocs,
     setMessages,
@@ -100,12 +102,18 @@ export function createSessionActions({
         e.preventDefault();
         setBusy(true);
         setError('');
+        setAuthNotice('');
         try {
-            await api(`/auth/${register ? 'register' : 'login'}`, {
+            const result = await api<{ verification_required?: boolean }>(`/auth/${register ? 'register' : 'login'}`, {
                 method: 'POST',
                 body: JSON.stringify({ email, password }),
             });
-            await boot();
+            if (result.verification_required) {
+                setPassword('');
+                setAuthNotice('Check your email for the link to verify your address.');
+            } else {
+                await boot();
+            }
         } catch (e) {
             setError((e as Error).message);
         } finally {

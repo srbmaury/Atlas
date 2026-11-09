@@ -1,13 +1,19 @@
 """Authentication endpoints."""
 
+import base64
 import hashlib
 import hmac
 import secrets
 import time
+from urllib.parse import urlencode
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
+from .. import supabase_auth
 from ..ai import enabled
 from ..api_dependencies import database, user
 from ..config import COOKIE_SECURE, MAX_FILE_BYTES
@@ -47,6 +53,15 @@ def issue_login(actor, response, db):
 
 @router.post('/api/auth/register')
 def register(body: Credentials, response: Response, db=Depends(database)):
+    config = supabase_auth.settings()
+    if config:
+        supabase_auth.request(
+            config,
+            'signup',
+            payload=body.model_dump(),
+            params={'redirect_to': f'{config.origin}/auth/complete?mode=confirm'},
+        )
+        return {'verification_required': True}
     email = body.email.strip().lower()
     if '@' not in email:
         raise HTTPException(422, 'Enter a valid email address.')
@@ -64,6 +79,12 @@ def register(body: Credentials, response: Response, db=Depends(database)):
 
 @router.post('/api/auth/login')
 def login(body: Credentials, response: Response, db=Depends(database)):
+    config = supabase_auth.settings()
+    if config:
+        result = supabase_auth.request(
+            config, 'token?grant_type=password', payload=body.model_dump()
+        )
+        return issue_login(verified_account(result, db), response, db)
     actor = db.query(User).filter_by(email=body.email.strip().lower()).first()
     stored = actor.password if actor else '0' * 32 + ':' + '0' * 64
     valid = hmac.compare_digest(password_hash(body.password, stored.split(':')[0]), stored)
@@ -89,3 +110,152 @@ def me(actor=Depends(user)):
         'mode': 'ai' if enabled() else 'local_excerpts',
         'max_file_bytes': MAX_FILE_BYTES,
     }
+
+
+def require_supabase():
+    config = supabase_auth.settings()
+    if not config:
+        raise HTTPException(503, 'Verified sign-in is not configured.')
+    return config
+
+
+def verified_identity(result):
+    identity = result.get('user') or {}
+    email = identity.get('email')
+    if not email or not identity.get('email_confirmed_at'):
+        raise HTTPException(403, 'Verify your email before signing in.')
+    try:
+        identifier = str(UUID(identity.get('id', '')))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(403, 'Could not verify the account identity.') from None
+    return identifier, email.strip().lower()
+
+
+def verified_account(result, db):
+    identifier, email = verified_identity(result)
+    actor = db.get(User, identifier)
+    if actor and actor.email == email:
+        return actor
+    if actor or db.query(User.id).filter_by(email=email).first():
+        raise HTTPException(409, 'This email is associated with a different Atlas account.')
+    actor = User(id=identifier, email=email, password='supabase-auth')
+    db.add(actor)
+    try:
+        db.flush()
+        db.add(Workspace(owner_id=identifier, name='My knowledge base'))
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        actor = db.get(User, identifier)
+        if actor is None or actor.email != email:
+            raise HTTPException(
+                409, 'This email is associated with a different Atlas account.'
+            ) from None
+    return actor
+
+
+class EmailRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+class EmailToken(BaseModel):
+    token_hash: str = Field(min_length=8, max_length=512)
+
+
+class PasswordReset(EmailToken):
+    password: str = Field(min_length=10, max_length=200)
+
+
+@router.get('/api/auth/options')
+def auth_options():
+    configured = bool(supabase_auth.settings())
+    return {'verified_auth': configured}
+
+
+@router.post('/api/auth/forgot')
+def forgot(body: EmailRequest):
+    config = require_supabase()
+    try:
+        supabase_auth.request(
+            config,
+            'recover',
+            payload=body.model_dump(),
+            params={'redirect_to': f'{config.origin}/auth/complete?mode=reset'},
+        )
+    except HTTPException as error:
+        if error.status_code != 400:
+            raise
+    return {'ok': True}
+
+
+@router.post('/api/auth/confirm')
+def confirm(body: EmailToken, response: Response, db=Depends(database)):
+    result = supabase_auth.request(
+        require_supabase(), 'verify', payload={'type': 'email', 'token_hash': body.token_hash}
+    )
+    return issue_login(verified_account(result, db), response, db)
+
+
+@router.post('/api/auth/reset')
+def reset(body: PasswordReset, response: Response, db=Depends(database)):
+    config = require_supabase()
+    result = supabase_auth.request(
+        config, 'verify', payload={'type': 'recovery', 'token_hash': body.token_hash}
+    )
+    identifier, _ = verified_identity(result)
+    access_token = result.get('access_token')
+    if not access_token:
+        raise HTTPException(400, 'The password reset link could not be verified.')
+    supabase_auth.request(
+        config, 'user', method='PUT', token=access_token, payload={'password': body.password}
+    )
+    db.query(Login).filter_by(user_id=identifier).delete()
+    db.commit()
+    response.delete_cookie('atlas_session', path='/')
+    return {'ok': True}
+
+
+@router.get('/api/auth/google')
+def google():
+    config = require_supabase()
+    verifier = secrets.token_urlsafe(48)
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
+    )
+    params = urlencode(
+        {
+            'provider': 'google',
+            'redirect_to': f'{config.origin}/api/auth/google/callback',
+            'code_challenge': challenge,
+            'code_challenge_method': 's256',
+        }
+    )
+    response = RedirectResponse(f'{config.url}/auth/v1/authorize?{params}')
+    response.set_cookie(
+        'atlas_google_pkce',
+        verifier,
+        max_age=600,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite='lax',
+        path='/api/auth/google/callback',
+    )
+    return response
+
+
+@router.get('/api/auth/google/callback')
+def google_callback(request: Request, code: str = '', db=Depends(database)):
+    config = require_supabase()
+    response = RedirectResponse(f'{config.origin}/', status_code=303)
+    response.delete_cookie('atlas_google_pkce', path='/api/auth/google/callback')
+    verifier = request.cookies.get('atlas_google_pkce')
+    try:
+        if not (code and verifier):
+            raise HTTPException(400, 'The Google sign-in attempt expired.')
+        result = supabase_auth.request(
+            config, 'token?grant_type=pkce', payload={'auth_code': code, 'code_verifier': verifier}
+        )
+        issue_login(verified_account(result, db), response, db)
+    except HTTPException:
+        response.headers['Location'] = f'{config.origin}/?auth_error=google'
+    return response
