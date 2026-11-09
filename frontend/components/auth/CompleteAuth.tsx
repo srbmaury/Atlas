@@ -7,7 +7,7 @@ import { AtlasMark } from '../ui/WorkspacePrimitives';
 import '../../app/rebuild.css';
 
 export function CompleteAuth() {
-    const [link, setLink] = useState<{ mode: string; token: string }>();
+    const [link, setLink] = useState<{ mode: string; token: string; code: string }>();
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -20,12 +20,14 @@ export function CompleteAuth() {
         const url = new URL(window.location.href);
         const mode = url.searchParams.get('mode') || '';
         const token = new URLSearchParams(url.hash.slice(1)).get('token_hash') || '';
-        setLink({ mode, token });
+        const code = url.searchParams.get('code') || '';
+        setLink({ mode, token, code });
+        url.searchParams.delete('code');
         window.history.replaceState(null, '', url.pathname + url.search);
     }, []);
 
     const reset = link?.mode === 'reset';
-    const valid = link?.token && (reset || link.mode === 'confirm');
+    const valid = link && (link.token || link.code) && (reset || link.mode === 'confirm');
 
     async function submit(event: FormEvent) {
         event.preventDefault();
@@ -35,7 +37,10 @@ export function CompleteAuth() {
         try {
             await api(reset ? '/auth/reset' : '/auth/confirm', {
                 method: 'POST',
-                body: JSON.stringify({ token_hash: link.token, ...(reset ? { password } : {}) }),
+                body: JSON.stringify({
+                    ...(link.code ? { code: link.code } : { token_hash: link.token }),
+                    ...(reset ? { password } : {}),
+                }),
             });
             setPassword('');
             if (reset) setDone(true);

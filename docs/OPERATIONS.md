@@ -60,7 +60,10 @@ In the Supabase dashboard:
    https://atlas.example.com/api/auth/google/callback
    ```
 
-3. Set the **Confirm signup** and **Reset password** email templates to use
+3. The default Supabase email templates work with Atlas. Open those links in
+   the same browser that requested the email, since Atlas uses PKCE. With
+   custom SMTP, you can optionally customize **Confirm signup** and
+   **Reset password** templates to use
    the corresponding link below. The token is in the URL fragment, which
    keeps it out of HTTP request URLs. Turn off click tracking for these links.
 
