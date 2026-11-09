@@ -40,7 +40,19 @@ def settings():
     return AuthSettings(url, key, origin)
 
 
-def request(config, path, *, method='POST', payload=None, token=None, params=None):
+def delete_identity(config, identifier):
+    key = os.getenv('ATLAS_AUTH_ADMIN_KEY', '')
+    if not key and os.getenv('ATLAS_STORAGE_URL', '').rstrip('/') == config.url:
+        key = os.getenv('ATLAS_STORAGE_KEY', '')
+    if not key.startswith('sb_secret_'):
+        raise HTTPException(503, 'Account deletion is not configured on this server.')
+    admin = AuthSettings(config.url, key, config.origin)
+    request(admin, f'admin/users/{identifier}', method='DELETE', allow_missing=True)
+
+
+def request(
+    config, path, *, method='POST', payload=None, token=None, params=None, allow_missing=False
+):
     headers = {'apikey': config.key}
     if token:
         headers['Authorization'] = f'Bearer {token}'
@@ -61,6 +73,14 @@ def request(config, path, *, method='POST', payload=None, token=None, params=Non
         raise HTTPException(503, 'Sign-in service returned an invalid response.') from None
     if not isinstance(result, dict):
         raise HTTPException(503, 'Sign-in service returned an invalid response.')
+    if (
+        allow_missing
+        and response.status_code == 404
+        and result.get('error_code') == 'user_not_found'
+    ):
+        return {}
+    if allow_missing and not response.is_success:
+        raise HTTPException(503, 'Could not delete the Supabase identity. Try again later.')
     if not response.is_success:
         detail = (
             'Check your email for a verification link before signing in.'
