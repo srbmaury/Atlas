@@ -50,7 +50,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
     }
 
     return (
-        <div className="auth-page">
+        <div className="auth-page auth-page-with-footer">
             <header>
                 <div className="brand-row">
                     <AtlasMark />

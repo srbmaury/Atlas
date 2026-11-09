@@ -1,14 +1,13 @@
 .footer {
-    width: min(100% - 40px, 780px);
-    margin-inline: auto;
-    padding-block: 20px;
-    border-top: 1px solid var(--line);
+    margin-block-start: auto;
+    padding: 16px clamp(16px, 4vw, 40px);
     font-size: 14px;
 }
 
 .footer nav {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 12px 24px;
 }
 
