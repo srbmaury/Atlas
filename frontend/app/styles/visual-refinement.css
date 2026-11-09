@@ -484,6 +484,9 @@
     .atlas-v3 .content-research .research-source-toolbar {
         margin-block: 6px 10px;
     }
+    .atlas-v3 .content-research .chat-workspace .chat-pane:has(.user-message, .answer-row) {
+        height: clamp(514px, calc(100dvh - 126px), 884px);
+    }
     .atlas-v3 .content-research .chat-workspace .prompt-row {
         flex-wrap: nowrap;
         overflow-x: auto;
