@@ -160,6 +160,7 @@
     max-width: 440px;
 }
 .settings-workspace-picker select,
+.settings-profile-form input,
 .settings-danger input {
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -444,4 +445,18 @@
     .settings-sidebar nav button {
         min-width: 0;
     }
+}
+
+.settings-profile-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+}
+
+.settings-profile-form label {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    width: min(100%, 280px);
 }

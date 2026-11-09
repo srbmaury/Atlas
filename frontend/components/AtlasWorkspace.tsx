@@ -274,7 +274,7 @@ export function AtlasWorkspace() {
     // Preserve original retrieval indices so [3] always opens source 3.
 
     const title = messages.find((m) => m.role === 'user')?.content || 'New research';
-    const initials = user?.email.slice(0, 2).toUpperCase() || 'A';
+    const initials = (user?.display_name || user?.email)?.slice(0, 2).toUpperCase() || 'A';
     const uploadedDocs = uploadSummary ? docs.filter((d) => uploadSummary.ids.includes(d.id)) : [];
     const uploadStatus = uploadSummary
         ? [
@@ -500,6 +500,7 @@ export function AtlasWorkspace() {
                 storageLabel={storage ? prettyBytes(storage) : '0 KB'}
                 initials={initials}
                 email={user.email}
+                displayName={user.display_name}
                 onSignOut={() => void signOut()}
             />
             <main className="main">

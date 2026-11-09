@@ -124,9 +124,24 @@ def me(actor=Depends(user)):
     return {
         'id': actor.id,
         'email': actor.email,
+        'display_name': actor.display_name,
         'mode': 'ai' if enabled() else 'local_excerpts',
         'max_file_bytes': MAX_FILE_BYTES,
     }
+
+
+class ProfileUpdate(BaseModel):
+    display_name: str = Field(max_length=100)
+
+
+@router.patch('/api/me')
+def update_profile(body: ProfileUpdate, actor=Depends(user), db=Depends(database)):
+    name = body.display_name.strip()
+    if any(ord(character) < 32 or ord(character) == 127 for character in name):
+        raise HTTPException(422, 'Enter a display name on one line.')
+    actor.display_name = name or None
+    db.commit()
+    return me(actor)
 
 
 def require_supabase():
