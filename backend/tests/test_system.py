@@ -1655,3 +1655,58 @@ def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     assert stats['failed'] == ['notion']
     assert stats['found']['slack'] == 1
     assert 'launch budget' in seen[0]
+
+
+def test_private_storage_keeps_original_available_without_local_copy(client, monkeypatch):
+    from contextlib import contextmanager
+
+    import httpx
+
+    from app import original_storage
+
+    objects = {}
+    monkeypatch.setenv('ATLAS_STORAGE_URL', 'https://example.supabase.co')
+    monkeypatch.setenv('ATLAS_STORAGE_BUCKET', 'atlas-documents')
+    monkeypatch.setenv('ATLAS_STORAGE_KEY', 'sb_secret_test')
+
+    def request_handler(request):
+        assert request.headers['apikey'] == 'sb_secret_test'
+        assert 'authorization' not in request.headers
+        path = request.url.path
+        if request.method == 'POST':
+            assert path.startswith('/storage/v1/object/atlas-documents/')
+            assert request.headers['x-upsert'] == 'false'
+            objects[path.rsplit('/', 1)[1]] = request.read()
+            return httpx.Response(200, json={})
+        if request.method == 'GET':
+            assert path.startswith('/storage/v1/object/authenticated/atlas-documents/')
+            return httpx.Response(200, content=objects[path.rsplit('/', 1)[1]])
+        assert request.method == 'DELETE'
+        assert path == '/storage/v1/object/atlas-documents'
+        import json
+
+        for identifier in json.loads(request.read())['prefixes']:
+            objects.pop(identifier, None)
+        return httpx.Response(200, json=[])
+
+    @contextmanager
+    def storage_client(headers):
+        with httpx.Client(headers=headers, transport=httpx.MockTransport(request_handler)) as fake:
+            yield fake
+
+    monkeypatch.setattr(original_storage, '_client', storage_client)
+    workspace_id = workspaceId(client)
+    document = upload(client, workspace_id, text='Original saved in private cloud storage.')
+    identifier = document['id']
+    assert identifier in objects
+    assert not (config.DATA / 'files' / identifier).exists()
+    drain()
+    original = client.get(f'/api/workspaces/{workspace_id}/documents/{identifier}/original')
+    assert original.content == b'Original saved in private cloud storage.'
+    assert original.headers['cache-control'] == 'private, no-store'
+    with Session() as db:
+        assert db.get(Document, identifier).status == 'ready'
+    assert (
+        client.delete(f'/api/workspaces/{workspace_id}/documents/{identifier}').status_code == 200
+    )
+    assert not objects

@@ -9,8 +9,8 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 from fastapi import HTTPException
 
-from .config import DATA
 from .db import Document
+from .original_storage import original_path
 from .query_context import retrieval_query
 from .research_queries import drive_query_for_question, gmail_query_for_question
 from .source_contract import Evidence, normalize_results
@@ -291,9 +291,9 @@ def connected_sources_for_payload(payload, document_evidence):
         origin_url = None
         if original and original['name'].lower().endswith('.md'):
             try:
-                original_text = (DATA / 'files' / original['document_id']).read_text(
-                    encoding='utf-8'
-                )[:4096]
+                with original_path(original['document_id'], limit=4096) as path:
+                    with path.open(encoding='utf-8', errors='replace') as source:
+                        original_text = source.read(4096)
             except (OSError, UnicodeError):
                 original_text = ''
             match = re.search(r'(?m)^Source URL: (https?://\S+)', original_text)

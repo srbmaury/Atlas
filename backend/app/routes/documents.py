@@ -7,9 +7,10 @@ from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
+from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 
-from .. import uploads
+from .. import original_storage, uploads
 from ..api_dependencies import database, document, public_doc, user, workspace
 from ..config import DATA, MAX_FILE_BYTES
 from ..db import Chunk, Document, uid
@@ -136,12 +137,14 @@ async def upload(
             doc = Document(
                 id=did, workspace_id=workspaceId, name=name, size=count, digest=digest.hexdigest()
             )
+            await run_in_threadpool(original_storage.store_original, did, path)
             db.add(doc)
             db.commit()
+            original_storage.remove_staging(path)
             results.append(public_doc(doc))
         except IntegrityError:
             db.rollback()
-            path.unlink(missing_ok=True)
+            await run_in_threadpool(original_storage.delete_original, did)
             existing = (
                 db.query(Document)
                 .filter_by(workspace_id=workspaceId, digest=digest.hexdigest())
@@ -155,7 +158,7 @@ async def upload(
             results.append({'name': name, 'error': str(exc)})
         except Exception:
             db.rollback()
-            path.unlink(missing_ok=True)
+            await run_in_threadpool(original_storage.delete_original, did)
             raise
         finally:
             await file.close()
@@ -197,8 +200,20 @@ def chunks(
 )
 def original(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)):
     doc = document(workspaceId, did, actor, db)
+    original = original_storage.original_path(did)
+    try:
+        path = original.__enter__()
+        if not path.is_file():
+            raise FileNotFoundError
+    except FileNotFoundError:
+        original.__exit__(None, None, None)
+        raise HTTPException(404, 'Document original was not found.') from None
     return FileResponse(
-        DATA / 'files' / did, filename=doc.name, content_disposition_type='attachment'
+        path,
+        filename=doc.name,
+        content_disposition_type='attachment',
+        headers={'Cache-Control': 'private, no-store'},
+        background=BackgroundTask(original.__exit__, None, None, None),
     )
 
 
@@ -245,5 +260,5 @@ def delete(workspaceId: str, did: str, actor=Depends(user), db=Depends(database)
     db.delete(doc)
     # Reports can contain copied passages; invalidate them on source deletion.
     db.commit()
-    (DATA / 'files' / did).unlink(missing_ok=True)
+    original_storage.delete_original(did)
     return {'ok': True}
