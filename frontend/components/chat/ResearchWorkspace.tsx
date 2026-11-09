@@ -170,7 +170,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         {props.copied ? <Check /> : <Copy />}
                         {props.copied ? 'Copied' : 'Copy chat'}
                     </button>
-                    <button className="btn primary" disabled={props.busy} onClick={props.onNewChat}>
+                    <button className="btn primary" aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
                         <Plus />
                         <span>New chat</span>
                     </button>
