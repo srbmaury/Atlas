@@ -86,7 +86,8 @@ def run_one():
                 )
                 db.commit()
         return True
-    from .routes.deep_research import claim_research, _investigate
+    from .routes.deep_research import claim_research, cleanup_research_runs, _investigate
+    cleanup_research_runs()
     claimed = claim_research()
     if claimed:
         run_id, owner_id, generation = claimed
