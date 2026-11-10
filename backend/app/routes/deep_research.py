@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
-from sqlalchemy import JSON, Column, Float, ForeignKey, String, Text
+from sqlalchemy import JSON, Column, Float, ForeignKey, String, Text, update
 from sqlalchemy.orm.attributes import flag_modified
 
 from ..api_dependencies import database, user, workspace
@@ -81,7 +81,7 @@ def public_run(run):
 def _save(run_id, *, status=None, stage=None, findings=None, error=None):
     with Session() as db:
         run = db.get(ResearchRun, run_id)
-        if not run or run.status == 'cancelled':
+        if not run or run.status in TERMINAL:
             return False
         if status:
             run.status = status
@@ -111,8 +111,23 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
         if error is not None:
             run.error = error
         run.updated = time.time()
+        # Compare-and-swap: cancellation or another terminal transition wins over
+        # stale worker state, even when it occurs after this session read the row.
+        changes = {
+            'status': run.status,
+            'stages': run.stages,
+            'findings': run.findings,
+            'error': run.error,
+            'updated': run.updated,
+        }
+        updated = db.execute(
+            update(ResearchRun)
+            .where(ResearchRun.id == run_id, ResearchRun.status.notin_(TERMINAL))
+            .values(**changes)
+            .execution_options(synchronize_session=False)
+        )
         db.commit()
-        return True
+        return updated.rowcount == 1
 
 
 def _investigate(run_id, actor_id):
