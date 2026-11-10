@@ -477,6 +477,9 @@ export function AtlasWorkspace() {
             {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
             <WorkspaceSidebar
                 open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                onNewChat={() => newChat()}
+                busy={busy}
                 onCollapse={() => {
                     setSidebarCollapsed(true);
                     setSidebarOpen(false);
@@ -620,6 +623,8 @@ export function AtlasWorkspace() {
                             searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
                             onOpenSource={openAnswerSource}
                             title={title}
+                            onOpenNavigation={() => setSidebarOpen(true)}
+                            onOpenGlobalSearch={() => setSearchOpen(true)}
                             userMode={user.mode}
                             readyCount={ready.length}
                             includeDocuments={includeDocuments}

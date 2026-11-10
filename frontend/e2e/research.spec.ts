@@ -140,6 +140,12 @@ test('composer remains in view after long response', async ({ page }) => {
 });
 
 test('phone chat fits a long answer above the composer', async ({ page }) => {
+    await page.route('**/api/workspaces/w1/connected-chat/stream', (route) =>
+        route.fulfill({
+            contentType: 'application/x-ndjson',
+            body: JSON.stringify({ type: 'done', result: { answer: 'Atlas found relevant evidence. '.repeat(100), mode: 'connected', sources: [] } }) + '\n',
+        }),
+    );
     await page.setViewportSize({ width: 360, height: 640 });
     const composer = page.locator('.chat-workspace .composer');
     const thread = page.locator('.chat-workspace .thread');
@@ -155,8 +161,31 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
         await page.setViewportSize(viewport);
         await expect(composer).toBeInViewport({ ratio: 1 });
         expect(await thread.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     }
+});
+
+test('phone Focus chat tools and compact drawer stay usable', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await expect(page.getByRole('button', { name: /Sources:/ })).toBeHidden();
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'Sources', exact: true }).click();
+    await openSourcePicker(page);
+    await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Close sidebar', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /All conversations/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Earlier conversation', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Old question', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Close sidebar', exact: true })).toBeHidden();
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'Find in conversation', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Search messages in this conversation' })).toBeVisible();
+    await expect(page.locator('.chat-workspace .composer')).toBeInViewport({ ratio: 1 });
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await page.getByRole('complementary').getByRole('button', { name: 'New chat', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'New research', exact: true })).toBeVisible();
 });
 
 test('Gmail replaces sources gallery without stacking beneath it', async ({ page }) => {
