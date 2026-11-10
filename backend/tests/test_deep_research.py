@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.db import Session, User, Workspace
+from app.db import Session, User, Workspace, init_db
 from app.routes.deep_research import ResearchRequest, ResearchRun, _save, initialize_research_runs
 
 
@@ -22,6 +22,7 @@ def test_repository_scope_requires_owner_and_repo():
 
 
 def test_stage_transitions_persist_across_sessions():
+    init_db()
     initialize_research_runs()
     with Session() as db:
         owner = User(email='deep-research-stage-test@example.com', password='test')
