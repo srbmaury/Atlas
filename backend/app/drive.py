@@ -250,7 +250,7 @@ def drive_search(token, query):
         token,
         {
             'q': q,
-            'page_size': 20,
+            'pageSize': 20,
             'fields': 'nextPageToken,files(id,name,mimeType,webViewLink,description,modifiedTime)',
             'orderBy': 'modifiedTime desc',
         },
@@ -346,7 +346,19 @@ def drive_evidence(token, items):
             log.warning('Skipping inaccessible or unreadable Drive file %s', item['id'])
             return None
 
-    selected = items[:5]
+    supported_types = {
+        'application/vnd.google-apps.document',
+        'application/vnd.google-apps.spreadsheet',
+        'application/json',
+        'application/xml',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }
+    selected = [
+        item
+        for item in items
+        if item.get('mimeType') in supported_types or item.get('mimeType', '').startswith('text/')
+    ][:5]
     if not selected:
         return []
     with ThreadPoolExecutor(max_workers=min(len(selected), 4)) as executor:

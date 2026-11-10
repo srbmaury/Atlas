@@ -120,6 +120,8 @@ def gmail_get(token, url, params=None):
                 502,
                 'Gmail denied access. Reconnect the account and confirm read-only Gmail permission.',
             ) from exc
+        if status == 404:
+            raise HTTPException(404, 'The Gmail record no longer exists.') from exc
         if status == 429:
             raise HTTPException(429, 'Gmail rate limit reached. Retry in a moment.') from exc
         raise HTTPException(

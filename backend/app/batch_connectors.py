@@ -79,7 +79,10 @@ def _text(value):
     if isinstance(value, str):
         return value
     if isinstance(value, dict):
-        return ' '.join(_text(x) for x in value.get('content', []))
+        if isinstance(value.get('text'), str):
+            return value['text']
+        separator = '' if value.get('type') in ('paragraph', 'heading') else ' '
+        return separator.join(_text(child) for child in value.get('content', []))
     if isinstance(value, list):
         return ' '.join(_text(x) for x in value)
     return ''
@@ -126,13 +129,20 @@ def _calendar_date_bounds(query):
     }
 
 
-def _calendar_events(token, calendar_id, params):
-    return _request(
-        'calendar',
-        token,
-        f'https://www.googleapis.com/calendar/v3/calendars/{quote(calendar_id, safe="")}/events',
-        params=params,
-    ).get('items', [])
+def _calendar_pages(token, url, params):
+    """Keep completed pages if a later request fails, with a bounded page budget."""
+    rows = []
+    for _ in range(3):
+        try:
+            page = _request('calendar', token, url, params=params)
+        except HTTPException as exc:
+            return rows, True, exc
+        rows.extend(page.get('items', []))
+        next_token = page.get('nextPageToken')
+        if not next_token:
+            return rows, False, None
+        params = {**params, 'pageToken': next_token}
+    return rows, True, None
 
 
 def profile(provider, token):
@@ -189,18 +199,28 @@ def search(provider, token, query):
             params['timeMin'] = datetime.now(ZoneInfo('Asia/Kolkata')).isoformat()
         elif not terms and broad_calendar_query and not date_bounds:
             params['timeMin'] = datetime.now(ZoneInfo('Asia/Kolkata')).isoformat()
-        calendars = _request(
-            provider,
+        calendars, partial, first_error = _calendar_pages(
             token,
             'https://www.googleapis.com/calendar/v3/users/me/calendarList',
-            params={'maxResults': 250},
-        ).get('items', [])
+            {'maxResults': 250},
+        )
         calendar_ids = list(
             dict.fromkeys(['primary'] + [item['id'] for item in calendars if item.get('id')])
         )
         events = []
         for calendar_id in calendar_ids:
-            events.extend(_calendar_events(token, calendar_id, params))
+            url = (
+                'https://www.googleapis.com/calendar/v3/calendars/'
+                f'{quote(calendar_id, safe="")}/events'
+            )
+            page_events, limited, error = _calendar_pages(token, url, params)
+            events.extend(page_events)
+            partial = partial or limited
+            first_error = first_error or error
+        if not events and partial:
+            if first_error:
+                raise first_error
+            raise HTTPException(502, 'Calendar search was incomplete. Try a narrower date range.')
         rows = []
         seen = set()
         for e in sorted(
@@ -224,6 +244,8 @@ def search(provider, token, query):
             )
             if row:
                 row['date'] = start
+                if partial:
+                    row['metadata'] = {'search_partial': True}
                 rows.append(row)
         return [x for x in rows if x]
     if provider == 'linear':
@@ -354,17 +376,17 @@ def search(provider, token, query):
                 '$select': 'id,subject,bodyPreview,webLink,receivedDateTime',
             },
         )
-        return [
-            v
-            for e in d.get('value', [])
-            if (
-                v := _result(
-                    provider,
-                    e.get('id'),
-                    e.get('subject'),
-                    e.get('receivedDateTime', '') + ' ' + e.get('bodyPreview', ''),
-                    e.get('webLink'),
-                )
+        rows = []
+        for message in d.get('value', []):
+            row = _result(
+                provider,
+                message.get('id'),
+                message.get('subject'),
+                message.get('bodyPreview'),
+                message.get('webLink'),
             )
-        ]
+            if row:
+                row['date'] = message.get('receivedDateTime')
+                rows.append(row)
+        return rows
     raise HTTPException(404, 'Unknown source provider.')

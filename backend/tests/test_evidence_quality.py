@@ -129,6 +129,7 @@ def test_mail_listing_and_rfc2822_dates_are_supported():
     assert is_listing_question('Any funds related emails')
     assert is_listing_question('Any other email which needs my attention')
     assert not is_listing_question('Explain the cited evidence in more detail')
+    assert not is_listing_question('What do my emails say about the launch budget?')
     assert (
         activity_timestamp(
             Evidence('gmail', 'm', 'Subject', 'Body', date='Sun, 08 Nov 2026 09:00:00 +0530')

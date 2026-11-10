@@ -57,7 +57,7 @@ export type Answer = {
         passages_used: number;
         sources: {
             provider: string;
-            status: 'searched' | 'failed';
+            status: 'searched' | 'partial' | 'failed';
             found: number;
             considered: number;
             used: number;

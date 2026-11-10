@@ -206,8 +206,10 @@ def test_partial_connector_failure_marks_answer_coverage():
         {'answer': 'Budget approved.', 'sources': [], 'coverage_note': 'Some claims omitted.'},
         body,
         [],
-        {'found': {'slack': 1}, 'failed': ['notion']},
+        {'found': {'slack': 1}, 'failed': ['notion'], 'partial': ['slack']},
     )
     assert 'Some claims omitted.' in result['coverage_note']
     assert 'could not search notion' in result['coverage_note']
+    assert 'partial results from slack' in result['coverage_note']
+    assert result['retrieval']['sources'][0]['status'] == 'partial'
     assert result['retrieval']['sources'][1]['status'] == 'failed'

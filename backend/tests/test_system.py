@@ -1830,3 +1830,21 @@ def test_profile_display_name_can_be_saved_and_cleared(client):
     assert client.patch('/api/me', json={'display_name': 'x' * 101}).status_code == 422
     assert client.patch('/api/me', json={'display_name': 'name\nline'}).status_code == 422
     assert client.patch('/api/me', json={'display_name': ''}).json()['display_name'] is None
+
+
+def test_drive_evidence_skips_folders_before_applying_fetch_limit(monkeypatch):
+    from app import drive
+
+    calls = []
+
+    def fake_request(url, *args, **kwargs):
+        calls.append(url)
+        return 'Budget approved'
+
+    monkeypatch.setattr(drive, 'request_google', fake_request)
+    items = [
+        {'id': str(index), 'mimeType': 'application/vnd.google-apps.folder'} for index in range(5)
+    ] + [{'id': 'budget', 'mimeType': 'application/vnd.google-apps.document'}]
+
+    assert drive.drive_evidence('token', items)[0]['excerpt'] == 'Budget approved'
+    assert calls == [drive.DRIVE_API + '/budget/export']

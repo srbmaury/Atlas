@@ -447,7 +447,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                     {latestAnswer.retrieval.sources.map((step, index) => (
                                         <li key={index}>
                                             <strong>{PROVIDER_LABELS[step.provider as keyof typeof PROVIDER_LABELS] || step.provider}</strong>
-                                            <span>{step.status === 'failed' ? 'Search failed' : `${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
+                                            <span>{step.status === 'failed' ? 'Search failed' : `${step.status === 'partial' ? 'Partial search · ' : ''}${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
                                         </li>
                                     ))}
                                     <li>
