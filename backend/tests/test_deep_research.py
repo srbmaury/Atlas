@@ -61,3 +61,31 @@ def test_stage_transitions_persist_across_sessions():
         run = db.get(ResearchRun, run_id)
         assert run.status == 'insufficient_evidence'
         assert all(step['status'] == 'completed' for step in run.stages)
+
+
+def test_terminal_runs_cannot_be_restarted_by_stale_worker():
+    init_db()
+    initialize_research_runs()
+    with Session() as db:
+        owner = User(email='deep-research-terminal-test@example.com', password='test')
+        db.add(owner)
+        db.flush()
+        space = Workspace(owner_id=owner.id, name='Deep Research terminal test')
+        db.add(space)
+        db.flush()
+        run = ResearchRun(
+            workspace_id=space.id,
+            owner_id=owner.id,
+            question='Cancellation consistency',
+            scope={'providers': []},
+            status='cancelled',
+            stages=[{'key': 'planning', 'label': 'Planning', 'status': 'cancelled'}],
+            findings=[],
+        )
+        db.add(run)
+        db.commit()
+        run_id = run.id
+    assert _save(run_id, status='running', stage='planning') is False
+    with Session() as db:
+        run = db.get(ResearchRun, run_id)
+        assert run.status == 'cancelled'
