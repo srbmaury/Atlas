@@ -259,10 +259,9 @@ def _investigate(run_id, actor_id):
             'question': question,
             'verified': bool(supported),
             'result': {
-                'answer': '\\n\\n'.join(
-                    f"{item['title']}: {item['result'].get('answer', '')}"
-                    for item in supported
-                ) if supported else 'Insufficient cited evidence to form a supported summary.',
+                'answer': ('Supported sections: ' + ', '.join(item['title'] for item in supported)
+                           + '. Review each section for its own citations and evidence.'
+                           if supported else 'Insufficient cited evidence to form a supported summary.'),
                 'sources': [],
                 'mode': 'research_summary',
             },
