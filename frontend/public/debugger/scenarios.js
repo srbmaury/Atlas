@@ -9,11 +9,26 @@ const step = (path, anchor, title, detail, input, state, output) => ({
     values: { input, state, output },
 });
 
+const uiStep = (screen, action, path, anchor, detail, input, state, output) => ({
+    ...step(web + path, anchor, action, detail, input, state, output),
+    screen,
+});
+
 export const scenarios = [
     {
         id: 'sign-in',
         title: 'Google sign-in and session',
         steps: [
+            uiStep(
+                'Sign-in screen',
+                'Click Continue with Google',
+                'components/auth/AuthView.tsx',
+                'href="/api/auth/google"',
+                'The Google button is shown when verified sign-in is configured. It navigates to the Atlas OAuth entry point.',
+                {},
+                { verifiedAuth: true },
+                { method: 'GET', path: '/api/auth/google' },
+            ),
             step(
                 api + 'routes/auth.py',
                 'def google():',
@@ -65,6 +80,16 @@ export const scenarios = [
         id: 'workspace',
         title: 'Workspace membership and access',
         steps: [
+            uiStep(
+                'Workspace manager',
+                'Submit Create workspace',
+                'components/layout/WorkspaceManagerDialog.tsx',
+                'onSubmit={onCreate}',
+                'The workspace form forwards the name and selected organisation to the workspace creation handler.',
+                { name: 'Engineering', organisation_id: 'org-1' },
+                { form: 'Create workspace' },
+                { handler: 'onCreate' },
+            ),
             step(
                 api + 'routes/workspaces.py',
                 'def create_workspace(',
@@ -107,6 +132,16 @@ export const scenarios = [
         id: 'upload',
         title: 'Upload, OCR, and indexing',
         steps: [
+            uiStep(
+                'Documents',
+                'Choose a file with Add documents',
+                'components/AtlasWorkspace.tsx',
+                'void upload(e.target.files)',
+                'The file input passes selected files to the upload handler when the workspace role permits editing.',
+                { file: 'policy.pdf', size: 184320 },
+                { canEdit: true },
+                { handler: 'upload' },
+            ),
             step(
                 api + 'routes/documents.py',
                 'async def upload(',
@@ -158,6 +193,16 @@ export const scenarios = [
         id: 'staged-upload',
         title: 'Staged upload and resume',
         steps: [
+            uiStep(
+                'Documents',
+                'Choose a large file with Add documents',
+                'components/AtlasWorkspace.tsx',
+                'void upload(e.target.files)',
+                'A large file starts at the same picker. The upload handler selects the staged upload path based on file size.',
+                { file: 'manual.pdf', size: 33554432 },
+                { canEdit: true },
+                { handler: 'upload' },
+            ),
             step(
                 api + 'uploads.py',
                 'def start(',
@@ -191,6 +236,16 @@ export const scenarios = [
         id: 'answer',
         title: 'Ask a question and verify citations',
         steps: [
+            uiStep(
+                'Ask Atlas',
+                'Enter a question and press Send',
+                'components/chat/ResearchComposer.tsx',
+                'aria-label="Send question"',
+                'The composer enables Send when a question and source scope are available. Submitting hands control to the research workspace.',
+                { question: 'What is the notice period?' },
+                { hasAskSources: true, busy: false },
+                { handler: 'onSubmit' },
+            ),
             step(
                 web + 'lib/researchRequests.ts',
                 'function requestResearchAnswer(',
@@ -251,6 +306,16 @@ export const scenarios = [
         id: 'connect-source',
         title: 'Connect Drive and search it live',
         steps: [
+            uiStep(
+                'Connected sources → Google Drive',
+                'Click Connect Google Drive',
+                'components/sources/SourceConnectionDialog.tsx',
+                'onClick={onConnectDrive}',
+                'The Drive dialog calls the connection handler when the provider is configured.',
+                {},
+                { configured: true },
+                { handler: 'onConnectDrive' },
+            ),
             step(
                 api + 'drive.py',
                 'def connect(',
@@ -302,6 +367,16 @@ export const scenarios = [
         id: 'scope',
         title: 'Share Slack channels and revoke access',
         steps: [
+            uiStep(
+                'Workspace settings → Source permissions',
+                'Save the Slack channel scope',
+                'components/layout/SourceSharingControls.tsx',
+                'onChange(connection, ids.length',
+                'The form parses channel IDs and passes the list and selected audience to the sharing handler.',
+                { resource_ids: 'C123' },
+                { provider: 'slack' },
+                { resourceIds: ['C123'] },
+            ),
             step(
                 api + 'routes/access.py',
                 'def share_connection(',
@@ -344,6 +419,16 @@ export const scenarios = [
         id: 'saved-chat',
         title: 'Save and reopen a private chat',
         steps: [
+            uiStep(
+                'Ask Atlas',
+                'Send a question to start a chat',
+                'components/chat/ResearchComposer.tsx',
+                'aria-label="Send question"',
+                'Sending a question starts the turn. Atlas saves the transcript after processing the turn.',
+                { question: 'What is the notice period?' },
+                { activeChat: null },
+                { handler: 'onSubmit' },
+            ),
             step(
                 web + 'lib/researchRequests.ts',
                 'function persistConversation(',
@@ -371,6 +456,16 @@ export const scenarios = [
                 { author: 'user-42' },
                 { status: 404 },
             ),
+            uiStep(
+                'Ask Atlas → Conversation history',
+                'Open the saved conversation',
+                'components/chat/ConversationHistory.tsx',
+                'onClick={() => (selecting ? toggleSelection(item.id) : onOpenChat(item.id))}',
+                'Clicking a history row opens it when bulk selection is off.',
+                { id: 'chat-1' },
+                { selecting: false },
+                { handler: 'onOpenChat' },
+            ),
             step(
                 web + 'utils/conversationActions.ts',
                 'async function loadChat(',
@@ -386,6 +481,16 @@ export const scenarios = [
         id: 'web-import',
         title: 'Import a public webpage',
         steps: [
+            uiStep(
+                'Documents → Web page import',
+                'Paste a URL and click Add URL',
+                'components/documents/WebPageImportForm.tsx',
+                'onSubmit={onSubmit}',
+                'The form passes the URL to the import handler, which submits it to the workspace API.',
+                { url: 'https://example.test/policy' },
+                { busy: false },
+                { handler: 'onSubmit' },
+            ),
             step(
                 api + 'web_sources.py',
                 'def add_web_page(',
@@ -419,6 +524,16 @@ export const scenarios = [
         id: 'repository',
         title: 'Inspect GitHub repository evidence',
         steps: [
+            uiStep(
+                'Repository Evidence',
+                'Submit a repository question',
+                'components/chat/RepositoryEvidence.tsx',
+                'onClick={() => void inspect()}',
+                'The question action calls the repository inspection handler using the current repository selection.',
+                { repository: 'example/repo', question: 'Trace the upload flow' },
+                { busy: false },
+                { handler: 'inspect' },
+            ),
             step(
                 web + 'components/chat/RepositoryEvidence.tsx',
                 'function RepositoryEvidence(',
@@ -452,6 +567,16 @@ export const scenarios = [
         id: 'recover',
         title: 'Reset a password and sign out',
         steps: [
+            uiStep(
+                'Sign-in screen',
+                'Click Forgot password?',
+                'components/auth/AuthView.tsx',
+                'Forgot password?',
+                'The sign-in form switches to recovery mode so the user can submit their email address.',
+                { email: 'reader@example.test' },
+                { forgot: false },
+                { forgot: true },
+            ),
             step(
                 api + 'routes/auth.py',
                 'def forgot(',
@@ -485,6 +610,16 @@ export const scenarios = [
         id: 'document-maintenance',
         title: 'Retry or delete a document',
         steps: [
+            uiStep(
+                'Documents → Document table',
+                'Click Reindex',
+                'components/documents/DocumentTable.tsx',
+                'onClick={() => onRetry(d)}',
+                'The row action passes the selected document to the reindex handler.',
+                { document: 'doc-1' },
+                { canEdit: true },
+                { handler: 'onRetry' },
+            ),
             step(
                 api + 'routes/documents.py',
                 'def retry(',
@@ -518,6 +653,16 @@ export const scenarios = [
         id: 'gmail',
         title: 'Connect Gmail and retrieve messages',
         steps: [
+            uiStep(
+                'Connected sources → Gmail',
+                'Click Connect Gmail',
+                'components/sources/gmail/GmailWorkspaceView.tsx',
+                'onClick={onConnect}',
+                'The mailbox screen calls the Gmail connection handler, starting OAuth for the current workspace.',
+                { workspace: 'ws-1' },
+                { connected: false },
+                { handler: 'onConnect' },
+            ),
             step(
                 api + 'gmail.py',
                 'def connect(',
@@ -551,6 +696,16 @@ export const scenarios = [
         id: 'export',
         title: 'Export a conversation',
         steps: [
+            uiStep(
+                'Ask Atlas → Conversation actions',
+                'Choose Export Markdown (.md)',
+                'components/chat/ResearchWorkspace.tsx',
+                "onClick={() => exportConversation('md')}",
+                'The conversation actions offer Markdown and PDF export when the transcript is ready.',
+                { format: 'md' },
+                { busy: false, canCopy: true },
+                { handler: 'exportConversation' },
+            ),
             step(
                 web + 'components/chat/ResearchWorkspace.tsx',
                 'function exportConversation(',

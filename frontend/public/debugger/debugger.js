@@ -54,6 +54,8 @@ function renderStep() {
     $('previous').disabled = index === 0;
     $('next').disabled = index === scenario.steps.length - 1;
     $('return-to-step').hidden = selectedFile === null;
+    $('screen').hidden = !step.screen;
+    $('screen').textContent = step.screen ? 'UI · ' + step.screen : '';
     $('step-title').textContent = step.title;
     $('explanation').textContent = step.detail;
     $('steps').replaceChildren(

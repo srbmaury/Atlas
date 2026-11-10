@@ -295,3 +295,10 @@ footer {
         flex-wrap: wrap;
     }
 }
+
+.screen {
+    margin: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 650;
+}
