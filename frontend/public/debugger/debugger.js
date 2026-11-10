@@ -3,6 +3,25 @@ import { scenarios } from './scenarios.js';
 const repository = 'srbmaury/Atlas';
 const api = 'https://api.github.com/repos/' + repository;
 const raw = 'https://raw.githubusercontent.com/' + repository;
+const commitPattern = /^[0-9a-f]{40}$/;
+const knownCommits = new Map([
+    ['main', '9e94ad34c946c589c90c222860c0a2a249b2beec'],
+    ['feat/atlas-flow-debugger', '560c2d836674c8e510df570cce6f5770ed457149'],
+]);
+const scenarioFiles = [...new Set(scenarios.flatMap(({ steps }) => steps.map(({ path }) => path)))].sort().map((path) => ({ path, type: 'blob' }));
+
+function savedRevision(ref, resolved) {
+    const key = 'atlas-debugger:revision:' + ref;
+    try {
+        if (resolved) localStorage.setItem(key, JSON.stringify(resolved));
+        const cached = JSON.parse(localStorage.getItem(key));
+        if (commitPattern.test(cached?.sha) && commitPattern.test(cached?.tree)) return cached;
+    } catch {
+        // Storage may be disabled.
+    }
+    return null;
+}
+
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const files = new Map();
@@ -188,6 +207,14 @@ async function loadTree() {
     treeLoaded = true;
     const activeRevision = revision;
     const signal = revisionRequest.signal;
+    const showScenarioFiles = () => {
+        renderTree(scenarioFiles);
+        $('tree').prepend(element('p', 'Showing walkthrough files. The full repository tree is unavailable.'));
+    };
+    if (!activeRevision.tree) {
+        showScenarioFiles();
+        return;
+    }
     $('tree').textContent = 'Loading repository files…';
     try {
         const data = await request(`${api}/git/trees/${activeRevision.tree}?recursive=1`, signal, true);
@@ -195,12 +222,16 @@ async function loadTree() {
             renderTree(data.tree);
             if (data.truncated) $('tree').append(element('p', 'GitHub returned a partial file tree.'));
         }
-    } catch (error) {
-        if (!signal.aborted) {
-            treeLoaded = false;
-            $('tree').textContent = `Could not load files. ${error.message}`;
-        }
+    } catch {
+        if (!signal.aborted) showScenarioFiles();
     }
+}
+
+function showRevision(resolved, note) {
+    revision = resolved;
+    $('revision-status').textContent = `${resolved.ref} · ${resolved.sha.slice(0, 8)} · ${note}`;
+    renderStep();
+    void loadTree();
 }
 
 async function loadRevision() {
@@ -219,19 +250,27 @@ async function loadRevision() {
     $('tree').replaceChildren();
     $('revision-status').textContent = `Resolving ${ref} on GitHub…`;
     renderStep();
+    if (commitPattern.test(ref.toLowerCase())) {
+        showRevision({ ref, sha: ref.toLowerCase(), tree: null }, 'exact commit');
+        return;
+    }
     try {
         const data = await request(`${api}/commits/${encodeURIComponent(ref)}`, signal, true);
         if (signal.aborted) return;
-        if (!/^[0-9a-f]{40}$/.test(data.sha) || !/^[0-9a-f]{40}$/.test(data.commit?.tree?.sha)) throw new Error('GitHub did not return a complete commit.');
-        revision = { ref, sha: data.sha, tree: data.commit.tree.sha };
-        $('revision-status').textContent = `${ref} · ${data.sha.slice(0, 8)} · pinned GitHub revision`;
-        renderStep();
-        void loadTree();
+        if (!commitPattern.test(data.sha) || !commitPattern.test(data.commit?.tree?.sha)) throw new Error('GitHub did not return a complete commit.');
+        const resolved = { ref, sha: data.sha, tree: data.commit.tree.sha };
+        savedRevision(ref, resolved);
+        showRevision(resolved, 'pinned GitHub revision');
     } catch (error) {
-        if (!signal.aborted) {
-            $('revision-status').textContent = `Could not resolve ${ref}.`;
-            $('code-status').textContent = `${error.message} Try another ref or refresh later.`;
+        if (signal.aborted) return;
+        const cached = savedRevision(ref);
+        const known = knownCommits.get(ref);
+        if (cached || known) {
+            showRevision({ ref, sha: cached?.sha || known, tree: cached?.tree || null }, 'GitHub lookup unavailable · pinned fallback');
+            return;
         }
+        $('revision-status').textContent = `Could not resolve ${ref}.`;
+        $('code-status').textContent = `${error.message} Use main or paste a full Git commit SHA.`;
     }
 }
 
