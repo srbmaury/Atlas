@@ -33,6 +33,23 @@ flowchart LR
 
 In local development the API and worker can run in the same environment; Compose runs separate API and worker services. The worker claims document records from the database rather than consuming messages from a separate queue broker. Connector records are fetched on demand, not automatically ingested into the document library.
 
+### Data model
+
+```mermaid
+erDiagram
+    USERS ||..o{ ORGANISATIONS : owns
+    USERS ||..o{ WORKSPACES : owns
+    ORGANISATIONS |o..o{ WORKSPACES : groups
+    USERS ||--o{ ORGANISATION_MEMBERS : joins
+    ORGANISATIONS ||--o{ ORGANISATION_MEMBERS : has
+    USERS ||--o{ WORKSPACE_MEMBERS : joins
+    WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+    WORKSPACES ||..o{ DOCUMENTS : contains
+    WORKSPACES ||..o{ CONVERSATIONS : contains
+```
+
+Organisation membership and workspace access are separate. A user accesses a workspace through ownership or an explicit workspace membership. Conversations belong to their authors within the workspace. See the [full database schema](docs/DATABASE.md) for keys, connector scopes, and audit relationships.
+
 ### Code flow: upload and index a document
 
 ```mermaid
