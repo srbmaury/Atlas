@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin, Plus, X } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
 type Tab = 'overview' | 'chat' | 'documents' | 'sources';
@@ -8,6 +8,9 @@ type Tab = 'overview' | 'chat' | 'documents' | 'sources';
 interface WorkspaceSidebarProps {
     open: boolean;
     onCollapse: () => void;
+    onClose: () => void;
+    onNewChat: () => void;
+    busy: boolean;
     onWorkspaceSettings: () => void;
     workspace?: Workspace;
     workspaceCount: number;
@@ -29,6 +32,9 @@ interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({
     open,
     onCollapse,
+    onClose,
+    onNewChat,
+    busy,
     onWorkspaceSettings,
     workspace,
     workspaceCount,
@@ -62,6 +68,9 @@ export function WorkspaceSidebar({
                 <button className="sidebar-collapse" aria-label="Collapse sidebar" onClick={onCollapse}>
                     <PanelLeftClose />
                 </button>
+                <button type="button" className="icon-button mobile-drawer-close" aria-label="Close sidebar" onClick={onClose}>
+                    <X />
+                </button>
             </div>
             <button aria-label="Switch workspace" className="workspace-btn" onClick={onWorkspaceSettings}>
                 <span className="ws-avatar">{workspace?.name[0]?.toUpperCase() || 'A'}</span>
@@ -89,7 +98,12 @@ export function WorkspaceSidebar({
                 ))}
             </nav>
             <div className="sidebar-research" aria-label="Recent conversations">
-                <div className="section-label">RECENT RESEARCH</div>
+                <div className="sidebar-research-heading">
+                    <div className="section-label">RECENT RESEARCH</div>
+                    <button type="button" className="mobile-drawer-view-all" aria-label={`All conversations (${chats.length})`} onClick={onAllChats}>
+                        View all
+                    </button>
+                </div>
                 {groups.map(
                     (group) =>
                         group.items.length > 0 && (
@@ -119,7 +133,7 @@ export function WorkspaceSidebar({
                             </div>
                         ),
                 )}
-                <button className="workspace-stat" onClick={onAllChats}>
+                <button className="workspace-stat sidebar-all-chats" onClick={onAllChats}>
                     <Clock3 />
                     <span>All conversations ({chats.length})</span>
                 </button>
@@ -129,6 +143,9 @@ export function WorkspaceSidebar({
                     <Settings2 size={16} />
                     <span>Account & settings</span>
                 </Link>
+                <button type="button" className="btn primary mobile-drawer-new" disabled={busy} onClick={onNewChat}>
+                    <Plus size={16} /> New chat
+                </button>
                 <div className="usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <span>Storage</span>
                     <strong>{storageLabel}</strong>

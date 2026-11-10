@@ -140,6 +140,12 @@ test('composer remains in view after long response', async ({ page }) => {
 });
 
 test('phone chat fits a long answer above the composer', async ({ page }) => {
+    await page.route('**/api/workspaces/w1/connected-chat/stream', (route) =>
+        route.fulfill({
+            contentType: 'application/x-ndjson',
+            body: JSON.stringify({ type: 'done', result: { answer: 'Atlas found relevant evidence. '.repeat(100), mode: 'connected', sources: [] } }) + '\n',
+        }),
+    );
     await page.setViewportSize({ width: 360, height: 640 });
     const composer = page.locator('.chat-workspace .composer');
     const thread = page.locator('.chat-workspace .thread');
@@ -155,8 +161,31 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
         await page.setViewportSize(viewport);
         await expect(composer).toBeInViewport({ ratio: 1 });
         expect(await thread.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     }
+});
+
+test('phone Focus chat tools and compact drawer stay usable', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await expect(page.getByRole('button', { name: /Sources:/ })).toBeHidden();
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'Sources', exact: true }).click();
+    await openSourcePicker(page);
+    await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Close sidebar', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /All conversations/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Earlier conversation', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Old question', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Close sidebar', exact: true })).toBeHidden();
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'Find in conversation', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Search messages in this conversation' })).toBeVisible();
+    await expect(page.locator('.chat-workspace .composer')).toBeInViewport({ ratio: 1 });
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await page.getByRole('complementary').getByRole('button', { name: 'New chat', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'New research', exact: true })).toBeVisible();
 });
 
 test('Gmail replaces sources gallery without stacking beneath it', async ({ page }) => {
@@ -458,6 +487,34 @@ test('mobile navigation closes after choosing a destination', async ({ page }) =
     expect(overflow).toBe(false);
 });
 
+test('phone workspace pages expose compact source and document actions', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const navigate = async (name: string) => {
+        await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+        await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click();
+    };
+    await navigate('Connected sources');
+    const addSource = page.getByRole('button', { name: 'Add a source', exact: true });
+    const slack = page.getByRole('button', { name: /^Slack/ });
+    await expect(slack).toBeHidden();
+    await expect(page.getByRole('button', { name: /^GitHub/ })).toBeVisible();
+    await addSource.click();
+    await slack.click();
+    await expect(page.getByRole('dialog', { name: 'Manage source connection' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await navigate('Documents');
+    await expect(page.getByRole('searchbox', { name: 'Search documents' })).toBeVisible();
+    await page.getByRole('button', { name: 'Actions for notes.md' }).click();
+    await expect(page.getByRole('link', { name: 'Download notes.md' })).toBeVisible();
+    await page.getByRole('button', { name: 'Actions for notes.md' }).click();
+    await expect(page.getByRole('button', { name: 'Upload files' })).toBeHidden();
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Upload files' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add URL' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('Home keeps the primary research entry accessible on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
@@ -560,7 +617,7 @@ test('document processing failures expose context and retry', async ({ page }) =
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
     await expect(page.getByText('The PDF is password protected. Upload an unlocked copy.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Reindex failed.pdf' })).toBeVisible();
-    await expect(page.getByText('Processing', { exact: true })).toBeVisible();
+    await expect(page.getByText('Processing', { exact: true }).filter({ visible: true })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search documents' }).fill('absent');
     await expect(page.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
 });
@@ -750,7 +807,7 @@ test('settings fit a narrow screen and preserve workspace on return', async ({ p
     await expect(page.getByRole('heading', { name: 'Workspace & members', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     await page.screenshot({ path: 'test-results/settings-mobile.png', fullPage: true });
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByLabel('Settings section').selectOption('profile');
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'You’re signed out', exact: true })).toBeVisible();
 });

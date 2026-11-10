@@ -1,6 +1,6 @@
 'use client';
-import { Download, FolderOpen, RotateCcw, Trash2 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Download, Ellipsis, FolderOpen, RotateCcw, Trash2 } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import type { Doc } from '../../lib/types';
 import { fileExtension } from '../../utils/utils';
 import { EmptyState, FileBadge, Status } from '../ui/WorkspacePrimitives';
@@ -19,6 +19,7 @@ interface DocumentTableProps {
 }
 
 export function DocumentTable({ canEdit = true, items, filter, onClearFilter, uploadButton, onInspect, onRetry, onRemove, downloadUrl, formatSize }: DocumentTableProps) {
+    const [openActionsId, setOpenActionsId] = useState<string | null>(null);
     if (!items.length)
         return (
             <EmptyState
@@ -59,6 +60,9 @@ export function DocumentTable({ canEdit = true, items, filter, onClearFilter, up
                                     <FileBadge name={d.name} />
                                     <span>
                                         <strong>{d.name}</strong>
+                                        <small className="document-mobile-meta">
+                                            {formatSize(d.size)} · <Status status={d.status} />
+                                        </small>
                                         {d.error && <small className="document-error">{d.error}</small>}
                                     </span>
                                 </button>
@@ -70,7 +74,17 @@ export function DocumentTable({ canEdit = true, items, filter, onClearFilter, up
                                 <Status status={d.status} />
                             </td>
                             <td>
-                                <div className="row-actions">
+                                <button
+                                    type="button"
+                                    className="icon-button document-mobile-actions"
+                                    aria-label={`Actions for ${d.name}`}
+                                    aria-expanded={openActionsId === d.id}
+                                    aria-controls={`document-actions-${d.id}`}
+                                    onClick={() => setOpenActionsId((current) => (current === d.id ? null : d.id))}
+                                >
+                                    <Ellipsis size={17} />
+                                </button>
+                                <div className="row-actions" id={`document-actions-${d.id}`} data-mobile-open={openActionsId === d.id}>
                                     {canEdit && ['ready', 'failed'].includes(d.status) && (
                                         <button className="icon-button" aria-label={`Reindex ${d.name}`} title="Reindex document" onClick={() => onRetry(d)}>
                                             <RotateCcw />

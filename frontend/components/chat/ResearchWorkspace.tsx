@@ -1,7 +1,25 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
-import { Check, ChevronDown, CircleHelp, Copy, FileText, MessageSquare, Plus, ArrowUpRight, BookOpen, Search, X, Activity, PanelRightClose, PanelRightOpen, ChevronUp } from 'lucide-react';
+import {
+    Check,
+    ChevronDown,
+    CircleHelp,
+    Copy,
+    FileText,
+    MessageSquare,
+    Plus,
+    ArrowUpRight,
+    BookOpen,
+    Search,
+    X,
+    Activity,
+    PanelRightClose,
+    PanelRightOpen,
+    ChevronUp,
+    Menu,
+    Ellipsis,
+} from 'lucide-react';
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
@@ -18,6 +36,8 @@ interface ResearchWorkspaceProps {
     workspaceId: string;
     searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
+    onOpenNavigation: () => void;
+    onOpenGlobalSearch: () => void;
     onOpenSource: (source: Source) => void;
     userMode: string;
     readyCount: number;
@@ -74,6 +94,12 @@ interface ResearchWorkspaceProps {
 }
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
+    const mobileActions = useRef<HTMLDetailsElement>(null);
+    const [mobilePanel, setMobilePanel] = useState<'sources' | 'find' | null>(null);
+    function chooseMobileAction(action: () => void) {
+        if (mobileActions.current) mobileActions.current.open = false;
+        action();
+    }
     const [messageSearch, setMessageSearch] = useState('');
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
     const [evidenceOpen, setEvidenceOpen] = useState(true);
@@ -85,9 +111,11 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     useEffect(() => {
         setFocusedIndex(null);
         setMessageSearch('');
+        setMobilePanel(null);
     }, [props.chatId]);
     useEffect(() => {
         if (!props.searchTarget || props.chatId !== props.searchTarget.chatId) return;
+        setMobilePanel('find');
         const target = props.searchTarget;
         if (!props.messages[target.index] || !props.messages[target.index].content.toLocaleLowerCase().includes(target.phrase.toLocaleLowerCase())) return;
         setMessageSearch(target.phrase);
@@ -151,7 +179,49 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         );
 
     return (
-        <section className="research-page">
+        <section className="research-page" data-mobile-panel={mobilePanel}>
+            <header className="focus-chat-header">
+                <button type="button" className="icon-button" aria-label="Open menu" onClick={props.onOpenNavigation}>
+                    <Menu />
+                </button>
+                <div className="focus-chat-title">
+                    <h1>{props.title}</h1>
+                    <span>Ask Atlas</span>
+                </div>
+                <details
+                    ref={mobileActions}
+                    className="focus-chat-actions"
+                    onKeyDown={(event) => {
+                        if (event.key !== 'Escape' || !event.currentTarget.open) return;
+                        event.currentTarget.open = false;
+                        event.currentTarget.querySelector('summary')?.focus();
+                    }}
+                >
+                    <summary className="icon-button" aria-label="More chat actions">
+                        <Ellipsis />
+                    </summary>
+                    <div className="focus-chat-menu">
+                        <button type="button" onClick={() => chooseMobileAction(() => setMobilePanel((panel) => (panel === 'sources' ? null : 'sources')))}>
+                            Sources
+                        </button>
+                        <button type="button" disabled={!props.messages.length} onClick={() => chooseMobileAction(() => setMobilePanel((panel) => (panel === 'find' ? null : 'find')))}>
+                            Find in conversation
+                        </button>
+                        <button type="button" onClick={() => chooseMobileAction(props.onToggleHistory)}>
+                            {props.historyOpen ? 'Hide history' : 'History'}
+                        </button>
+                        <button type="button" onClick={() => chooseMobileAction(props.onOpenGlobalSearch)}>
+                            Search workspace
+                        </button>
+                        <button type="button" disabled={!props.canCopy} onClick={() => chooseMobileAction(props.onCopy)}>
+                            {props.copied ? 'Copied' : 'Copy chat'}
+                        </button>
+                        <button type="button" disabled={props.busy} onClick={() => chooseMobileAction(props.onNewChat)}>
+                            New chat
+                        </button>
+                    </div>
+                </details>
+            </header>
             <div className="crumb">
                 Ask Atlas<span>›</span>
                 <span className="crumb-title">{props.title}</span>
