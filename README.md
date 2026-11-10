@@ -212,7 +212,7 @@ The `.env.example` file defaults to `AI_PROVIDER=openai` with an empty API key. 
 Ollama keeps prompts and generated answers on the machine running Ollama. Atlas does not set an output-token cap for local generation; response time depends on your hardware, and the model still has a finite context window. New uploads use local embeddings. To re-embed existing documents, stop the API worker and run from the repository root:
 
 ```sh
-PYTHONPATH=backend .venv/bin/python evals/reindex_local.py
+PYTHONPATH=backend .venv/bin/python ops/reindex_local.py
 ```
 
 ### OpenAI
@@ -299,6 +299,14 @@ npm install --no-save @playwright/test@1.56.1
 npx playwright install chromium
 npx playwright test
 ```
+
+Run the offline keyword retrieval regression with:
+
+```sh
+PYTHONPATH=backend .venv/bin/python evals/retrieval_eval.py evals/retrieval_cases.json --k 5
+```
+
+The fixture uses synthetic queries and labeled passages. It measures keyword ranking and serves as a regression check.
 
 ## What Atlas supports
 
