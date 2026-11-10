@@ -45,9 +45,6 @@ class ResearchRun(Base):
 
 class ResearchRequest(ConnectedQuestion):
     depth: str = Field(default='standard', pattern='^(standard|deep)$')
-    repository: str | None = Field(
-        default=None, max_length=150, pattern=r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
-    )
 
 
 def initialize_research_runs():
@@ -152,9 +149,7 @@ def _investigate(run_id, actor_id):
         # the selected sources and uses the existing citation validation.
         repository = scope.get('repository')
         if repository and 'github' in scope.get('providers', []):
-            # Trigger repository-scoped code retrieval, rather than a generic
-            # GitHub issues or repository listing search.
-            question = f'Analyze source code for: {question} repo:{repository}'
+            question = f'Analyze source code for: {question}'
         questions = [
             ('Key findings', question),
             (
