@@ -44,12 +44,10 @@ class ConversationRename(BaseModel):
 
 
 class ConnectedQuestion(Question):
-    repository: str | None = Field(default=None, max_length=150, pattern=r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+
-    include_documents: bool = True
-    include_gmail: bool = False
-    gmail_query: str = Field(default='newer_than:30d', max_length=400)
-    providers: List[str] = Field(default_factory=list, max_length=12)
-)
+    repository: str | None = Field(
+        default=None, max_length=150,
+        pattern=r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+    )
     include_documents: bool = True
     include_gmail: bool = False
     gmail_query: str = Field(default='newer_than:30d', max_length=400)
