@@ -229,7 +229,7 @@ function AnswerTrace({ result, onOpenSource }: { result: Answer; onOpenSource: (
                                     ? 'Could not search this source'
                                     : item.found === 0
                                       ? 'No matching passages'
-                                      : `${item.found} matches · ${item.considered} kept · ${item.used} ${isListing ? 'shown' : 'cited'}`}
+                                      : `${item.status === 'partial' ? 'Partial search · ' : ''}${item.found} matches · ${item.considered} kept · ${item.used} ${isListing ? 'shown' : 'cited'}`}
                             </span>
                             {sourceCitations.length > 0 && (
                                 <span className="answer-trace-citations">

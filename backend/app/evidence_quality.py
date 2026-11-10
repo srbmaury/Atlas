@@ -63,6 +63,13 @@ def score(item, question):
 
 def is_listing_question(question):
     """Recognize record-list requests across providers without provider-specific terms."""
+    if re.search(
+        r'\b(?:summari[sz]e|explain|compare|analy[sz]e)\b'
+        r'|\b(?:what|how)\b[^?]*\b(?:say|suggest|indicate|reveal|recommend)\b',
+        question,
+        re.I,
+    ):
+        return False
     words = set(tokens(question)) | {
         word.removesuffix('s') for word in re.findall(r'\w+', question.lower())
     }
@@ -102,7 +109,11 @@ def is_listing_question(question):
         'pr',
     }
     asks_for_email_matches = bool(
-        re.search(r'\b(?:any|which|what)\b.{0,65}\b(?:emails?|mails?|messages?)\b', question, re.I)
+        re.search(
+            r'\b(?:any|which|what)\b(?!\s+(?:do|did|does)\b).{0,65}\b(?:emails?|mails?|messages?)\b',
+            question,
+            re.I,
+        )
     )
     return (
         (asks_to_list and bool(words & record_terms))

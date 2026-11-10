@@ -35,6 +35,7 @@ def test_jira_query_uses_fixed_host_and_safe_terms(monkeypatch):
     monkeypatch.setattr(batch_connectors, '_request', fake_request)
     rows = batch_connectors.search('jira', 'token', 'cache" OR project=ADMIN')
     assert rows[0]['url'] == 'https://atlas-team.atlassian.net/browse/DEV-4'
+    assert rows[0]['excerpt'] == 'Avoid stale cache'
     assert calls[0][1].startswith('https://atlas-team.atlassian.net/')
     assert 'project=ADMIN' not in calls[0][2]['params']['jql']
 
@@ -389,3 +390,57 @@ def test_sharepoint_search_returns_only_site_items(monkeypatch):
     assert rows[0]['provider'] == 'sharepoint'
     assert rows[0]['id'] == 'sp1'
     assert rows[0]['url'] == 'https://example.sharepoint.com/design'
+
+
+def test_calendar_follows_page_tokens_and_keeps_events_when_another_calendar_fails(monkeypatch):
+    calls = []
+
+    def fake_request(provider, token, url, *, params):
+        calls.append((url, params))
+        if url.endswith('/calendarList'):
+            return (
+                {'items': [{'id': 'secondary'}]}
+                if 'pageToken' in params
+                else {
+                    'items': [],
+                    'nextPageToken': 'calendar-page-2',
+                }
+            )
+        if '/secondary/' in url:
+            raise HTTPException(422, 'Calendar access expired')
+        if 'pageToken' not in params:
+            return {'items': [], 'nextPageToken': 'events-page-2'}
+        return {'items': [{'id': 'event', 'summary': 'Launch', 'start': {'date': '2099-01-01'}}]}
+
+    monkeypatch.setattr(batch_connectors, '_request', fake_request)
+    rows = batch_connectors.search('calendar', 'token', 'list upcoming events')
+
+    assert [row['id'] for row in rows] == ['event']
+    assert rows[0]['metadata'] == {'search_partial': True}
+    assert [params.get('pageToken') for _, params in calls] == [
+        None,
+        'calendar-page-2',
+        None,
+        'events-page-2',
+        None,
+    ]
+
+
+def test_outlook_retains_message_date_for_recency_ranking(monkeypatch):
+    from app.evidence_quality import prepare_evidence
+    from app.source_contract import normalize_results
+
+    monkeypatch.setattr(
+        batch_connectors,
+        '_request',
+        lambda *a, **kw: {
+            'value': [
+                {'id': 'older', 'subject': 'Budget', 'receivedDateTime': '2026-10-01T09:00:00Z'},
+                {'id': 'newer', 'subject': 'Budget', 'receivedDateTime': '2026-11-01T09:00:00Z'},
+            ]
+        },
+    )
+    question = 'Find the latest budget email'
+    evidence = normalize_results('outlook', batch_connectors.search('outlook', 'token', question))
+
+    assert [item.source_id for item in prepare_evidence(question, evidence)] == ['newer', 'older']

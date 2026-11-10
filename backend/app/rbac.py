@@ -1,5 +1,7 @@
 """Explicit workspace membership; organisation administration never grants content access."""
 
+import hashlib
+
 from fastapi import HTTPException, Request
 
 from .db import (
@@ -74,16 +76,37 @@ def connection_owner(db, row):
     return row.connected_by or db.get(Workspace, row.workspace_id).owner_id
 
 
+RESOURCE_SCOPED_PROVIDERS = frozenset({'drive', 'slack'})
+
+
+def source_scope(db, actor, row):
+    """Snapshot a scoped provider's credential and effective resource allowlist."""
+    if row is None or getattr(row, 'provider', None) not in RESOURCE_SCOPED_PROVIDERS:
+        return None
+    resource_ids = (
+        None if connection_owner(db, row) == actor.id else frozenset(row.shared_resource_ids or [])
+    )
+    return hashlib.sha256(row.secret.encode()).digest(), resource_ids
+
+
 def connection_visible(db, actor, row):
     if row is None:
         return False
     item = db.get(Workspace, row.workspace_id)
     if not item or not workspace_role(db, actor, item):
         return False
-    return bool(
-        row.shared
+    if connection_owner(db, row) == actor.id:
+        return True
+    provider = getattr(row, 'provider', 'gmail')
+    if provider in RESOURCE_SCOPED_PROVIDERS and not row.shared_resource_ids:
+        return False
+    return bool(row.shared or db.get(SourceGrant, (row.workspace_id, provider, actor.id)))
+
+
+def connection_diagnostics_visible(db, actor, row):
+    return connection_visible(db, actor, row) and (
+        getattr(row, 'provider', None) not in RESOURCE_SCOPED_PROVIDERS
         or connection_owner(db, row) == actor.id
-        or db.get(SourceGrant, (row.workspace_id, getattr(row, 'provider', 'gmail'), actor.id))
     )
 
 
@@ -108,7 +131,7 @@ def connection_for_change(db, actor, workspace_id, provider):
     return row
 
 
-def revalidate_access(workspace_id, actor, providers=()):
+def revalidate_access(workspace_id, actor, providers=(), scopes=None):
     """Check a fresh session before releasing results after slow provider calls."""
     with Session() as db:
         require_workspace(db, actor, workspace_id)
@@ -123,6 +146,10 @@ def revalidate_access(workspace_id, actor, providers=()):
             if row is None:
                 raise HTTPException(409, 'A source was disconnected during this answer. Ask again.')
             require_connection(db, actor, row)
+            if scopes and provider in scopes and source_scope(db, actor, row) != scopes[provider]:
+                raise HTTPException(
+                    409, 'Source permissions changed during this search. Ask again.'
+                )
 
 
 def workspace_permission(minimum='viewer', *, provider=None, manage_connection=False):

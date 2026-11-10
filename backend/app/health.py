@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from .db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
 from .gmail import actor, allowed_workspace
-from .rbac import connection_visible, workspace_permission
+from .rbac import connection_diagnostics_visible, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def workspace_operations(workspaceId: str, request: Request):
         checks = [
             item
             for item in db.query(SourceHealthCheck).filter_by(workspace_id=workspaceId).all()
-            if connection_visible(
+            if connection_diagnostics_visible(
                 db,
                 who,
                 db.get(GmailConnection, workspaceId)

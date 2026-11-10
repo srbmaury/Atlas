@@ -146,3 +146,48 @@ def test_gmail_listing_uses_every_distinct_message():
         'considered': 25,
         'used': 25,
     }
+
+
+def test_connected_search_keeps_available_messages_after_a_deleted_hit(monkeypatch):
+    import httpx
+
+    from app import gmail
+
+    def fake_get(url, **kwargs):
+        request = httpx.Request('GET', url)
+        if url.endswith('/messages'):
+            return httpx.Response(
+                200, request=request, json={'messages': [{'id': 'missing'}, {'id': 'good'}]}
+            )
+        if url.endswith('/missing'):
+            return httpx.Response(404, request=request)
+        return httpx.Response(200, request=request, json={'id': 'good', 'snippet': 'Approved'})
+
+    monkeypatch.setattr(gmail.httpx, 'get', fake_get)
+    body = SimpleNamespace(question='Find budget emails', gmail_query='')
+    hits = _search_gmail(
+        'token',
+        body,
+        'https://example.test',
+        gmail.gmail_get,
+        gmail.email_from_json,
+        gmail_query_for_question,
+    )
+
+    assert [hit.source_id for hit in hits] == ['good']
+    assert hits[0].metadata['search_partial'] is True
+
+
+def test_record_listing_does_not_drop_retrieved_documents():
+    from app.connected_research import direct_connected_result
+    from app.source_contract import Evidence
+
+    body = SimpleNamespace(include_documents=True, include_gmail=True, providers=[])
+    evidence = [
+        Evidence('gmail', 'email', 'Budget email', 'Budget approved'),
+        Evidence('documents', 'chunk', 'Budget report', 'Budget proposed'),
+    ]
+    assert (
+        direct_connected_result('List budget emails and documents', body, evidence, {'chunk': {}})
+        is None
+    )

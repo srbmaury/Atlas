@@ -25,6 +25,8 @@ from .rbac import (
     connection_visible,
     require_connection,
     require_workspace,
+    revalidate_access,
+    source_scope,
     workspace_permission,
 )
 
@@ -185,6 +187,7 @@ def callback(state: str = '', code: str = ''):
         if row:
             row.account, row.secret = account, encrypted
             row.connected_by, row.shared = who.id, False
+            row.shared_resource_ids = None
         else:
             db.add(
                 ExternalConnection(
@@ -225,7 +228,7 @@ def access_token(db, who, workspaceId):
     return tokens['access_token']
 
 
-def drive_search(token, query):
+def drive_search(token, query, *, resource_ids=None):
     raw_terms = re.findall(r"[A-Za-z0-9][A-Za-z0-9_'’-]*", query.lower())
     terms = list(
         dict.fromkeys(term.strip("_'’- ") for term in raw_terms if len(term.strip("_'’- ")) >= 2)
@@ -245,16 +248,32 @@ def drive_search(token, query):
             for term in terms
         )
         q += ' and (' + ' or '.join(alternatives) + ')'
-    data = request_google(
-        DRIVE_API,
-        token,
-        {
-            'q': q,
-            'page_size': 20,
-            'fields': 'nextPageToken,files(id,name,mimeType,webViewLink,description,modifiedTime)',
-            'orderBy': 'modifiedTime desc',
-        },
-    )
+    params = {
+        'q': q,
+        'pageSize': 20 if resource_ids is None else 50,
+        'fields': 'nextPageToken,files(id,name,mimeType,webViewLink,description,modifiedTime)',
+        'orderBy': 'modifiedTime desc',
+    }
+    items = []
+    for _ in range(1 if resource_ids is None else 3):
+        data = request_google(DRIVE_API, token, params)
+        items.extend(
+            item
+            for item in data.get('files', [])
+            if resource_ids is None
+            or (
+                item.get('id') in resource_ids
+                and item.get('mimeType')
+                and item.get('mimeType')
+                not in (
+                    'application/vnd.google-apps.folder',
+                    'application/vnd.google-apps.shortcut',
+                )
+            )
+        )
+        if not data.get('nextPageToken'):
+            break
+        params = {**params, 'pageToken': data['nextPageToken']}
     results = [
         {
             'provider': 'drive',
@@ -265,7 +284,7 @@ def drive_search(token, query):
             or 'https://drive.google.com/file/d/' + item['id'] + '/view',
             'mimeType': item.get('mimeType', ''),
         }
-        for item in data.get('files', [])
+        for item in items
         if item.get('id')
     ]
     if terms:
@@ -346,7 +365,19 @@ def drive_evidence(token, items):
             log.warning('Skipping inaccessible or unreadable Drive file %s', item['id'])
             return None
 
-    selected = items[:5]
+    supported_types = {
+        'application/vnd.google-apps.document',
+        'application/vnd.google-apps.spreadsheet',
+        'application/json',
+        'application/xml',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }
+    selected = [
+        item
+        for item in items
+        if item.get('mimeType') in supported_types or item.get('mimeType', '').startswith('text/')
+    ][:5]
     if not selected:
         return []
     with ThreadPoolExecutor(max_workers=min(len(selected), 4)) as executor:
@@ -380,8 +411,16 @@ def status(workspaceId: str, request: Request):
 def search(workspaceId: str, body: DriveSearch, request: Request):
     with Session() as db:
         who = actor(request, db)
+        row = db.get(ExternalConnection, (workspaceId, 'drive'))
+        scope = source_scope(db, who, row)
         token = access_token(db, who, workspaceId)
-    return {'results': drive_search(token, body.query)}
+    results = (
+        drive_search(token, body.query, resource_ids=scope[1])
+        if scope and scope[1] is not None
+        else drive_search(token, body.query)
+    )
+    revalidate_access(workspaceId, who, ('drive',), {'drive': scope} if scope else None)
+    return {'results': results}
 
 
 @router.delete(

@@ -6,12 +6,14 @@ import os
 import re
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, wait
+from dataclasses import replace
 
 from fastapi import HTTPException
 
-from .db import Document
+from .db import Document, ExternalConnection
 from .original_storage import original_path
 from .query_context import retrieval_query
+from .rbac import source_scope
 from .research_queries import drive_query_for_question, gmail_query_for_question
 from .source_contract import Evidence, normalize_results
 
@@ -45,6 +47,8 @@ def collect_connected_evidence(
     evidence, document_evidence = [], {}
     stats = retrieval_stats if retrieval_stats is not None else {}
     stats.update({'found': {provider: 0 for provider in connected_scope(body)}, 'failed': []})
+    scopes = {}
+    stats['scopes'] = scopes
     tasks = []
     failures = []
     query = retrieval_query(body.question, body.history)
@@ -86,14 +90,21 @@ def collect_connected_evidence(
                     )
                 )
         if 'drive' in body.providers:
+            drive_row = db.get(ExternalConnection, (workspaceId, 'drive'))
             drive_token = credential('drive', lambda: drive_access_token(db, actor, workspaceId))
             if drive_token is not None:
+                scope = source_scope(db, actor, drive_row)
+                if scope is not None:
+                    scopes['drive'] = scope
+                drive_kwargs = {'resource_ids': scope[1]} if scope and scope[1] is not None else {}
                 tasks.append(
                     (
                         'drive',
                         lambda: drive_evidence(
                             drive_token,
-                            drive_search(drive_token, drive_query_for_question(query)),
+                            drive_search(
+                                drive_token, drive_query_for_question(query), **drive_kwargs
+                            ),
                         ),
                     )
                 )
@@ -101,11 +112,17 @@ def collect_connected_evidence(
             loaded = credential(provider, lambda: read_connection(db, actor, workspaceId, provider))
             if loaded is None:
                 continue
-            _, provider_token = loaded
+            row, provider_token = loaded
+            scope = source_scope(db, actor, row)
+            if scope is not None:
+                scopes[provider] = scope
+            kwargs = {'resource_ids': scope[1]} if scope and scope[1] is not None else {}
             tasks.append(
                 (
                     provider,
-                    lambda p=provider, t=provider_token: source_search(p, t, query),
+                    lambda p=provider, t=provider_token, options=kwargs: source_search(
+                        p, t, query, **options
+                    ),
                 )
             )
         # A single slow connector should not serialize all selected sources. Keep
@@ -132,22 +149,16 @@ def collect_connected_evidence(
                 try:
                     hits = future.result()
                     stats['found'][provider] = len(hits)
-                    if provider == 'gmail':
-                        evidence.extend(normalize_results(provider, hits))
-                    else:
+                    if provider != 'gmail':
                         excerpt_limit = 8000 if provider == 'slack' else 3000
-                        evidence.extend(
-                            normalize_results(
-                                provider,
-                                [
-                                    {
-                                        **hit,
-                                        'excerpt': hit.get('excerpt', '')[:excerpt_limit],
-                                    }
-                                    for hit in hits
-                                ],
-                            )
-                        )
+                        hits = [
+                            {**hit, 'excerpt': hit.get('excerpt', '')[:excerpt_limit]}
+                            for hit in hits
+                        ]
+                    normalized = normalize_results(provider, hits)
+                    if any(hit.metadata.get('search_partial') for hit in normalized):
+                        stats.setdefault('partial', []).append(provider)
+                    evidence.extend(normalized)
                 except Exception as exc:
                     failures.append((provider, exc))
                     stats['failed'].append(provider)
@@ -203,10 +214,13 @@ def retrieval_trace(body, evidence, stats, used_sources, scope=None):
     used = Counter((item.get('provider') or 'documents') for item in used_sources)
     found = stats.get('found', {}) if stats else {}
     failed = set(stats.get('failed', [])) if stats else set()
+    partial = set(stats.get('partial', [])) if stats else set()
     rows = [
         {
             'provider': provider,
-            'status': 'failed' if provider in failed else 'searched',
+            'status': (
+                'failed' if provider in failed else 'partial' if provider in partial else 'searched'
+            ),
             'found': found.get(provider, 0),
             'considered': considered[provider],
             'used': used[provider],
@@ -234,6 +248,10 @@ def attach_retrieval_trace(result, body, evidence, stats, used_sources=None):
     if failed:
         warning = 'Search coverage is incomplete: could not search ' + ', '.join(failed) + '.'
         result['coverage_note'] = ' '.join(filter(None, [result.get('coverage_note'), warning]))
+    partial = (stats or {}).get('partial', [])
+    if partial:
+        warning = 'Search coverage is incomplete: partial results from ' + ', '.join(partial) + '.'
+        result['coverage_note'] = ' '.join(filter(None, [result.get('coverage_note'), warning]))
     return result
 
 
@@ -257,12 +275,15 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
         )
         matches = search_result.get('messages', [])
         search_limited = bool(search_result.get('nextPageToken'))
-    from .sources import Evidence
 
     def read_message(item):
-        message = email_from_json(
-            gmail_get(token, gmail_api + '/messages/' + item['id'], {'format': 'full'})
-        )
+        try:
+            raw = gmail_get(token, gmail_api + '/messages/' + item['id'], {'format': 'full'})
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                return None
+            raise
+        message = email_from_json(raw)
         return Evidence(
             'gmail',
             message['id'],
@@ -275,7 +296,13 @@ def _search_gmail(token, body, gmail_api, gmail_get, email_from_json, gmail_quer
         )
 
     with ThreadPoolExecutor(max_workers=min(len(matches), 6) or 1) as executor:
-        return list(executor.map(read_message, matches))
+        results = list(executor.map(read_message, matches))
+    hits = [item for item in results if item is not None]
+    if len(hits) == len(results):
+        return hits
+    if not hits:
+        raise HTTPException(404, 'The matching Gmail messages are no longer available.')
+    return [replace(item, metadata={**item.metadata, 'search_partial': True}) for item in hits]
 
 
 def connected_sources_for_payload(payload, document_evidence):
@@ -358,7 +385,7 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
     """Format explicit record listings uniformly from provider-owned metadata."""
     from .evidence_quality import is_listing_question
 
-    if not is_listing_question(question):
+    if document_evidence or not is_listing_question(question):
         return None
     scope = [provider for provider in connected_scope(body) if provider != 'documents']
     searchable_scopes = {

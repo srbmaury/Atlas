@@ -33,6 +33,23 @@ flowchart LR
 
 In local development the API and worker can run in the same environment; Compose runs separate API and worker services. The worker claims document records from the database rather than consuming messages from a separate queue broker. Connector records are fetched on demand, not automatically ingested into the document library.
 
+### Data model
+
+```mermaid
+erDiagram
+    USERS ||..o{ ORGANISATIONS : owns
+    USERS ||..o{ WORKSPACES : owns
+    ORGANISATIONS |o..o{ WORKSPACES : groups
+    USERS ||--o{ ORGANISATION_MEMBERS : joins
+    ORGANISATIONS ||--o{ ORGANISATION_MEMBERS : has
+    USERS ||--o{ WORKSPACE_MEMBERS : joins
+    WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+    WORKSPACES ||..o{ DOCUMENTS : contains
+    WORKSPACES ||..o{ CONVERSATIONS : contains
+```
+
+Organisation membership and workspace access are separate. A user accesses a workspace through ownership or an explicit workspace membership. Conversations belong to their authors within the workspace. See the [full database schema](docs/DATABASE.md) for keys, connector scopes, and audit relationships.
+
 ### Code flow: upload and index a document
 
 ```mermaid
@@ -195,7 +212,7 @@ The `.env.example` file defaults to `AI_PROVIDER=openai` with an empty API key. 
 Ollama keeps prompts and generated answers on the machine running Ollama. Atlas does not set an output-token cap for local generation; response time depends on your hardware, and the model still has a finite context window. New uploads use local embeddings. To re-embed existing documents, stop the API worker and run from the repository root:
 
 ```sh
-PYTHONPATH=backend .venv/bin/python evals/reindex_local.py
+PYTHONPATH=backend .venv/bin/python ops/reindex_local.py
 ```
 
 ### OpenAI
@@ -283,6 +300,14 @@ npx playwright install chromium
 npx playwright test
 ```
 
+Run the offline keyword retrieval regression with:
+
+```sh
+PYTHONPATH=backend .venv/bin/python evals/retrieval_eval.py evals/retrieval_cases.json --k 5
+```
+
+The fixture uses synthetic queries and labeled passages. It measures keyword ranking and serves as a regression check.
+
 ## What Atlas supports
 
 - Workspace accounts, private documents, saved conversations, and source citations. Supabase Auth adds verified email signup, password reset, and Google sign-in.
@@ -353,8 +378,15 @@ remove a connection. Source permissions support private, selected-member, and
 all-workspace access. Grant selected members in **Source permissions**, or use the
 workspace-wide checkbox to include every current and future member. Managers and
 organisation admins cannot bypass source grants. Provider permissions still bound
-what the shared credential can retrieve; choose those permissions accordingly. This is not per-file
-provider ACL replication. One credential slot per provider/workspace is supported.
+what the shared credential can retrieve. For Google Drive and Slack, save a list
+of file IDs or channel IDs before sharing. The allowlist applies to all recipients
+of that connection. Drive folders and shortcuts, Slack direct and group messages,
+and results Atlas cannot verify are excluded. Other connectors retain
+connection-level sharing. One credential slot per provider/workspace is supported.
+
+Migration `0010` pauses existing Drive and Slack shares and clears their selected
+member grants. Connection owners can restore sharing by saving a resource list
+and choosing the recipients again. Owners retain access through their own credentials.
 
 Removing a member revokes their workspace access, removes their source grants, and
 disconnects their saved credentials so an offboarded account cannot occupy a provider slot.

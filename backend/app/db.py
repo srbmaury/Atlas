@@ -112,6 +112,7 @@ class ExternalConnection(Base):
     secret = Column(Text, nullable=False)
     connected_by = Column(String)
     shared = Column(Boolean, nullable=False, server_default='0')
+    shared_resource_ids = Column(JSON, nullable=True)
 
 
 class SourceHealthCheck(Base):
