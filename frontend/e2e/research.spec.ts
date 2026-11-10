@@ -139,7 +139,7 @@ test('composer remains in view after long response', async ({ page }) => {
     await expect(composer).toBeInViewport();
 });
 
-test('phone chat fits a long answer above the composer', async ({ page }) => {
+test('phone chat scrolls the page with the composer pinned', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     const composer = page.locator('.chat-workspace .composer');
     const thread = page.locator('.chat-workspace .thread');
@@ -154,7 +154,16 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
     ]) {
         await page.setViewportSize(viewport);
         await expect(composer).toBeInViewport({ ratio: 1 });
-        expect(await thread.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+        expect(await thread.evaluate((node) => getComputedStyle(node).overflowY)).toBe('visible');
+        const bottom = await page.evaluate(() => {
+            window.scrollTo(0, 0);
+            return document.documentElement.scrollHeight - innerHeight;
+        });
+        expect(bottom).toBeGreaterThan(0);
+        await expect(composer).toBeInViewport({ ratio: 1 });
+        await page.evaluate((offset) => window.scrollTo(0, offset), bottom / 2);
+        await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+        await expect(composer).toBeInViewport({ ratio: 1 });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
 });

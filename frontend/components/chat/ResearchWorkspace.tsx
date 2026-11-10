@@ -151,7 +151,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         );
 
     return (
-        <section className="research-page">
+        <section>
             <div className="crumb">
                 Ask Atlas<span>›</span>
                 <span className="crumb-title">{props.title}</span>

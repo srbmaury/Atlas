@@ -530,41 +530,23 @@
     }
 }
 
-/* Fit the phone chat below its real header and controls. Short screens can still scroll the page. */
+/* On phones, the document scrolls and the composer stays within reach. */
 @media (max-width: 600px) {
-    .atlas-v3 .main:has(> .content-research) {
-        display: flex;
-        flex-direction: column;
-        height: 100dvh;
-        min-height: 0;
-    }
-    .atlas-v3 .main:has(> .content-research) > .topbar {
-        flex-shrink: 0;
-    }
-    .atlas-v3 .content-research,
-    .atlas-v3 .content-research > .research-page,
-    .atlas-v3 .research-page > .chat-workspace:not(.history-visible),
-    .atlas-v3 .research-page .chat-workspace:not(.history-visible) > .research {
-        display: flex;
-        flex: 1;
-        min-height: 0;
-        flex-direction: column;
-    }
-    .atlas-v3 .content.content-research {
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-    }
     .atlas-v3 .content-research .chat-workspace .chat-pane {
-        flex: 1;
         height: auto;
-        min-height: 370px;
+        min-height: max(370px, calc(100dvh - 220px));
         overflow: visible;
     }
-    .atlas-v3 .content-research .chat-workspace .thread {
-        flex-basis: 0;
-        min-height: 120px;
+    .atlas-v3 .content.content-research .chat-workspace .thread,
+    .atlas-v3 .content.content-research .chat-workspace .thread:has(.research-welcome) {
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+        border: 0;
     }
-    .atlas-v3 .content.content-research .chat-workspace .thread:has(.research-welcome):not(:has(.user-message, .answer-row)) {
-        min-height: 120px;
-        overflow-y: auto;
+    .atlas-v3 .content-research .chat-workspace .composer {
+        position: sticky;
+        bottom: env(safe-area-inset-bottom);
+        z-index: 1;
     }
 }
