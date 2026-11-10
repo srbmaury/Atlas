@@ -7,11 +7,10 @@ or invent a global confidence score.
 
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
-from sqlalchemy import JSON, Column, Float, ForeignKey, String, Text, update
+from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text, update
 from sqlalchemy.orm.attributes import flag_modified
 
 from ..api_dependencies import database, user, workspace
@@ -21,7 +20,8 @@ from ..schemas import ConnectedQuestion
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/research-runs')
-EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix='atlas-deep-research')
+RESEARCH_LEASE_SECONDS = 3600
+RESEARCH_RETENTION_SECONDS = 30 * 24 * 3600
 STAGES = ('planning', 'retrieving', 'citation_audit', 'synthesizing')
 TERMINAL = ('completed', 'failed', 'cancelled', 'insufficient_evidence')
 
@@ -41,6 +41,8 @@ class ResearchRun(Base):
     error = Column(Text)
     created = Column(Float, nullable=False, default=time.time)
     updated = Column(Float, nullable=False, default=time.time)
+    lease = Column(Float, nullable=False, default=0)
+    generation = Column(Integer, nullable=False, default=0)
 
 
 class ResearchRequest(ConnectedQuestion):
@@ -48,18 +50,40 @@ class ResearchRequest(ConnectedQuestion):
 
 
 def initialize_research_runs():
-    # Isolated additive table for this MVP. Move to a versioned Alembic
-    # revision before enabling production deployments with multiple replicas.
-    Base.metadata.create_all(bind=engine, tables=[ResearchRun.__table__])
-    # Threads cannot survive process restarts; report interrupted work honestly.
+    # Schema is maintained by Alembic; do not mutate it on application startup.
+    cleanup_research_runs()
+
+
+def cleanup_research_runs():
+    cutoff = time.time() - RESEARCH_RETENTION_SECONDS
     with Session() as db:
-        for run in (
-            db.query(ResearchRun).filter(ResearchRun.status.in_(['queued', 'running'])).all()
-        ):
-            run.status = 'failed'
-            run.error = 'Research was interrupted by a server restart. Start a new investigation.'
-            run.updated = time.time()
+        db.query(ResearchRun).filter(
+            ResearchRun.status.in_(TERMINAL), ResearchRun.updated < cutoff
+        ).delete(synchronize_session=False)
         db.commit()
+
+
+def claim_research():
+    now = time.time()
+    with Session() as db:
+        candidate = db.query(ResearchRun).filter(
+            (ResearchRun.status == 'queued') |
+            ((ResearchRun.status == 'running') & (ResearchRun.lease < now))
+        ).order_by(ResearchRun.created).first()
+        if candidate is None:
+            return None
+        generation = candidate.generation or 0
+        changed = db.query(ResearchRun).filter(
+            ResearchRun.id == candidate.id,
+            ResearchRun.generation == generation,
+            (ResearchRun.status == 'queued') |
+            ((ResearchRun.status == 'running') & (ResearchRun.lease < now))
+        ).update({
+            'status': 'running', 'lease': now + RESEARCH_LEASE_SECONDS,
+            'generation': generation + 1, 'updated': now,
+        }, synchronize_session=False)
+        db.commit()
+        return (candidate.id, candidate.owner_id, generation + 1) if changed else None
 
 
 def public_run(run):
@@ -75,10 +99,10 @@ def public_run(run):
     }
 
 
-def _save(run_id, *, status=None, stage=None, findings=None, error=None):
+def _save(run_id, *, status=None, stage=None, findings=None, error=None, generation=None):
     with Session() as db:
         run = db.get(ResearchRun, run_id)
-        if not run or run.status in TERMINAL:
+        if not run or run.status in TERMINAL or (generation is not None and run.generation != generation):
             return False
         if status:
             run.status = status
@@ -118,9 +142,13 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
             'updated': run.updated,
         }
         db.expunge(run)  # prevent ORM autoflush from bypassing the status guard
+        condition = [ResearchRun.id == run_id, ResearchRun.status.notin_(TERMINAL)]
+        if generation is not None:
+            condition.append(ResearchRun.generation == generation)
+            changes['lease'] = time.time() + RESEARCH_LEASE_SECONDS
         updated = db.execute(
             update(ResearchRun)
-            .where(ResearchRun.id == run_id, ResearchRun.status.notin_(TERMINAL))
+            .where(*condition)
             .values(**changes)
             .execution_options(synchronize_session=False)
         )
@@ -128,7 +156,7 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
         return updated.rowcount == 1
 
 
-def _investigate(run_id, actor_id):
+def _investigate(run_id, actor_id, generation=None):
     from ..main import connected_chat
 
     try:
@@ -143,7 +171,7 @@ def _investigate(run_id, actor_id):
             scope = dict(run.scope)
             question = run.question
             workspace_id = run.workspace_id
-        if not _save(run_id, status='running', stage='planning'):
+        if not _save(run_id, status='running', stage='planning', generation=generation):
             return
         # Bounded deterministic decomposition; every step independently searches
         # the selected sources and uses the existing citation validation.
@@ -164,7 +192,7 @@ def _investigate(run_id, actor_id):
                     'What alternative explanations or unresolved questions exist for: ' + question,
                 )
             )
-        if not _save(run_id, status='running', stage='retrieving'):
+        if not _save(run_id, status='running', stage='retrieving', generation=generation):
             return
         findings = []
         for title, subquestion in questions:
@@ -215,9 +243,9 @@ def _investigate(run_id, actor_id):
                 # Results remain scoped to this workspace and are re-authorized
                 # whenever read. Each section preserves its own citation IDs.
                 findings.append({'title': title, 'question': subquestion, 'result': result})
-            if not _save(run_id, findings=findings):
+            if not _save(run_id, findings=findings, generation=generation):
                 return
-        if not _save(run_id, status='running', stage='citation_audit'):
+        if not _save(run_id, status='running', stage='citation_audit', generation=generation):
             return
         # Audit actual citation references and lexical evidence rather than
         # treating the mere presence of sources as verification.
@@ -249,7 +277,7 @@ def _investigate(run_id, actor_id):
                     else 'unverified'
                 ),
             }
-        if not _save(run_id, status='running', stage='synthesizing', findings=findings):
+        if not _save(run_id, status='running', stage='synthesizing', findings=findings, generation=generation):
             return
         # Provide a unified, traceable summary without fabricating conclusions.
         # The original independently cited sections remain available below it.
@@ -276,12 +304,13 @@ def _investigate(run_id, actor_id):
                 stage='synthesizing',
                 findings=findings,
                 error='No usable citations were found. Check the selected sources and try a more specific research question.',
+                generation=generation,
             )
         else:
-            _save(run_id, status='completed', stage='synthesizing', findings=findings)
+            _save(run_id, status='completed', stage='synthesizing', findings=findings, generation=generation)
     except Exception as exc:
         log.exception('Deep research run %s failed', run_id)
-        _save(run_id, status='failed', error=str(exc)[:250])
+        _save(run_id, status='failed', error='Research failed. Check server logs and retry.', generation=generation)
 
 
 @router.post('', dependencies=[Depends(workspace_permission('viewer'))])
@@ -306,6 +335,9 @@ def start_research(
         )
         if count != len(set(body.document_ids)):
             raise HTTPException(404, 'Selected document not found.')
+    # Serialize admission across API replicas using the workspace row lock.
+    from ..db import Workspace
+    db.query(Workspace).filter(Workspace.id == workspaceId).with_for_update().first()
     active = (
         db.query(ResearchRun)
         .filter(
@@ -329,7 +361,7 @@ def start_research(
     )
     db.add(run)
     db.commit()
-    EXECUTOR.submit(_investigate, run.id, actor.id)
+    # Durable database queue: the worker claims this row after commit.
     return public_run(run)
 
 
