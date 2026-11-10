@@ -10,10 +10,10 @@ test:
 	cd frontend && npm test && npm run typecheck && npm run build
 
 format:
-	.venv/bin/ruff check --select I --fix backend evals ops load_tests
-	.venv/bin/ruff format backend evals ops load_tests
+	.venv/bin/ruff check --select I --fix backend evals ops
+	.venv/bin/ruff format backend evals ops
 	cd frontend && npm run format
 format-check:
-	.venv/bin/ruff check backend evals ops load_tests
-	.venv/bin/ruff format --check backend evals ops load_tests
+	.venv/bin/ruff check backend evals ops
+	.venv/bin/ruff format --check backend evals ops
 	cd frontend && npm run format:check

@@ -138,13 +138,3 @@ Public webpage import is disabled unless an outbound firewall or proxy blocks
 private, loopback, link-local and metadata IP ranges, including after redirects
 and DNS changes. Imports accept HTML under 2 MB with at least 40 characters of
 extracted text; authenticated pages and JavaScript-rendered pages are unsupported.
-
-## Load smoke test
-
-Run `load_tests/locustfile.py` only against an isolated Atlas environment you own.
-Set `ATLAS_TEST_EMAIL`, `ATLAS_TEST_PASSWORD`, and
-`ATLAS_TEST_WORKSPACE_ID`, then start Locust at a low user count. Increase load
-gradually while monitoring latency, errors, resource use and ingestion backlog.
-Do not stress public third-party APIs.
-
-These steps are deployment requirements, not claims of completed infrastructure.

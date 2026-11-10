@@ -19,8 +19,8 @@ jobs:
                   pip check
             - name: Check Python style
               run: |
-                  ruff check backend evals ops load_tests
-                  ruff format --check backend evals ops load_tests
+                  ruff check backend evals ops
+                  ruff format --check backend evals ops
             - name: Run API tests
               env:
                   PYTHONPATH: backend
