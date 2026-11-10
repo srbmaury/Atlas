@@ -415,7 +415,7 @@ export function AtlasWorkspace() {
     }
 
     async function switchChat(id: string, target?: { index: number; phrase: string }) {
-        if (busy) return;
+        if (busy) return false;
         setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
         try {
             sessionStorage.setItem(draftKey(chatId), query);
@@ -423,7 +423,9 @@ export function AtlasWorkspace() {
             /* Storage unavailable. */
         }
         await loadChat(id);
-        if (activeChat.current === id) restoreDraft(id);
+        if (activeChat.current !== id) return false;
+        restoreDraft(id);
+        return true;
     }
 
     const uploadButton = (
@@ -643,6 +645,7 @@ export function AtlasWorkspace() {
                             onManageSources={() => navigate('sources')}
                             historyOpen={historyOpen}
                             onToggleHistory={() => setHistoryOpen((open) => !open)}
+                            onCloseHistory={() => setHistoryOpen(false)}
                             copied={copied}
                             canCopy={messages.length > 0}
                             onCopy={() => void copyConversation()}
@@ -651,7 +654,7 @@ export function AtlasWorkspace() {
                             chats={chats}
                             chatId={chatId}
                             onRefreshChats={() => void refreshChats()}
-                            onOpenChat={(id) => void switchChat(id)}
+                            onOpenChat={switchChat}
                             onRenameChat={(item) => void renameChat(item)}
                             onDeleteChat={(item) => void deleteChat(item)}
                             onDeleteChats={(items) => void deleteChats(items)}

@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal, flushSync } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
 import {
     Check,
@@ -25,6 +28,7 @@ import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
 import { visibleEvidence, sourceDisplayName, sourceLocation } from '../../lib/evidence';
 import { prompts } from '../../utils/utils';
+import { conversationExportName, conversationMarkdown, downloadConversationMarkdown } from '../../lib/conversationExport';
 import { ConversationHistory } from './ConversationHistory';
 import { ConversationTranscript } from './ConversationTranscript';
 import { ResearchComposer } from './ResearchComposer';
@@ -57,6 +61,7 @@ interface ResearchWorkspaceProps {
     onManageSources: () => void;
     historyOpen: boolean;
     onToggleHistory: () => void;
+    onCloseHistory: () => void;
     copied: boolean;
     canCopy: boolean;
     onCopy: () => void;
@@ -65,7 +70,7 @@ interface ResearchWorkspaceProps {
     chats: ChatSummary[];
     chatId: string | null;
     onRefreshChats: () => void;
-    onOpenChat: (id: string) => void;
+    onOpenChat: (id: string) => Promise<boolean>;
     onRenameChat: (chat: ChatSummary) => void;
     onDeleteChat: (chat: ChatSummary) => void;
     onDeleteChats: (chats: ChatSummary[]) => void;
@@ -100,6 +105,51 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         if (mobileActions.current) mobileActions.current.open = false;
         action();
     }
+    const historyClose = useRef<HTMLButtonElement>(null);
+    const desktopExport = useRef<HTMLDetailsElement>(null);
+    const [printMarkdown, setPrintMarkdown] = useState<string | null>(null);
+    useEffect(() => {
+        if (props.historyOpen && historyClose.current?.getClientRects().length) historyClose.current.focus();
+    }, [props.historyOpen]);
+
+    function closeMobileHistory() {
+        if (!historyClose.current?.getClientRects().length) return;
+        props.onCloseHistory();
+        window.requestAnimationFrame(() => mobileActions.current?.querySelector('summary')?.focus());
+    }
+
+    useEffect(() => {
+        if (printMarkdown === null) return;
+        const clearPrint = () => setPrintMarkdown(null);
+        window.addEventListener('afterprint', clearPrint);
+        return () => window.removeEventListener('afterprint', clearPrint);
+    }, [printMarkdown]);
+
+    function exportConversation(format: 'pdf' | 'md') {
+        if (!props.canCopy || props.busy) return;
+        if (mobileActions.current) mobileActions.current.open = false;
+        if (desktopExport.current) desktopExport.current.open = false;
+        const markdown = conversationMarkdown(props.title, props.messages);
+        const filename = conversationExportName(props.title);
+        if (format === 'md') {
+            downloadConversationMarkdown(filename, markdown);
+            return;
+        }
+        flushSync(() => setPrintMarkdown(markdown));
+        window.print();
+    }
+
+    const exportActions = (
+        <>
+            <button type="button" disabled={!props.canCopy || props.busy} onClick={() => exportConversation('md')}>
+                Export Markdown (.md)
+            </button>
+            <button type="button" disabled={!props.canCopy || props.busy} onClick={() => exportConversation('pdf')}>
+                Export as PDF
+            </button>
+        </>
+    );
+
     const [messageSearch, setMessageSearch] = useState('');
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
     const [evidenceOpen, setEvidenceOpen] = useState(true);
@@ -152,6 +202,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     }
     useEffect(() => {
         function onShortcut(event: KeyboardEvent) {
+            if (historyClose.current?.getClientRects().length) return;
             const target = event.target as HTMLElement | null;
             const editing = target?.matches('input, textarea, [contenteditable="true"]');
             if (event.key === '/' && !editing && !event.metaKey && !event.ctrlKey && !event.altKey) {
@@ -180,6 +231,13 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
 
     return (
         <section className="research-page" data-mobile-panel={mobilePanel}>
+            {printMarkdown !== null &&
+                createPortal(
+                    <article className="conversation-print" aria-label="Conversation export">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{printMarkdown}</ReactMarkdown>
+                    </article>,
+                    document.body,
+                )}
             <header className="focus-chat-header">
                 <button type="button" className="icon-button" aria-label="Open menu" onClick={props.onOpenNavigation}>
                     <Menu />
@@ -216,6 +274,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         <button type="button" disabled={!props.canCopy} onClick={() => chooseMobileAction(props.onCopy)}>
                             {props.copied ? 'Copied' : 'Copy chat'}
                         </button>
+                        {exportActions}
                         <button type="button" disabled={props.busy} onClick={() => chooseMobileAction(props.onNewChat)}>
                             New chat
                         </button>
@@ -240,6 +299,10 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         {props.copied ? <Check /> : <Copy />}
                         {props.copied ? 'Copied' : 'Copy chat'}
                     </button>
+                    <details ref={desktopExport} className="conversation-export">
+                        <summary className="btn">Export</summary>
+                        <div className="focus-chat-menu">{exportActions}</div>
+                    </details>
                     <button className="btn primary" aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
                         <Plus />
                         <span>New chat</span>
@@ -294,8 +357,15 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     chatId={props.chatId}
                     busy={props.busy}
                     onRefresh={props.onRefreshChats}
-                    onNewChat={props.onNewChat}
-                    onOpenChat={props.onOpenChat}
+                    onClose={closeMobileHistory}
+                    closeRef={historyClose}
+                    onNewChat={() => {
+                        closeMobileHistory();
+                        props.onNewChat();
+                    }}
+                    onOpenChat={async (id) => {
+                        if (await props.onOpenChat(id)) closeMobileHistory();
+                    }}
                     onRenameChat={props.onRenameChat}
                     onDeleteChat={props.onDeleteChat}
                     onDeleteChats={props.onDeleteChats}
@@ -447,7 +517,11 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                     {latestAnswer.retrieval.sources.map((step, index) => (
                                         <li key={index}>
                                             <strong>{PROVIDER_LABELS[step.provider as keyof typeof PROVIDER_LABELS] || step.provider}</strong>
-                                            <span>{step.status === 'failed' ? 'Search failed' : `${step.status === 'partial' ? 'Partial search · ' : ''}${step.found} found · ${step.considered} retained · ${step.used} cited`}</span>
+                                            <span>
+                                                {step.status === 'failed'
+                                                    ? 'Search failed'
+                                                    : `${step.status === 'partial' ? 'Partial search · ' : ''}${step.found} found · ${step.considered} retained · ${step.used} cited`}
+                                            </span>
                                         </li>
                                     ))}
                                     <li>

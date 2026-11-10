@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
     let lastId = 2;
@@ -186,6 +187,90 @@ test('phone Focus chat tools and compact drawer stay usable', async ({ page }) =
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
     await page.getByRole('complementary').getByRole('button', { name: 'New chat', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'New research', exact: true })).toBeVisible();
+});
+
+test('phone history uses the full width and returns to the pinned composer', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.route('**/api/workspaces/w1/conversations', (route) =>
+        route.fulfill({
+            json: [{ id: 'old', title: 'Earlier conversation', updated: 1234 }, ...Array.from({ length: 25 }, (_, i) => ({ id: `chat-${i}`, title: `Research conversation ${i}`, updated: i + 1 }))],
+        }),
+    );
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await page.getByRole('button', { name: /All conversations/ }).click();
+    const history = page.getByRole('complementary', { name: 'Conversation history' });
+    const close = history.getByRole('button', { name: 'Close conversation history' });
+    const composer = page.locator('.chat-workspace .composer');
+    await expect(close).toBeFocused();
+    await expect(history).toBeInViewport({ ratio: 1 });
+    expect((await history.boundingBox())?.width).toBe(360);
+    await expect(composer).toBeHidden();
+    const list = history.locator('.chat-history-list');
+    expect(await list.evaluate((node) => node.scrollHeight > node.clientHeight && node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(composer).toBeInViewport({ ratio: 1 });
+    await expect(page.getByLabel('More chat actions')).toBeFocused();
+
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'History', exact: true }).click();
+    await history.getByRole('textbox', { name: 'Search conversations' }).fill('Earlier');
+    await history.locator('.chat-history-open').filter({ hasText: 'Earlier conversation' }).click();
+    await expect(history).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Old question', exact: true })).toBeVisible();
+    await expect(composer).toBeInViewport({ ratio: 1 });
+});
+
+test('conversation export downloads Markdown and prints a clean, cited transcript', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route('**/api/workspaces/w1/conversations/old', (route) =>
+        route.fulfill({
+            json: {
+                id: 'old',
+                title: 'Earlier conversation',
+                updated: 1234,
+                messages: [
+                    { role: 'user', content: 'Old question' },
+                    {
+                        role: 'assistant',
+                        content: 'Atlas found evidence. [1]',
+                        result: {
+                            answer: 'Atlas found evidence. [1]',
+                            mode: 'connected',
+                            sources: [{ name: 'Launch PR', provider: 'github', url: 'https://github.com/example/repo/pull/1' }],
+                        },
+                    },
+                ],
+            },
+        }),
+    );
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Earlier conversation', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Old question', exact: true })).toBeVisible();
+    await page.getByLabel('More chat actions').click();
+    const downloadEvent = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export Markdown (.md)' }).click();
+    const download = await downloadEvent;
+    expect(download.suggestedFilename()).toBe('Old question.md');
+    const markdown = await readFile((await download.path())!, 'utf8');
+    expect(markdown).toContain('## You\n\nOld question');
+    expect(markdown).toContain('Atlas found evidence. [1]');
+    expect(markdown).toContain('- [1] [Launch PR · GitHub](<https://github.com/example/repo/pull/1>)');
+
+    await page.evaluate(() => {
+        window.print = () => document.body.setAttribute('data-print-requested', 'true');
+    });
+    await page.getByLabel('More chat actions').click();
+    await page.getByRole('button', { name: 'Export as PDF' }).click();
+    await expect(page.locator('body')).toHaveAttribute('data-print-requested', 'true');
+    await page.emulateMedia({ media: 'print' });
+    const transcript = page.getByRole('article', { name: 'Conversation export' });
+    await expect(transcript.getByText('Atlas found evidence. [1]')).toBeVisible();
+    await expect(transcript.getByRole('link', { name: 'Launch PR · GitHub' })).toBeVisible();
+    await expect(page.locator('.chat-workspace .composer')).toBeHidden();
+    await page.emulateMedia({ media: 'screen' });
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    await expect(transcript).toHaveCount(0);
+    await expect(page.locator('.chat-workspace .composer')).toBeInViewport({ ratio: 1 });
 });
 
 test('Gmail replaces sources gallery without stacking beneath it', async ({ page }) => {

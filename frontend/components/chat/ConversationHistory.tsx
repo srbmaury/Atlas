@@ -11,6 +11,8 @@ interface ConversationHistoryProps {
     chatId: string | null;
     busy: boolean;
     onRefresh: () => void;
+    onClose: () => void;
+    closeRef: React.RefObject<HTMLButtonElement | null>;
     onNewChat: () => void;
     onOpenChat: (id: string) => void;
     onRenameChat: (item: ChatSummary) => void;
@@ -25,7 +27,7 @@ function conversationDate(timestamp: number): string {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
 }
 
-export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefresh, onNewChat, onOpenChat, onRenameChat, onDeleteChat, onDeleteChats }: ConversationHistoryProps) {
+export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefresh, onClose, closeRef, onNewChat, onOpenChat, onRenameChat, onDeleteChat, onDeleteChats }: ConversationHistoryProps) {
     const [search, setSearch] = useState('');
     const [showArchived, setShowArchived] = useState(false);
     const [actionMenu, setActionMenu] = useState<string | null>(null);
@@ -103,7 +105,13 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
     };
 
     return (
-        <aside className="chat-history" aria-label="Conversation history">
+        <aside
+            className="chat-history"
+            aria-label="Conversation history"
+            onKeyDown={(event) => {
+                if (event.key === 'Escape' && !actionMenu && closeRef.current?.getClientRects().length) onClose();
+            }}
+        >
             <div className="chat-history-header">
                 <strong>Conversations</strong>
                 <button type="button" onClick={onRefresh} disabled={busy} title="Refresh saved conversations" aria-label="Refresh saved conversations">
@@ -111,6 +119,9 @@ export function ConversationHistory({ chats, workspaceId, chatId, busy, onRefres
                 </button>
                 <button type="button" onClick={onNewChat} disabled={busy} title="New conversation" aria-label="New conversation">
                     <Plus size={16} />
+                </button>
+                <button type="button" ref={closeRef} className="chat-history-close" aria-label="Close conversation history" onClick={onClose}>
+                    <X size={20} />
                 </button>
             </div>
             {!!chats.length && (
