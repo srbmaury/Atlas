@@ -229,4 +229,23 @@ def init_db():
     from alembic.config import Config
 
     config = Config(str(Path(__file__).resolve().parents[1] / 'alembic.ini'))
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import text
+
+    script = ScriptDirectory.from_config(config)
+    known_revisions = {revision.revision for revision in script.walk_revisions()}
+    with engine.connect() as connection:
+        inspector = __import__('sqlalchemy').inspect(connection)
+        if 'alembic_version' in inspector.get_table_names():
+            recorded = [row[0] for row in connection.execute(
+                text('SELECT version_num FROM alembic_version')
+            )]
+            unknown = sorted(set(recorded) - known_revisions)
+            if unknown:
+                raise RuntimeError(
+                    'Database migration revision(s) ' + ', '.join(unknown)
+                    + ' are not present in this checkout. Restore the original migration '
+                    'file(s) from the branch that created this database before upgrading. '
+                    'Do not stamp or reset the database without verifying its schema.'
+                )
     command.upgrade(config, 'head')
