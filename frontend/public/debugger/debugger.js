@@ -1,4 +1,4 @@
-import { scenarios } from './scenarios.js';
+import { scenarios, walkthroughs } from './scenarios.js';
 
 const repository = 'srbmaury/Atlas';
 const api = 'https://api.github.com/repos/' + repository;
@@ -8,7 +8,7 @@ const knownCommits = new Map([
     ['main', '9e94ad34c946c589c90c222860c0a2a249b2beec'],
     ['feat/atlas-flow-debugger', '560c2d836674c8e510df570cce6f5770ed457149'],
 ]);
-const scenarioFiles = [...new Set(scenarios.flatMap(({ steps }) => steps.map(({ path }) => path)))].sort().map((path) => ({ path, type: 'blob' }));
+const scenarioFiles = [...new Set(walkthroughs.flatMap(({ steps }) => steps.flatMap(({ path, test }) => (test ? [path, test.path] : [path]))))].sort().map((path) => ({ path, type: 'blob' }));
 
 function savedRevision(ref, resolved) {
     const key = 'atlas-debugger:revision:' + ref;
@@ -25,19 +25,25 @@ function savedRevision(ref, resolved) {
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const files = new Map();
+const legacyStagedUpload = params.get('scenario') === 'staged-upload';
 let scenarioIndex = Math.max(
     0,
-    scenarios.findIndex(({ id }) => id === params.get('scenario')),
+    scenarios.findIndex(({ id }) => id === (legacyStagedUpload ? 'upload' : params.get('scenario'))),
 );
-let index = Math.max(0, Math.min(scenarios[scenarioIndex].steps.length - 1, (Number.parseInt(params.get('step'), 10) || 1) - 1));
+const currentScenario = () => scenarios[scenarioIndex];
+let caseIndex = Math.max(0, currentScenario().cases?.findIndex(({ id }) => id === (legacyStagedUpload ? 'large' : params.get('case'))) ?? 0);
+const currentCase = () => currentScenario().cases?.[caseIndex] || currentScenario();
+const namedIndex = currentCase().steps.findIndex(({ id }) => id === params.get('step'));
+let index = namedIndex >= 0 ? namedIndex : Math.max(0, Math.min(currentCase().steps.length - 1, (Number.parseInt(params.get('step'), 10) || 1) - 1));
+const currentStep = () => currentCase().steps[index];
 let selectedFile = null;
+let returnScroll = null;
 let revision = null;
 let revisionRequest = null;
 let sourceRequest = null;
 let treeLoaded = false;
+let pinnedCommit = commitPattern.test(params.get('commit')) ? params.get('commit') : null;
 
-const currentScenario = () => scenarios[scenarioIndex];
-const currentStep = () => currentScenario().steps[index];
 const encodedPath = (path) => path.split('/').map(encodeURIComponent).join('/');
 const keyword = /^(?:async|await|class|const|def|else|except|export|false|False|for|from|function|if|import|in|let|None|null|return|true|True|try|with|yield)$/;
 const tokens = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|(?:\/\/|#).*|\b[A-Za-z_]\w*\b)/g;
@@ -58,17 +64,52 @@ async function request(url, signal, json = false) {
     return json ? response.json() : response.text();
 }
 
-function updateLink() {
+function stepLink(commit = pinnedCommit) {
     const url = new URL(location.href);
     url.searchParams.set('ref', revision?.ref || $('ref').value.trim() || 'main');
     url.searchParams.set('scenario', currentScenario().id);
-    url.searchParams.set('step', String(index + 1));
-    history.replaceState(null, '', url);
+    url.searchParams.set('step', currentStep().id);
+    if (currentScenario().cases) url.searchParams.set('case', currentCase().id);
+    else url.searchParams.delete('case');
+    if (commit) url.searchParams.set('commit', commit);
+    else url.searchParams.delete('commit');
+    return url;
+}
+
+function updateLink() {
+    history.replaceState(null, '', stepLink());
+    $('share').hidden = !revision;
+    if (revision) $('share').href = stepLink(revision.sha).href;
+}
+
+function stepLayer(step) {
+    if (step.screen) return 'Browser · Atlas UI';
+    if (step.path.startsWith('frontend/')) return 'Browser · application code';
+    if (/\/(worker|ingest)\.py$/.test(step.path)) return 'Worker · indexing';
+    if (/\/(uploads|original_storage)\.py$/.test(step.path)) return 'API · file storage';
+    if (step.path.endsWith('/connected_synthesis.py')) return 'API · model and citations';
+    return 'API · request handling';
 }
 
 function renderStep() {
-    const scenario = currentScenario();
+    const scenario = currentCase();
     const step = currentStep();
+    $('case-control').hidden = !currentScenario().cases;
+    $('case').replaceChildren(
+        ...(currentScenario().cases || []).map(({ title }, position) => {
+            const option = element('option', title);
+            option.value = String(position);
+            return option;
+        }),
+    );
+    $('case').value = String(caseIndex);
+    $('layer').textContent = stepLayer(step);
+    $('open-test').hidden = !step.test;
+    $('transition').hidden = !step.transition;
+    if (step.transition) {
+        $('before').textContent = JSON.stringify(step.transition.before, null, 2);
+        $('after').textContent = JSON.stringify(step.transition.after, null, 2);
+    }
     $('progress').textContent = `${index + 1} / ${scenario.steps.length}`;
     $('previous').disabled = index === 0;
     $('next').disabled = index === scenario.steps.length - 1;
@@ -114,8 +155,9 @@ function highlight(line, row) {
 async function renderSource() {
     sourceRequest?.abort();
     const step = currentStep();
-    const path = selectedFile || step.path;
-    const anchor = selectedFile === null ? step.anchor : null;
+    const path = selectedFile?.path || step.path;
+    const anchor = selectedFile ? selectedFile.anchor : step.anchor;
+    const highlightLines = selectedFile ? 1 : step.lines || 6;
     $('filename').textContent = path;
     $('code').replaceChildren();
     $('github').hidden = !revision;
@@ -139,10 +181,11 @@ async function renderSource() {
         if (text.length > 250_000 || text.includes('\0')) throw new Error('This file is too large or is not plain text.');
         files.set(path, text);
         const lines = text.split(/\r?\n/);
-        const target = anchor === null ? -1 : lines.findIndex((line) => line.includes(anchor));
+        const matches = anchor ? lines.flatMap((line, position) => (line.includes(anchor) ? [position] : [])) : [];
+        const target = matches.length === 1 ? matches[0] : -1;
         const content = document.createDocumentFragment();
         for (const [position, line] of lines.entries()) {
-            const active = target >= 0 && position >= target && position < target + 16;
+            const active = target >= 0 && position >= target && position < target + highlightLines;
             const row = element('span', undefined, active ? 'code-line active' : 'code-line');
             const number = element('span', String(position + 1), 'line-number');
             number.setAttribute('aria-hidden', 'true');
@@ -154,11 +197,15 @@ async function renderSource() {
         code.replaceChildren(content);
         code.scrollTop = 0;
         code.scrollLeft = 0;
-        $('code-status').textContent = anchor && target === -1 ? `Step anchor “${anchor}” was not found at this commit. The current file is shown below.` : '';
+        $('code-status').textContent = anchor && target === -1 ? `Anchor “${anchor}” matched ${matches.length} lines at this commit. Showing the file without a highlight.` : '';
         if (target >= 0) {
             $('github').href = githubUrl + '#L' + (target + 1);
             const first = code.querySelector('.active');
             code.scrollTop = Math.max(0, first.offsetTop - code.offsetTop - 42);
+        }
+        if (!selectedFile && returnScroll) {
+            code.scrollTo(returnScroll);
+            returnScroll = null;
         }
     } catch (error) {
         if (!controller.signal.aborted) $('code-status').textContent = `Could not open source. ${error.message}`;
@@ -166,9 +213,16 @@ async function renderSource() {
 }
 
 function goTo(position) {
-    if (position < 0 || position >= currentScenario().steps.length) return;
+    if (position < 0 || position >= currentCase().steps.length) return;
     index = position;
     selectedFile = null;
+    returnScroll = null;
+    renderStep();
+}
+
+function openFile(file) {
+    if (!selectedFile) returnScroll = { top: $('code').scrollTop, left: $('code').scrollLeft };
+    selectedFile = file;
     renderStep();
 }
 
@@ -192,10 +246,9 @@ function renderTree(entries) {
         const button = element('button', name, 'tree-file');
         button.type = 'button';
         button.dataset.path = entry.path;
-        if (entry.path === (selectedFile || currentStep().path)) button.setAttribute('aria-current', 'true');
+        if (entry.path === (selectedFile?.path || currentStep().path)) button.setAttribute('aria-current', 'true');
         button.addEventListener('click', () => {
-            selectedFile = entry.path;
-            renderStep();
+            openFile({ path: entry.path });
         });
         folder(parts.join('/')).append(button);
     }
@@ -250,8 +303,9 @@ async function loadRevision() {
     $('tree').replaceChildren();
     $('revision-status').textContent = `Resolving ${ref} on GitHub…`;
     renderStep();
-    if (commitPattern.test(ref.toLowerCase())) {
-        showRevision({ ref, sha: ref.toLowerCase(), tree: null }, 'exact commit');
+    if (pinnedCommit || commitPattern.test(ref.toLowerCase())) {
+        const sha = pinnedCommit || ref.toLowerCase();
+        showRevision({ ref, sha, tree: null }, 'exact commit');
         return;
     }
     try {
@@ -285,15 +339,38 @@ $('scenario').replaceChildren(
 $('scenario').value = String(scenarioIndex);
 $('scenario').addEventListener('change', (event) => {
     scenarioIndex = Number(event.target.value);
+    caseIndex = 0;
+    goTo(0);
+});
+$('case').addEventListener('change', (event) => {
+    caseIndex = Number(event.target.value);
     goTo(0);
 });
 $('revision-form').addEventListener('submit', (event) => {
     event.preventDefault();
+    pinnedCommit = null;
+    returnScroll = null;
     void loadRevision();
 });
 $('previous').addEventListener('click', () => goTo(index - 1));
 $('next').addEventListener('click', () => goTo(index + 1));
-$('return-to-step').addEventListener('click', () => goTo(index));
+$('return-to-step').addEventListener('click', () => {
+    selectedFile = null;
+    renderStep();
+});
+$('open-test').addEventListener('click', () => {
+    if (currentStep().test) openFile(currentStep().test);
+});
+$('share').addEventListener('click', async (event) => {
+    if (!navigator.clipboard || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    try {
+        await navigator.clipboard.writeText($('share').href);
+        $('share-status').textContent = 'Step link copied.';
+    } catch {
+        location.href = $('share').href;
+    }
+});
 document.querySelector('.repo').addEventListener('toggle', () => void loadTree());
 window.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('input, select, textarea, pre, [contenteditable]')) return;

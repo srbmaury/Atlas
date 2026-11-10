@@ -10,7 +10,7 @@ The diagrams below describe the code in this repository, rather than a proposed 
 
 ### Interactive code walkthrough
 
-With the frontend running locally, open the [Atlas Flow Debugger](http://localhost:3000/debugger/index.html). Choose a scenario to start at the Atlas screen and user action, then step forward or back through the real functions, and inspect example inputs, state, and outputs. The explorer reads the public Atlas repository from GitHub, pins every file to the same commit, and lets you refresh or select another ref. The displayed values are examples rather than live application state.
+With the frontend running locally, open the [Atlas Flow Debugger](http://localhost:3000/debugger/index.html). Choose a scenario to start at the Atlas screen and user action, then step forward or back through the real functions, and inspect example inputs, state, and outputs. Switch branches in the upload, answer, and Slack scope scenarios to see different outcomes. Open linked regression tests from the inspector, or share a step at the exact commit. The explorer reads the public Atlas repository from GitHub, pins every file to the same commit, and lets you refresh or select another ref. The displayed values are examples rather than live application state.
 
 ### System architecture
 

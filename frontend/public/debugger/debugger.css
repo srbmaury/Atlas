@@ -302,3 +302,14 @@ footer {
     font-size: 13px;
     font-weight: 650;
 }
+
+#case-control {
+    margin-top: 12px;
+}
+#layer {
+    margin: 0 0 6px;
+    color: var(--accent);
+}
+.state-change dd:last-child pre {
+    border-color: #4a8067;
+}

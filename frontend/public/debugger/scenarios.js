@@ -1,25 +1,28 @@
 const api = 'backend/app/';
 const web = 'frontend/';
 
-const step = (path, anchor, title, detail, input, state, output) => ({
+const step = (id, path, anchor, title, detail, input, state, output, metadata = {}) => ({
+    id,
     path,
     anchor,
     title,
     detail,
     values: { input, state, output },
+    ...metadata,
 });
 
-const uiStep = (screen, action, path, anchor, detail, input, state, output) => ({
-    ...step(web + path, anchor, action, detail, input, state, output),
+const uiStep = (id, screen, action, path, anchor, detail, input, state, output) => ({
+    ...step(id, web + path, anchor, action, detail, input, state, output),
     screen,
 });
 
-export const scenarios = [
+const linearScenarios = [
     {
         id: 'sign-in',
         title: 'Google sign-in and session',
         steps: [
             uiStep(
+                'click-continue-with-google',
                 'Sign-in screen',
                 'Click Continue with Google',
                 'components/auth/AuthView.tsx',
@@ -30,6 +33,7 @@ export const scenarios = [
                 { method: 'GET', path: '/api/auth/google' },
             ),
             step(
+                'start-oauth',
                 api + 'routes/auth.py',
                 'def google():',
                 'Start OAuth',
@@ -39,6 +43,7 @@ export const scenarios = [
                 { redirect: 'Supabase authorize endpoint' },
             ),
             step(
+                'exchange-the-callback-code',
                 api + 'routes/auth.py',
                 'def google_callback(',
                 'Exchange the callback code',
@@ -48,6 +53,7 @@ export const scenarios = [
                 { verifiedIdentity: { id: 'user-42' } },
             ),
             step(
+                'resolve-the-atlas-account',
                 api + 'routes/auth.py',
                 'def verified_account(',
                 'Resolve the Atlas account',
@@ -57,6 +63,7 @@ export const scenarios = [
                 { atlasUser: 'user-42' },
             ),
             step(
+                'issue-an-atlas-session',
                 api + 'routes/auth.py',
                 'def issue_login(',
                 'Issue an Atlas session',
@@ -66,6 +73,7 @@ export const scenarios = [
                 { cookie: '[redacted]', httpOnly: true },
             ),
             step(
+                'authenticate-the-next-request',
                 api + 'api_dependencies.py',
                 'def user(',
                 'Authenticate the next request',
@@ -81,6 +89,7 @@ export const scenarios = [
         title: 'Workspace membership and access',
         steps: [
             uiStep(
+                'submit-create-workspace',
                 'Workspace manager',
                 'Submit Create workspace',
                 'components/layout/WorkspaceManagerDialog.tsx',
@@ -91,6 +100,7 @@ export const scenarios = [
                 { handler: 'onCreate' },
             ),
             step(
+                'create-a-workspace',
                 api + 'routes/workspaces.py',
                 'def create_workspace(',
                 'Create a workspace',
@@ -100,6 +110,7 @@ export const scenarios = [
                 { workspace: 'ws-1' },
             ),
             step(
+                'assign-a-workspace-role',
                 api + 'routes/access.py',
                 'def grant_workspace_member(',
                 'Assign a workspace role',
@@ -109,6 +120,7 @@ export const scenarios = [
                 { workspace: 'ws-1', member: 'user-42' },
             ),
             step(
+                'resolve-the-effective-role',
                 api + 'rbac.py',
                 'def workspace_role(',
                 'Resolve the effective role',
@@ -118,6 +130,7 @@ export const scenarios = [
                 { role: 'viewer' },
             ),
             step(
+                'enforce-the-minimum-role',
                 api + 'rbac.py',
                 'def require_workspace(',
                 'Enforce the minimum role',
@@ -133,6 +146,7 @@ export const scenarios = [
         title: 'Upload, OCR, and indexing',
         steps: [
             uiStep(
+                'choose-a-file-with-add-documents',
                 'Documents',
                 'Choose a file with Add documents',
                 'components/AtlasWorkspace.tsx',
@@ -143,6 +157,7 @@ export const scenarios = [
                 { handler: 'upload' },
             ),
             step(
+                'receive-an-uploaded-file',
                 api + 'routes/documents.py',
                 'async def upload(',
                 'Receive an uploaded file',
@@ -152,6 +167,7 @@ export const scenarios = [
                 { document: 'doc-1', status: 'queued' },
             ),
             step(
+                'store-the-original',
                 api + 'original_storage.py',
                 'def store_original(',
                 'Store the original',
@@ -161,6 +177,7 @@ export const scenarios = [
                 { objectKey: 'doc-1' },
             ),
             step(
+                'claim-a-processing-lease',
                 api + 'worker.py',
                 'def claim(',
                 'Claim a processing lease',
@@ -170,6 +187,7 @@ export const scenarios = [
                 { status: 'processing' },
             ),
             step(
+                'extract-text-and-ocr',
                 api + 'ingest.py',
                 'def extract(',
                 'Extract text and OCR',
@@ -179,6 +197,7 @@ export const scenarios = [
                 { text: 'The notice period is 30 days.' },
             ),
             step(
+                'persist-passages',
                 api + 'ingest.py',
                 'def ingest(',
                 'Persist passages',
@@ -194,6 +213,7 @@ export const scenarios = [
         title: 'Staged upload and resume',
         steps: [
             uiStep(
+                'choose-a-large-file-with-add-documents',
                 'Documents',
                 'Choose a large file with Add documents',
                 'components/AtlasWorkspace.tsx',
@@ -204,6 +224,7 @@ export const scenarios = [
                 { handler: 'upload' },
             ),
             step(
+                'create-an-upload-session',
                 api + 'uploads.py',
                 'def start(',
                 'Create an upload session',
@@ -213,6 +234,7 @@ export const scenarios = [
                 { upload: 'upload-1', offset: 0 },
             ),
             step(
+                'append-the-next-part',
                 api + 'uploads.py',
                 'def append(',
                 'Append the next part',
@@ -222,13 +244,14 @@ export const scenarios = [
                 { offset: 1048576 },
             ),
             step(
+                'finalize-the-file',
                 api + 'uploads.py',
                 'def finish(',
                 'Finalize the file',
                 'Once the recorded size is complete, Atlas stores the original and creates a queued document.',
                 { upload: 'upload-1', offset: 33554432 },
                 { expectedBytes: 33554432 },
-                { document: 'doc-2', status: 'queued' },
+                { document: 'doc-1', status: 'queued' },
             ),
         ],
     },
@@ -237,6 +260,7 @@ export const scenarios = [
         title: 'Ask a question and verify citations',
         steps: [
             uiStep(
+                'enter-a-question-and-press-send',
                 'Ask Atlas',
                 'Enter a question and press Send',
                 'components/chat/ResearchComposer.tsx',
@@ -247,6 +271,7 @@ export const scenarios = [
                 { handler: 'onSubmit' },
             ),
             step(
+                'send-the-selected-source-scope',
                 web + 'lib/researchRequests.ts',
                 'function requestResearchAnswer(',
                 'Send the selected source scope',
@@ -256,6 +281,7 @@ export const scenarios = [
                 { response: 'NDJSON stream' },
             ),
             step(
+                'start-the-answer-stream',
                 api + 'main.py',
                 'def connected_chat_stream(',
                 'Start the answer stream',
@@ -265,6 +291,7 @@ export const scenarios = [
                 { event: 'status' },
             ),
             step(
+                'collect-permitted-evidence',
                 api + 'connected_research.py',
                 'def collect_connected_evidence(',
                 'Collect permitted evidence',
@@ -274,6 +301,7 @@ export const scenarios = [
                 { providersWithEvidence: ['documents', 'slack'] },
             ),
             step(
+                'rank-document-passages',
                 api + 'retrieval.py',
                 'def retrieve(',
                 'Rank document passages',
@@ -283,15 +311,28 @@ export const scenarios = [
                 { chunk: 'chunk-7', page: 2 },
             ),
             step(
+                'generate-a-grounded-answer',
                 api + 'connected_synthesis.py',
                 'def stream_connected(',
                 'Generate a grounded answer',
-                'The selected model receives numbered evidence. The stream checks citation references before returning the completed answer.',
+                'The model receives numbered evidence. Atlas buffers its draft while the API can send status updates. The draft stays buffered until Atlas checks the citation references.',
                 { evidence: [{ number: 1, text: 'The notice period is 30 days.' }] },
                 { model: 'configured provider' },
-                { answer: 'The notice period is 30 days. [1]' },
+                { draft: 'The notice period is 30 days. [1]' },
             ),
             step(
+                'release-checked-answer',
+                api + 'connected_synthesis.py',
+                "if mode == 'connected':",
+                'Release the citation-checked answer',
+                'Only the connected result emits answer text as a delta. A complete event carries the final result.',
+                { citationReferencesValid: true },
+                { draft: 'buffered' },
+                { events: ['delta', 'complete'] },
+                { lines: 2 },
+            ),
+            step(
+                'render-citations',
                 web + 'components/chat/ResearchAnswer.tsx',
                 'function ResearchAnswer(',
                 'Render citations',
@@ -307,6 +348,7 @@ export const scenarios = [
         title: 'Connect Drive and search it live',
         steps: [
             uiStep(
+                'click-connect-google-drive',
                 'Connected sources → Google Drive',
                 'Click Connect Google Drive',
                 'components/sources/SourceConnectionDialog.tsx',
@@ -317,6 +359,7 @@ export const scenarios = [
                 { handler: 'onConnectDrive' },
             ),
             step(
+                'start-drive-oauth',
                 api + 'drive.py',
                 'def connect(',
                 'Start Drive OAuth',
@@ -326,6 +369,7 @@ export const scenarios = [
                 { redirect: 'Google OAuth' },
             ),
             step(
+                'store-the-connection',
                 api + 'drive.py',
                 'def callback(',
                 'Store the connection',
@@ -335,6 +379,7 @@ export const scenarios = [
                 { provider: 'drive', shared: false },
             ),
             step(
+                'resolve-search-access',
                 api + 'drive.py',
                 'def access_token(',
                 'Resolve search access',
@@ -344,6 +389,7 @@ export const scenarios = [
                 { token: '[redacted]' },
             ),
             step(
+                'search-and-filter-files',
                 api + 'drive.py',
                 'def drive_search(',
                 'Search and filter files',
@@ -353,6 +399,7 @@ export const scenarios = [
                 { visibleFileIds: ['file-1'] },
             ),
             step(
+                'read-matching-content',
                 api + 'drive.py',
                 'def drive_evidence(',
                 'Read matching content',
@@ -368,6 +415,7 @@ export const scenarios = [
         title: 'Share Slack channels and revoke access',
         steps: [
             uiStep(
+                'save-the-slack-channel-scope',
                 'Workspace settings → Source permissions',
                 'Save the Slack channel scope',
                 'components/layout/SourceSharingControls.tsx',
@@ -378,6 +426,7 @@ export const scenarios = [
                 { resourceIds: ['C123'] },
             ),
             step(
+                'save-sharing-scope',
                 api + 'routes/access.py',
                 'def share_connection(',
                 'Save sharing scope',
@@ -387,6 +436,7 @@ export const scenarios = [
                 { allowedChannels: ['C123'] },
             ),
             step(
+                'snapshot-effective-access',
                 api + 'rbac.py',
                 'def source_scope(',
                 'Snapshot effective access',
@@ -396,6 +446,7 @@ export const scenarios = [
                 { allowedChannels: ['C123'] },
             ),
             step(
+                'filter-upstream-results',
                 api + 'external_sources.py',
                 'def source_search(',
                 'Filter upstream results',
@@ -405,6 +456,7 @@ export const scenarios = [
                 { retainedChannelIds: ['C123'] },
             ),
             step(
+                'recheck-before-returning-an-answer',
                 api + 'rbac.py',
                 'def revalidate_access(',
                 'Recheck before returning an answer',
@@ -420,16 +472,18 @@ export const scenarios = [
         title: 'Save and reopen a private chat',
         steps: [
             uiStep(
+                'send-a-question-to-start-a-chat',
                 'Ask Atlas',
                 'Send a question to start a chat',
                 'components/chat/ResearchComposer.tsx',
                 'aria-label="Send question"',
-                'Sending a question starts the turn. Atlas saves the transcript after processing the turn.',
+                'Sending a question starts the turn. For a new chat, Atlas saves the submitted question before requesting the answer.',
                 { question: 'What is the notice period?' },
                 { activeChat: null },
                 { handler: 'onSubmit' },
             ),
             step(
+                'persist-the-transcript',
                 web + 'lib/researchRequests.ts',
                 'function persistConversation(',
                 'Persist the transcript',
@@ -439,6 +493,7 @@ export const scenarios = [
                 { method: 'POST' },
             ),
             step(
+                'assign-the-authenticated-author',
                 api + 'routes/conversations.py',
                 'def create_conversation(',
                 'Assign the authenticated author',
@@ -448,15 +503,18 @@ export const scenarios = [
                 { id: 'chat-1', author_id: 'user-42' },
             ),
             step(
-                api + 'routes/conversations.py',
-                'def owned_conversation(',
-                'Enforce private history',
-                'Atlas looks up the conversation by workspace, ID, and caller. Another workspace member cannot open it.',
-                { conversation: 'chat-1', actor: 'user-43' },
-                { author: 'user-42' },
-                { status: 404 },
+                'update-completed-transcript',
+                web + 'utils/conversationActions.ts',
+                'const saved = await persistConversation(target, id, title, completed)',
+                'Update the chat after generation',
+                'When generation completes, Atlas updates the existing conversation with the answer and its result metadata.',
+                { id: 'chat-1', method: 'PUT' },
+                { messages: ['user'] },
+                { messages: ['user', 'assistant'] },
+                { lines: 2, transition: { before: { messages: ['user'] }, after: { messages: ['user', 'assistant'] } } },
             ),
             uiStep(
+                'open-the-saved-conversation',
                 'Ask Atlas → Conversation history',
                 'Open the saved conversation',
                 'components/chat/ConversationHistory.tsx',
@@ -467,6 +525,17 @@ export const scenarios = [
                 { handler: 'onOpenChat' },
             ),
             step(
+                'enforce-private-history',
+                api + 'routes/conversations.py',
+                'def owned_conversation(',
+                'Enforce private history',
+                'Atlas looks up the conversation by workspace, ID, and caller. The author receives the transcript. A different member would get a 404.',
+                { conversation: 'chat-1', actor: 'user-42' },
+                { author: 'user-42' },
+                { status: 200 },
+            ),
+            step(
+                'restore-the-conversation',
                 web + 'utils/conversationActions.ts',
                 'async function loadChat(',
                 'Restore the conversation',
@@ -482,6 +551,7 @@ export const scenarios = [
         title: 'Import a public webpage',
         steps: [
             uiStep(
+                'paste-a-url-and-click-add-url',
                 'Documents → Web page import',
                 'Paste a URL and click Add URL',
                 'components/documents/WebPageImportForm.tsx',
@@ -492,6 +562,7 @@ export const scenarios = [
                 { handler: 'onSubmit' },
             ),
             step(
+                'authorize-the-import',
                 api + 'web_sources.py',
                 'def add_web_page(',
                 'Authorize the import',
@@ -501,6 +572,7 @@ export const scenarios = [
                 { next: 'fetch_page' },
             ),
             step(
+                'fetch-and-extract-readable-text',
                 api + 'web_sources.py',
                 'def fetch_page(',
                 'Fetch and extract readable text',
@@ -510,6 +582,7 @@ export const scenarios = [
                 { title: 'Policy', text: 'Notice period is 30 days.' },
             ),
             step(
+                'queue-it-as-a-document',
                 api + 'web_sources.py',
                 'def save_webpage(',
                 'Queue it as a document',
@@ -525,6 +598,7 @@ export const scenarios = [
         title: 'Inspect GitHub repository evidence',
         steps: [
             uiStep(
+                'submit-a-repository-question',
                 'Repository Evidence',
                 'Submit a repository question',
                 'components/chat/RepositoryEvidence.tsx',
@@ -535,6 +609,7 @@ export const scenarios = [
                 { handler: 'inspect' },
             ),
             step(
+                'ask-about-a-repository',
                 web + 'components/chat/RepositoryEvidence.tsx',
                 'function RepositoryEvidence(',
                 'Ask about a repository',
@@ -544,6 +619,7 @@ export const scenarios = [
                 { route: 'repository-evidence' },
             ),
             step(
+                'resolve-repository-access',
                 api + 'routes/repository_evidence.py',
                 'def inspect_repository(',
                 'Resolve repository access',
@@ -553,6 +629,7 @@ export const scenarios = [
                 { scope: 'example/repo' },
             ),
             step(
+                'read-matching-source-files',
                 api + 'external_sources.py',
                 'def github_repository_file_search(',
                 'Read matching source files',
@@ -568,6 +645,7 @@ export const scenarios = [
         title: 'Reset a password and sign out',
         steps: [
             uiStep(
+                'click-forgot-password',
                 'Sign-in screen',
                 'Click Forgot password?',
                 'components/auth/AuthView.tsx',
@@ -578,6 +656,7 @@ export const scenarios = [
                 { forgot: true },
             ),
             step(
+                'request-a-recovery-email',
                 api + 'routes/auth.py',
                 'def forgot(',
                 'Request a recovery email',
@@ -587,6 +666,7 @@ export const scenarios = [
                 { requested: true },
             ),
             step(
+                'complete-the-recovery',
                 api + 'routes/auth.py',
                 'def reset(',
                 'Complete the recovery',
@@ -596,6 +676,7 @@ export const scenarios = [
                 { authenticated: true },
             ),
             step(
+                'revoke-the-atlas-session',
                 api + 'routes/auth.py',
                 'def logout(',
                 'Revoke the Atlas session',
@@ -611,6 +692,7 @@ export const scenarios = [
         title: 'Retry or delete a document',
         steps: [
             uiStep(
+                'click-reindex',
                 'Documents → Document table',
                 'Click Reindex',
                 'components/documents/DocumentTable.tsx',
@@ -621,6 +703,7 @@ export const scenarios = [
                 { handler: 'onRetry' },
             ),
             step(
+                'queue-a-failed-document-again',
                 api + 'routes/documents.py',
                 'def retry(',
                 'Queue a failed document again',
@@ -630,6 +713,7 @@ export const scenarios = [
                 { status: 'queued' },
             ),
             step(
+                'run-the-queued-attempt',
                 api + 'worker.py',
                 'def run_one(',
                 'Run the queued attempt',
@@ -639,6 +723,7 @@ export const scenarios = [
                 { status: 'ready' },
             ),
             step(
+                'delete-the-document',
                 api + 'routes/documents.py',
                 'def delete(',
                 'Delete the document',
@@ -654,6 +739,7 @@ export const scenarios = [
         title: 'Connect Gmail and retrieve messages',
         steps: [
             uiStep(
+                'click-connect-gmail',
                 'Connected sources → Gmail',
                 'Click Connect Gmail',
                 'components/sources/gmail/GmailWorkspaceView.tsx',
@@ -664,6 +750,7 @@ export const scenarios = [
                 { handler: 'onConnect' },
             ),
             step(
+                'begin-mailbox-authorization',
                 api + 'gmail.py',
                 'def connect(',
                 'Begin mailbox authorization',
@@ -673,6 +760,7 @@ export const scenarios = [
                 { redirect: 'Google OAuth' },
             ),
             step(
+                'save-the-mailbox-credential',
                 api + 'gmail.py',
                 'def callback(',
                 'Save the mailbox credential',
@@ -682,6 +770,7 @@ export const scenarios = [
                 { provider: 'gmail', shared: false },
             ),
             step(
+                'retrieve-matching-messages',
                 api + 'connected_research.py',
                 'def _search_gmail(',
                 'Retrieve matching messages',
@@ -697,6 +786,7 @@ export const scenarios = [
         title: 'Export a conversation',
         steps: [
             uiStep(
+                'choose-export-markdown-md',
                 'Ask Atlas → Conversation actions',
                 'Choose Export Markdown (.md)',
                 'components/chat/ResearchWorkspace.tsx',
@@ -707,6 +797,7 @@ export const scenarios = [
                 { handler: 'exportConversation' },
             ),
             step(
+                'choose-an-export-format',
                 web + 'components/chat/ResearchWorkspace.tsx',
                 'function exportConversation(',
                 'Choose an export format',
@@ -716,6 +807,7 @@ export const scenarios = [
                 { ready: true },
             ),
             step(
+                'format-the-transcript-and-citations',
                 web + 'lib/conversationExport.ts',
                 'function conversationMarkdown(',
                 'Format the transcript and citations',
@@ -725,6 +817,7 @@ export const scenarios = [
                 { extension: '.md', sources: 1 },
             ),
             step(
+                'download-markdown',
                 web + 'lib/conversationExport.ts',
                 'function downloadConversationMarkdown(',
                 'Download Markdown',
@@ -736,3 +829,171 @@ export const scenarios = [
         ],
     },
 ];
+
+const upload = linearScenarios.find(({ id }) => id === 'upload');
+const staged = linearScenarios.find(({ id }) => id === 'staged-upload');
+const uploadBrowser = web + 'lib/uploadDocuments.ts';
+const uploadTest = {
+    path: web + 'e2e/research.spec.ts',
+    anchor: 'expect(chunks).toBe(1);',
+};
+const uploadApiTest = {
+    path: 'backend/tests/test_system.py',
+    anchor: 'def test_chunked_upload_offsets_completion_duplicates_and_access(',
+};
+
+function uploadDecision(size) {
+    const multipart = size <= 8388608;
+    return step(
+        'select-upload-path',
+        uploadBrowser,
+        'if (file.size <= 8 * 1024 * 1024)',
+        'Choose the upload request',
+        'Files up to and including 8 MiB use multipart upload. Larger files open a staged upload session.',
+        { size },
+        { thresholdBytes: 8388608 },
+        { method: 'POST', endpoint: multipart ? '/documents' : '/uploads' },
+        { lines: 5 },
+    );
+}
+
+const indexSteps = [
+    {
+        ...upload.steps[3],
+        anchor: "'status': 'processing',",
+        lines: 4,
+        transition: { before: { status: 'queued', generation: 0, attempts: 0 }, after: { status: 'processing', generation: 1, attempts: 1 } },
+    },
+    upload.steps[4],
+    step(
+        'check-worker-generation',
+        api + 'ingest.py',
+        "if not doc or doc.generation != generation or doc.status != 'processing':",
+        'Check that this worker still owns the attempt',
+        'Before replacing chunks, ingestion checks that the job generation and status still match. A worker whose lease was reclaimed cannot publish stale chunks.',
+        { workerGeneration: 1 },
+        { documentGeneration: 1, status: 'processing' },
+        { publishAllowed: true },
+        { lines: 2, test: { path: 'backend/tests/test_system.py', anchor: 'def test_stale_job_cannot_publish_after_reindex(' } },
+    ),
+    {
+        ...upload.steps[5],
+        anchor: "doc.status, doc.error, doc.pages, doc.chunk_count = 'ready'",
+        lines: 3,
+        transition: { before: { status: 'processing', chunk_count: 0 }, after: { status: 'ready', chunk_count: 4 } },
+    },
+    step(
+        'poll-document-status',
+        web + 'components/AtlasWorkspace.tsx',
+        'const timer = window.setInterval(() => {',
+        'Refresh readiness in the browser',
+        'While a newly uploaded document is queued or processing, the browser refreshes document state every three seconds.',
+        { document: 'doc-1' },
+        { observedStatus: 'processing' },
+        { observedStatus: 'ready' },
+        { lines: 3, transition: { before: { searchable: false }, after: { searchable: true } } },
+    ),
+];
+
+const appendPart = {
+    ...staged.steps[2],
+    anchor: 'if offset != current:',
+    lines: 6,
+    values: { input: { offset: 0, bytes: 8388608 }, state: { currentOffset: 0 }, output: { offset: 8388608 } },
+    transition: { before: { serverOffset: 0 }, after: { serverOffset: 8388608 } },
+    test: uploadApiTest,
+};
+const reconcile = step(
+    'reconcile-lost-ack',
+    uploadBrowser,
+    'if (state.offset === end) sent = true;',
+    'Recover a lost acknowledgement',
+    'After the PUT fails at the client, Atlas reads the server offset. If the server already reached the end of this part, the client advances without sending the bytes again.',
+    { sentOffset: 0, end: 8388608, response: 'lost' },
+    { serverOffset: 8388608 },
+    { resend: false, nextOffset: 8388608 },
+    { lines: 2, transition: { before: { clientOffset: 0, serverOffset: 8388608 }, after: { clientOffset: 8388608, serverOffset: 8388608 } }, test: uploadTest },
+);
+
+const uploadCases = [
+    { id: 'small', title: 'Small file', steps: [upload.steps[0], uploadDecision(184320), upload.steps[1], upload.steps[2], ...indexSteps] },
+    { id: 'large', title: 'Large staged file', steps: [staged.steps[0], uploadDecision(33554432), staged.steps[1], appendPart, staged.steps[3], ...indexSteps] },
+    { id: 'lost-ack', title: 'Large file · lost acknowledgement', steps: [staged.steps[0], uploadDecision(33554432), staged.steps[1], appendPart, reconcile, staged.steps[3], ...indexSteps] },
+];
+
+const answer = linearScenarios.find(({ id }) => id === 'answer');
+const scope = linearScenarios.find(({ id }) => id === 'scope');
+const scopeFilter = { ...scope.steps[3], anchor: 'channel_id not in resource_ids', lines: 5 };
+const scopeCheck = {
+    ...scope.steps.at(-1),
+    anchor: 'if scopes and provider in scopes and source_scope(db, actor, row) != scopes[provider]:',
+    lines: 2,
+    transition: { before: { allowedChannels: ['C123'] }, after: { allowedChannels: ['C456'] } },
+    test: { path: 'backend/tests/test_rbac.py', anchor: "assert 'Source permissions changed' in response.text" },
+};
+const answerFailure = step(
+    'withhold-unverified-draft',
+    api + 'connected_synthesis.py',
+    "mode = 'citation_check_failed'",
+    'Withhold the unverified draft',
+    'If citation repair cannot produce a valid answer, the caller receives a failure result. Atlas does not emit the model draft as an answer delta.',
+    { draft: 'The notice period is 30 days. [99]' },
+    { citationReferencesValid: false },
+    { mode: 'citation_check_failed', answerDelta: false },
+    { lines: 1, test: { path: 'backend/tests/test_answer_quality.py', anchor: "assert result['mode'] == 'citation_check_failed'" } },
+);
+const partial = step(
+    'continue-with-partial-coverage',
+    api + 'connected_research.py',
+    'if failures and not evidence:',
+    'Keep evidence from successful sources',
+    'Atlas continues when at least one source returned usable evidence. The coverage note records the unavailable source.',
+    { providers: ['documents', 'slack'] },
+    { failures: ['slack'], usablePassages: 1 },
+    { continueWith: ['documents'], partialCoverage: true },
+    { lines: 2, test: { path: 'backend/tests/test_answer_quality.py', anchor: 'def test_partial_connector_failure_marks_answer_coverage(' } },
+);
+
+export const scenarios = linearScenarios
+    .filter(({ id }) => id !== 'staged-upload')
+    .map((scenario) => {
+        if (scenario === upload) return { ...scenario, cases: uploadCases };
+        if (scenario === answer) {
+            return {
+                ...scenario,
+                cases: [
+                    { id: 'cited', title: 'Valid citations', steps: answer.steps },
+                    { id: 'partial', title: 'Slack unavailable', steps: [...answer.steps.slice(0, 5), partial, ...answer.steps.slice(5)] },
+                    {
+                        id: 'invalid',
+                        title: 'Citation repair fails',
+                        steps: [
+                            ...answer.steps.slice(0, -3),
+                            { ...answer.steps.at(-3), values: { ...answer.steps.at(-3).values, output: { draft: 'The notice period is 30 days. [99]' } } },
+                            answerFailure,
+                        ],
+                    },
+                ],
+            };
+        }
+        if (scenario === scope) {
+            return {
+                ...scenario,
+                cases: [
+                    {
+                        id: 'unchanged',
+                        title: 'Scope stays the same',
+                        steps: [
+                            ...scope.steps.slice(0, 3),
+                            scopeFilter,
+                            { ...scopeCheck, values: { input: { originalScope: ['C123'] }, state: { currentScope: ['C123'] }, output: { allowed: true } }, transition: undefined, test: undefined },
+                        ],
+                    },
+                    { id: 'revoked', title: 'Scope narrowed during synthesis', steps: [...scope.steps.slice(0, 3), scopeFilter, scopeCheck] },
+                ],
+            };
+        }
+        return scenario;
+    });
+
+export const walkthroughs = scenarios.flatMap((scenario) => scenario.cases || [scenario]);
