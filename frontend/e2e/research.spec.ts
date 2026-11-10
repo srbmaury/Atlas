@@ -139,6 +139,26 @@ test('composer remains in view after long response', async ({ page }) => {
     await expect(composer).toBeInViewport();
 });
 
+test('phone chat fits a long answer above the composer', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    const composer = page.locator('.chat-workspace .composer');
+    const thread = page.locator('.chat-workspace .thread');
+    await expect(composer).toBeInViewport({ ratio: 1 });
+    await page.getByRole('textbox', { name: 'Your question' }).fill('Write a long answer');
+    await page.getByRole('button', { name: 'Send question' }).click();
+    await expect(page.locator('.answer-row')).toBeVisible();
+
+    for (const viewport of [
+        { width: 360, height: 640 },
+        { width: 390, height: 844 },
+    ]) {
+        await page.setViewportSize(viewport);
+        await expect(composer).toBeInViewport({ ratio: 1 });
+        expect(await thread.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+});
+
 test('Gmail replaces sources gallery without stacking beneath it', async ({ page }) => {
     await page.getByRole('button', { name: 'Connected sources', exact: true }).click();
     await page.locator('.integration-tile').filter({ hasText: 'Gmail' }).click();
