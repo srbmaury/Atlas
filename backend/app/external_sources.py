@@ -5,6 +5,7 @@ at rest. Never send them to AI providers or include them in responses.
 """
 
 import base64
+from datetime import datetime, timedelta, timezone
 import logging
 import re
 from urllib.parse import quote
@@ -827,6 +828,35 @@ def source_search(provider, token, query):
     if provider in batch_connectors.NEW_PROVIDERS:
         return batch_connectors.search(provider, token, query)
     if provider == 'github':
+        # Questions about recent repository changes need commit evidence, not
+        # GitHub's issue/code search (which cannot return commit history).
+        repo_name = github_repository_from_query(query)
+        recent = re.search(r'\\b(?:last|past|previous)\\s+(\\d{1,2})\\s+days?\\b', query, re.I)
+        if repo_name and recent and re.search(r'\\b(chang(?:e|ed|es)|commits?|updates?|activity|happened)\\b', query, re.I):
+            days = int(recent.group(1))
+            if not 1 <= days <= 30:
+                raise HTTPException(422, 'GitHub change history supports 1–30 days.')
+            since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            data = http_json(
+                f'https://api.github.com/repos/{repo_name}/commits', token, provider,
+                {'since': since, 'per_page': 100},
+            )
+            results = []
+            for item in data if isinstance(data, list) else []:
+                sha = item.get('sha', '')
+                commit = item.get('commit') or {}
+                message = commit.get('message') or ''
+                author = commit.get('author') or {}
+                results.append({
+                    'provider': provider,
+                    'id': sha,
+                    'title': message.split('\\n', 1)[0][:250] or sha[:12],
+                    'excerpt': f"Commit {sha[:12]} by {author.get('name', 'unknown')} on {author.get('date', 'unknown')}\\n{message[:2400]}",
+                    'url': item.get('html_url'),
+                    'scope': repo_name,
+                    'metadata': {'repository': repo_name, 'sha': sha, 'date': author.get('date')},
+                })
+            return results
         pull_query = github_pull_request_query(query)
         if pull_query:
             if not any(
