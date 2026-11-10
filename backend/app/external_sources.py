@@ -10,6 +10,7 @@ import re
 from urllib.parse import quote
 
 import httpx
+from cryptography.fernet import InvalidToken
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -156,11 +157,18 @@ def read_connection(db, user, workspaceId, provider):
     if not row:
         raise HTTPException(409, f'Connect {provider.title()} first.')
     require_connection(db, user, row)
+    # Configuration failures must not be mislabeled as corrupt credentials.
+    cipher = crypt()
     try:
-        secret = crypt().decrypt(row.secret.encode()).decode()
-    except Exception as exc:
-        log.warning('Could not decrypt source token for %s', provider)
-        raise HTTPException(503, 'Connection encryption key does not match stored token.') from exc
+        secret = cipher.decrypt(row.secret.encode()).decode()
+    except (InvalidToken, UnicodeDecodeError) as exc:
+        log.warning('Stored %s credential cannot be decrypted; reconnect required', provider)
+        raise HTTPException(
+            503,
+            f'{provider.title()} connection needs to be reconnected: the saved token '
+            'cannot be decrypted with the current encryption key. Restore the original '
+            'GMAIL_TOKEN_ENCRYPTION_KEY or disconnect and reconnect this source.',
+        ) from exc
     if provider in ('calendar', 'onedrive', 'outlook'):
         from .connected_oauth import access_token
 
