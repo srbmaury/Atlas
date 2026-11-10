@@ -22,6 +22,8 @@ from .rbac import (
     connection_visible,
     require_connection,
     require_workspace,
+    revalidate_access,
+    source_scope,
     workspace_permission,
 )
 from .research_queries import (
@@ -203,6 +205,7 @@ def connect(workspaceId: str, provider: str, body: ConnectRequest, request: Requ
         if row:
             row.account, row.secret = account, encrypted
             row.connected_by, row.shared = user.id, False
+            row.shared_resource_ids = None
         else:
             db.add(
                 ExternalConnection(
@@ -867,7 +870,7 @@ def github_search_all_pages(token, query, per_page=100, max_pages=10):
     return results
 
 
-def source_search(provider, token, query):
+def source_search(provider, token, query, *, resource_ids=None):
     if provider in batch_connectors.NEW_PROVIDERS:
         return batch_connectors.search(provider, token, query)
     if provider == 'github':
@@ -1092,28 +1095,49 @@ def source_search(provider, token, query):
     normalized_query = slack_search_query(query)
     if not normalized_query:
         return []
-    d = http_json(
-        'https://slack.com/api/search.all',
-        token,
-        provider,
-        {'query': normalized_query, 'count': 8},
-    )
-    if not d.get('ok'):
-        if d.get('error') == 'not_allowed_token_type':
+    matches = []
+    for page in range(1, 2 if resource_ids is None else 4):
+        params = {'query': normalized_query, 'count': 8}
+        if resource_ids is not None:
+            params.update(count=20, page=page)
+        d = http_json('https://slack.com/api/search.all', token, provider, params)
+        if not d.get('ok'):
+            if d.get('error') == 'not_allowed_token_type':
+                raise HTTPException(
+                    422,
+                    'Slack message search requires a user-scoped token with search:read. Bot tokens can authenticate but cannot use this search endpoint.',
+                )
+            if d.get('error') == 'missing_scope':
+                raise HTTPException(
+                    422,
+                    'Slack token is missing the search:read scope. Reauthorize it with that scope and reconnect.',
+                )
             raise HTTPException(
-                422,
-                'Slack message search requires a user-scoped token with search:read. Bot tokens can authenticate but cannot use this search endpoint.',
+                422, 'Slack search denied. Confirm search:read scope and workspace permissions.'
             )
-        if d.get('error') == 'missing_scope':
-            raise HTTPException(
-                422,
-                'Slack token is missing the search:read scope. Reauthorize it with that scope and reconnect.',
-            )
-        raise HTTPException(
-            422, 'Slack search denied. Confirm search:read scope and workspace permissions.'
-        )
+        messages = d.get('messages', {})
+        for item in messages.get('matches', []):
+            if resource_ids is not None:
+                channel = item.get('channel') or {}
+                channel_id = channel.get('id') or ''
+                if (
+                    channel_id not in resource_ids
+                    or not re.fullmatch(r'[CG][A-Z0-9]{2,31}', channel_id)
+                    or channel.get('is_im')
+                    or channel.get('is_mpim')
+                    # Legacy G IDs also identify group DMs. Require Slack to distinguish them.
+                    or (channel_id.startswith('G') and channel.get('is_mpim') is not False)
+                ):
+                    continue
+            matches.append(item)
+        if (
+            resource_ids is None
+            or len(matches) >= 8
+            or page >= (messages.get('paging') or {}).get('pages', 1)
+        ):
+            break
     results = []
-    for item in d.get('messages', {}).get('matches', []):
+    for item in matches[:8]:
         text = item.get('text') or ''
         channel = (item.get('channel') or {}).get('name') or ''
         if channel and not re.fullmatch(r'[A-Z0-9]{8,}', channel):
@@ -1195,5 +1219,14 @@ def notion_excerpt(text, terms):
 def search(workspaceId: str, provider: str, body: SearchRequest, request: Request):
     with Session() as db:
         user = actor(request, db)
-        _, token = read_connection(db, user, workspaceId, provider)
-    return {'results': source_search(provider, token, body.query)}
+        row, token = read_connection(db, user, workspaceId, provider)
+        scope = source_scope(db, user, row)
+    if scope is None:
+        return {'results': source_search(provider, token, body.query)}
+    results = (
+        source_search(provider, token, body.query, resource_ids=scope[1])
+        if scope[1] is not None
+        else source_search(provider, token, body.query)
+    )
+    revalidate_access(workspaceId, user, (provider,), {provider: scope})
+    return {'results': results}

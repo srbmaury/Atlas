@@ -96,15 +96,19 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
         }
     }
 
-    async function changeSharing(connection: Sharing, shared: boolean, memberIds: string[]) {
+    async function changeSharing(connection: Sharing, shared: boolean, memberIds: string[], resourceIds: string[] = connection.resource_ids || []) {
         if (busy) return;
         // Keep the controlled input responsive; roll back if the server rejects it.
-        setConnections((items) => items.map((item) => (item.provider === connection.provider ? { ...item, shared, member_ids: memberIds } : item)));
+        setConnections((items) => items.map((item) => (item.provider === connection.provider ? { ...item, shared, member_ids: memberIds, resource_ids: resourceIds } : item)));
         const saved = await perform(
             () =>
                 api(`${base}/connection-sharing/${connection.provider}`, {
                     method: 'PATCH',
-                    body: JSON.stringify({ shared, member_ids: memberIds }),
+                    body: JSON.stringify({
+                        shared,
+                        member_ids: memberIds,
+                        ...((connection.provider === 'drive' || connection.provider === 'slack') && { resource_ids: resourceIds }),
+                    }),
                 }),
             'Connection sharing updated.',
         );
@@ -219,7 +223,7 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
                             connections={connections}
                             members={members}
                             busy={busy}
-                            onChange={(connection, shared, ids) => void changeSharing(connection, shared, ids)}
+                            onChange={(connection, shared, ids, resources) => void changeSharing(connection, shared, ids, resources)}
                         />
                     )}
                     {members.some((member) => member.owner && member.id === userId) && (

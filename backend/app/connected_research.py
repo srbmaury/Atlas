@@ -10,9 +10,10 @@ from dataclasses import replace
 
 from fastapi import HTTPException
 
-from .db import Document
+from .db import Document, ExternalConnection
 from .original_storage import original_path
 from .query_context import retrieval_query
+from .rbac import source_scope
 from .research_queries import drive_query_for_question, gmail_query_for_question
 from .source_contract import Evidence, normalize_results
 
@@ -46,6 +47,8 @@ def collect_connected_evidence(
     evidence, document_evidence = [], {}
     stats = retrieval_stats if retrieval_stats is not None else {}
     stats.update({'found': {provider: 0 for provider in connected_scope(body)}, 'failed': []})
+    scopes = {}
+    stats['scopes'] = scopes
     tasks = []
     failures = []
     query = retrieval_query(body.question, body.history)
@@ -87,14 +90,21 @@ def collect_connected_evidence(
                     )
                 )
         if 'drive' in body.providers:
+            drive_row = db.get(ExternalConnection, (workspaceId, 'drive'))
             drive_token = credential('drive', lambda: drive_access_token(db, actor, workspaceId))
             if drive_token is not None:
+                scope = source_scope(db, actor, drive_row)
+                if scope is not None:
+                    scopes['drive'] = scope
+                drive_kwargs = {'resource_ids': scope[1]} if scope and scope[1] is not None else {}
                 tasks.append(
                     (
                         'drive',
                         lambda: drive_evidence(
                             drive_token,
-                            drive_search(drive_token, drive_query_for_question(query)),
+                            drive_search(
+                                drive_token, drive_query_for_question(query), **drive_kwargs
+                            ),
                         ),
                     )
                 )
@@ -102,11 +112,17 @@ def collect_connected_evidence(
             loaded = credential(provider, lambda: read_connection(db, actor, workspaceId, provider))
             if loaded is None:
                 continue
-            _, provider_token = loaded
+            row, provider_token = loaded
+            scope = source_scope(db, actor, row)
+            if scope is not None:
+                scopes[provider] = scope
+            kwargs = {'resource_ids': scope[1]} if scope and scope[1] is not None else {}
             tasks.append(
                 (
                     provider,
-                    lambda p=provider, t=provider_token: source_search(p, t, query),
+                    lambda p=provider, t=provider_token, options=kwargs: source_search(
+                        p, t, query, **options
+                    ),
                 )
             )
         # A single slow connector should not serialize all selected sources. Keep

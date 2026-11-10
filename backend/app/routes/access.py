@@ -1,5 +1,6 @@
 """Organisation and workspace access management for registered Atlas accounts."""
 
+import re
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,6 +20,7 @@ from ..db import (
     WorkspaceMember,
 )
 from ..rbac import (
+    RESOURCE_SCOPED_PROVIDERS,
     connection_owner,
     connection_visible,
     lock_resource,
@@ -52,6 +54,7 @@ class WorkspaceGrant(BaseModel):
 class Sharing(BaseModel):
     shared: bool
     member_ids: list[str] = Field(default_factory=list, max_length=2000)
+    resource_ids: list[str] = Field(default_factory=list, max_length=50)
 
 
 def registered_account(db, email):
@@ -269,6 +272,9 @@ def connection_sharing(workspaceId: str, actor=Depends(user), db=Depends(databas
             'provider': getattr(row, 'provider', 'gmail'),
             'shared': row.shared,
             'owned': connection_owner(db, row) == actor.id,
+            'resource_ids': (getattr(row, 'shared_resource_ids', None) or [])
+            if connection_owner(db, row) == actor.id
+            else [],
             'member_ids': [
                 g.user_id
                 for g in db.query(SourceGrant).filter_by(
@@ -300,6 +306,15 @@ def share_connection(
         raise HTTPException(404, 'Connection not found.')
     require_connection(db, actor, row, manage=True)
     ids = set(body.member_ids)
+    resource_ids = sorted({value.strip() for value in body.resource_ids})
+    if provider in RESOURCE_SCOPED_PROVIDERS:
+        pattern = r'[A-Za-z0-9_-]{1,150}' if provider == 'drive' else r'[CG][A-Z0-9]{2,31}'
+        if any(not re.fullmatch(pattern, value) for value in resource_ids):
+            raise HTTPException(422, 'Enter valid Drive file IDs or Slack channel IDs.')
+        if (body.shared or ids) and not resource_ids:
+            raise HTTPException(422, 'Choose at least one file or channel before sharing.')
+    elif resource_ids:
+        raise HTTPException(422, 'Resource-level sharing is supported for Drive and Slack.')
     if body.shared and ids:
         raise HTTPException(422, 'Choose all workspace members or selected members, not both.')
     item = db.get(Workspace, workspaceId)
@@ -309,6 +324,7 @@ def share_connection(
             raise HTTPException(422, 'Every source grantee must be an active workspace member.')
     previous = {
         'shared': row.shared,
+        'resource_count': len(getattr(row, 'shared_resource_ids', None) or []),
         'member_ids': sorted(
             g.user_id
             for g in db.query(SourceGrant).filter_by(workspace_id=workspaceId, provider=provider)
@@ -318,6 +334,8 @@ def share_connection(
     for member_id in ids:
         db.add(SourceGrant(workspace_id=workspaceId, provider=provider, user_id=member_id))
     row.shared = body.shared
+    if provider in RESOURCE_SCOPED_PROVIDERS:
+        row.shared_resource_ids = resource_ids or None
     record(
         db,
         actor.id,
@@ -328,9 +346,15 @@ def share_connection(
         previous=previous,
         shared=body.shared,
         member_ids=sorted(ids),
+        resource_count=len(resource_ids),
     )
     health = db.get(SourceHealthCheck, (workspaceId, provider))
     if health:
         db.delete(health)
     db.commit()
-    return {'provider': provider, 'shared': row.shared, 'member_ids': sorted(ids)}
+    return {
+        'provider': provider,
+        'shared': row.shared,
+        'member_ids': sorted(ids),
+        'resource_ids': resource_ids,
+    }

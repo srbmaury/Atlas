@@ -149,7 +149,9 @@ def connected_chat(
     evidence, document_evidence = collect_connected_evidence(
         workspaceId, body, actor, db, retrieval_stats
     )
-    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
+    revalidate_access(
+        workspaceId, actor, {item.provider for item in evidence}, retrieval_stats.get('scopes')
+    )
     if not evidence:
         return no_evidence_result(body, retrieval_stats)
     # A local 8k-context model cannot accept all retrieved source bodies at once.
@@ -189,7 +191,9 @@ def connected_chat(
         raise HTTPException(
             502, 'Connected answer generation failed. Check the AI provider logs.'
         ) from exc
-    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
+    revalidate_access(
+        workspaceId, actor, {item.provider for item in evidence}, retrieval_stats.get('scopes')
+    )
     from .connected_synthesis import has_valid_citations
 
     if not has_valid_citations(answer or '', payload):
@@ -282,7 +286,12 @@ def connected_chat_stream(
             evidence, document_evidence = collect_connected_evidence(
                 workspaceId, effective_body, actor, db, retrieval_stats
             )
-            revalidate_access(workspaceId, actor, {item.provider for item in evidence})
+            revalidate_access(
+                workspaceId,
+                actor,
+                {item.provider for item in evidence},
+                retrieval_stats.get('scopes'),
+            )
             if not evidence:
                 yield (
                     json.dumps(
@@ -364,7 +373,12 @@ def connected_chat_stream(
 
             for event in stream_with_heartbeats(answer_events):
                 if event['type'] in ('delta', 'complete'):
-                    revalidate_access(workspaceId, actor, {item.provider for item in evidence})
+                    revalidate_access(
+                        workspaceId,
+                        actor,
+                        {item.provider for item in evidence},
+                        retrieval_stats.get('scopes'),
+                    )
                 if event['type'] == 'complete':
                     public_sources = (
                         connected_sources_for_payload(event['sources'], document_evidence)

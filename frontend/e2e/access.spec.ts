@@ -113,3 +113,29 @@ test('ownership transfer requires the resource name and selects an existing memb
     await transfer.click();
     await expect.poll(() => submitted).toEqual({member_id:'member',confirmation:'Research'});
 });
+
+test('Drive sharing requires a saved file scope and clearing it turns sharing off', async ({ page }) => {
+    await setup(page, 'manager');
+    let sharing = { provider: 'drive', owned: true, shared: false, member_ids: [], resource_ids: [] as string[] };
+    await page.route('**/api/workspaces/w1/connection-sharing', (route) => route.fulfill({ json: [sharing] }));
+    await page.route('**/api/workspaces/w1/connection-sharing/drive', (route) => {
+        sharing = { ...sharing, ...route.request().postDataJSON() };
+        return route.fulfill({ json: sharing });
+    });
+    await page.goto('/settings?section=workspace&workspaceId=w1');
+    const share = page.getByRole('checkbox', { name: 'Share drive with this workspace' });
+    const files = page.getByRole('textbox', { name: 'Drive file IDs' });
+    const save = page.getByRole('button', { name: 'Save scope' });
+    await expect(share).toBeDisabled();
+    await files.fill('file-shared\nfile-other, file-shared');
+    await save.click();
+    await expect(share).toBeEnabled();
+    await share.check();
+    await expect(share).toBeChecked();
+    expect(sharing.resource_ids).toEqual(['file-shared', 'file-other']);
+    await files.clear();
+    await save.click();
+    await expect(share).toBeDisabled();
+    await expect(share).not.toBeChecked();
+    expect(sharing.resource_ids).toEqual([]);
+});

@@ -7,7 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..api_dependencies import database, user, workspace
 from ..db import ExternalConnection, GmailConnection, SourceHealthCheck
-from ..rbac import connection_visible, workspace_permission
+from ..rbac import (
+    RESOURCE_SCOPED_PROVIDERS,
+    connection_diagnostics_visible,
+    connection_owner,
+    workspace_permission,
+)
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -29,7 +34,7 @@ def source_health(workspaceId: str, actor=Depends(user), db=Depends(database)):
                 'checked_at': row.checked_at,
             }
             for row in db.query(SourceHealthCheck).filter_by(workspace_id=workspaceId).all()
-            if connection_visible(
+            if connection_diagnostics_visible(
                 db,
                 actor,
                 db.get(GmailConnection, workspaceId)
@@ -94,7 +99,9 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
 
     for provider in PROVIDERS:
         row = db.get(ExternalConnection, (workspaceId, provider))
-        if connection_visible(db, actor, row):
+        if row and provider in RESOURCE_SCOPED_PROVIDERS and connection_owner(db, row) != actor.id:
+            continue
+        if connection_diagnostics_visible(db, actor, row):
 
             def check_external(p=provider):
                 _, token = read_connection(db, actor, workspaceId, p)
@@ -105,7 +112,7 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
             record(provider, False, lambda: None)
 
     gmail_row = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
-    if connection_visible(db, actor, gmail_row):
+    if connection_diagnostics_visible(db, actor, gmail_row):
 
         def check_gmail():
             entry = gmail_connection(db, actor, workspaceId)
@@ -120,14 +127,14 @@ def verify_sources(workspaceId: str, request: Request, actor=Depends(user), db=D
         record('gmail', False, lambda: None)
 
     drive_row = db.get(ExternalConnection, (workspaceId, 'drive'))
-    if connection_visible(db, actor, drive_row):
+    if connection_diagnostics_visible(db, actor, drive_row):
 
         def check_drive():
             token = drive_access(db, actor, workspaceId)
             return drive_row.account, len(drive_search(token, ''))
 
         record('drive', True, check_drive, drive_row.account)
-    else:
+    elif drive_row is None:
         record('drive', False, lambda: None)
     db.commit()
     return {'checks': checks}

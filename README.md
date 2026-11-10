@@ -353,8 +353,15 @@ remove a connection. Source permissions support private, selected-member, and
 all-workspace access. Grant selected members in **Source permissions**, or use the
 workspace-wide checkbox to include every current and future member. Managers and
 organisation admins cannot bypass source grants. Provider permissions still bound
-what the shared credential can retrieve; choose those permissions accordingly. This is not per-file
-provider ACL replication. One credential slot per provider/workspace is supported.
+what the shared credential can retrieve. For Google Drive and Slack, save a list
+of file IDs or channel IDs before sharing. The allowlist applies to all recipients
+of that connection. Drive folders and shortcuts, Slack direct and group messages,
+and results Atlas cannot verify are excluded. Other connectors retain
+connection-level sharing. One credential slot per provider/workspace is supported.
+
+Migration `0010` pauses existing Drive and Slack shares and clears their selected
+member grants. Connection owners can restore sharing by saving a resource list
+and choosing the recipients again. Owners retain access through their own credentials.
 
 Removing a member revokes their workspace access, removes their source grants, and
 disconnects their saved credentials so an offboarded account cannot occupy a provider slot.

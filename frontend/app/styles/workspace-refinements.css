@@ -600,6 +600,19 @@
     font-size: 12px;
     line-height: 1.5;
 }
+.access-source-scope {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.access-source-scope textarea {
+    width: 100%;
+    margin-top: 4px;
+    resize: vertical;
+}
+.access-source-scope button {
+    justify-self: start;
+}
 .access-audit {
     border-top: 1px solid var(--line);
     margin-top: 20px;

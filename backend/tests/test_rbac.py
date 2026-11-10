@@ -362,6 +362,7 @@ def test_unsharing_during_stream_does_not_release_answer(accounts, monkeypatch):
                 account='team',
                 secret='opaque',
                 shared=True,
+                shared_resource_ids=['C123'],
                 connected_by=owner.identity['id'],
             )
         )
@@ -635,7 +636,12 @@ def test_source_grants_cannot_target_outsiders_and_revoke_on_offboarding(account
     endpoint = f'/api/workspaces/{workspace}/connection-sharing/slack'
     assert (
         owner.patch(
-            endpoint, json={'shared': False, 'member_ids': [outsider.identity['id']]}
+            endpoint,
+            json={
+                'shared': False,
+                'member_ids': [outsider.identity['id']],
+                'resource_ids': ['C123'],
+            },
         ).status_code
         == 422
     )
@@ -647,7 +653,8 @@ def test_source_grants_cannot_target_outsiders_and_revoke_on_offboarding(account
     )
     assert (
         owner.patch(
-            endpoint, json={'shared': False, 'member_ids': [member.identity['id']]}
+            endpoint,
+            json={'shared': False, 'member_ids': [member.identity['id']], 'resource_ids': ['C123']},
         ).status_code
         == 200
     )
@@ -804,3 +811,207 @@ def test_concurrent_ownership_transfers_have_one_winner(accounts):
     assert all(code in (200, 403, 409) for code in results)
     events = owner.get(f'/api/workspaces/{workspace}/audit').json()['events']
     assert sum(event['action'] == 'ownership.transferred' for event in events) == 1
+
+
+@pytest.mark.parametrize('provider', ['drive', 'slack'])
+def test_resource_scopes_filter_direct_search_and_chat(accounts, monkeypatch, provider):
+    from app import drive
+
+    owner, member, _, workspace = accounts
+    grant(owner, member, workspace, 'viewer')
+    monkeypatch.setattr(gmail, 'KEY', Fernet.generate_key().decode())
+    shared_id = 'file-shared' if provider == 'drive' else 'C123'
+    with Session() as db:
+        db.add(
+            ExternalConnection(
+                workspace_id=workspace,
+                provider=provider,
+                account='test',
+                secret=gmail.crypt().encrypt(b'provider-token').decode(),
+                connected_by=owner.identity['id'],
+                shared=True,  # Fail closed even if a legacy broad flag exists.
+            )
+        )
+        db.commit()
+
+    scope_url = f'/api/workspaces/{workspace}/connection-sharing/{provider}'
+    search_url = f'/api/workspaces/{workspace}/'
+    search_url += 'drive/search' if provider == 'drive' else 'sources/slack/search'
+    assert member.post(search_url, json={'query': 'budget'}).status_code == 403
+    assert owner.patch(scope_url, json={'shared': True}).status_code == 422
+    assert (
+        owner.patch(
+            scope_url,
+            json={
+                'shared': False,
+                'member_ids': [member.identity['id']],
+                'resource_ids': [shared_id],
+            },
+        ).status_code
+        == 200
+    )
+
+    if provider == 'drive':
+        fetches = []
+
+        def request_drive(url, token, params, **kwargs):
+            if url == drive.DRIVE_API:
+                return {
+                    'files': [
+                        {'id': 'file-private', 'name': 'Private budget', 'mimeType': 'text/plain'},
+                        {'id': shared_id, 'name': 'Shared budget', 'mimeType': 'text/plain'},
+                    ]
+                }
+            fetches.append(url)
+            assert url == drive.DRIVE_API + '/' + shared_id
+            return 'Shared budget details'
+
+        monkeypatch.setattr(drive, 'google_token', lambda payload: {'access_token': 'access'})
+        monkeypatch.setattr(drive, 'request_google', request_drive)
+        question = 'List budget files'
+    else:
+
+        def request_slack(url, token, provider, params):
+            return {
+                'ok': True,
+                'messages': {
+                    'matches': [
+                        {
+                            'ts': '1',
+                            'text': 'Private budget',
+                            'channel': {'id': 'C456', 'name': 'private'},
+                        },
+                        {
+                            'ts': '2',
+                            'text': 'Shared budget',
+                            'channel': {'id': shared_id, 'name': 'shared'},
+                        },
+                        {'ts': '3', 'text': 'Unknown budget', 'channel': {'name': 'shared'}},
+                    ]
+                },
+            }
+
+        monkeypatch.setattr(external_sources, 'http_json', request_slack)
+        question = 'List budget messages'
+
+    result = member.post(search_url, json={'query': 'budget'})
+    assert result.status_code == 200, result.text
+    assert len(result.json()['results']) == 1
+    assert 'Shared budget' in result.text
+    assert 'Private budget' not in result.text and 'Unknown budget' not in result.text
+    owner_result = owner.post(search_url, json={'query': 'budget'})
+    assert 'Private budget' in owner_result.text
+
+    body = {'question': question, 'include_documents': False, 'providers': [provider]}
+    response = member.post(f'/api/workspaces/{workspace}/connected-chat/stream', json=body)
+    assert 'Shared budget' in response.text
+    assert 'Private budget' not in response.text and 'Unknown budget' not in response.text
+    assert '"type": "done"' in response.text
+    if provider == 'drive':
+        assert fetches == [drive.DRIVE_API + '/' + shared_id]
+
+
+def test_narrowing_slack_scope_during_synthesis_blocks_response(accounts, monkeypatch):
+    from app import connected_synthesis
+
+    owner, member, _, workspace = accounts
+    grant(owner, member, workspace, 'viewer')
+    monkeypatch.setattr(gmail, 'KEY', Fernet.generate_key().decode())
+    with Session() as db:
+        db.add(
+            ExternalConnection(
+                workspace_id=workspace,
+                provider='slack',
+                account='team',
+                secret=gmail.crypt().encrypt(b'provider-token').decode(),
+                shared=True,
+                shared_resource_ids=['C123', 'C456'],
+                connected_by=owner.identity['id'],
+            )
+        )
+        db.commit()
+
+    monkeypatch.setattr(
+        external_sources,
+        'http_json',
+        lambda *args: {
+            'ok': True,
+            'messages': {
+                'matches': [{'ts': '1', 'text': 'Secret budget', 'channel': {'id': 'C123'}}]
+            },
+        },
+    )
+
+    def delayed(*args, **kwargs):
+        with Session() as db:
+            db.get(ExternalConnection, (workspace, 'slack')).shared_resource_ids = ['C456']
+            db.commit()
+        yield {'type': 'delta', 'text': 'Secret budget'}
+
+    monkeypatch.setattr(connected_synthesis, 'stream_connected', delayed)
+    response = member.post(
+        f'/api/workspaces/{workspace}/connected-chat/stream',
+        json={
+            'question': 'What is the budget?',
+            'include_documents': False,
+            'providers': ['slack'],
+        },
+    )
+    assert '"type": "error"' in response.text
+    assert 'Source permissions changed' in response.text
+    assert 'Secret budget' not in response.text
+
+
+def test_slack_scope_excludes_ambiguous_group_dms(monkeypatch):
+    monkeypatch.setattr(
+        external_sources,
+        'http_json',
+        lambda *args: {
+            'ok': True,
+            'messages': {
+                'matches': [
+                    {'ts': '1', 'text': 'Ambiguous', 'channel': {'id': 'G123'}},
+                    {'ts': '2', 'text': 'Group DM', 'channel': {'id': 'G456', 'is_mpim': True}},
+                    {
+                        'ts': '3',
+                        'text': 'Private channel',
+                        'channel': {'id': 'G789', 'is_mpim': False},
+                    },
+                    {'ts': '4', 'text': 'Direct message', 'channel': {'id': 'D123'}},
+                ]
+            },
+        },
+    )
+    matches = external_sources.source_search(
+        'slack', 'token', 'budget', resource_ids={'G123', 'G456', 'G789', 'D123'}
+    )
+    assert [item['id'] for item in matches] == ['3']
+
+
+def test_source_scope_migration_pauses_only_drive_and_slack(tmp_path):
+    path = tmp_path / 'legacy-sharing.db'
+    with sqlite3.connect(path) as db:
+        db.executescript("""
+            CREATE TABLE alembic_version (version_num TEXT PRIMARY KEY);
+            INSERT INTO alembic_version VALUES ('0009');
+            CREATE TABLE external_connections (workspace_id TEXT, provider TEXT, shared BOOLEAN);
+            INSERT INTO external_connections VALUES ('w','drive',1), ('w','slack',1), ('w','github',1);
+            CREATE TABLE source_grants (workspace_id TEXT, provider TEXT, user_id TEXT);
+            INSERT INTO source_grants VALUES ('w','drive','u'), ('w','slack','u'), ('w','github','u');
+            CREATE TABLE source_health_checks (workspace_id TEXT, provider TEXT);
+            INSERT INTO source_health_checks VALUES ('w','drive'), ('w','slack'), ('w','github');
+        """)
+    env = {**os.environ, 'DATABASE_URL': 'sqlite:///' + str(path), 'DATA_DIR': str(tmp_path)}
+    result = subprocess.run(
+        [sys.executable, '-c', 'from app.db import init_db; init_db()'],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    with sqlite3.connect(path) as db:
+        assert db.execute(
+            'SELECT provider, shared, shared_resource_ids FROM external_connections ORDER BY provider'
+        ).fetchall() == [('drive', 0, None), ('github', 1, None), ('slack', 0, None)]
+        for table in ('source_grants', 'source_health_checks'):
+            assert db.execute(f'SELECT provider FROM {table}').fetchall() == [('github',)]
