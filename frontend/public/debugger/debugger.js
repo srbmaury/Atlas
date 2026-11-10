@@ -159,6 +159,7 @@ async function renderSource() {
     const anchor = selectedFile ? selectedFile.anchor : step.anchor;
     const highlightLines = selectedFile ? 1 : step.lines || 6;
     $('filename').textContent = path;
+    $('line-range').hidden = true;
     $('code').replaceChildren();
     $('github').hidden = !revision;
     for (const button of $('tree').querySelectorAll('.tree-file')) {
@@ -183,14 +184,23 @@ async function renderSource() {
         const lines = text.split(/\r?\n/);
         const matches = anchor ? lines.flatMap((line, position) => (line.includes(anchor) ? [position] : [])) : [];
         const target = matches.length === 1 ? matches[0] : -1;
+        const end = Math.min(lines.length, target + highlightLines);
         const content = document.createDocumentFragment();
         for (const [position, line] of lines.entries()) {
-            const active = target >= 0 && position >= target && position < target + highlightLines;
-            const row = element('span', undefined, active ? 'code-line active' : 'code-line');
+            const focused = position === target;
+            const active = target >= 0 && position >= target && position < end;
+            const row = element('span', undefined, focused ? 'code-line active focused-line' : active ? 'code-line active' : 'code-line');
             const number = element('span', String(position + 1), 'line-number');
             number.setAttribute('aria-hidden', 'true');
             row.append(number);
-            highlight(line, row);
+            if (focused) {
+                const start = line.indexOf(anchor);
+                highlight(line.slice(0, start), row);
+                row.append(element('mark', anchor, 'code-match'));
+                highlight(line.slice(start + anchor.length), row);
+            } else {
+                highlight(line, row);
+            }
             content.append(row);
         }
         const code = $('code');
@@ -199,9 +209,15 @@ async function renderSource() {
         code.scrollLeft = 0;
         $('code-status').textContent = anchor && target === -1 ? `Anchor “${anchor}” matched ${matches.length} lines at this commit. Showing the file without a highlight.` : '';
         if (target >= 0) {
-            $('github').href = githubUrl + '#L' + (target + 1);
-            const first = code.querySelector('.active');
-            code.scrollTop = Math.max(0, first.offsetTop - code.offsetTop - 42);
+            const firstLine = target + 1;
+            $('github').href = githubUrl + '#L' + firstLine + (end > firstLine ? '-L' + end : '');
+            $('line-range').textContent = end > firstLine ? `Lines ${firstLine}–${end}` : `Line ${firstLine}`;
+            $('line-range').hidden = false;
+            const focus = code.querySelector('.focused-line');
+            code.scrollTop = Math.max(0, focus.offsetTop - code.offsetTop - Math.min(64, code.clientHeight / 4));
+            const mark = focus.querySelector('.code-match');
+            const markLeft = mark.getBoundingClientRect().left - code.getBoundingClientRect().left;
+            if (markLeft >= code.clientWidth - 48) code.scrollLeft = markLeft - 72;
         }
         if (!selectedFile && returnScroll) {
             code.scrollTo(returnScroll);

@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="dark" />
         <title>Atlas Flow Debugger</title>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="./debugger.css" />
         <script type="module" src="./debugger.js"></script>
     </head>
@@ -46,6 +47,7 @@
                 </div>
                 <div class="tab">
                     <span id="filename"></span>
+                    <span id="line-range" class="line-range" hidden></span>
                     <a id="github" target="_blank" rel="noopener noreferrer" hidden>Open on GitHub ↗</a>
                 </div>
                 <p id="code-status" class="status" role="status"></p>
