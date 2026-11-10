@@ -190,37 +190,6 @@ ol button[aria-current='step'],
     color: #c1dbff;
     padding: 2px 6px;
 }
-.next-hint {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    padding: 8px 12px;
-    border-inline-start: 3px solid #ffcf75;
-    border-bottom: 1px solid var(--border);
-    background: #1c2637;
-}
-.next-hint > div {
-    flex: 1 1 200px;
-    min-width: 0;
-}
-.next-hint strong,
-.next-hint span {
-    display: block;
-    overflow-wrap: anywhere;
-}
-.next-hint strong {
-    color: #ffde9c;
-    font-size: 13px;
-}
-.next-hint span {
-    color: var(--muted);
-    font-size: 12px;
-}
-.next-hint button {
-    font-size: 12px;
-}
 .status {
     margin: 8px 12px;
     color: var(--muted);
