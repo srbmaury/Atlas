@@ -219,16 +219,18 @@ def _investigate(run_id, actor_id):
                 return
         if not _save(run_id, status='running', stage='citation_audit'):
             return
-        # Citation presence audit only; semantic contradiction detection is
-        # not implemented in this initial research release.
+        # Audit actual citation references and lexical evidence rather than
+        # treating the mere presence of sources as verification.
+        from ..citation_audit import audit_citations
         for finding in findings:
             result = finding['result']
-            finding['verified'] = bool(result.get('sources')) and result.get('mode') in (
-                'ai',
-                'connected',
-                'local_excerpts',
-                'source_results',
-            )
+            sources = result.get('sources') or []
+            audit = audit_citations(result.get('answer') or '', sources)
+            result['citation_audit'] = audit
+            claims = audit.get('claims') or []
+            finding['verified'] = bool(sources) and bool(claims) and all(
+                claim['status'] == 'lexically_supported' for claim in claims
+            ) and result.get('mode') not in ('citation_check_failed', 'no_evidence')
             trace = result.get('retrieval') or {}
             searched = trace.get('sources') or []
             finding['diagnostics'] = {
@@ -249,7 +251,26 @@ def _investigate(run_id, actor_id):
             }
         if not _save(run_id, status='running', stage='synthesizing', findings=findings):
             return
-        if not any(finding['verified'] for finding in findings):
+        # Provide a unified, traceable summary without fabricating conclusions.
+        # The original independently cited sections remain available below it.
+        supported = [item for item in findings if item['verified']]
+        report = {
+            'title': 'Research summary',
+            'question': question,
+            'verified': bool(supported),
+            'result': {
+                'answer': '\\n\\n'.join(
+                    f"{item['title']}: {item['result'].get('answer', '')}"
+                    for item in supported
+                ) if supported else 'Insufficient cited evidence to form a supported summary.',
+                'sources': [],
+                'mode': 'research_summary',
+            },
+            'diagnostics': {'outcome': 'summary', 'providers': [],
+                            'passages_considered': 0, 'passages_used': 0},
+        }
+        findings = [report, *findings]
+        if not supported:
             _save(
                 run_id,
                 status='insufficient_evidence',
