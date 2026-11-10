@@ -162,7 +162,7 @@ def _investigate(run_id, actor_id, generation=None):
     try:
         with Session() as db:
             run = db.get(ResearchRun, run_id)
-            if not run or run.status == 'cancelled':
+            if not run or run.status in TERMINAL or (generation is not None and run.generation != generation):
                 return
             actor = db.get(User, actor_id)
             if not actor:
@@ -198,7 +198,7 @@ def _investigate(run_id, actor_id, generation=None):
         for title, subquestion in questions:
             with Session() as db:
                 run = db.get(ResearchRun, run_id)
-                if not run or run.status == 'cancelled':
+                if not run or run.status in TERMINAL or (generation is not None and run.generation != generation):
                     return
                 actor = db.get(User, actor_id)
                 if not actor:
@@ -337,7 +337,7 @@ def start_research(
             raise HTTPException(404, 'Selected document not found.')
     # Serialize admission across API replicas using the workspace row lock.
     from ..db import Workspace
-    db.query(Workspace).filter(Workspace.id == workspaceId).with_for_update().first()
+    db.execute(update(Workspace).where(Workspace.id == workspaceId).values(name=Workspace.name))
     active = (
         db.query(ResearchRun)
         .filter(
