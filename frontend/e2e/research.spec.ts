@@ -588,7 +588,7 @@ test('document processing failures expose context and retry', async ({ page }) =
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
     await expect(page.getByText('The PDF is password protected. Upload an unlocked copy.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Reindex failed.pdf' })).toBeVisible();
-    await expect(page.getByText('Processing', { exact: true })).toBeVisible();
+    await expect(page.getByText('Processing', { exact: true }).filter({ visible: true })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search documents' }).fill('absent');
     await expect(page.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
 });
