@@ -160,6 +160,7 @@ async function renderSource() {
     const highlightLines = selectedFile ? 1 : step.lines || 6;
     $('filename').textContent = path;
     $('line-range').hidden = true;
+    $('next-hint').hidden = true;
     $('code').replaceChildren();
     $('github').hidden = !revision;
     for (const button of $('tree').querySelectorAll('.tree-file')) {
@@ -196,7 +197,9 @@ async function renderSource() {
             if (focused) {
                 const start = line.indexOf(anchor);
                 highlight(line.slice(0, start), row);
-                row.append(element('mark', anchor, 'code-match'));
+                const mark = element('mark', anchor, 'code-match');
+                if (!selectedFile) mark.setAttribute('aria-describedby', 'next-hint-label next-hint-detail');
+                row.append(mark);
                 highlight(line.slice(start + anchor.length), row);
             } else {
                 highlight(line, row);
@@ -213,6 +216,13 @@ async function renderSource() {
             $('github').href = githubUrl + '#L' + firstLine + (end > firstLine ? '-L' + end : '');
             $('line-range').textContent = end > firstLine ? `Lines ${firstLine}–${end}` : `Line ${firstLine}`;
             $('line-range').hidden = false;
+            if (!selectedFile) {
+                const upcoming = currentCase().steps[index + 1];
+                $('next-hint-label').textContent = upcoming ? `Next · ${upcoming.title}` : 'End of this walkthrough';
+                $('next-hint-detail').textContent = upcoming ? `${stepLayer(upcoming)} — ${upcoming.detail}` : 'Go back to review a step, or choose another scenario.';
+                $('next-hint-go').hidden = !upcoming;
+                $('next-hint').hidden = false;
+            }
             const focus = code.querySelector('.focused-line');
             code.scrollTop = Math.max(0, focus.offsetTop - code.offsetTop - Math.min(64, code.clientHeight / 4));
             const mark = focus.querySelector('.code-match');
@@ -370,6 +380,10 @@ $('revision-form').addEventListener('submit', (event) => {
 });
 $('previous').addEventListener('click', () => goTo(index - 1));
 $('next').addEventListener('click', () => goTo(index + 1));
+$('next-hint-go').addEventListener('click', () => {
+    goTo(index + 1);
+    $('code').focus({ preventScroll: true });
+});
 $('return-to-step').addEventListener('click', () => {
     selectedFile = null;
     renderStep();

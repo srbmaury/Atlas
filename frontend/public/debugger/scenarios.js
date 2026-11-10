@@ -109,6 +109,17 @@ const linearScenarios = [
                 { actor: 'owner-1' },
                 { workspace: 'ws-1' },
             ),
+            uiStep(
+                'choose-workspace-member',
+                'Workspace settings → Members',
+                'Submit the workspace membership form',
+                'components/layout/AccessManagement.tsx',
+                'Add or update member',
+                'A manager selects the viewer role and submits the registered member’s email address.',
+                { email: 'reader@example.test', role: 'viewer' },
+                { workspace: 'ws-1' },
+                { request: 'PUT /members' },
+            ),
             step(
                 'assign-a-workspace-role',
                 api + 'routes/access.py',
@@ -161,10 +172,10 @@ const linearScenarios = [
                 api + 'routes/documents.py',
                 'async def upload(',
                 'Receive an uploaded file',
-                'The workspace editor uploads a supported file. Atlas creates a document record for indexing.',
+                'The workspace editor uploads a supported file. Atlas validates the filename and stages the bytes before storing the original.',
                 { file: 'policy.pdf', workspace: 'ws-1' },
                 { bytes: 184320, actorRole: 'editor' },
-                { document: 'doc-1', status: 'queued' },
+                { document: 'doc-1', staged: true },
             ),
             step(
                 'store-the-original',
@@ -378,6 +389,17 @@ const linearScenarios = [
                 { credential: '[encrypted]' },
                 { provider: 'drive', shared: false },
             ),
+            uiStep(
+                'ask-with-drive',
+                'Ask Atlas → Source selector',
+                'Select Drive and ask about the policy',
+                'components/chat/ResearchSourceSelector.tsx',
+                'onToggleProvider(p, e.target.checked)',
+                'The connection is now available to its owner. Select Drive, then send a question to initiate retrieval.',
+                { provider: 'drive', question: 'Find the policy' },
+                { connected: true },
+                { providers: ['drive'] },
+            ),
             step(
                 'resolve-search-access',
                 api + 'drive.py',
@@ -392,10 +414,10 @@ const linearScenarios = [
                 'search-and-filter-files',
                 api + 'drive.py',
                 'def drive_search(',
-                'Search and filter files',
-                'Atlas queries Drive and applies the file allowlist when a non-owner uses the shared connection.',
-                { query: 'policy', allowedFileIds: ['file-1'] },
-                { returnedFileIds: ['file-1', 'file-2'] },
+                'Search the owner’s Drive',
+                'Atlas queries Drive with the owner’s credential. Shared member searches additionally apply the file allowlist.',
+                { query: 'policy' },
+                { actor: 'connection owner' },
                 { visibleFileIds: ['file-1'] },
             ),
             step(
@@ -422,8 +444,8 @@ const linearScenarios = [
                 'onChange(connection, ids.length',
                 'The form parses channel IDs and passes the list and selected audience to the sharing handler.',
                 { resource_ids: 'C123' },
-                { provider: 'slack' },
-                { resourceIds: ['C123'] },
+                { provider: 'slack', existingMemberIds: ['user-42'] },
+                { resourceIds: ['C123'], memberIds: ['user-42'] },
             ),
             step(
                 'save-sharing-scope',
@@ -434,6 +456,17 @@ const linearScenarios = [
                 { provider: 'slack', shared: false, member_ids: ['user-42'], resource_ids: ['C123'] },
                 { actor: 'owner-1' },
                 { allowedChannels: ['C123'] },
+            ),
+            uiStep(
+                'ask-with-shared-slack',
+                'Ask Atlas → Source selector',
+                'Ask a question using shared Slack',
+                'components/chat/ResearchSourceSelector.tsx',
+                'onToggleProvider(p, e.target.checked)',
+                'An allowed member selects Slack and submits a question. Search runs using the sharing settings that are current at request time.',
+                { provider: 'slack', question: 'What is the budget?' },
+                { actor: 'user-42' },
+                { providers: ['slack'] },
             ),
             step(
                 'snapshot-effective-access',
@@ -501,6 +534,17 @@ const linearScenarios = [
                 { workspace: 'ws-1', title: 'Policy research' },
                 { actor: 'user-42' },
                 { id: 'chat-1', author_id: 'user-42' },
+            ),
+            step(
+                'request-answer-after-saving-question',
+                web + 'utils/conversationActions.ts',
+                'result = await requestResearchAnswer(',
+                'Request the answer for the saved turn',
+                'The first question already has a conversation ID when Atlas starts its regular research request.',
+                { question: 'What is the notice period?' },
+                { conversation: 'chat-1', persistedMessages: ['user'] },
+                { answer: 'The notice period is 30 days. [1]' },
+                { lines: 2 },
             ),
             step(
                 'update-completed-transcript',
@@ -611,8 +655,8 @@ const linearScenarios = [
             step(
                 'ask-about-a-repository',
                 web + 'components/chat/RepositoryEvidence.tsx',
-                'function RepositoryEvidence(',
-                'Ask about a repository',
+                'const inspect = async () => {',
+                'Build the repository evidence request',
                 'The Repository Evidence view submits a question with repository selection and optional web context.',
                 { repository: 'example/repo', question: 'Trace the upload flow' },
                 { include_web: false },
@@ -642,7 +686,7 @@ const linearScenarios = [
     },
     {
         id: 'recover',
-        title: 'Reset a password and sign out',
+        title: 'Reset a password and revoke old sessions',
         steps: [
             uiStep(
                 'click-forgot-password',
@@ -655,6 +699,17 @@ const linearScenarios = [
                 { forgot: false },
                 { forgot: true },
             ),
+            uiStep(
+                'submit-recovery-email',
+                'Sign-in screen → Reset your password',
+                'Send the reset link',
+                'components/auth/AuthView.tsx',
+                "await api('/auth/forgot'",
+                'The recovery form sends the entered email to the password recovery endpoint.',
+                { email: 'reader@example.test' },
+                { forgot: true },
+                { request: 'POST /auth/forgot' },
+            ),
             step(
                 'request-a-recovery-email',
                 api + 'routes/auth.py',
@@ -665,25 +720,37 @@ const linearScenarios = [
                 { action: 'recovery' },
                 { requested: true },
             ),
+            uiStep(
+                'submit-new-password',
+                'Password reset link → Choose a new password',
+                'Submit the new password',
+                'components/auth/CompleteAuth.tsx',
+                "await api(reset ? '/auth/reset'",
+                'The email opens a reset form. Submitting includes the recovery code or token and the new password.',
+                { password: '[redacted]' },
+                { mode: 'reset', recoveryToken: '[redacted]' },
+                { request: 'POST /auth/reset' },
+            ),
             step(
                 'complete-the-recovery',
                 api + 'routes/auth.py',
                 'def reset(',
                 'Complete the recovery',
-                'Atlas validates the recovery callback before updating the password and issuing a session.',
+                'Atlas validates the recovery link before updating the password with Supabase.',
                 { code: '[redacted]', password: '[redacted]' },
                 { flow: 'recovery' },
-                { authenticated: true },
+                { passwordUpdated: true },
             ),
             step(
                 'revoke-the-atlas-session',
                 api + 'routes/auth.py',
-                'def logout(',
-                'Revoke the Atlas session',
-                'Signing out removes the session token and clears the browser cookie.',
-                { session: '[redacted]' },
-                { sessionFound: true },
-                { signedOut: true },
+                'db.query(Login).filter_by(user_id=identifier).delete()',
+                'Revoke existing Atlas sessions',
+                'A successful password reset deletes the user’s existing sessions and clears the browser cookie. The user must sign in with the new password.',
+                { user: 'user-42' },
+                { existingSessions: 2 },
+                { existingSessions: 0, signInRequired: true },
+                { lines: 3, transition: { before: { sessions: 2 }, after: { sessions: 0 } } },
             ),
         ],
     },
@@ -721,6 +788,17 @@ const linearScenarios = [
                 { document: 'doc-1' },
                 { generation: 2 },
                 { status: 'ready' },
+            ),
+            uiStep(
+                'click-delete-document',
+                'Documents → Document table',
+                'Choose Delete and confirm',
+                'components/documents/DocumentTable.tsx',
+                'onClick={() => onRemove(d)}',
+                'Deletion is a separate action. The document handler asks for confirmation before sending DELETE.',
+                { document: 'doc-1' },
+                { canEdit: true, confirmed: true },
+                { method: 'DELETE' },
             ),
             step(
                 'delete-the-document',
@@ -768,6 +846,17 @@ const linearScenarios = [
                 { state: '[redacted]', code: '[redacted]' },
                 { authenticated: true },
                 { provider: 'gmail', shared: false },
+            ),
+            uiStep(
+                'ask-with-gmail',
+                'Ask Atlas → Source selector',
+                'Select Gmail and ask about policy emails',
+                'components/chat/ResearchSourceSelector.tsx',
+                'onIncludeGmail(e.target.checked)',
+                'Selecting Gmail includes the mailbox when the next question is sent.',
+                { question: 'Find policy emails' },
+                { connected: true },
+                { include_gmail: true },
             ),
             step(
                 'retrieve-matching-messages',
@@ -857,6 +946,18 @@ function uploadDecision(size) {
     );
 }
 
+const queueUpload = step(
+    'commit-queued-document',
+    api + 'routes/documents.py',
+    'results.append(public_doc(doc))',
+    'Return the queued document',
+    'Once original storage succeeds, the API commits the document row and returns it with the default queued status.',
+    { document: 'doc-1', originalStored: true },
+    { committed: true },
+    { status: 'queued' },
+    { lines: 1, transition: { before: { documentRow: null }, after: { status: 'queued' } } },
+);
+
 const indexSteps = [
     {
         ...upload.steps[3],
@@ -916,14 +1017,14 @@ const reconcile = step(
 );
 
 const uploadCases = [
-    { id: 'small', title: 'Small file', steps: [upload.steps[0], uploadDecision(184320), upload.steps[1], upload.steps[2], ...indexSteps] },
+    { id: 'small', title: 'Small file', steps: [upload.steps[0], uploadDecision(184320), upload.steps[1], upload.steps[2], queueUpload, ...indexSteps] },
     { id: 'large', title: 'Large staged file', steps: [staged.steps[0], uploadDecision(33554432), staged.steps[1], appendPart, staged.steps[3], ...indexSteps] },
     { id: 'lost-ack', title: 'Large file · lost acknowledgement', steps: [staged.steps[0], uploadDecision(33554432), staged.steps[1], appendPart, reconcile, staged.steps[3], ...indexSteps] },
 ];
 
 const answer = linearScenarios.find(({ id }) => id === 'answer');
 const scope = linearScenarios.find(({ id }) => id === 'scope');
-const scopeFilter = { ...scope.steps[3], anchor: 'channel_id not in resource_ids', lines: 5 };
+const scopeFilter = { ...scope.steps[4], anchor: 'channel_id not in resource_ids', lines: 5 };
 const scopeCheck = {
     ...scope.steps.at(-1),
     anchor: 'if scopes and provider in scopes and source_scope(db, actor, row) != scopes[provider]:',
@@ -963,7 +1064,17 @@ export const scenarios = linearScenarios
                 ...scenario,
                 cases: [
                     { id: 'cited', title: 'Valid citations', steps: answer.steps },
-                    { id: 'partial', title: 'Slack unavailable', steps: [...answer.steps.slice(0, 5), partial, ...answer.steps.slice(5)] },
+                    {
+                        id: 'partial',
+                        title: 'Slack unavailable',
+                        steps: [
+                            ...answer.steps.slice(0, 3),
+                            { ...answer.steps[3], values: { ...answer.steps[3].values, output: { providersWithEvidence: ['documents'], failures: ['slack'] } } },
+                            answer.steps[4],
+                            partial,
+                            ...answer.steps.slice(5),
+                        ],
+                    },
                     {
                         id: 'invalid',
                         title: 'Citation repair fails',
@@ -984,12 +1095,12 @@ export const scenarios = linearScenarios
                         id: 'unchanged',
                         title: 'Scope stays the same',
                         steps: [
-                            ...scope.steps.slice(0, 3),
+                            ...scope.steps.slice(0, 4),
                             scopeFilter,
                             { ...scopeCheck, values: { input: { originalScope: ['C123'] }, state: { currentScope: ['C123'] }, output: { allowed: true } }, transition: undefined, test: undefined },
                         ],
                     },
-                    { id: 'revoked', title: 'Scope narrowed during synthesis', steps: [...scope.steps.slice(0, 3), scopeFilter, scopeCheck] },
+                    { id: 'revoked', title: 'Scope narrowed during synthesis', steps: [...scope.steps.slice(0, 4), scopeFilter, scopeCheck] },
                 ],
             };
         }
