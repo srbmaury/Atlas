@@ -1,6 +1,6 @@
 'use client';
-import { type ReactNode } from 'react';
-import { Search, Upload, FileText, CheckCircle2, HardDrive } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Search, Upload, Plus, FileText, CheckCircle2, HardDrive } from 'lucide-react';
 
 interface DocumentsViewProps {
     canEdit?: boolean;
@@ -39,6 +39,7 @@ export function DocumentsView({
     uploading,
     onBrowse,
 }: DocumentsViewProps) {
+    const [addOpen, setAddOpen] = useState(false);
     return (
         <section className="document-library-v3">
             <div className="crumb">
@@ -50,9 +51,26 @@ export function DocumentsView({
                     <h1>Documents</h1>
                     <p>Search, inspect, and manage the files behind your research.</p>
                 </div>
-                {uploadButton}
+                <div className="library-desktop-upload">{uploadButton}</div>
+                {canEdit && (
+                    <button type="button" className="btn primary library-mobile-add" aria-expanded={addOpen} aria-controls="library-import-actions" onClick={() => setAddOpen((open) => !open)}>
+                        <Plus size={16} /> Add
+                    </button>
+                )}
             </div>
-            {webImport}
+            <div id="library-import-actions" className="library-import-actions" data-open={addOpen || !canEdit}>
+                {canEdit && (
+                    <div className="library-mobile-upload">
+                        <button type="button" className="btn" disabled={uploading} onClick={onBrowse}>
+                            Upload files
+                        </button>
+                    </div>
+                )}
+                {webImport}
+            </div>
+            <p className="library-mobile-summary">
+                {totalDocuments} {totalDocuments === 1 ? 'file' : 'files'} · {readyDocuments} ready to search · {storageLabel}
+            </p>
             <div className="library-stat-strip library-metrics">
                 <span>
                     <FileText size={17} />
@@ -73,7 +91,9 @@ export function DocumentsView({
                         <h2>All documents</h2>
                         <p>Search and manage files in this workspace</p>
                     </div>
-                    <span>{filteredCount} files</span>
+                    <span>
+                        {filteredCount} {filteredCount === 1 ? 'file' : 'files'}
+                    </span>
                 </div>
                 <div className="library-search-row">
                     <label>

@@ -16,7 +16,7 @@ type Props = {
 
 export function IntegrationTile({ name, description, connected, account, icon, onClick, disabled, health }: Props) {
     return (
-        <button type="button" className="integration-tile" onClick={onClick} disabled={disabled}>
+        <button type="button" className="integration-tile" data-connected={Boolean(connected)} onClick={onClick} disabled={disabled}>
             <span className="integration-tile-top">
                 <span className="integration-tile-icon">{icon}</span>
                 <ArrowUpRight size={17} className="integration-tile-arrow" />
@@ -51,6 +51,9 @@ export function IntegrationTile({ name, description, connected, account, icon, o
                         Not connected
                     </>
                 )}
+            </span>
+            <span className="mobile-source-tile-action" aria-hidden="true">
+                {connected ? 'Manage' : 'Connect'}
             </span>
         </button>
     );

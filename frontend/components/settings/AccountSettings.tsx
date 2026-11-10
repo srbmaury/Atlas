@@ -158,6 +158,16 @@ export function AccountSettings() {
                         Atlas <small> / Settings</small>
                     </span>
                 </div>
+                <label className="settings-mobile-switch">
+                    <span>Settings section</span>
+                    <select value={section} onChange={(event) => navigate(event.target.value as Section)}>
+                        {sections.map(({ id, label }) => (
+                            <option key={id} value={id}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
                 <nav aria-label="Settings navigation">
                     <span className="settings-nav-group">PERSONAL</span>
                     {sections.map(({ id, label, icon: Icon }, index) => (
