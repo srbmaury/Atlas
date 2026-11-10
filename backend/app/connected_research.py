@@ -48,6 +48,8 @@ def collect_connected_evidence(
     tasks = []
     failures = []
     query = retrieval_query(body.question, body.history)
+    repository = getattr(body, 'repository', None)
+    github_query = f'{query} repo:{repository}' if repository else query
 
     def credential(provider, load):
         try:
@@ -107,7 +109,9 @@ def collect_connected_evidence(
             tasks.append(
                 (
                     provider,
-                    lambda p=provider, t=provider_token: source_search(p, t, query),
+                    lambda p=provider, t=provider_token: source_search(
+                        p, t, github_query if p == 'github' else query
+                    ),
                 )
             )
         # A single slow connector should not serialize all selected sources. Keep
@@ -133,6 +137,22 @@ def collect_connected_evidence(
                     continue
                 try:
                     hits = future.result()
+                    if provider == 'github' and repository:
+                        # Never allow cross-repository hits into the synthesis context.
+                        from urllib.parse import urlparse
+                        expected = repository.casefold()
+                        def belongs_to_repo(hit):
+                            metadata = hit.get('metadata') or {}
+                            declared = metadata.get('repository') or hit.get('scope')
+                            if declared:
+                                return str(declared).casefold() == expected
+                            url = hit.get('url') or ''
+                            parsed = urlparse(url)
+                            parts = parsed.path.strip('/').split('/')
+                            return (parsed.hostname in ('github.com', 'www.github.com')
+                                    and len(parts) >= 2
+                                    and '/'.join(parts[:2]).casefold() == expected)
+                        hits = [hit for hit in hits if belongs_to_repo(hit)]
                     stats['found'][provider] = len(hits)
                     if provider == 'gmail':
                         evidence.extend(normalize_results(provider, hits))
