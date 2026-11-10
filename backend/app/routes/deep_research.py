@@ -120,6 +120,7 @@ def _save(run_id, *, status=None, stage=None, findings=None, error=None):
             'error': run.error,
             'updated': run.updated,
         }
+        db.expunge(run)  # prevent ORM autoflush from bypassing the status guard
         updated = db.execute(
             update(ResearchRun)
             .where(ResearchRun.id == run_id, ResearchRun.status.notin_(TERMINAL))
