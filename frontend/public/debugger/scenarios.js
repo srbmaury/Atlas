@@ -1169,7 +1169,413 @@ const partial = step(
     { lines: 2, test: { path: 'backend/tests/test_answer_quality.py', anchor: 'def test_partial_connector_failure_marks_answer_coverage(' } },
 );
 
-export const scenarios = linearScenarios
+const ragPipeline = {
+    "id": "rag-pipeline",
+    "title": "RAG lab · chunk → retrieve → answer",
+    "cases": [
+        {
+            "id": "hybrid",
+            "title": "Hybrid RAG with AI",
+            "steps": [
+                {
+                    "id": "rag-upload-ui",
+                    "screen": "Documents · upload",
+                    "path": "frontend/lib/uploadDocuments.ts",
+                    "anchor": "export async function uploadDocument(",
+                    "title": "Upload a document from Atlas",
+                    "detail": "The browser submits a file for the selected workspace. Atlas then extracts and indexes its content before questions can retrieve evidence.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf",
+                            "workspace": "ws-1"
+                        },
+                        "state": {
+                            "method": "POST",
+                            "action": "Upload document"
+                        },
+                        "output": {
+                            "request": "POST /workspaces/ws-1/documents"
+                        }
+                    }
+                },
+                {
+                    "id": "rag-extract",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "def extract(",
+                    "title": "Extract text and OCR",
+                    "detail": "Read PDF pages, DOCX blocks, or supported text files. Image-only PDF pages may use OCR.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf"
+                        },
+                        "state": {
+                            "page": 1
+                        },
+                        "output": {
+                            "text": "Employees receive 20 days of annual leave. Requests require manager approval."
+                        }
+                    }
+                },
+                {
+                    "id": "rag-split",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "def split_text(text, size=1800, overlap=240):",
+                    "title": "Split into overlapping chunks",
+                    "detail": "The actual splitter uses up to 1,800 characters with 240-character overlap, preferring newline or sentence boundaries. The short passages here illustrate the concept rather than literal chunk sizes.",
+                    "values": {
+                        "input": {
+                            "text": "Employees receive 20 days of annual leave. Requests require manager approval."
+                        },
+                        "state": {
+                            "size": 1800,
+                            "overlap": 240
+                        },
+                        "output": {
+                            "illustrativeChunks": [
+                                "Employees receive 20 days of annual leave.",
+                                "Requests require manager approval."
+                            ]
+                        }
+                    }
+                },
+                {
+                    "id": "rag-embed",
+                    "path": "backend/app/ai.py",
+                    "anchor": "def embed(texts):",
+                    "title": "Generate embeddings",
+                    "detail": "The worker embeds batches of 32 passages. OpenAI produces 1,536-dimensional vectors; shorter Ollama vectors are padded. No provider means null embeddings.",
+                    "values": {
+                        "input": {
+                            "chunks": 2
+                        },
+                        "state": {
+                            "provider": "OpenAI / Ollama",
+                            "batchSize": 32
+                        },
+                        "output": {
+                            "exampleVector": "[0.12, -0.08, …] illustrative",
+                            "dimensions": 1536
+                        }
+                    }
+                },
+                {
+                    "id": "rag-store",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "db.add_all(chunks)",
+                    "title": "Store indexed chunks",
+                    "detail": "Replace existing Chunk rows for this document and commit text, page, ordinal, vector and embedding model. Mark the document ready.",
+                    "values": {
+                        "input": {
+                            "document": "doc-1"
+                        },
+                        "state": {
+                            "workspace": "ws-1",
+                            "table": "chunks"
+                        },
+                        "output": {
+                            "status": "ready",
+                            "chunkCount": 2
+                        }
+                    }
+                },
+                {
+                    "id": "rag-query",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "def retrieve(workspace_id, query, document_ids=None, limit=8):",
+                    "title": "Ask a question",
+                    "detail": "Search ready documents in the workspace, optionally filtered by document IDs.",
+                    "values": {
+                        "input": {
+                            "question": "How many annual leave days do employees receive?"
+                        },
+                        "state": {
+                            "workspace": "ws-1"
+                        },
+                        "output": {
+                            "limit": 8
+                        }
+                    }
+                },
+                {
+                    "id": "rag-lexical",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "if engine.dialect.name == 'postgresql':",
+                    "title": "Keyword search",
+                    "detail": "Use PostgreSQL full-text search, SQLite FTS5, or an in-process BM25 fallback.",
+                    "values": {
+                        "input": {
+                            "query": "How many annual leave days do employees receive?"
+                        },
+                        "state": {
+                            "backend": "PostgreSQL or SQLite"
+                        },
+                        "output": {
+                            "hit": "Employees receive 20 days of annual leave."
+                        }
+                    }
+                },
+                {
+                    "id": "rag-semantic",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "if engine.dialect.name == 'postgresql' and enabled():",
+                    "title": "Vector similarity search",
+                    "detail": "Embed the question and compare it with stored vectors of the same embedding model, using pgvector or Python cosine similarity.",
+                    "values": {
+                        "input": {
+                            "query": "How many annual leave days do employees receive?"
+                        },
+                        "state": {
+                            "aiEnabled": true
+                        },
+                        "output": {
+                            "hit": "Employees receive 20 days of annual leave."
+                        }
+                    }
+                },
+                {
+                    "id": "rag-rank",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "for ranking, weight in [(lexical, 4.0), (semantic, 1.0)]:",
+                    "title": "Fuse, filter, diversify",
+                    "detail": "Rank fusion weights lexical hits 4:1 versus semantic hits, filters unsupported matches and diversifies across documents.",
+                    "values": {
+                        "input": {
+                            "lexical": [
+                                "Employees receive 20 days of annual leave."
+                            ],
+                            "semantic": [
+                                "Employees receive 20 days of annual leave."
+                            ]
+                        },
+                        "state": {
+                            "perDocument": 3
+                        },
+                        "output": {
+                            "selected": [
+                                "Employees receive 20 days of annual leave."
+                            ]
+                        }
+                    }
+                },
+                {
+                    "id": "rag-answer",
+                    "path": "backend/app/ai.py",
+                    "anchor": "def generate(question, sources, history=None):",
+                    "title": "Generate grounded answer",
+                    "detail": "Pass the question and numbered retrieved evidence to the configured model; the whole document is not sent.",
+                    "values": {
+                        "input": {
+                            "question": "How many annual leave days do employees receive?",
+                            "sources": [
+                                {
+                                    "source_id": 1,
+                                    "text": "Employees receive 20 days of annual leave."
+                                }
+                            ]
+                        },
+                        "state": {
+                            "provider": "OpenAI / Ollama"
+                        },
+                        "output": {
+                            "answer": "Employees receive 20 days of annual leave. [1]"
+                        }
+                    }
+                },
+                {
+                    "id": "rag-citations",
+                    "path": "backend/app/ai.py",
+                    "anchor": "refs = {int(n) for n in re.findall",
+                    "title": "Validate citations",
+                    "detail": "Validate cited source numbers, not claim-level factual correctness.",
+                    "values": {
+                        "input": {
+                            "answer": "Employees receive 20 days of annual leave. [1]"
+                        },
+                        "state": {
+                            "availableSourceIds": [
+                                1
+                            ]
+                        },
+                        "output": {
+                            "mode": "ai",
+                            "citations": [
+                                1
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": "keyword",
+            "title": "Keyword-only without AI",
+            "steps": [
+                {
+                    "id": "rag-upload-ui",
+                    "screen": "Documents · upload",
+                    "path": "frontend/lib/uploadDocuments.ts",
+                    "anchor": "export async function uploadDocument(",
+                    "title": "Upload a document from Atlas",
+                    "detail": "The browser submits a file for the selected workspace. Atlas then extracts and indexes its content before questions can retrieve evidence.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf",
+                            "workspace": "ws-1"
+                        },
+                        "state": {
+                            "method": "POST",
+                            "action": "Upload document"
+                        },
+                        "output": {
+                            "request": "POST /workspaces/ws-1/documents"
+                        }
+                    }
+                },
+                {
+                    "id": "rag-extract",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "def extract(",
+                    "title": "Extract text and OCR",
+                    "detail": "Read PDF pages, DOCX blocks, or supported text files. Image-only PDF pages may use OCR.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf"
+                        },
+                        "state": {
+                            "page": 1
+                        },
+                        "output": {
+                            "text": "Employees receive 20 days of annual leave. Requests require manager approval."
+                        }
+                    }
+                },
+                {
+                    "id": "rag-split",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "def split_text(text, size=1800, overlap=240):",
+                    "title": "Split into overlapping chunks",
+                    "detail": "The actual splitter uses up to 1,800 characters with 240-character overlap, preferring newline or sentence boundaries. The short passages here illustrate the concept rather than literal chunk sizes.",
+                    "values": {
+                        "input": {
+                            "text": "Employees receive 20 days of annual leave. Requests require manager approval."
+                        },
+                        "state": {
+                            "size": 1800,
+                            "overlap": 240
+                        },
+                        "output": {
+                            "illustrativeChunks": [
+                                "Employees receive 20 days of annual leave.",
+                                "Requests require manager approval."
+                            ]
+                        }
+                    }
+                },
+                {
+                    "id": "rag-embed",
+                    "path": "backend/app/ai.py",
+                    "anchor": "def embed(texts):",
+                    "title": "Generate embeddings",
+                    "detail": "With AI_PROVIDER=none, embed() returns null vectors. Keyword indexing still works.",
+                    "values": {
+                        "input": {
+                            "chunks": 2
+                        },
+                        "state": {
+                            "provider": "none"
+                        },
+                        "output": {
+                            "vectors": [
+                                null,
+                                null
+                            ]
+                        }
+                    }
+                },
+                {
+                    "id": "rag-store",
+                    "path": "backend/app/ingest.py",
+                    "anchor": "db.add_all(chunks)",
+                    "title": "Store indexed chunks",
+                    "detail": "Replace existing Chunk rows for this document and commit text, page, ordinal, vector and embedding model. Mark the document ready.",
+                    "values": {
+                        "input": {
+                            "document": "doc-1"
+                        },
+                        "state": {
+                            "workspace": "ws-1",
+                            "table": "chunks"
+                        },
+                        "output": {
+                            "status": "ready",
+                            "chunkCount": 2
+                        }
+                    }
+                },
+                {
+                    "id": "rag-query",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "def retrieve(workspace_id, query, document_ids=None, limit=8):",
+                    "title": "Ask a question",
+                    "detail": "Search ready documents in the workspace, optionally filtered by document IDs.",
+                    "values": {
+                        "input": {
+                            "question": "How many annual leave days do employees receive?"
+                        },
+                        "state": {
+                            "workspace": "ws-1"
+                        },
+                        "output": {
+                            "limit": 8
+                        }
+                    }
+                },
+                {
+                    "id": "rag-lexical",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "if engine.dialect.name == 'postgresql':",
+                    "title": "Keyword search",
+                    "detail": "Use PostgreSQL full-text search, SQLite FTS5, or an in-process BM25 fallback.",
+                    "values": {
+                        "input": {
+                            "query": "How many annual leave days do employees receive?"
+                        },
+                        "state": {
+                            "backend": "PostgreSQL or SQLite"
+                        },
+                        "output": {
+                            "hit": "Employees receive 20 days of annual leave."
+                        }
+                    }
+                },
+                {
+                    "id": "rag-rank",
+                    "path": "backend/app/retrieval.py",
+                    "anchor": "for ranking, weight in [(lexical, 4.0), (semantic, 1.0)]:",
+                    "title": "Fuse, filter, diversify",
+                    "detail": "Only lexical matches contribute. The system returns matching excerpts without LLM synthesis.",
+                    "values": {
+                        "input": {
+                            "lexical": [
+                                "Employees receive 20 days of annual leave."
+                            ],
+                            "semantic": []
+                        },
+                        "state": {
+                            "aiEnabled": false
+                        },
+                        "output": {
+                            "mode": "local_excerpts",
+                            "excerpt": "Employees receive 20 days of annual leave."
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+};
+
+export const scenarios = [ragPipeline, ...linearScenarios]
     .filter(({ id }) => id !== 'staged-upload')
     .map((scenario) => {
         if (scenario === upload) return { ...scenario, cases: uploadCases };

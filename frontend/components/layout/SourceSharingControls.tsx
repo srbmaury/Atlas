@@ -66,7 +66,7 @@ export function SourceSharingControls({
                             </form>
                         )}
                         <label className="access-share-row">
-                            <input type="checkbox" disabled={needsResources} checked={connection.shared} onChange={(event) => onChange(connection, event.target.checked, [])} />
+                            <input type="checkbox" disabled={needsResources} checked={!needsResources && connection.shared} onChange={(event) => onChange(connection, event.target.checked, [])} />
                             Share {connection.provider} with this workspace
                         </label>
                         {connection.shared ? (
@@ -82,7 +82,7 @@ export function SourceSharingControls({
                                                 type="checkbox"
                                                 disabled={needsResources}
                                                 aria-label={`Allow ${connection.provider} for ${member.email}`}
-                                                checked={(connection.member_ids || []).includes(member.id)}
+                                                checked={!needsResources && (connection.member_ids || []).includes(member.id)}
                                                 onChange={(event) => {
                                                     const ids = new Set(connection.member_ids || []);
                                                     if (event.target.checked) ids.add(member.id);

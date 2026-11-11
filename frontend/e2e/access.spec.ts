@@ -134,7 +134,13 @@ test('Drive sharing requires a saved file scope and clearing it turns sharing of
     await expect(share).toBeChecked();
     expect(sharing.resource_ids).toEqual(['file-shared', 'file-other']);
     await files.clear();
+    const scopeSaved = page.waitForResponse((response) =>
+        response.url().endsWith('/api/workspaces/w1/connection-sharing/drive') &&
+        response.request().method() === 'PATCH' &&
+        response.request().postDataJSON()?.resource_ids?.length === 0,
+    );
     await save.click();
+    await scopeSaved;
     await expect(share).toBeDisabled();
     await expect(share).not.toBeChecked();
     expect(sharing.resource_ids).toEqual([]);
