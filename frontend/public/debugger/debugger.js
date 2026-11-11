@@ -96,8 +96,8 @@ function renderRagMap() {
     $('rag-map').hidden = !active;
     if (!active) return;
     const phases = [
-        ['Index', ['rag-extract', 'rag-split', 'rag-embed', 'rag-store']],
-        ['Retrieve', ['rag-question', 'rag-lexical', 'rag-semantic', 'rag-rank']],
+        ['Index', ['rag-upload-ui', 'rag-extract', 'rag-split', 'rag-embed', 'rag-store']],
+        ['Retrieve', ['rag-query', 'rag-lexical', 'rag-semantic', 'rag-rank']],
         ['Answer', ['rag-answer', 'rag-citations']],
     ];
     $('rag-stages').replaceChildren(...phases.map(([label, ids]) => {

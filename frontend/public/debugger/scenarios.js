@@ -1178,6 +1178,27 @@ const ragPipeline = {
             "title": "Hybrid RAG with AI",
             "steps": [
                 {
+                    "id": "rag-upload-ui",
+                    "screen": "Documents · upload",
+                    "path": "frontend/lib/uploadDocuments.ts",
+                    "anchor": "export async function uploadDocument(",
+                    "title": "Upload a document from Atlas",
+                    "detail": "The browser submits a file for the selected workspace. Atlas then extracts and indexes its content before questions can retrieve evidence.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf",
+                            "workspace": "ws-1"
+                        },
+                        "state": {
+                            "method": "POST",
+                            "action": "Upload document"
+                        },
+                        "output": {
+                            "request": "POST /workspaces/ws-1/documents"
+                        }
+                    }
+                },
+                {
                     "id": "rag-extract",
                     "path": "backend/app/ingest.py",
                     "anchor": "def extract(",
@@ -1389,6 +1410,27 @@ const ragPipeline = {
             "id": "keyword",
             "title": "Keyword-only without AI",
             "steps": [
+                {
+                    "id": "rag-upload-ui",
+                    "screen": "Documents · upload",
+                    "path": "frontend/lib/uploadDocuments.ts",
+                    "anchor": "export async function uploadDocument(",
+                    "title": "Upload a document from Atlas",
+                    "detail": "The browser submits a file for the selected workspace. Atlas then extracts and indexes its content before questions can retrieve evidence.",
+                    "values": {
+                        "input": {
+                            "file": "leave-policy.pdf",
+                            "workspace": "ws-1"
+                        },
+                        "state": {
+                            "method": "POST",
+                            "action": "Upload document"
+                        },
+                        "output": {
+                            "request": "POST /workspaces/ws-1/documents"
+                        }
+                    }
+                },
                 {
                     "id": "rag-extract",
                     "path": "backend/app/ingest.py",
