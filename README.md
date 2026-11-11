@@ -264,6 +264,17 @@ The default Compose PostgreSQL password is for local development only. Changing 
 
 The Render Dockerfile is at `ops/render/Dockerfile`. See [Supabase on Render](docs/OPERATIONS.md#supabase-on-render) to persist database records and original files across redeploys. Configure [verified sign-in](docs/OPERATIONS.md#verified-sign-in-with-supabase-auth) before deploying with `COOKIE_SECURE=true`.
 
+### Recovering an Alembic revision mismatch on Render
+
+If startup fails with `Can't locate revision identified by '0011'` (or another revision), the **database migration record** and the **migration files in the deployed image** disagree. The image currently contains revisions `0001` through `0010`. Rebuilding the image alone does not clear a persistent SQLite disk or external PostgreSQL database.
+
+1. Confirm the Render service's `DATABASE_URL` and `DATA_DIR` configuration, and make a verified backup of the selected database and uploaded originals. Do not delete a live disk or shared Supabase/Render database as a troubleshooting shortcut.
+2. For PostgreSQL, inspect the version with `SELECT version_num FROM alembic_version;`. For SQLite, open the configured database using `sqlite3 <database-file> 'SELECT version_num FROM alembic_version;'`. Also inspect the migration files in the exact deployed commit.
+3. If the database has already applied a revision absent from the image, restore that original migration and any subsequent chain from source control or a known-good deployment. Review its schema operations before running `alembic upgrade head`.
+4. For an **intentionally disposable** environment only, provision a brand-new empty database (and separate original-file storage, if intentionally discarded), update the service's `DATABASE_URL` and relevant storage settings, then redeploy. This discards its users, documents, conversations, connections and migration history. Create a fresh database rather than altering `alembic_version` on an unknown schema.
+
+Never use `alembic stamp head` to suppress an unknown revision error: it changes the revision marker without applying or verifying schema changes. Atlas applies migrations in `backend/app/db.py:init_db` during FastAPI startup.
+
 ## Troubleshooting
 
 - **Atlas only shows excerpts, not an answer:** Check `AI_PROVIDER`, the API logs, and that Ollama is running or the OpenAI key is valid. Restart the API after changing `.env`.
