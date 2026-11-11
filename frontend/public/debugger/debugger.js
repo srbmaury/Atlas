@@ -91,7 +91,33 @@ function stepLayer(step) {
     return 'API · request handling';
 }
 
+function renderRagMap() {
+    const active = currentScenario().id === 'rag-pipeline';
+    $('rag-map').hidden = !active;
+    if (!active) return;
+    const phases = [
+        ['Index', ['rag-extract', 'rag-split', 'rag-embed', 'rag-store']],
+        ['Retrieve', ['rag-question', 'rag-lexical', 'rag-semantic', 'rag-rank']],
+        ['Answer', ['rag-answer', 'rag-citations']],
+    ];
+    $('rag-stages').replaceChildren(...phases.map(([label, ids]) => {
+        const group = element('div', undefined, 'rag-stage');
+        group.append(element('strong', label));
+        for (const id of ids) {
+            const position = currentCase().steps.findIndex(step => step.id === id);
+            if (position < 0) continue;
+            const button = element('button', currentCase().steps[position].title, 'rag-node');
+            button.type = 'button';
+            if (id === currentStep().id) button.setAttribute('aria-current', 'step');
+            button.addEventListener('click', () => goTo(position));
+            group.append(button);
+        }
+        return group;
+    }));
+}
+
 function renderStep() {
+    renderRagMap();
     const scenario = currentCase();
     const step = currentStep();
     $('case-control').hidden = !currentScenario().cases;
