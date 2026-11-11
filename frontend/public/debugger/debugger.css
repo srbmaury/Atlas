@@ -346,3 +346,12 @@ footer {
 .state-change dd:last-child pre {
     border-color: #4a8067;
 }
+
+/* Dedicated RAG lab navigation: index → retrieval → answer. */
+.rag-map { margin: 16px 0; padding: 12px; border: 1px solid #42628e; border-radius: 12px; background: linear-gradient(145deg, #192c40, #171b24); }
+.rag-map h3 { margin: 0 0 4px; color: #b9d5ff; }
+.rag-map p { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.rag-stage { display: grid; gap: 5px; padding: 10px 0; border-top: 1px solid #35455b; }
+.rag-stage strong { color: #a5e5d0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.rag-node { width: 100%; text-align: left; background: #202c3e; font-size: 12px; border-radius: 7px; }
+.rag-node[aria-current="step"] { background: #294b62; border-color: #7ad4b5; color: #fff; }
