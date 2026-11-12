@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -36,7 +36,7 @@ def test_source_selection_rejects_unknown_provider():
 def test_document_selection_is_workspace_scoped():
     body = CreateAgent(name='A', document_ids=['other-workspace-doc'])
     with patch('app.agent_studio.Document') as document:
-        db = __import__('unittest.mock', fromlist=['MagicMock']).MagicMock()
+        db = MagicMock()
         db.query.return_value.filter.return_value.count.return_value = 0
         with pytest.raises(HTTPException) as exc:
             validate_sources(db, 'workspace', body)
