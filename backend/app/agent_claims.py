@@ -1,6 +1,7 @@
 """Conservative claim-to-passage checks; never equate a citation with proof."""
 
 import json
+import logging
 import re
 
 from .retrieval import tokens
