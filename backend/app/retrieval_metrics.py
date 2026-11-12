@@ -27,7 +27,11 @@ def evaluate(cases: list[RetrievalCase], k: int = 10) -> dict:
         precisions.append(len(hits) / k)
         reciprocal_ranks.append(
             next(
-                (1 / rank for rank, identifier in enumerate(top, 1) if identifier in case.relevant_ids),
+                (
+                    1 / rank
+                    for rank, identifier in enumerate(top, 1)
+                    if identifier in case.relevant_ids
+                ),
                 0.0,
             )
         )
