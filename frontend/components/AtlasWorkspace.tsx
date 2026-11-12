@@ -425,13 +425,13 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: match![2] }) });
             if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
             const run: { id: string } = await started.json();
-            let completed: { status: string; result?: { answer?: string; error?: string; claim_verification?: { unsupported: number; supported?: number } }; error?: string } | undefined;
+            let completed: { id: string; status: string; result?: { answer?: string; error?: string; claim_verification?: { unsupported: number; supported?: number } }; error?: string } | undefined;
             for (let attempt = 0; attempt < 90; attempt++) {
                 await new Promise((resolve) => window.setTimeout(resolve, 2000));
                 const response = await fetch(base, { credentials: 'same-origin' });
                 if (!response.ok) throw new Error('Could not load agent research results.');
                 const runs: typeof completed[] = await response.json();
-                const current = runs.find((item) => (item as typeof run)?.id === run.id);
+                const current = runs.find((item) => item?.id === run.id);
                 if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) { completed = current; break; }
             }
             if (!completed) throw new Error('Agent is still running. Check its run history later.');
