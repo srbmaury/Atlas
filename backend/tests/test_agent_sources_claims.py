@@ -97,3 +97,22 @@ def test_revoked_agent_evidence_hidden_from_saved_conversation():
     assert result[0]['content'] == 'Question'
     assert 'Secret source excerpt' not in str(result[1])
     assert 'hidden' in result[1]['content']
+
+
+def test_legacy_agent_answer_without_provenance_is_hidden():
+    from app.routes.conversations import visible_messages
+
+    conversation = MagicMock()
+    conversation.workspace_id = 'workspace'
+    conversation.messages = [
+        {
+            'role': 'assistant',
+            'content': 'Historical connected-source secret',
+            'agent': {'id': 'agent-1', 'name': 'Researcher'},
+            'result': {'sources': [{'text': 'Historical connected-source secret'}]},
+        }
+    ]
+    visible = visible_messages(conversation, MagicMock())
+    assert len(visible) == 1
+    assert 'Historical connected-source secret' not in str(visible)
+    assert 'cannot be verified' in visible[0]['content']
