@@ -1,8 +1,14 @@
 # Atlas source setup
 
-Atlas supports uploaded documents and 11 connected sources. Atlas reads connected sources on demand. Connect a provider in **Sources**, then select it for a question in **Ask Atlas**. Atlas does not copy connected content into the document library or synchronize it in the background.
+Atlas supports uploaded documents and 11 connected sources. Atlas reads connected sources on demand. Connect a provider in **Sources**, then select it for a question in **Ask Atlas** or include it in an **Agent Studio** research agent. Atlas does not copy connected content into the document library or synchronize it in the background.
 
 Set a stable, private `GMAIL_TOKEN_ENCRYPTION_KEY` on the backend before connecting a source. Generate it with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Set backend variables in `.env` for local development or in the service environment for hosted deployments. Keep secrets out of Git. Disconnecting deletes the saved credential in Atlas. Revoke the grant or token separately at the provider.
+
+## Use connected sources with Agent Studio
+
+In **Agents → Create agent**, choose the documents and connected providers that agent may search. In Home or Chat, type `@` and select the agent to run research using its saved source configuration. This selection is independent of the normal Chat source filters.
+
+Agent configuration does not grant provider access. Retrieval uses the **invoking user's** workspace and connected-source permissions and provider-side visibility. Users without a grant cannot obtain another member's connected evidence merely by invoking their agent. Restricted results may be hidden after access is revoked. For run lifecycle, traces and limitations, see [Agent Studio](AGENT_STUDIO.md).
 
 ## Uploaded documents
 
