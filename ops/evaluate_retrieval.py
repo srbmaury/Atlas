@@ -4,6 +4,7 @@ Usage: PYTHONPATH=backend python ops/evaluate_retrieval.py examples/retrieval-ev
 Input schema: {"cases":[{"query":"...","relevant_ids":["id"],"ranked_ids":["id"]}]}
 Ranked IDs must come from a real retrieval run; this script does not run retrieval.
 """
+
 import argparse
 import json
 from pathlib import Path
