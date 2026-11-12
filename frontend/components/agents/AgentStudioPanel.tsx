@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BookOpen, Bot, Check, Clock3, FileText, History, Layers3, LoaderCircle, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
-type Agent = { id: string; name: string; instructions: string };
+type Agent = { id: string; name: string; instructions: string; output_format: string };
 type EvidenceNode = { id: string; type: string; name?: string; page?: number; excerpt?: string };
 type EvidenceGraph = { nodes: EvidenceNode[]; edges: { from: string; to: string; type: string }[] };
 type Run = {
@@ -13,7 +13,7 @@ type Run = {
     question: string;
     created?: number;
     steps: { tool: string; source_count?: number; mode?: string; queries?: string[] }[];
-    result?: { answer?: string; error?: string; sources?: unknown[]; evidence_graph?: EvidenceGraph };
+    result?: { answer?: string; error?: string; mode?: string; sources?: unknown[]; evidence_graph?: EvidenceGraph };
 };
 
 export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
@@ -23,6 +23,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     const [selectedRun, setSelectedRun] = useState('');
     const [name, setName] = useState('');
     const [instructions, setInstructions] = useState('Find relevant evidence and cite sources.');
+    const [outputFormat, setOutputFormat] = useState('detailed_notes');
+    const [editing, setEditing] = useState(false);
     const [question, setQuestion] = useState('');
     const [runs, setRuns] = useState<Run[]>([]);
     const [error, setError] = useState('');
@@ -72,11 +74,11 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
         setBusy(true);
         setError('');
         try {
-            const response = await fetch(base, {
-                method: 'POST',
+            const response = await fetch(editing ? `${base}/${encodeURIComponent(selected)}` : base, {
+                method: editing ? 'PATCH' : 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name.trim(), instructions }),
+                body: JSON.stringify({ name: name.trim(), instructions, output_format: outputFormat }),
             });
             if (!response.ok) throw new Error('Unable to create agent.');
             const agent: Agent = await response.json();
@@ -85,12 +87,34 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
             setSelectedRun('');
             setName('');
             setShowCreate(false);
-            setRuns([]);
+            setEditing(false);
+            if (!editing) setRuns([]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not create agent.');
         } finally {
             setBusy(false);
         }
+    }
+
+    function editAgent() {
+        if (!activeAgent) return;
+        setName(activeAgent.name);
+        setInstructions(activeAgent.instructions);
+        setOutputFormat(activeAgent.output_format || 'detailed_notes');
+        setEditing(true);
+        setShowCreate(true);
+    }
+
+    async function deleteAgent() {
+        if (!activeAgent || !window.confirm(`Delete ${activeAgent.name} and its research history?`)) return;
+        setError('');
+        try {
+            const response = await fetch(`${base}/${encodeURIComponent(activeAgent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Cancel active research runs before deleting this agent.');
+            setSelected('');
+            setRuns([]);
+            await loadAgents();
+        } catch (err) { setError(err instanceof Error ? err.message : 'Unable to delete agent.'); }
     }
 
     async function research() {
@@ -152,7 +176,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                     </h1>
                     <p>Create, run, and manage AI research agents for your workspace.</p>
                 </div>
-                <button className={`${styles.button} ${styles.primary}`} onClick={() => setShowCreate(true)}>
+                <button className={`${styles.button} ${styles.primary}`} onClick={() => { setEditing(false); setName(''); setInstructions('Find relevant evidence and cite sources.'); setOutputFormat('detailed_notes'); setShowCreate(true); }}>
                     <Plus size={17} /> Create Agent
                 </button>
             </div>
@@ -197,6 +221,10 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <p>{activeAgent?.instructions || 'Create an agent to begin source-grounded research.'}</p>
                         </div>
                     </div>
+                    {activeAgent && <div className={styles.formBottom} style={{ marginBottom: 14 }}>
+                        <span className={styles.hint}>Output: {activeAgent.output_format?.replaceAll('_', ' ') || 'detailed notes'} · Workspace documents</span>
+                        <span><button className={styles.button} onClick={editAgent}>Edit agent</button> <button className={styles.button} onClick={deleteAgent}>Delete</button></span>
+                    </div>}
                     <div className={styles.tabs}>
                         <button className={`${styles.tab} ${view === 'run' ? styles.tabActive : ''}`} onClick={() => setView('run')}>
                             <Sparkles size={15} /> Run
@@ -273,6 +301,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <div className={styles.detailMeta}>
                                 <Clock3 size={14} style={{ verticalAlign: 'middle' }} /> {date(activeRun.created)} · {passages.length} evidence passages
                             </div>
+                            {activeRun.result?.mode === 'citation_check_failed' && <div role="alert" className={styles.error}>Answer validation failed. The model did not produce valid source citations. Review the evidence or retry the question.</div>}
+                            {activeRun.result?.mode === 'citation_check_failed' && <button className={styles.button} onClick={() => { setQuestion(activeRun.question); setView('run'); setDetailTab('evidence'); }}>Inspect evidence and retry</button>}
                             <div className={`${styles.tabs} ${styles.rightTabs}`}>
                                 <button className={`${styles.tab} ${detailTab === 'answer' ? styles.tabActive : ''}`} onClick={() => setDetailTab('answer')}>
                                     Answer
@@ -349,7 +379,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}>
                     <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <h2 id="create-agent-title">Create an agent</h2>
+                            <h2 id="create-agent-title">{editing ? 'Edit agent' : 'Create an agent'}</h2>
                             <button className={styles.button} onClick={() => setShowCreate(false)} aria-label="Close">
                                 <X size={17} />
                             </button>
@@ -359,12 +389,15 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                         <input id="agent-name" className={styles.input} value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="Research Agent" />
                         <label htmlFor="agent-instructions">Instructions</label>
                         <textarea id="agent-instructions" className={styles.textarea} value={instructions} maxLength={2000} onChange={(event) => setInstructions(event.target.value)} />
+                        <label htmlFor="agent-format">Output format</label>
+                        <select id="agent-format" className={styles.input} value={outputFormat} onChange={(event) => setOutputFormat(event.target.value)}><option value="detailed_notes">Detailed notes</option><option value="concise">Concise answer</option><option value="report">Structured report</option></select>
+                        <p className={styles.hint}>Knowledge scope: indexed workspace documents. Connected-source tools are not enabled for agents.</p>
                         <div className={styles.modalActions}>
                             <button className={styles.button} onClick={() => setShowCreate(false)}>
                                 Cancel
                             </button>
                             <button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim()}>
-                                <Check size={15} /> Create agent
+                                <Check size={15} /> {editing ? 'Save changes' : 'Create agent'}
                             </button>
                         </div>
                     </div>
