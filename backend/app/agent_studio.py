@@ -1,11 +1,10 @@
 """Bounded, read-only research agents with workspace-scoped persistent traces."""
-import time
-
 import logging
+import time
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
 from .agent_evidence import evidence_graph, plan
 from .ai import generate
@@ -101,6 +100,40 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
     ]
 
 
+@router.post(
+    '/{agentId}/runs/{runId}/cancel',
+    dependencies=[Depends(workspace_permission('editor'))],
+)
+def cancel_research(
+    workspaceId: str,
+    agentId: str,
+    runId: str,
+    actor=Depends(user),
+    db=Depends(database),
+):
+    workspace(workspaceId, actor, db)
+    changed = (
+        db.query(AgentRun)
+        .filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId)
+        .filter(AgentRun.status.in_(('queued', 'processing')))
+        .update(
+            {
+                'status': 'cancelled',
+                'lease': 0,
+                'generation': AgentRun.generation + 1,
+            },
+            synchronize_session=False,
+        )
+    )
+    db.commit()
+    run = db.query(AgentRun).filter_by(
+        workspace_id=workspaceId, agent_id=agentId, id=runId
+    ).first()
+    if run is None:
+        raise HTTPException(404, 'Research run not found.')
+    return public_run(run)
+
+
 @router.post('/{agentId}/runs', dependencies=[Depends(workspace_permission('editor'))])
 def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
@@ -121,13 +154,13 @@ def execute_one_research_run():
     run_id, generation = claimed
     with Session() as db:
         run = db.query(AgentRun).filter_by(id=run_id, generation=generation).first()
-        if run is None:
+        if run is None or run.status != 'processing':
             return True
         workspace_id, question = run.workspace_id, run.question
         requesting_user = db.get(User, run.actor_id)
         try:
             require_workspace(db, requesting_user, workspace_id, 'editor')
-        except Exception:
+        except (HTTPException, AttributeError):
             run.status = 'failed'
             run.result = {'error': 'Workspace access is no longer authorized.'}
             db.commit()
