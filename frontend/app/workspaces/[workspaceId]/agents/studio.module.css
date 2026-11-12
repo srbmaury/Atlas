@@ -543,9 +543,25 @@
 }
 
 /* Agent research content must remain readable in both Atlas themes. */
-.studio .answer { color: var(--text); line-height: 1.75; overflow-wrap: anywhere; }
-.studio .trace { color: var(--text); }
-.studio .source p { color: var(--text); opacity: .85; }
-.studio .source strong { color: var(--text); }
-.studio .modal { max-height: 90vh; overflow-y: auto; }
-.studio .agentHeader p { overflow-wrap: anywhere; }
+.studio .answer {
+    color: var(--text);
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+.studio .trace {
+    color: var(--text);
+}
+.studio .source p {
+    color: var(--text);
+    opacity: 0.85;
+}
+.studio .source strong {
+    color: var(--text);
+}
+.studio .modal {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.studio .agentHeader p {
+    overflow-wrap: anywhere;
+}
