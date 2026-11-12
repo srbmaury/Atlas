@@ -379,7 +379,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                                 activeRun.result?.answer ||
                                                 activeRun.result?.error ||
                                                 (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')
-                                            ).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}
+                                            ).replace(/\[(\d+)\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}
                                         </ReactMarkdown>
                                     </div>
                                 </div>
