@@ -8,6 +8,8 @@ import {
     Bot,
     CalendarDays,
     Check,
+    Copy,
+    Search,
     Clock3,
     Cloud,
     FileText,
@@ -266,6 +268,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     const date = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '');
 
     const [agentSearch, setAgentSearch] = useState('');
+    const [copiedHandle, setCopiedHandle] = useState('');
     const filteredAgents = agents.filter((agent) => (agent.name + ' ' + agent.instructions).toLowerCase().includes(agentSearch.toLowerCase()));
 
     return (
@@ -273,7 +276,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
             <div className={styles.pageHead}>
                 <div>
                     <h1>Agents</h1>
-                    <p>Create and configure reusable agents. Mention an agent in any Atlas chat to run it.</p>
+                    <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
                 </div>
                 <button
                     className={`${styles.button} ${styles.primary}`}
@@ -298,8 +301,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 </div>
             )}
             <div className={styles.libraryTools}>
-                <input aria-label="Search agents" className={styles.input} placeholder="Search agents..." value={agentSearch} onChange={(event) => setAgentSearch(event.target.value)} />
-                <span>{filteredAgents.length} agents</span>
+                <label className={styles.librarySearch}><Search size={17} aria-hidden="true" /><input aria-label="Search agents" className={styles.input} placeholder="Search agents by name or purpose..." value={agentSearch} onChange={(event) => setAgentSearch(event.target.value)} /></label>
+                <span className={styles.libraryCount}>{filteredAgents.length} {filteredAgents.length === 1 ? 'agent' : 'agents'}</span>
             </div>
             {filteredAgents.length ? (
                 <div className={styles.libraryGrid}>
@@ -315,6 +318,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 .replace(/^-|-$/g, '');
                         return (
                             <article className={styles.libraryCard} key={agent.id}>
+                                <div className={styles.libraryCardAccent} aria-hidden="true" />
                                 <div className={styles.libraryCardTitle}>
                                     <span className={styles.agentIcon}>
                                         <Bot size={21} />
@@ -327,6 +331,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     </div>
                                 </div>
                                 <p className={styles.libraryDescription}>{agent.instructions}</p>
+                                <div className={styles.librarySourceHeading}>KNOWLEDGE SOURCES</div>
                                 <div className={styles.librarySources} aria-label="Agent research sources">
                                     {sourceTypes.map((provider) => (
                                         <span className={styles.sourcePill} key={provider} title={SOURCE_NAMES[provider] || provider}>
@@ -338,7 +343,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     ))}
                                 </div>
                                 <div className={styles.libraryFooter}>
-                                    <code>{handle}</code>
+                                    <button type="button" className={styles.mentionCopy} aria-label={`Copy ${handle} mention`} title="Copy mention to use in Atlas Chat" onClick={async () => { try { await navigator.clipboard.writeText(handle); setCopiedHandle(handle); } catch { setError('Could not copy the agent handle.'); } }}><code>{handle}</code>{copiedHandle === handle ? <Check size={14} /> : <Copy size={14} />}</button>
                                     <div>
                                         <button
                                             className={styles.button}
@@ -385,8 +390,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
             {showCreate && (
                 <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}>
                     <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <h2 id="create-agent-title">{editing ? 'Edit agent' : 'Create an agent'}</h2>
+                        <div className={styles.modalHeader}>
+                            <div><div className={styles.modalEyebrow}><Sparkles size={14} /> AGENT BUILDER</div><h2 id="create-agent-title">{editing ? 'Edit agent' : 'Create an agent'}</h2></div>
                             <button className={styles.button} onClick={() => setShowCreate(false)} aria-label="Close">
                                 <X size={17} />
                             </button>
