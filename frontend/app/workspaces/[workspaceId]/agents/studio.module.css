@@ -776,3 +776,18 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Wider agent editor without exceeding the viewport on smaller screens. */
+.studio .modal {
+    width: min(760px, calc(100vw - 32px));
+    max-width: 760px;
+    max-height: min(88vh, 920px);
+    overflow-y: auto;
+}
+@media (max-width: 600px) {
+    .studio .modal {
+        width: calc(100vw - 24px);
+        max-width: none;
+        padding: 18px;
+    }
+}
