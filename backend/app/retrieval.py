@@ -117,9 +117,6 @@ def source(chunk, name, ocr=False):
 
 def retrieve(workspace_id, query, document_ids=None, limit=8):
     with Session() as db:
-        # Explicit document IDs must never silently broaden retrieval to the workspace.
-        if document_ids is not None and len(document_ids) == 0:
-            return []
         base = (
             db.query(Chunk)
             .join(Document)
