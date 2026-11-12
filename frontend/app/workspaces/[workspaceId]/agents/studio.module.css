@@ -791,3 +791,109 @@
         padding: 18px;
     }
 }
+
+/* Agent library visual refresh */
+.librarySearch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 520px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 0 12px;
+    color: var(--sub);
+    background: var(--panel);
+}
+.librarySearch:focus-within {
+    border-color: var(--brand);
+    outline: 2px solid var(--active);
+}
+.libraryTools .librarySearch input {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.libraryCount {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+}
+.libraryCard {
+    position: relative;
+    overflow: hidden;
+    min-height: 270px;
+    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.libraryCard:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px #00000012;
+}
+.libraryCardAccent {
+    height: 3px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, var(--brand), transparent);
+}
+.librarySourceHeading {
+    color: var(--sub);
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    font-weight: 750;
+    margin: auto 0 9px;
+}
+.librarySources {
+    margin-bottom: 16px;
+}
+.mentionCopy {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 9px;
+    background: var(--active);
+    color: var(--brand);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    max-width: 55%;
+}
+.mentionCopy:hover,
+.mentionCopy:focus-visible {
+    border-color: var(--brand);
+}
+.mentionCopy code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.modalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--line);
+}
+.modalHeader h2 {
+    margin: 5px 0 0;
+}
+.modalEyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--brand);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    font-weight: 750;
+}
+@media (max-width: 600px) {
+    .libraryTools { gap: 10px; }
+    .librarySearch { width: 100%; max-width: none; }
+    .libraryCard { min-height: 0; }
+}
