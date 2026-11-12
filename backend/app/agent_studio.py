@@ -216,13 +216,23 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
     workspace(workspaceId, actor, db)
     if not db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first():
         raise HTTPException(404, 'Agent not found.')
-    return [
-        public_run(r)
-        for r in db.query(AgentRun)
+    visible = []
+    for run in (
+        db.query(AgentRun)
         .filter_by(workspace_id=workspaceId, agent_id=agentId, actor_id=actor.id)
         .order_by(AgentRun.created.desc())
         .limit(30)
-    ]
+    ):
+        item = public_run(run)
+        providers = set((run.result or {}).get('scope') or []) - {'documents'}
+        if providers:
+            try:
+                revalidate_access(workspaceId, actor, providers)
+            except HTTPException:
+                item['result'] = {'error': 'Connected source access has changed. Previous evidence is hidden.'}
+                item['steps'] = []
+        visible.append(item)
+    return visible
 
 
 @router.post(
