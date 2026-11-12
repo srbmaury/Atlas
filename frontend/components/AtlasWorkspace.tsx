@@ -482,13 +482,21 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             const audit = completed.result?.claim_verification;
             const answer = completed.result?.answer || completed.result?.error || completed.error || 'No answer available.';
             const content = `**${agent.name}** · Agent\\n\\n${answer}${audit ? `\\n\\nEvidence assessment: ${audit.supported || 0} model-supported · ${audit.unsupported} uncertain or unsupported. Review original sources before relying on claims.` : ''}`;
-            const agentResult = completed.result?.answer ? {
-                answer: completed.result.answer,
-                sources: completed.result.sources || [],
-                mode: completed.result.mode || 'agent_research',
-                scope: completed.result.scope || [],
-                citation_audit: audit ? { claims: (audit.claims || []).map((claim) => ({ claim: claim.claim, citations: claim.source_ids, overlap: 0, status: claim.status })), needs_review: audit.unsupported, note: 'Automated model assessment; not independent factual verification.' } : undefined,
-            } : undefined;
+            const agentResult = completed.result?.answer
+                ? {
+                      answer: completed.result.answer,
+                      sources: completed.result.sources || [],
+                      mode: completed.result.mode || 'agent_research',
+                      scope: completed.result.scope || [],
+                      citation_audit: audit
+                          ? {
+                                claims: (audit.claims || []).map((claim) => ({ claim: claim.claim, citations: claim.source_ids, overlap: 0, status: claim.status })),
+                                needs_review: audit.unsupported,
+                                note: 'Automated model assessment; not independent factual verification.',
+                            }
+                          : undefined,
+                  }
+                : undefined;
             const reply = { role: 'assistant' as const, content, result: agentResult, agent: { id: agent.id, name: agent.name, run_id: run.id } };
             chatMessages.current = [...chatMessages.current, reply];
             setMessages(chatMessages.current);
