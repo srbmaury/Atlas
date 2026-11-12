@@ -26,7 +26,7 @@ Agents support editable names, instructions, and three output styles (detailed n
 
 A completed worker execution is not equivalent to a verified answer. Citation-validation failures now mark runs failed; the UI exposes the evidence and a retry path. Numbered citations link to retrieved passages, but this does **not** establish claim-level factual entailment.
 
-Agent retrieval remains restricted to indexed workspace documents. Connected Gmail/Drive tools, per-agent source selection, model settings, persistent memory, and workflow orchestration are not implemented; do not display these as enabled capabilities. Agent instructions are presentation/task preferences, not arbitrary executable tools.
+Agent retrieval supports selected indexed workspace documents and explicitly enabled read-only connected sources. Per-agent model settings, persistent memory, and workflow orchestration are not implemented. Agent instructions are presentation/task preferences, not arbitrary executable tools.
 
 ## Agent source tools and claim assessment
 
