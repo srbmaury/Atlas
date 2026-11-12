@@ -427,7 +427,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
 
     async function askWithAgent(question?: string) {
         const text = (question ?? query).trim();
-        const match = /^(@[a-z0-9-]+)\\s+([\\s\\S]+)$/i.exec(text);
+        const match = /(?:^|\\s)(@[a-z0-9-]+)(?=\\s|$)/i.exec(text);
         const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
         if (!agent) {
             void ask(question);
@@ -449,7 +449,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             chatTitle.current = conversationTitle;
             setChats((previous) => [{ id: saved.id, title: conversationTitle, updated: saved.updated }, ...previous.filter((item) => item.id !== saved.id)]);
             const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents/${encodeURIComponent(agent.id)}/runs`;
-            const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: match![2] }) });
+            const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: agentQuestion }) });
             if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
             const run: { id: string } = await started.json();
             let completed:
