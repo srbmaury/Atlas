@@ -437,8 +437,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setAgentBusy(true);
         setQuery('');
         const questionMessage = { role: 'user' as const, content: text };
-        setMessages((previous) => [...previous, questionMessage]);
         chatMessages.current = [...chatMessages.current, questionMessage];
+        setMessages(chatMessages.current);
         const conversationTitle = chatTitle.current === 'New chat' ? text.slice(0, 100) : chatTitle.current;
         let conversationId = activeChat.current;
         try {
@@ -476,8 +476,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 citation_audit: audit ? { claims: (audit.claims || []).map((claim) => ({ claim: claim.claim, citations: claim.source_ids, overlap: 0, status: claim.status })), needs_review: audit.unsupported, note: 'Automated model assessment; not independent factual verification.' } : undefined,
             } : undefined;
             const reply = { role: 'assistant' as const, content, result: agentResult, agent: { id: agent.id, name: agent.name, run_id: run.id } };
-            setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
+            setMessages(chatMessages.current);
             await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
         } catch (error) {
             const reply = { role: 'assistant' as const, content: `**${agent.name}** · ${error instanceof Error ? error.message : 'Research failed.'}` };
