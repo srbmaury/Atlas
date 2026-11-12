@@ -33,7 +33,7 @@ def evidence_graph(sources: list[dict]) -> dict:
     seen_documents = set()
     seen_chunks = set()
     for source in sources[:MAX_SOURCES]:
-        document_id = str(source.get('document_id') or '')
+        document_id = str(source.get('document_id') or f"{source.get('provider', 'source')}:{source.get('name', '')}")
         chunk_id = str(source.get('chunk_id') or '')
         if not document_id or not chunk_id:
             continue
@@ -45,6 +45,7 @@ def evidence_graph(sources: list[dict]) -> dict:
                     'id': doc_key,
                     'type': 'document',
                     'name': str(source.get('name') or 'Document')[:200],
+                    'provider': source.get('provider', 'documents'),
                 }
             )
             seen_documents.add(doc_key)
