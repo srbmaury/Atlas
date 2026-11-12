@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..api_dependencies import database, user, workspace
-from ..db import Conversation, Session as database_session
+from ..db import Conversation
+from ..db import Session as database_session
 from ..rbac import workspace_permission
 from ..schemas import ConversationPayload, ConversationRename
 
@@ -51,10 +52,12 @@ def visible_messages(item, actor=None):
                         with database_session() as check_db:
                             current = {
                                 provider: source_scope(
-                                    check_db, actor,
+                                    check_db,
+                                    actor,
                                     check_db.get(ExternalConnection, (item.workspace_id, provider)),
                                 )
-                                for provider in fingerprints if provider != 'gmail'
+                                for provider in fingerprints
+                                if provider != 'gmail'
                             }
                         hashed = source_scope_fingerprints(current)
                         if any(
