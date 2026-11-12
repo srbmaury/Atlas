@@ -1,7 +1,6 @@
 .studio {
-    min-height: 100vh;
-    background: #f8f9fe;
-    color: #18203a;
+    width: 100%;
+    color: var(--text);
     font-family: inherit;
 }
 .topbar {
@@ -10,8 +9,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 28px;
-    background: white;
-    border-bottom: 1px solid #e7e8f2;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
 }
 .brand {
     font-size: 24px;
@@ -20,7 +19,7 @@
     color: #1a1835;
 }
 .brandMark {
-    color: #6945eb;
+    color: var(--brand);
     margin-right: 10px;
 }
 .workspaceTag {
@@ -30,14 +29,10 @@
     border-radius: 10px;
     color: #545977;
 }
-.shell {
-    display: grid;
-    grid-template-columns: 210px minmax(0, 1fr);
-    min-height: calc(100vh - 68px);
-}
+.shell { display: block; }
 .sidebar {
-    background: white;
-    border-right: 1px solid #e8e9f3;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
     padding: 24px 14px;
     display: flex;
     flex-direction: column;
@@ -56,23 +51,20 @@
 }
 .navLink:hover,
 .navActive {
-    background: #f0ebff;
-    color: #6338e4;
+    background: var(--active);
+    color: var(--brand);
 }
 .sideFooter {
     margin-top: auto;
     padding: 15px;
-    border: 1px solid #e8e9f3;
+    border: 1px solid var(--line);
     border-radius: 12px;
     color: #69718a;
     font-size: 12px;
 }
 .content {
-    min-width: 0;
-    padding: 28px;
-    max-width: 1800px;
     width: 100%;
-    margin: auto;
+    min-width: 0;
 }
 .pageHead {
     display: flex;
@@ -86,6 +78,7 @@
     letter-spacing: -0.8px;
     margin: 0 0 5px;
     font-weight: 800;
+    color: var(--text);
 }
 .pageHead p {
     margin: 0;
@@ -94,7 +87,7 @@
 }
 .beta {
     font-size: 11px;
-    color: #763ce5;
+    color: var(--brand);
     background: #f2e8ff;
     border-radius: 30px;
     padding: 5px 9px;
@@ -102,8 +95,8 @@
     letter-spacing: 0;
 }
 .button {
-    border: 1px solid #e0e2f0;
-    background: white;
+    border: 1px solid var(--line2);
+    background: var(--panel);
     color: #313651;
     border-radius: 10px;
     padding: 10px 15px;
@@ -120,13 +113,11 @@
     border-color: #a99cf3;
 }
 .primary {
-    background: #6539e8;
-    border-color: #6539e8;
-    color: white;
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--brandtext);
 }
-.primary:hover {
-    background: #542bcf;
-}
+.primary:hover { background: var(--brandhover); }
 .button:disabled {
     opacity: 0.55;
     cursor: not-allowed;
@@ -138,10 +129,10 @@
     align-items: stretch;
 }
 .panel {
-    background: #fff;
-    border: 1px solid #e7e8f3;
-    border-radius: 16px;
-    box-shadow: 0 2px 9px #1d25500a;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
     min-width: 0;
 }
 .agentPanel,
@@ -170,8 +161,8 @@
     display: flex;
     gap: 11px;
     align-items: flex-start;
-    background: white;
-    border: 1px solid #eff0f6;
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 13px 10px;
     margin-bottom: 9px;
@@ -181,7 +172,7 @@
 }
 .agentItemSelected {
     border-color: #b9a6ff;
-    background: #f6f2ff;
+    background: var(--active);
     box-shadow: 0 0 0 1px #d8cbff;
 }
 .agentIcon {
@@ -190,8 +181,8 @@
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: #eee8ff;
-    color: #663de6;
+    background: var(--active);
+    color: var(--brand);
     border-radius: 11px;
     font-size: 20px;
 }
@@ -251,7 +242,7 @@
 .tabs {
     display: flex;
     gap: 8px;
-    border-bottom: 1px solid #e9eaf2;
+    border-bottom: 1px solid var(--line);
     margin: 0 -17px 17px;
     padding: 0 17px;
 }
@@ -267,32 +258,31 @@
     font-size: 13px;
 }
 .tabActive {
-    color: #673be9;
-    border-color: #673be9;
-    background: #f8f5ff;
+    color: var(--brand);
+    border-color: var(--brand);
+    background: var(--active);
 }
 .card {
-    border: 1px solid #e9eaf4;
+    border: 1px solid var(--line);
     border-radius: 13px;
     padding: 17px;
     margin-bottom: 14px;
-    background: white;
+    background: var(--panel);
 }
 .card h3 {
     font-size: 15px;
     margin: 0 0 14px;
 }
-.textarea,
-.input {
+.textarea, .input {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #dfe1ef;
+    border: 1px solid var(--line2);
     border-radius: 10px;
-    background: #fff;
+    background: var(--panel);
     padding: 12px;
     font: inherit;
     font-size: 13px;
-    color: #252b45;
+    color: var(--text);
     outline: none;
 }
 .textarea:focus,
@@ -321,18 +311,18 @@
     align-items: center;
     gap: 10px;
     padding: 12px;
-    border: 1px solid #ececf5;
+    border: 1px solid var(--line);
     border-radius: 11px;
     margin-top: 8px;
     cursor: pointer;
-    background: white;
+    background: var(--panel);
     width: 100%;
     text-align: left;
     font: inherit;
     color: inherit;
 }
 .runSelected {
-    background: #f6f2ff;
+    background: var(--active);
     border-color: #ddd1ff;
 }
 .runMain {
@@ -394,7 +384,7 @@
 }
 .error {
     border: 1px solid #ffc5c5;
-    background: #fff1f1;
+    background: var(--panel)1f1;
     color: #a12d2d;
     border-radius: 10px;
     padding: 12px;
@@ -411,7 +401,7 @@
     z-index: 50;
 }
 .modal {
-    background: white;
+    background: var(--panel);
     border-radius: 17px;
     padding: 24px;
     width: min(460px, 100%);
@@ -488,3 +478,16 @@
         display: none;
     }
 }
+
+/* The existing Atlas shell owns the header, navigation, page width and theme. */
+.studio .pageHead { margin-bottom: 24px; }
+.studio .columns { grid-template-columns: minmax(190px, .8fr) minmax(320px, 1.8fr) minmax(270px, 1.1fr); }
+.studio .panel { box-shadow: none; }
+.studio .button, .studio .agentItem, .studio .runItem, .studio .card { background: var(--panel); color: var(--text); }
+.studio .primary { background: var(--brand); color: var(--brandtext); }
+.studio .agentItemSelected, .studio .runSelected { background: var(--active); border-color: var(--brand); }
+.studio .agentDesc, .studio .agentHeader p, .studio .hint, .studio .empty, .studio .detailMeta, .studio .runMeta { color: var(--sub); }
+.studio .modal { background: var(--panel); color: var(--text); }
+.studio .modalBackdrop { background: #0008; }
+@media(max-width:1250px) { .studio .columns { grid-template-columns: minmax(190px,1fr) minmax(310px,2fr); } .studio .details { grid-column:1/-1; } }
+@media(max-width:780px) { .studio .columns { grid-template-columns:1fr; } .studio .details { grid-column:auto; } }
