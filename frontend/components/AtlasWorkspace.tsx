@@ -430,6 +430,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         const match = /(?:^|\\s)(@[a-z0-9-]+)(?=\\s|$)/i.exec(text);
         const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
         if (!agent) {
+            if (match) { setError(`Unknown agent ${match[1]}. Select an agent from the @ menu.`); return; }
             void ask(question);
             return;
         }
