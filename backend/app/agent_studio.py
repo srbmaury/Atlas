@@ -164,6 +164,16 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
 
 def execute_one_research_run():
     """Claim one persisted run, recover expired leases, and persist a safe trace."""
+    with Session() as db:
+        db.query(AgentRun).filter(
+            AgentRun.status == 'processing',
+            AgentRun.attempts >= 3,
+            AgentRun.lease < time.time(),
+        ).update(
+            {'status': 'failed', 'error': 'Research exceeded retry limit.'},
+            synchronize_session=False,
+        )
+        db.commit()
     claimed = claim(AgentRun, max_attempts=3)
     if not claimed:
         return False
