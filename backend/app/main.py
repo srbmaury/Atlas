@@ -37,7 +37,6 @@ from .worker import loop
 @asynccontextmanager
 async def lifespan(app):
     init_db()
-    agent_studio.initialize_agent_tables()
     (DATA / 'files').mkdir(exist_ok=True)
     stop = threading.Event()
     thread = None
