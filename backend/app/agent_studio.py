@@ -10,7 +10,7 @@ from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 from .agent_evidence import evidence_graph, plan
 from .ai import generate
 from .api_dependencies import database, user, workspace
-from .db import Base, Session, User, engine, uid
+from .db import Base, Session, User, uid
 from .rbac import require_workspace, workspace_permission
 from .retrieval import retrieve
 from .worker import claim, heartbeat
@@ -61,9 +61,6 @@ class CreateAgent(BaseModel):
 class ResearchRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
 
-
-def initialize_agent_tables():
-    Base.metadata.create_all(bind=engine, tables=[AgentDefinition.__table__, AgentRun.__table__])
 
 
 def public_agent(agent):
