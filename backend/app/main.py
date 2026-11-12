@@ -9,8 +9,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from . import config, connected_research
-from .ai import generate
 from .agent_studio import initialize_agent_tables, router as agent_studio_router
+from .ai import generate
 from .api_dependencies import database, user, workspace
 from .config import DATA
 from .connected_oauth import router as connected_oauth_router
