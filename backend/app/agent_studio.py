@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
-from .agent_claims import verify_claims
+from .agent_claims import assess_claims
 from .agent_evidence import evidence_graph, plan
 from .ai import generate_agent
 from .api_dependencies import database, user, workspace
@@ -373,7 +373,7 @@ def execute_one_research_run():
             return True
         result = generate_agent(question, sources, agent_instructions, output_format)
         result['evidence_graph'] = graph
-        result['claim_verification'] = verify_claims(result.get('answer', ''), sources)
+        result['claim_verification'] = assess_claims(result.get('answer', ''), sources)
         result['scope'] = sorted({s.get('provider', 'documents') for s in sources})
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
         if provider_scopes:
