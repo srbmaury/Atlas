@@ -471,6 +471,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                           mode?: string;
                           sources?: Source[];
                           scope?: string[];
+                          source_scope_fingerprints?: Record<string, string>;
                           claim_verification?: { unsupported: number; supported?: number; claims?: { claim: string; status: string; source_ids: number[] }[] };
                       };
                       error?: string;
