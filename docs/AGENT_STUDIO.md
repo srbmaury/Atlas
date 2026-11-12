@@ -13,7 +13,7 @@ Requests use existing session authentication and workspace RBAC. Runs plan up to
 
 ## Limitations and next steps
 
-- Runs execute synchronously; add durable background dispatch, cancellation, timeouts and concurrency limits.
+- Runs are now persisted as queued jobs and dispatched by the existing worker loop, with generation/lease-based claiming and workspace permission revalidation at execution. Add cancellation, explicit timeouts, concurrency limits, retry classification, dead-letter handling and budgets before production use.
 - Research currently uses only workspace document retrieval, not cross-provider tool orchestration.
 - Add workspace-specific budgets, permissioned tool registry, execution-cost tracking, approval gates and multi-agent delegation.
 - Add migrations rather than relying on metadata table creation for production schema changes.
