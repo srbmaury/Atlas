@@ -510,7 +510,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 role: 'assistant' as const,
                 content,
                 result: agentResult,
-                agent: { id: agent.id, name: agent.name, run_id: run.id, providers: (completed.result?.scope || []).filter((provider) => provider !== 'documents') },
+                agent: { id: agent.id, name: agent.name, run_id: run.id, providers: (completed.result?.scope || []).filter((provider) => provider !== 'documents'), scope_fingerprints: completed.result?.source_scope_fingerprints || {} },
             };
             chatMessages.current = [...chatMessages.current, reply];
             setMessages(chatMessages.current);
