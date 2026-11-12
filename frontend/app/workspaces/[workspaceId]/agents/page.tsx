@@ -43,13 +43,16 @@ export default function AgentStudio() {
         setSelected((current) => current || items[0]?.id || '');
     }, [base]);
 
-    const loadRuns = useCallback(async (id: string) => {
-        const response = await fetch(`${base}/${encodeURIComponent(id)}/runs`, { credentials: 'same-origin' });
-        if (!response.ok) throw new Error('Unable to load research runs.');
-        const items: Run[] = await response.json();
-        setRuns(items);
-        setSelectedRun((current) => (items.some((run) => run.id === current) ? current : items[0]?.id || ''));
-    }, [base]);
+    const loadRuns = useCallback(
+        async (id: string) => {
+            const response = await fetch(`${base}/${encodeURIComponent(id)}/runs`, { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Unable to load research runs.');
+            const items: Run[] = await response.json();
+            setRuns(items);
+            setSelectedRun((current) => (items.some((run) => run.id === current) ? current : items[0]?.id || ''));
+        },
+        [base],
+    );
 
     useEffect(() => {
         if (workspaceId) loadAgents().catch((err) => setError(err.message));
@@ -142,59 +145,118 @@ export default function AgentStudio() {
     const documents = graph?.nodes.filter((node) => node.type === 'document') || [];
     const passages = graph?.nodes.filter((node) => node.type !== 'document') || [];
     const isRunning = (status: string) => status === 'queued' || status === 'processing';
-    const date = (value?: number) => value ? new Date(value * 1000).toLocaleString() : '';
+    const date = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '');
 
     return (
         <div className={styles.studio}>
             <header className={styles.topbar}>
-                <Link href="/" className={styles.brand}><span className={styles.brandMark}>◢</span>Atlas</Link>
+                <Link href="/" className={styles.brand}>
+                    <span className={styles.brandMark}>◢</span>Atlas
+                </Link>
                 <span className={styles.workspaceTag}>Product Workspace · Agent Studio</span>
-                <Link href="/" className={styles.button}>Back to workspace <ChevronRight size={15} /></Link>
+                <Link href="/" className={styles.button}>
+                    Back to workspace <ChevronRight size={15} />
+                </Link>
             </header>
             <div className={styles.shell}>
                 <nav className={styles.sidebar} aria-label="Workspace navigation">
-                    <Link className={styles.navLink} href="/"><Layers3 size={18} /> Workspace</Link>
-                    <Link className={styles.navLink} href="/"><Search size={18} /> Search & chat</Link>
-                    <Link className={styles.navLink} href="/"><BookOpen size={18} /> Knowledge</Link>
-                    <span className={`${styles.navLink} ${styles.navActive}`} aria-current="page"><Sparkles size={18} /> Agents</span>
-                    <div className={styles.sideFooter}>Atlas Agent Studio<br />Source-grounded research, with visible evidence.</div>
+                    <Link className={styles.navLink} href="/">
+                        <Layers3 size={18} /> Workspace
+                    </Link>
+                    <Link className={styles.navLink} href="/">
+                        <Search size={18} /> Search & chat
+                    </Link>
+                    <Link className={styles.navLink} href="/">
+                        <BookOpen size={18} /> Knowledge
+                    </Link>
+                    <span className={`${styles.navLink} ${styles.navActive}`} aria-current="page">
+                        <Sparkles size={18} /> Agents
+                    </span>
+                    <div className={styles.sideFooter}>
+                        Atlas Agent Studio
+                        <br />
+                        Source-grounded research, with visible evidence.
+                    </div>
                 </nav>
                 <main className={styles.content}>
                     <div className={styles.pageHead}>
                         <div>
-                            <h1>Agent Studio <span className={styles.beta}>Beta</span></h1>
+                            <h1>
+                                Agent Studio <span className={styles.beta}>Beta</span>
+                            </h1>
                             <p>Create, run, and manage AI research agents for your workspace.</p>
                         </div>
-                        <button className={`${styles.button} ${styles.primary}`} onClick={() => setShowCreate(true)}><Plus size={17} /> Create Agent</button>
+                        <button className={`${styles.button} ${styles.primary}`} onClick={() => setShowCreate(true)}>
+                            <Plus size={17} /> Create Agent
+                        </button>
                     </div>
-                    {error && <div role="alert" className={styles.error}>{error}</div>}
+                    {error && (
+                        <div role="alert" className={styles.error}>
+                            {error}
+                        </div>
+                    )}
                     <div className={styles.columns}>
                         <section className={`${styles.panel} ${styles.agentPanel}`} aria-label="Agents">
-                            <h2 className={styles.panelTitle}>Agents <span className={styles.count}>{agents.length}</span></h2>
+                            <h2 className={styles.panelTitle}>
+                                Agents <span className={styles.count}>{agents.length}</span>
+                            </h2>
                             {agents.length === 0 && <div className={styles.empty}>No agents yet. Create one to get started.</div>}
                             {agents.map((agent) => (
-                                <button key={agent.id} className={`${styles.agentItem} ${selected === agent.id ? styles.agentItemSelected : ''}`} onClick={() => { setSelected(agent.id); setSelectedRun(''); setView('run'); }}>
-                                    <span className={styles.agentIcon}><Bot size={21} /></span>
-                                    <span><span className={styles.agentName}>{agent.name}</span><span className={styles.agentDesc}>{agent.instructions}</span></span>
+                                <button
+                                    key={agent.id}
+                                    className={`${styles.agentItem} ${selected === agent.id ? styles.agentItemSelected : ''}`}
+                                    onClick={() => {
+                                        setSelected(agent.id);
+                                        setSelectedRun('');
+                                        setView('run');
+                                    }}
+                                >
+                                    <span className={styles.agentIcon}>
+                                        <Bot size={21} />
+                                    </span>
+                                    <span>
+                                        <span className={styles.agentName}>{agent.name}</span>
+                                        <span className={styles.agentDesc}>{agent.instructions}</span>
+                                    </span>
                                 </button>
                             ))}
                         </section>
                         <section className={`${styles.panel} ${styles.middle}`} aria-label="Agent research">
                             <div className={styles.agentHeader}>
-                                <span className={styles.agentIcon}><BookOpen size={24} /></span>
-                                <div><h2>{activeAgent?.name || 'Select an agent'}</h2><p>{activeAgent?.instructions || 'Create an agent to begin source-grounded research.'}</p></div>
+                                <span className={styles.agentIcon}>
+                                    <BookOpen size={24} />
+                                </span>
+                                <div>
+                                    <h2>{activeAgent?.name || 'Select an agent'}</h2>
+                                    <p>{activeAgent?.instructions || 'Create an agent to begin source-grounded research.'}</p>
+                                </div>
                             </div>
                             <div className={styles.tabs}>
-                                <button className={`${styles.tab} ${view === 'run' ? styles.tabActive : ''}`} onClick={() => setView('run')}><Sparkles size={15} /> Run</button>
-                                <button className={`${styles.tab} ${view === 'history' ? styles.tabActive : ''}`} onClick={() => setView('history')}><History size={15} /> History</button>
+                                <button className={`${styles.tab} ${view === 'run' ? styles.tabActive : ''}`} onClick={() => setView('run')}>
+                                    <Sparkles size={15} /> Run
+                                </button>
+                                <button className={`${styles.tab} ${view === 'history' ? styles.tabActive : ''}`} onClick={() => setView('history')}>
+                                    <History size={15} /> History
+                                </button>
                             </div>
                             {view === 'run' && (
                                 <div className={styles.card}>
                                     <h3>Ask a research question</h3>
-                                    <textarea className={styles.textarea} aria-label="Research question" value={question} maxLength={2000} onChange={(event) => setQuestion(event.target.value)} placeholder="What do our documents say about…?" />
+                                    <textarea
+                                        className={styles.textarea}
+                                        aria-label="Research question"
+                                        value={question}
+                                        maxLength={2000}
+                                        onChange={(event) => setQuestion(event.target.value)}
+                                        placeholder="What do our documents say about…?"
+                                    />
                                     <div className={styles.formBottom}>
-                                        <span className={styles.hint}><Layers3 size={14} style={{ verticalAlign: 'middle' }} /> Workspace documents · source-grounded</span>
-                                        <button className={`${styles.button} ${styles.primary}`} disabled={busy || !selected || question.trim().length < 3} onClick={research}>{busy ? <LoaderCircle size={15} /> : <Sparkles size={15} />} {busy ? 'Starting…' : 'Run Research'}</button>
+                                        <span className={styles.hint}>
+                                            <Layers3 size={14} style={{ verticalAlign: 'middle' }} /> Workspace documents · source-grounded
+                                        </span>
+                                        <button className={`${styles.button} ${styles.primary}`} disabled={busy || !selected || question.trim().length < 3} onClick={research}>
+                                            {busy ? <LoaderCircle size={15} /> : <Sparkles size={15} />} {busy ? 'Starting…' : 'Run Research'}
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -203,44 +265,147 @@ export default function AgentStudio() {
                                 {runs.length === 0 && <div className={styles.empty}>Research runs will appear here.</div>}
                                 {runs.map((run) => (
                                     <div key={run.id} className={`${styles.runItem} ${selectedRun === run.id ? styles.runSelected : ''}`}>
-                                        <button style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 0, cursor: 'pointer' }} onClick={() => { setSelectedRun(run.id); setDetailTab('answer'); }} aria-label={`View research: ${run.question}`}>
-                                            <span className={styles.runQuestion}><FileText size={14} style={{ verticalAlign: 'middle', marginRight: 7 }} />{run.question}</span>
-                                            <span className={styles.runMeta}>{date(run.created)} · {run.steps.find((step) => step.source_count !== undefined)?.source_count ?? 0} sources</span>
+                                        <button
+                                            style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 0, cursor: 'pointer' }}
+                                            onClick={() => {
+                                                setSelectedRun(run.id);
+                                                setDetailTab('answer');
+                                            }}
+                                            aria-label={`View research: ${run.question}`}
+                                        >
+                                            <span className={styles.runQuestion}>
+                                                <FileText size={14} style={{ verticalAlign: 'middle', marginRight: 7 }} />
+                                                {run.question}
+                                            </span>
+                                            <span className={styles.runMeta}>
+                                                {date(run.created)} · {run.steps.find((step) => step.source_count !== undefined)?.source_count ?? 0} sources
+                                            </span>
                                         </button>
                                         <span className={`${styles.status} ${styles[run.status as keyof typeof styles] || ''}`}>{run.status}</span>
-                                        {isRunning(run.status) ? <button className={styles.button} onClick={() => cancelRun(run.id)} aria-label="Cancel research"><Square size={13} /></button> : <button className={styles.button} onClick={() => setSelectedRun(run.id)}>View</button>}
+                                        {isRunning(run.status) ? (
+                                            <button className={styles.button} onClick={() => cancelRun(run.id)} aria-label="Cancel research">
+                                                <Square size={13} />
+                                            </button>
+                                        ) : (
+                                            <button className={styles.button} onClick={() => setSelectedRun(run.id)}>
+                                                View
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </section>
                         <aside className={`${styles.panel} ${styles.details}`} aria-label="Run details">
-                            <h2 className={styles.panelTitle}>Run Details {activeRun && <span className={`${styles.status} ${styles[activeRun.status as keyof typeof styles] || ''}`}>{activeRun.status}</span>}</h2>
-                            {!activeRun ? <div className={styles.empty}>Select a research run to inspect its answer, sources, and provenance.</div> : (
+                            <h2 className={styles.panelTitle}>
+                                Run Details {activeRun && <span className={`${styles.status} ${styles[activeRun.status as keyof typeof styles] || ''}`}>{activeRun.status}</span>}
+                            </h2>
+                            {!activeRun ? (
+                                <div className={styles.empty}>Select a research run to inspect its answer, sources, and provenance.</div>
+                            ) : (
                                 <>
                                     <h3 className={styles.detailQuestion}>{activeRun.question}</h3>
-                                    <div className={styles.detailMeta}><Clock3 size={14} style={{ verticalAlign: 'middle' }} /> {date(activeRun.created)} · {passages.length} evidence passages</div>
-                                    <div className={`${styles.tabs} ${styles.rightTabs}`}>
-                                        <button className={`${styles.tab} ${detailTab === 'answer' ? styles.tabActive : ''}`} onClick={() => setDetailTab('answer')}>Answer</button>
-                                        <button className={`${styles.tab} ${detailTab === 'evidence' ? styles.tabActive : ''}`} onClick={() => setDetailTab('evidence')}>Evidence</button>
-                                        <button className={`${styles.tab} ${detailTab === 'graph' ? styles.tabActive : ''}`} onClick={() => setDetailTab('graph')}>Graph</button>
+                                    <div className={styles.detailMeta}>
+                                        <Clock3 size={14} style={{ verticalAlign: 'middle' }} /> {date(activeRun.created)} · {passages.length} evidence passages
                                     </div>
-                                    {detailTab === 'answer' && <div className={styles.card}><h3>Research answer</h3><div className={styles.answer}>{activeRun.result?.answer || activeRun.result?.error || (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')}</div></div>}
-                                    {detailTab === 'evidence' && <div><p className={styles.hint}>Retrieved passages are evidence candidates, not independently verified claims.</p>{passages.length === 0 && <div className={styles.empty}>No evidence passages available.</div>}{passages.map((node) => <div className={styles.source} key={node.id}><strong><FileText size={14} style={{ verticalAlign: 'middle' }} /> Page {node.page ?? 'unknown'}</strong><p>{node.excerpt}</p></div>)}</div>}
-                                    {detailTab === 'graph' && <div><p className={styles.hint}>Document-to-passage provenance relationships. These edges do not establish factual entailment.</p>{documents.map((node) => <div className={styles.source} key={node.id}><strong><BookOpen size={14} style={{ verticalAlign: 'middle' }} /> {node.name || 'Document'}</strong>{graph?.edges.filter((edge) => edge.from === node.id).map((edge, index) => <div className={styles.graphEdge} key={index}>↳ {passages.find((item) => item.id === edge.to)?.excerpt?.slice(0, 120) || 'Source passage'}</div>)}</div>)}{documents.length === 0 && <div className={styles.empty}>No provenance graph available.</div>}</div>}
-                                    <details><summary className={styles.hint} style={{ cursor: 'pointer' }}><Settings2 size={14} style={{ verticalAlign: 'middle' }} /> Execution trace</summary><ol className={styles.trace}>{activeRun.steps.map((step, index) => <li key={index}>{step.tool}{step.source_count === undefined ? '' : ` · ${step.source_count} sources`}</li>)}</ol></details>
+                                    <div className={`${styles.tabs} ${styles.rightTabs}`}>
+                                        <button className={`${styles.tab} ${detailTab === 'answer' ? styles.tabActive : ''}`} onClick={() => setDetailTab('answer')}>
+                                            Answer
+                                        </button>
+                                        <button className={`${styles.tab} ${detailTab === 'evidence' ? styles.tabActive : ''}`} onClick={() => setDetailTab('evidence')}>
+                                            Evidence
+                                        </button>
+                                        <button className={`${styles.tab} ${detailTab === 'graph' ? styles.tabActive : ''}`} onClick={() => setDetailTab('graph')}>
+                                            Graph
+                                        </button>
+                                    </div>
+                                    {detailTab === 'answer' && (
+                                        <div className={styles.card}>
+                                            <h3>Research answer</h3>
+                                            <div className={styles.answer}>
+                                                {activeRun.result?.answer ||
+                                                    activeRun.result?.error ||
+                                                    (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {detailTab === 'evidence' && (
+                                        <div>
+                                            <p className={styles.hint}>Retrieved passages are evidence candidates, not independently verified claims.</p>
+                                            {passages.length === 0 && <div className={styles.empty}>No evidence passages available.</div>}
+                                            {passages.map((node) => (
+                                                <div className={styles.source} key={node.id}>
+                                                    <strong>
+                                                        <FileText size={14} style={{ verticalAlign: 'middle' }} /> Page {node.page ?? 'unknown'}
+                                                    </strong>
+                                                    <p>{node.excerpt}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {detailTab === 'graph' && (
+                                        <div>
+                                            <p className={styles.hint}>Document-to-passage provenance relationships. These edges do not establish factual entailment.</p>
+                                            {documents.map((node) => (
+                                                <div className={styles.source} key={node.id}>
+                                                    <strong>
+                                                        <BookOpen size={14} style={{ verticalAlign: 'middle' }} /> {node.name || 'Document'}
+                                                    </strong>
+                                                    {graph?.edges
+                                                        .filter((edge) => edge.from === node.id)
+                                                        .map((edge, index) => (
+                                                            <div className={styles.graphEdge} key={index}>
+                                                                ↳ {passages.find((item) => item.id === edge.to)?.excerpt?.slice(0, 120) || 'Source passage'}
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            ))}
+                                            {documents.length === 0 && <div className={styles.empty}>No provenance graph available.</div>}
+                                        </div>
+                                    )}
+                                    <details>
+                                        <summary className={styles.hint} style={{ cursor: 'pointer' }}>
+                                            <Settings2 size={14} style={{ verticalAlign: 'middle' }} /> Execution trace
+                                        </summary>
+                                        <ol className={styles.trace}>
+                                            {activeRun.steps.map((step, index) => (
+                                                <li key={index}>
+                                                    {step.tool}
+                                                    {step.source_count === undefined ? '' : ` · ${step.source_count} sources`}
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </details>
                                 </>
                             )}
                         </aside>
                     </div>
                 </main>
             </div>
-            {showCreate && <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}><div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><h2 id="create-agent-title">Create an agent</h2><button className={styles.button} onClick={() => setShowCreate(false)} aria-label="Close"><X size={17} /></button></div>
-                <p className={styles.hint}>Agents research your workspace's indexed documents.</p>
-                <label htmlFor="agent-name">Agent name</label><input id="agent-name" className={styles.input} value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="Research Agent" />
-                <label htmlFor="agent-instructions">Instructions</label><textarea id="agent-instructions" className={styles.textarea} value={instructions} maxLength={2000} onChange={(event) => setInstructions(event.target.value)} />
-                <div className={styles.modalActions}><button className={styles.button} onClick={() => setShowCreate(false)}>Cancel</button><button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim()}><Check size={15} /> Create agent</button></div>
-            </div></div>}
+            {showCreate && (
+                <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}>
+                    <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <h2 id="create-agent-title">Create an agent</h2>
+                            <button className={styles.button} onClick={() => setShowCreate(false)} aria-label="Close">
+                                <X size={17} />
+                            </button>
+                        </div>
+                        <p className={styles.hint}>Agents research your workspace's indexed documents.</p>
+                        <label htmlFor="agent-name">Agent name</label>
+                        <input id="agent-name" className={styles.input} value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="Research Agent" />
+                        <label htmlFor="agent-instructions">Instructions</label>
+                        <textarea id="agent-instructions" className={styles.textarea} value={instructions} maxLength={2000} onChange={(event) => setInstructions(event.target.value)} />
+                        <div className={styles.modalActions}>
+                            <button className={styles.button} onClick={() => setShowCreate(false)}>
+                                Cancel
+                            </button>
+                            <button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim()}>
+                                <Check size={15} /> Create agent
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
