@@ -397,6 +397,57 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         newChat,
     });
 
+    const [mentionAgents, setMentionAgents] = useState<{ id: string; name: string; handle: string }[]>([]);
+    const [agentBusy, setAgentBusy] = useState(false);
+    useEffect(() => {
+        if (!workspaceId || !user) return;
+        const controller = new AbortController();
+        fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/agents`, { credentials: 'same-origin', signal: controller.signal })
+            .then((response) => response.ok ? response.json() : [])
+            .then((items: { id: string; name: string }[]) => setMentionAgents(items.map((item) => ({ ...item, handle: '@' + item.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }))))
+            .catch(() => { if (!controller.signal.aborted) setMentionAgents([]); });
+        return () => controller.abort();
+    }, [workspaceId, user, tab]);
+
+    async function askWithAgent(question?: string) {
+        const text = (question ?? query).trim();
+        const match = /^(@[a-z0-9-]+)\\s+([\\s\\S]+)$/i.exec(text);
+        const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
+        if (!agent) { void ask(question); return; }
+        if (busy || agentBusy || !workspaceId) return;
+        setAgentBusy(true);
+        setQuery('');
+        const questionMessage = { role: 'user' as const, content: text };
+        setMessages((previous) => [...previous, questionMessage]);
+        chatMessages.current = [...chatMessages.current, questionMessage];
+        try {
+            const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents/${encodeURIComponent(agent.id)}/runs`;
+            const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: match![2] }) });
+            if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
+            const run: { id: string } = await started.json();
+            let completed: { status: string; result?: { answer?: string; error?: string; claim_verification?: { unsupported: number; supported?: number } }; error?: string } | undefined;
+            for (let attempt = 0; attempt < 90; attempt++) {
+                await new Promise((resolve) => window.setTimeout(resolve, 2000));
+                const response = await fetch(base, { credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Could not load agent research results.');
+                const runs: typeof completed[] = await response.json();
+                const current = runs.find((item) => (item as typeof run)?.id === run.id);
+                if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) { completed = current; break; }
+            }
+            if (!completed) throw new Error('Agent is still running. Check its run history later.');
+            const audit = completed.result?.claim_verification;
+            const answer = completed.result?.answer || completed.result?.error || completed.error || 'No answer available.';
+            const content = `**${agent.name}** · Agent\\n\\n${answer}${audit ? `\\n\\nEvidence assessment: ${audit.supported || 0} model-supported · ${audit.unsupported} uncertain or unsupported. Review original sources before relying on claims.` : ''}`;
+            const reply = { role: 'assistant' as const, content };
+            setMessages((previous) => [...previous, reply]);
+            chatMessages.current = [...chatMessages.current, reply];
+        } catch (error) {
+            const reply = { role: 'assistant' as const, content: `**${agent.name}** · ${error instanceof Error ? error.message : 'Research failed.'}` };
+            setMessages((previous) => [...previous, reply]);
+            chatMessages.current = [...chatMessages.current, reply];
+        } finally { setAgentBusy(false); }
+    }
+
     // Drafts are scoped to workspace and conversation, including the unsaved new chat.
     const draftKey = (id: string | null) => `atlas:draft:${workspaceId}:${id || 'new'}`;
     useEffect(() => {
@@ -656,7 +707,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             copied={copied}
                             canCopy={messages.length > 0}
                             onCopy={() => void copyConversation()}
-                            busy={busy}
+                            busy={busy || agentBusy}
+                            mentionAgents={mentionAgents}
                             onNewChat={() => newChat()}
                             chats={chats}
                             chatId={chatId}
@@ -667,7 +719,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             onDeleteChats={(items) => void deleteChats(items)}
                             messages={messages}
                             uploadButton={uploadButton}
-                            onAsk={(question) => void ask(question)}
+                            onAsk={(question) => void askWithAgent(question)}
                             initials={initials}
                             renderAnswer={renderAnswer}
                             answerProgress={answerProgress}
