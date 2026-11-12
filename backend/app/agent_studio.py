@@ -323,6 +323,15 @@ def execute_one_research_run():
         if run is None or run.status != 'processing':
             return True
         workspace_id, question = run.workspace_id, run.question
+        requesting_user = db.get(User, run.actor_id)
+        requesting_actor = requesting_user
+        try:
+            require_workspace(db, requesting_user, workspace_id, 'editor')
+        except (HTTPException, AttributeError):
+            run.status = 'failed'
+            run.result = {'error': 'Workspace access is no longer authorized.'}
+            db.commit()
+            return True
         agent = (
             db.query(AgentDefinition).filter_by(id=run.agent_id, workspace_id=workspace_id).first()
         )
@@ -334,15 +343,6 @@ def execute_one_research_run():
         agent_instructions = agent.instructions
         output_format = agent.output_format
         source_config = agent.source_config or {'include_documents': True}
-        requesting_user = db.get(User, run.actor_id)
-        requesting_actor = requesting_user
-        try:
-            require_workspace(db, requesting_user, workspace_id, 'editor')
-        except (HTTPException, AttributeError):
-            run.status = 'failed'
-            run.result = {'error': 'Workspace access is no longer authorized.'}
-            db.commit()
-            return True
     steps = []
     try:
         questions = plan(question)
