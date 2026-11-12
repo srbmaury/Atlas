@@ -25,17 +25,38 @@ def owned_conversation(workspace_id, conversation_id, actor, db):
     return item
 
 
-def visible_messages(item):
-    return [
-        dict(message) for message in (item.messages or []) if not message.get('_atlas_metadata')
-    ]
+def visible_messages(item, actor=None):
+    from ..rbac import revalidate_access
+
+    visible = []
+    for message in item.messages or []:
+        if not isinstance(message, dict) or message.get('_atlas_metadata'):
+            continue
+        entry = dict(message)
+        agent = entry.get('agent')
+        if actor is not None and isinstance(agent, dict):
+            providers = set(agent.get('providers') or [])
+            if not providers:
+                providers = set((entry.get('result') or {}).get('scope') or [])
+            providers.discard('documents')
+            if providers:
+                try:
+                    revalidate_access(item.workspace_id, actor, providers)
+                except HTTPException:
+                    entry = {
+                        'role': entry.get('role', 'assistant'),
+                        'content': 'This agent response is hidden because connected-source access has changed.',
+                        'agent': {'id': agent.get('id'), 'name': agent.get('name')},
+                    }
+        visible.append(entry)
+    return visible
 
 
-def conversation_data(item):
+def conversation_data(item, actor=None):
     return {
         'id': item.id,
         'title': item.title,
-        'messages': visible_messages(item),
+        'messages': visible_messages(item, actor),
         'created': item.created,
         'updated': item.updated,
         'pinned': bool((item.messages or [{}])[0].get('_atlas_pinned')) if item.messages else False,
@@ -104,7 +125,7 @@ def organize_conversation(
             first['_atlas_pinned'] = False
     item.messages = messages
     db.commit()
-    return conversation_data(item)
+    return conversation_data(item, actor)
 
 
 @router.get(
@@ -130,7 +151,7 @@ def search_conversation_messages(
     )
     results = []
     for item in items:
-        for index, message in enumerate(item.messages or []):
+        for index, message in enumerate(visible_messages(item, actor)):
             if not isinstance(message, dict):
                 continue
             content = message.get('content')
