@@ -112,7 +112,7 @@ def cancel_research(
     db=Depends(database),
 ):
     workspace(workspaceId, actor, db)
-    changed = (
+    (
         db.query(AgentRun)
         .filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId)
         .filter(AgentRun.status.in_(('queued', 'processing')))
