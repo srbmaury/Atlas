@@ -5,6 +5,7 @@ import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface ResearchComposerProps {
     query: string;
+    mentionAgents?: { id: string; name: string; handle: string }[];
     onChange: (q: string) => void;
     onSubmit: () => void;
     onUpload: () => void;
@@ -25,6 +26,7 @@ interface ResearchComposerProps {
 
 export function ResearchComposer({
     query,
+    mentionAgents = [],
     onChange,
     onSubmit,
     onUpload,
@@ -65,6 +67,8 @@ export function ResearchComposer({
         onChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
     }
 
+    const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
+    const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     return (
         <form
             className="composer research-composer-v2"
@@ -160,6 +164,12 @@ export function ResearchComposer({
                     </div>
                 )}
             </div>
+            {matchingAgents.length > 0 && <div className="agent-mention-menu" role="listbox" aria-label="Mention an agent">
+                <span className="agent-mention-title">AGENT SUGGESTIONS</span>
+                {matchingAgents.map((agent) => <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
+                    <span>✦</span><span><strong>{agent.name}</strong><small>{agent.handle}</small></span>
+                </button>)}
+            </div>}
             <textarea
                 aria-label="Your question"
                 aria-describedby="research-composer-help"
