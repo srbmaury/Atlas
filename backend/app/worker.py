@@ -107,4 +107,7 @@ if __name__ == '__main__':
     from .db import init_db
 
     init_db()
+    from .agent_studio import initialize_agent_tables
+
+    initialize_agent_tables()
     loop(threading.Event())
