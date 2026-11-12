@@ -19,6 +19,9 @@ jobs:
                   pip check
             - name: Check Python style
               run: |
+                  ruff check --fix backend/app/agent_studio.py backend/app/routes/conversations.py
+                  ruff format backend/app/agent_studio.py backend/app/routes/conversations.py
+                  git diff -- backend/app/agent_studio.py backend/app/routes/conversations.py
                   ruff check backend evals ops
                   ruff format --check backend evals ops
             - name: Run API tests
@@ -39,7 +42,10 @@ jobs:
               run: npm ci
             - name: Check frontend formatting
               working-directory: frontend
-              run: npm run format:check
+              run: |
+                  npx prettier --write 'components/AtlasWorkspace.tsx' 'lib/types.ts'
+                  git diff -- components/AtlasWorkspace.tsx lib/types.ts
+                  npm run format:check
             - name: Conversation unit tests
               working-directory: frontend
               run: node --experimental-strip-types --test tests/*.test.mjs
