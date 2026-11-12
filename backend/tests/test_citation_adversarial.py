@@ -2,6 +2,7 @@
 
 These tests intentionally do not claim semantic entailment verification.
 """
+
 from app.citation_audit import audit_citations
 
 
@@ -18,7 +19,10 @@ def test_fabricated_number_is_rejected():
 
 
 def test_negated_claim_is_flagged():
-    assert _status('The service is not available [1].', 'The service is available.') == 'possible_negation_mismatch'
+    assert (
+        _status('The service is not available [1].', 'The service is available.')
+        == 'possible_negation_mismatch'
+    )
 
 
 def test_unknown_reference_is_rejected():
@@ -26,6 +30,8 @@ def test_unknown_reference_is_rejected():
 
 
 def test_lexical_overlap_is_not_semantic_verification():
-    report = audit_citations('The service is available [1].', [{'text': 'The service is available.'}])
+    report = audit_citations(
+        'The service is available [1].', [{'text': 'The service is available.'}]
+    )
     assert report['semantic_entailment_verified'] is False
     assert report['claims'][0]['requires_human_review'] is True
