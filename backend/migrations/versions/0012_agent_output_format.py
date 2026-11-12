@@ -14,7 +14,12 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('agent_definitions', sa.Column('output_format', sa.String(length=32), nullable=False, server_default='detailed_notes'))
+    op.add_column(
+        'agent_definitions',
+        sa.Column(
+            'output_format', sa.String(length=32), nullable=False, server_default='detailed_notes'
+        ),
+    )
 
 
 def downgrade():
