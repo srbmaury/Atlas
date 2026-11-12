@@ -16,6 +16,8 @@ from .worker import claim, heartbeat
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
 MAX_STEPS = 5
+MAX_ACTIVE_RUNS_PER_WORKSPACE = 5
+MAX_ACTIVE_RUNS_PER_USER = 2
 log = logging.getLogger(__name__)
 
 
@@ -140,7 +142,21 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
         raise HTTPException(404, 'Agent not found.')
-    run = AgentRun(workspace_id=workspaceId, agent_id=agentId, actor_id=actor.id, question=body.question, steps=[])
+    active = db.query(AgentRun).filter(
+        AgentRun.workspace_id == workspaceId,
+        AgentRun.status.in_(('queued', 'processing')),
+    )
+    if active.count() >= MAX_ACTIVE_RUNS_PER_WORKSPACE:
+        raise HTTPException(429, 'Workspace research queue is full.')
+    if active.filter(AgentRun.actor_id == actor.id).count() >= MAX_ACTIVE_RUNS_PER_USER:
+        raise HTTPException(429, 'You already have too many active research runs.')
+    run = AgentRun(
+        workspace_id=workspaceId,
+        agent_id=agentId,
+        actor_id=actor.id,
+        question=body.question,
+        steps=[],
+    )
     db.add(run)
     db.commit()
     return public_run(run)
