@@ -59,15 +59,9 @@ def queue_snapshot(model=Document, *, now=None):
         'processing': sum(row.status == 'processing' for row in rows),
         'failed': sum(row.status == 'failed' for row in rows),
         'ready': sum(row.status == 'ready' for row in rows),
-        'expired_leases': sum(
-            row.status == 'processing' and row.lease < now for row in rows
-        ),
-        'retry_pending': sum(
-            row.status == 'queued' and row.attempts > 0 for row in rows
-        ),
-        'terminal_failures': sum(
-            row.status == 'failed' and row.attempts >= 3 for row in rows
-        ),
+        'expired_leases': sum(row.status == 'processing' and row.lease < now for row in rows),
+        'retry_pending': sum(row.status == 'queued' and row.attempts > 0 for row in rows),
+        'terminal_failures': sum(row.status == 'failed' and row.attempts >= 3 for row in rows),
     }
 
 
