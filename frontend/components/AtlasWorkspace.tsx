@@ -1,5 +1,6 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
+import { persistConversation } from '../lib/researchRequests';
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
@@ -420,7 +421,15 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         const questionMessage = { role: 'user' as const, content: text };
         setMessages((previous) => [...previous, questionMessage]);
         chatMessages.current = [...chatMessages.current, questionMessage];
+        const conversationTitle = chatTitle.current === 'New chat' ? text.slice(0, 100) : chatTitle.current;
+        let conversationId = activeChat.current;
         try {
+            const saved = await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
+            conversationId = saved.id;
+            activeChat.current = saved.id;
+            setChatId(saved.id);
+            chatTitle.current = conversationTitle;
+            setChats((previous) => [{ id: saved.id, title: conversationTitle, updated: saved.updated }, ...previous.filter((item) => item.id !== saved.id)]);
             const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents/${encodeURIComponent(agent.id)}/runs`;
             const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: match![2] }) });
             if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
@@ -441,10 +450,14 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             const reply = { role: 'assistant' as const, content };
             setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
+            await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
         } catch (error) {
             const reply = { role: 'assistant' as const, content: `**${agent.name}** · ${error instanceof Error ? error.message : 'Research failed.'}` };
             setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
+            if (conversationId) {
+                try { await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current); } catch { /* Keep visible error. */ }
+            }
         } finally { setAgentBusy(false); }
     }
 
