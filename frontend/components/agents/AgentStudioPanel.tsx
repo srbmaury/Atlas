@@ -362,51 +362,39 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <option value="concise">Concise answer</option>
                             <option value="report">Structured report</option>
                         </select>
-                        <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-                            <legend>Research sources</legend>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={includeDocuments}
-                                    onChange={(event) => {
-                                        setIncludeDocuments(event.target.checked);
-                                        if (!event.target.checked) setDocumentIds([]);
-                                    }}
-                                />{' '}
-                                Workspace documents
+                        <fieldset className={styles.sourcePicker}>
+                            <legend>Knowledge & connected sources</legend>
+                            <p className={styles.sourcePickerHint}>Choose what this agent can reference when answering in chat.</p>
+                            <label className={styles.sourceOption}>
+                                <span className={styles.sourceOptionIcon}><SourceIcon provider="documents" size={19} /></span>
+                                <span className={styles.sourceOptionText}><strong>Workspace documents</strong><small>Indexed files in this workspace</small></span>
+                                <input type="checkbox" checked={includeDocuments} onChange={(event) => {
+                                    setIncludeDocuments(event.target.checked);
+                                    if (!event.target.checked) setDocumentIds([]);
+                                }} />
                             </label>
                             {includeDocuments && (
-                                <div style={{ maxHeight: 130, overflowY: 'auto' }}>
-                                    <p className={styles.hint}>Leave all unchecked to search every indexed document.</p>
+                                <div className={styles.documentPicker}>
+                                    <p className={styles.hint}>No selection means all indexed documents.</p>
                                     {sourceOptions.documents.map((doc) => (
-                                        <label key={doc.id} style={{ display: 'block' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={documentIds.includes(doc.id)}
-                                                onChange={(event) => setDocumentIds((ids) => (event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)))}
-                                            />{' '}
-                                            {doc.name}
+                                        <label key={doc.id} className={styles.documentOption}>
+                                            <FileText size={15} />
+                                            <span title={doc.name}>{doc.name}</span>
+                                            <input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)} />
                                         </label>
                                     ))}
                                 </div>
                             )}
-                            {sourceOptions.providers.includes('gmail') && (
-                                <label style={{ display: 'block' }}>
-                                    <input type="checkbox" checked={includeGmail} onChange={(event) => setIncludeGmail(event.target.checked)} /> Gmail
+                            {sourceOptions.providers.map((provider) => (
+                                <label className={styles.sourceOption} key={provider}>
+                                    <span className={styles.sourceOptionIcon}><SourceIcon provider={provider} size={19} /></span>
+                                    <span className={styles.sourceOptionText}><strong>{SOURCE_NAMES[provider] || provider}</strong><small>Connected workspace source</small></span>
+                                    <input type="checkbox" checked={provider === 'gmail' ? includeGmail : providers.includes(provider)} onChange={(event) => {
+                                        if (provider === 'gmail') setIncludeGmail(event.target.checked);
+                                        else setProviders((items) => event.target.checked ? [...items, provider] : items.filter((item) => item !== provider));
+                                    }} />
                                 </label>
-                            )}
-                            {sourceOptions.providers
-                                .filter((p) => p !== 'gmail')
-                                .map((provider) => (
-                                    <label key={provider} style={{ display: 'block' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={providers.includes(provider)}
-                                            onChange={(event) => setProviders((items) => (event.target.checked ? [...items, provider] : items.filter((p) => p !== provider)))}
-                                        />{' '}
-                                        {provider}
-                                    </label>
-                                ))}
+                            ))}
                         </fieldset>
                         <p className={styles.hint}>Connected sources are searched read-only using your existing workspace permissions.</p>
                         <div className={styles.modalActions}>
