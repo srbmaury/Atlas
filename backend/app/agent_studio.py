@@ -85,7 +85,9 @@ def public_agent(agent, actor=None, db=None):
     return {
         'id': agent.id,
         'name': agent.name,
-        'instructions': 'Some agent instructions are hidden because source access is restricted.' if restricted else agent.instructions,
+        'instructions': 'Some agent instructions are hidden because source access is restricted.'
+        if restricted
+        else agent.instructions,
         'output_format': agent.output_format,
         'source_config': config,
         'created': agent.created,
@@ -404,8 +406,12 @@ def execute_one_research_run():
         seen = set()
         provider_scopes = []
         permission_scopes = {}
-        if not (source_config.get('include_documents') or source_config.get('include_gmail') or source_config.get('providers')):
-            raise HTTPException(403, 'You do not have access to this agent\'s configured sources.')
+        if not (
+            source_config.get('include_documents')
+            or source_config.get('include_gmail')
+            or source_config.get('providers')
+        ):
+            raise HTTPException(403, "You do not have access to this agent's configured sources.")
         for query in questions:
             if not heartbeat(AgentRun, run_id, generation):
                 return True
