@@ -10,9 +10,9 @@ from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
 from .agent_claims import assess_claims
 from .agent_evidence import evidence_graph, plan
-from .connected_research import collect_connected_evidence, connected_sources_for_payload
 from .ai import generate_agent
 from .api_dependencies import database, user, workspace
+from .connected_research import collect_connected_evidence, connected_sources_for_payload
 from .db import Base, Document, Session, User, uid
 from .rbac import require_workspace, revalidate_access, workspace_permission
 from .retrieval import retrieve
