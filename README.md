@@ -1,6 +1,6 @@
-# Atlas — Document intelligence
+# Atlas — Multi-source AI research workspace
 
-Atlas is a private, workspace-based research app. Upload documents, connect read-only data sources, ask questions across selected sources, and inspect citations that link back to the evidence.
+Atlas is a private, workspace-based AI research app. Upload documents, connect read-only data sources, ask questions with traceable citations, and create reusable research agents in **Agent Studio**. Invoke an agent from Home or Chat with an `@agent-handle`; its configured sources are independent of the chat's normal source selection, but never bypass the invoking user's access permissions.
 
 The app uses a Next.js/TypeScript frontend and a FastAPI backend. Local development uses SQLite, Docker Compose runs PostgreSQL with pgvector, and Render can use Supabase Postgres and private Storage. You can generate answers with Ollama on your machine, OpenAI, or use source excerpts without an AI provider.
 
@@ -27,6 +27,11 @@ flowchart LR
   Retrieval --> DB
   API --> Synthesis["Grounded answer generation<br/>ai.py / connected_synthesis.py"]
   Synthesis --> Model["Optional Ollama or OpenAI"]
+  API --> Agents["Agent definitions and runs<br/>backend/app/agent_studio.py"]
+  Agents --> DB
+  Agents --> Conn
+  Agents --> Retrieval
+  Agents --> Worker
   API --> Queue["Document status / lease<br/>stored in database"]
   Queue --> Worker["Ingestion worker<br/>backend/app/worker.py"]
   Worker --> Parser["Parsing · OCR · chunking<br/>backend/app/ingest.py"]
@@ -50,6 +55,9 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
     WORKSPACES ||..o{ DOCUMENTS : contains
     WORKSPACES ||..o{ CONVERSATIONS : contains
+    WORKSPACES ||..o{ AGENT_DEFINITIONS : configures
+    WORKSPACES ||..o{ AGENT_RUNS : executes
+    AGENT_DEFINITIONS ||..o{ AGENT_RUNS : starts
 ```
 
 Organisation membership and workspace access are separate. A user accesses a workspace through ownership or an explicit workspace membership. Conversations belong to their authors within the workspace. See the [full database schema](docs/DATABASE.md) for keys, connector scopes, and audit relationships.
@@ -124,6 +132,31 @@ sequenceDiagram
 
 For documents-only requests, the server may use the document answer-generation path rather than cross-source synthesis. Source IDs are checked, but a valid ID is **not proof** that every claim is supported by its citation. If the model cannot produce a valid answer, clients should show an explicit failure instead of inventing conclusions.
 
+### Code flow: invoke a research agent
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Chat as Home / Chat
+  participant API as Agent Studio API
+  participant DB as Workspace database
+  participant Worker as Background worker
+  participant Sources as Permitted documents and connectors
+  User->>Chat: Type @agent-handle and a question
+  Chat->>API: Create agent run
+  API->>DB: Save queued run and invoking user
+  Worker->>DB: Claim run and load agent configuration
+  Worker->>Worker: Recheck workspace and source permissions
+  Worker->>Sources: Search only authorized agent sources
+  Sources-->>Worker: Bounded evidence and citations
+  Worker->>DB: Persist answer, evidence assessment, and trace
+  Chat->>API: Poll run status
+  API-->>Chat: Return permitted result
+  Chat-->>User: Cited answer in the same conversation
+```
+
+Agent runs are read-only and use the invoking user's permissions, not the agent creator's. The UI can show evidence assessments and traces; these are not guarantees of factual correctness. See [Agent Studio](docs/AGENT_STUDIO.md).
+
 ### Where to follow the code
 
 | Workflow | Entry point | Key modules |
@@ -133,6 +166,8 @@ For documents-only requests, the server may use the document answer-generation p
 | Document retrieval | `backend/app/main.py` chat routes | `retrieval.py`, `ai.py` |
 | Cross-source answers | `backend/app/main.py` connected-chat routes | `external_sources.py`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
 | Citation display | `frontend/components/chat/ResearchAnswer.tsx` | `frontend/lib/evidence.ts` |
+| Agent creation, runs and authorization | `backend/app/agent_studio.py` | `agent_evidence.py`, `agent_claims.py`, `rbac.py` |
+| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
 
 
 
@@ -228,6 +263,18 @@ With OpenAI selected, document passages and selected connected-source excerpts a
 ### Search without generated answers
 
 Set `AI_PROVIDER=none` and leave `OPENAI_API_KEY` empty. Atlas returns matching source excerpts instead of a synthesized answer.
+
+## Create and use research agents
+
+1. Open **Agents** in your workspace and choose **Create agent**.
+2. Give it a name and instructions, choose an output format, and select its research sources: ready workspace documents, Gmail, and/or available connected providers.
+3. Save the agent. Its library card shows its source scope and generated handle (for example `@research-analyst`); you can copy the handle.
+4. In **Home** or **Chat**, type `@` to select the agent, then enter your question. The answer and citations appear in that conversation. Use Agent Studio for configuration and historical run inspection, not a separate chat.
+5. Keep the background worker running to process queued research.
+
+Agent source settings **override chat source filters for that agent invocation**, but access is always evaluated for the person asking. An agent configured with a source you cannot access does not grant you that source. Previously saved agent evidence may be hidden if access is revoked. Research uses bounded retrieval and automated claim assessments; validate important conclusions against the cited evidence.
+
+See [Agent Studio documentation](docs/AGENT_STUDIO.md) for lifecycle, permissions, APIs and limitations.
 
 ## Connect data sources
 
@@ -330,6 +377,7 @@ The fixture uses synthetic queries and labeled passages. It measures keyword ran
 - Durable document processing with retry and reindex controls.
 - Keyword search, optional vector search, and source-grounded answers.
 - [On-demand retrieval from connected sources](docs/SOURCE_SETUP.md), including Google Workspace, Microsoft 365, and engineering tools.
+- [Agent Studio](docs/AGENT_STUDIO.md): configurable read-only research agents, source-specific permissions, `@` mentions, evidence assessments, and persisted run traces.
 
 Connected sources use permission checks at the provider and do not sync in the background. AI answers can miss details; review cited passages before relying on them. Atlas validates citation references but does not prove every claim is supported by its citation.
 
@@ -347,10 +395,12 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 - `backend/app/ai.py`: embeddings and grounded answer generation.
 - `backend/app/external_sources.py`: GitHub, Notion, and Slack adapters.
 - `backend/app/drive.py` and `backend/app/gmail.py`: Google connectors.
-- `backend/app/worker.py`: durable ingestion queue worker.
+- `backend/app/worker.py`: background document ingestion and agent research execution.
+- `backend/app/agent_studio.py`: agent definitions, run lifecycle, source authorization and trace persistence.
+- `backend/app/agent_evidence.py` and `backend/app/agent_claims.py`: research planning, evidence graph and claim assessment.
 - `frontend/app/page.tsx`: lightweight Next.js entry point.
 - `frontend/components/AtlasWorkspace.tsx`: workspace state and screen composition.
-- `frontend/components/{home,documents,chat,sources,auth,layout,ui}/`: feature-level UI and shared components.
+- `frontend/components/{home,documents,chat,agents,sources,auth,layout,ui}/`: feature-level UI and shared components.
 - `frontend/hooks/`: theme, conversation, Gmail and connected-source state.
 - `frontend/utils/`: typed session, document, and conversation actions.
 - `frontend/app/{globals,rebuild}.css`: ordered entry points for styles in `frontend/app/styles/`; rule order is preserved for existing visual refinements.
