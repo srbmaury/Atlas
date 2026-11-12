@@ -219,7 +219,7 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
     return [
         public_run(r)
         for r in db.query(AgentRun)
-        .filter_by(workspace_id=workspaceId, agent_id=agentId)
+        .filter_by(workspace_id=workspaceId, agent_id=agentId, actor_id=actor.id)
         .order_by(AgentRun.created.desc())
         .limit(30)
     ]
