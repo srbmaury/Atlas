@@ -114,7 +114,9 @@ def create_agent(workspaceId: str, body: CreateAgent, actor=Depends(user), db=De
 
 
 @router.patch('/{agentId}', dependencies=[Depends(workspace_permission('editor'))])
-def update_agent(workspaceId: str, agentId: str, body: CreateAgent, actor=Depends(user), db=Depends(database)):
+def update_agent(
+    workspaceId: str, agentId: str, body: CreateAgent, actor=Depends(user), db=Depends(database)
+):
     workspace(workspaceId, actor, db)
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if agent is None:
@@ -132,7 +134,12 @@ def delete_agent(workspaceId: str, agentId: str, actor=Depends(user), db=Depends
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if agent is None:
         raise HTTPException(404, 'Agent not found.')
-    if db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId).filter(AgentRun.status.in_(('queued', 'processing'))).first():
+    if (
+        db.query(AgentRun)
+        .filter_by(workspace_id=workspaceId, agent_id=agentId)
+        .filter(AgentRun.status.in_(('queued', 'processing')))
+        .first()
+    ):
         raise HTTPException(409, 'Cancel active runs before deleting this agent.')
     db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId).delete()
     db.delete(agent)
@@ -235,7 +242,9 @@ def execute_one_research_run():
         if run is None or run.status != 'processing':
             return True
         workspace_id, question = run.workspace_id, run.question
-        agent = db.query(AgentDefinition).filter_by(id=run.agent_id, workspace_id=workspace_id).first()
+        agent = (
+            db.query(AgentDefinition).filter_by(id=run.agent_id, workspace_id=workspace_id).first()
+        )
         if agent is None:
             run.status = 'failed'
             run.result = {'error': 'Agent no longer exists.'}
