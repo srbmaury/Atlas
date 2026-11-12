@@ -1,6 +1,8 @@
 """Bounded, read-only research agents with workspace-scoped persistent traces."""
 import time
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
@@ -8,12 +10,14 @@ from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
 from .agent_evidence import evidence_graph, plan
 from .ai import generate
 from .api_dependencies import database, user, workspace
-from .db import Base, engine, uid
+from .db import Base, Session, engine, uid
 from .rbac import workspace_permission
 from .retrieval import retrieve
+from .worker import claim, heartbeat
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
 MAX_STEPS = 5
+log = logging.getLogger(__name__)
 
 
 class AgentDefinition(Base):
@@ -33,7 +37,11 @@ class AgentRun(Base):
     agent_id = Column(String, nullable=False, index=True)
     actor_id = Column(String, nullable=False)
     question = Column(Text, nullable=False)
-    status = Column(String, nullable=False, default='running')
+    status = Column(String, nullable=False, default='queued', index=True)
+    lease = Column(Float, default=0)
+    generation = Column(Integer, default=0)
+    attempts = Column(Integer, default=0)
+    error = Column(Text)
     steps = Column(JSON, nullable=False, default=list)
     result = Column(JSON)
     created = Column(Float, default=time.time)
@@ -102,16 +110,30 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
     run = AgentRun(workspace_id=workspaceId, agent_id=agentId, actor_id=actor.id, question=body.question, steps=[])
     db.add(run)
     db.commit()
+    return public_run(run)
+
+
+def execute_one_research_run():
+    """Claim one persisted run, recover expired leases, and persist a safe trace."""
+    claimed = claim(AgentRun)
+    if not claimed:
+        return False
+    run_id, generation = claimed
+    with Session() as db:
+        run = db.query(AgentRun).filter_by(id=run_id, generation=generation).first()
+        if run is None:
+            return True
+        workspace_id, question = run.workspace_id, run.question
     steps = []
     try:
-        # Agent instructions are configuration, not an authority to bypass access checks.
-        # Tool access is deliberately limited to workspace-scoped document retrieval.
-        questions = plan(body.question)
+        questions = plan(question)
         steps.append({'tool': 'research_plan', 'queries': questions})
         sources = []
         seen = set()
         for query in questions:
-            for source in retrieve(workspaceId, query, limit=8):
+            if not heartbeat(AgentRun, run_id, generation):
+                return True
+            for source in retrieve(workspace_id, query, limit=8):
                 key = source.get('chunk_id')
                 if key and key not in seen and len(sources) < 8:
                     seen.add(key)
@@ -119,14 +141,20 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
         steps.append({'tool': 'workspace_retrieval', 'source_count': len(sources)})
         graph = evidence_graph(sources)
         steps.append({'tool': 'evidence_graph', 'nodes': len(graph['nodes'])})
-        result = generate(body.question, sources)
+        if not heartbeat(AgentRun, run_id, generation):
+            return True
+        result = generate(question, sources)
         result['evidence_graph'] = graph
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
-        run.result = result
-        run.status = 'completed'
+        status = 'completed'
     except Exception:
-        run.status = 'failed'
-        run.result = {'error': 'Research failed. Check server logs.'}
-    run.steps = steps[:MAX_STEPS]
-    db.commit()
-    return public_run(run)
+        log.exception('Agent research execution failed for run %s', run_id)
+        status = 'failed'
+        result = {'error': 'Research failed. Check server logs.'}
+    with Session() as db:
+        active = db.query(AgentRun).filter_by(
+            id=run_id, generation=generation, status='processing'
+        )
+        active.update({'status': status, 'result': result, 'steps': steps[:MAX_STEPS]})
+        db.commit()
+    return True
