@@ -8,12 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
+from .agent_claims import verify_claims
 from .agent_evidence import evidence_graph, plan
 from .ai import generate_agent
 from .api_dependencies import database, user, workspace
-from .db import Base, Session, User, uid
-from .rbac import require_workspace, workspace_permission
+from .db import Base, Document, Session, User, uid
+from .rbac import require_workspace, revalidate_access, workspace_permission
 from .retrieval import retrieve
+from .schemas import ConnectedQuestion
 from .worker import claim, heartbeat
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
@@ -33,6 +35,7 @@ class AgentDefinition(Base):
     name = Column(String(100), nullable=False)
     instructions = Column(Text, nullable=False)
     output_format = Column(String(32), nullable=False, default='detailed_notes')
+    source_config = Column(JSON, nullable=False, default=dict)
     created = Column(Float, default=time.time)
 
 
@@ -59,6 +62,10 @@ class CreateAgent(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     instructions: str = Field(default='Find relevant evidence and cite sources.', max_length=2000)
     output_format: Literal['detailed_notes', 'concise', 'report'] = 'detailed_notes'
+    include_documents: bool = True
+    document_ids: list[str] = Field(default_factory=list, max_length=200)
+    include_gmail: bool = False
+    providers: list[str] = Field(default_factory=list, max_length=12)
 
 
 class ResearchRequest(BaseModel):
@@ -71,7 +78,33 @@ def public_agent(agent):
         'name': agent.name,
         'instructions': agent.instructions,
         'output_format': agent.output_format,
+        'source_config': agent.source_config or {'include_documents': True},
         'created': agent.created,
+    }
+
+
+def validate_sources(db, workspace_id, body):
+    from .external_sources import PROVIDERS
+
+    providers = list(dict.fromkeys(body.providers))
+    if any(p not in (*PROVIDERS, 'drive') for p in providers):
+        raise HTTPException(422, 'Unknown connected provider.')
+    if not body.include_documents and body.document_ids:
+        raise HTTPException(422, 'Document selection requires documents to be enabled.')
+    if not (body.include_documents or body.include_gmail or providers):
+        raise HTTPException(422, 'Select at least one research source.')
+    selected = list(dict.fromkeys(body.document_ids))
+    if selected:
+        found = db.query(Document.id).filter(
+            Document.workspace_id == workspace_id, Document.id.in_(selected)
+        ).count()
+        if found != len(selected):
+            raise HTTPException(404, 'Selected document not found.')
+    return {
+        'include_documents': body.include_documents,
+        'document_ids': selected,
+        'include_gmail': body.include_gmail,
+        'providers': providers,
     }
 
 
@@ -98,6 +131,35 @@ def list_agents(workspaceId: str, actor=Depends(user), db=Depends(database)):
     ]
 
 
+@router.get('/sources', dependencies=[Depends(workspace_permission('viewer'))])
+def list_agent_sources(workspaceId: str, actor=Depends(user), db=Depends(database)):
+    workspace(workspaceId, actor, db)
+    from .db import ExternalConnection, GmailConnection
+    from .rbac import require_connection
+
+    connected = []
+    for row in db.query(ExternalConnection).filter_by(workspace_id=workspaceId):
+        try:
+            require_connection(db, actor, row)
+            connected.append(row.provider)
+        except HTTPException:
+            pass
+    gmail = db.get(GmailConnection, workspaceId)
+    if gmail:
+        try:
+            require_connection(db, actor, gmail)
+            connected.append('gmail')
+        except HTTPException:
+            pass
+    return {
+        'documents': [
+            {'id': d.id, 'name': d.name}
+            for d in db.query(Document).filter_by(workspace_id=workspaceId, status='ready').order_by(Document.name)
+        ],
+        'providers': sorted(set(connected)),
+    }
+
+
 @router.post('', dependencies=[Depends(workspace_permission('editor'))])
 def create_agent(workspaceId: str, body: CreateAgent, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
@@ -107,6 +169,7 @@ def create_agent(workspaceId: str, body: CreateAgent, actor=Depends(user), db=De
         name=body.name.strip(),
         instructions=body.instructions,
         output_format=body.output_format,
+        source_config=validate_sources(db, workspaceId, body),
     )
     db.add(agent)
     db.commit()
@@ -124,6 +187,7 @@ def update_agent(
     agent.name = body.name.strip()
     agent.instructions = body.instructions
     agent.output_format = body.output_format
+    agent.source_config = validate_sources(db, workspaceId, body)
     db.commit()
     return public_agent(agent)
 
@@ -252,6 +316,8 @@ def execute_one_research_run():
             return True
         agent_instructions = agent.instructions
         output_format = agent.output_format
+        source_config = agent.source_config or {'include_documents': True}
+        requesting_actor = requesting_user
         requesting_user = db.get(User, run.actor_id)
         try:
             require_workspace(db, requesting_user, workspace_id, 'editor')
@@ -266,22 +332,54 @@ def execute_one_research_run():
         steps.append({'tool': 'research_plan', 'queries': questions})
         sources = []
         seen = set()
+        provider_scopes = []
         for query in questions:
             if not heartbeat(AgentRun, run_id, generation):
                 return True
-            for source in retrieve(workspace_id, query, limit=8):
-                key = source.get('chunk_id')
-                if key and key not in seen and len(sources) < 8:
+            if source_config.get('include_gmail') or source_config.get('providers'):
+                from .connected_research import collect_connected_evidence, connected_sources_for_payload
+
+                body = ConnectedQuestion(
+                    question=query,
+                    include_documents=source_config.get('include_documents', True),
+                    document_ids=source_config.get('document_ids') or [],
+                    include_gmail=source_config.get('include_gmail', False),
+                    providers=source_config.get('providers') or [],
+                )
+                with Session() as source_db:
+                    stats = {}
+                    evidence, original = collect_connected_evidence(
+                        workspace_id, body, requesting_actor, source_db, stats,
+                        workspace_access=require_workspace,
+                        retrieve_chunks=lambda wid, q, ids: retrieve(wid, q, document_ids=ids or None),
+                    )
+                revalidate_access(workspace_id, requesting_actor, {e.provider for e in evidence}, stats.get('scopes'))
+                payload = [e.as_prompt(i) | {'origin_id': e.source_id} for i, e in enumerate(evidence[:8], 1)]
+                found = connected_sources_for_payload(payload, original)
+                provider_scopes.extend(item.get('provider') for item in found)
+            elif source_config.get('include_documents', True):
+                found = retrieve(workspace_id, query, document_ids=source_config.get('document_ids') or None, limit=8)
+            else:
+                found = []
+            for source in found:
+                key = (source.get('provider', 'documents'), source.get('chunk_id'))
+                if key[1] and key not in seen and len(sources) < 8:
                     seen.add(key)
                     sources.append(source)
-        steps.append({'tool': 'workspace_retrieval', 'source_count': len(sources)})
+        steps.append({'tool': 'workspace_retrieval', 'source_count': len(sources), 'providers': sorted(set(provider_scopes) | ({'documents'} if source_config.get('include_documents') else set()))})
         graph = evidence_graph(sources)
         steps.append({'tool': 'evidence_graph', 'nodes': len(graph['nodes'])})
         if not heartbeat(AgentRun, run_id, generation):
             return True
         result = generate_agent(question, sources, agent_instructions, output_format)
         result['evidence_graph'] = graph
+        result['claim_verification'] = verify_claims(result.get('answer', ''), sources)
+        result['scope'] = sorted({s.get('provider', 'documents') for s in sources})
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
+        if provider_scopes:
+            revalidate_access(workspace_id, requesting_actor, set(provider_scopes))
+        with Session() as check_db:
+            require_workspace(check_db, check_db.get(User, requesting_actor.id), workspace_id, 'editor')
         status = 'failed' if result.get('mode') == 'citation_check_failed' else 'completed'
     except Exception:
         log.exception('Agent research execution failed for run %s', run_id)
