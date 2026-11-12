@@ -14,7 +14,7 @@ Requests use existing session authentication and workspace RBAC. Runs plan up to
 
 ## Limitations and next steps
 
-- Runs are now persisted as queued jobs and dispatched by the existing worker loop, with generation/lease-based claiming and workspace permission revalidation at execution. Cancellation invalidates the generation of queued/processing runs and workers check ownership at checkpoints. It does not forcibly interrupt an in-flight model request. Add explicit timeouts, concurrency limits, retry classification, dead-letter handling and budgets before production use.
+- Runs are now persisted as queued jobs and dispatched by the existing worker loop, with generation/lease-based claiming and workspace permission revalidation at execution. Cancellation invalidates the generation of queued/processing runs and workers check ownership at checkpoints. It does not forcibly interrupt an in-flight model request. Admission currently caps active runs at five per workspace and two per user, but this is not an atomic concurrency-safe quota. Add explicit timeouts, atomic quotas, retry classification, dead-letter handling and token/cost budgets before production use.
 - Research currently uses only workspace document retrieval, not cross-provider tool orchestration.
 - Add workspace-specific budgets, permissioned tool registry, execution-cost tracking, approval gates and multi-agent delegation.
 - Add migrations rather than relying on metadata table creation for production schema changes.
