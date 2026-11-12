@@ -503,8 +503,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
         } catch (error) {
             const reply = { role: 'assistant' as const, content: `**${agent.name}** · ${error instanceof Error ? error.message : 'Research failed.'}` };
-            setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
+            setMessages(chatMessages.current);
             if (conversationId) {
                 try {
                     await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
