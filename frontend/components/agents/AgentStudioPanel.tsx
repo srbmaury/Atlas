@@ -211,22 +211,114 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     return (
         <div className={styles.studio}>
             <div className={styles.pageHead}>
-                <div><h1>Agents</h1><p>Create and configure reusable agents. Mention an agent in any Atlas chat to run it.</p></div>
-                <button className={`${styles.button} ${styles.primary}`} onClick={() => { setEditing(false); setName(''); setInstructions('Find relevant evidence and cite sources.'); setOutputFormat('detailed_notes'); setIncludeDocuments(true); setDocumentIds([]); setIncludeGmail(false); setProviders([]); setShowCreate(true); }}><Plus size={17} /> Create agent</button>
+                <div>
+                    <h1>Agents</h1>
+                    <p>Create and configure reusable agents. Mention an agent in any Atlas chat to run it.</p>
+                </div>
+                <button
+                    className={`${styles.button} ${styles.primary}`}
+                    onClick={() => {
+                        setEditing(false);
+                        setName('');
+                        setInstructions('Find relevant evidence and cite sources.');
+                        setOutputFormat('detailed_notes');
+                        setIncludeDocuments(true);
+                        setDocumentIds([]);
+                        setIncludeGmail(false);
+                        setProviders([]);
+                        setShowCreate(true);
+                    }}
+                >
+                    <Plus size={17} /> Create agent
+                </button>
             </div>
-            {error && <div role="alert" className={styles.error}>{error}</div>}
-            <div className={styles.libraryTools}><input aria-label="Search agents" className={styles.input} placeholder="Search agents..." value={agentSearch} onChange={(event) => setAgentSearch(event.target.value)} /><span>{filteredAgents.length} agents</span></div>
-            {filteredAgents.length ? <div className={styles.libraryGrid}>{filteredAgents.map((agent) => {
-                const scope = agent.source_config || {};
-                const labels = [...(scope.include_documents !== false ? [scope.document_ids?.length ? `${scope.document_ids.length} documents` : 'Documents'] : []), ...(scope.include_gmail ? ['Gmail'] : []), ...(scope.providers || [])];
-                const handle = '@' + agent.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                return <article className={styles.libraryCard} key={agent.id}>
-                    <div className={styles.libraryCardTitle}><span className={styles.agentIcon}><Bot size={21} /></span><div><h2>{agent.name}</h2><span>{labels.length} source types</span></div></div>
-                    <p className={styles.libraryDescription}>{agent.instructions}</p>
-                    <div className={styles.librarySources}>{labels.map((label) => <span key={label}>{label}</span>)}</div>
-                    <div className={styles.libraryFooter}><code>{handle}</code><div><button className={styles.button} onClick={() => { setSelected(agent.id); setName(agent.name); setInstructions(agent.instructions); setOutputFormat(agent.output_format || 'detailed_notes'); setIncludeDocuments(scope.include_documents ?? true); setDocumentIds(scope.document_ids || []); setIncludeGmail(scope.include_gmail || false); setProviders(scope.providers || []); setEditing(true); setShowCreate(true); }}><Settings2 size={14} /> Edit</button><button className={styles.button} aria-label={`Delete ${agent.name}`} onClick={async () => { if (!window.confirm(`Delete ${agent.name} and its runs?`)) return; try { const response = await fetch(`${base}/${encodeURIComponent(agent.id)}`, { method: 'DELETE', credentials: 'same-origin' }); if (!response.ok) throw new Error('Unable to delete agent.'); await loadAgents(); } catch (err) { setError(err instanceof Error ? err.message : 'Delete failed.'); } }}><X size={14} /></button></div></div>
-                </article>;
-            })}</div> : <div className={styles.libraryEmpty}>{agents.length ? 'No agents match your search.' : 'No agents yet. Create your first agent to use it in Atlas Chat.'}</div>}
+            {error && (
+                <div role="alert" className={styles.error}>
+                    {error}
+                </div>
+            )}
+            <div className={styles.libraryTools}>
+                <input aria-label="Search agents" className={styles.input} placeholder="Search agents..." value={agentSearch} onChange={(event) => setAgentSearch(event.target.value)} />
+                <span>{filteredAgents.length} agents</span>
+            </div>
+            {filteredAgents.length ? (
+                <div className={styles.libraryGrid}>
+                    {filteredAgents.map((agent) => {
+                        const scope = agent.source_config || {};
+                        const labels = [
+                            ...(scope.include_documents !== false ? [scope.document_ids?.length ? `${scope.document_ids.length} documents` : 'Documents'] : []),
+                            ...(scope.include_gmail ? ['Gmail'] : []),
+                            ...(scope.providers || []),
+                        ];
+                        const handle =
+                            '@' +
+                            agent.name
+                                .toLowerCase()
+                                .trim()
+                                .replace(/[^a-z0-9]+/g, '-')
+                                .replace(/^-|-$/g, '');
+                        return (
+                            <article className={styles.libraryCard} key={agent.id}>
+                                <div className={styles.libraryCardTitle}>
+                                    <span className={styles.agentIcon}>
+                                        <Bot size={21} />
+                                    </span>
+                                    <div>
+                                        <h2>{agent.name}</h2>
+                                        <span>{labels.length} source types</span>
+                                    </div>
+                                </div>
+                                <p className={styles.libraryDescription}>{agent.instructions}</p>
+                                <div className={styles.librarySources}>
+                                    {labels.map((label) => (
+                                        <span key={label}>{label}</span>
+                                    ))}
+                                </div>
+                                <div className={styles.libraryFooter}>
+                                    <code>{handle}</code>
+                                    <div>
+                                        <button
+                                            className={styles.button}
+                                            onClick={() => {
+                                                setSelected(agent.id);
+                                                setName(agent.name);
+                                                setInstructions(agent.instructions);
+                                                setOutputFormat(agent.output_format || 'detailed_notes');
+                                                setIncludeDocuments(scope.include_documents ?? true);
+                                                setDocumentIds(scope.document_ids || []);
+                                                setIncludeGmail(scope.include_gmail || false);
+                                                setProviders(scope.providers || []);
+                                                setEditing(true);
+                                                setShowCreate(true);
+                                            }}
+                                        >
+                                            <Settings2 size={14} /> Edit
+                                        </button>
+                                        <button
+                                            className={styles.button}
+                                            aria-label={`Delete ${agent.name}`}
+                                            onClick={async () => {
+                                                if (!window.confirm(`Delete ${agent.name} and its runs?`)) return;
+                                                try {
+                                                    const response = await fetch(`${base}/${encodeURIComponent(agent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
+                                                    if (!response.ok) throw new Error('Unable to delete agent.');
+                                                    await loadAgents();
+                                                } catch (err) {
+                                                    setError(err instanceof Error ? err.message : 'Delete failed.');
+                                                }
+                                            }}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className={styles.libraryEmpty}>{agents.length ? 'No agents match your search.' : 'No agents yet. Create your first agent to use it in Atlas Chat.'}</div>
+            )}
             {showCreate && (
                 <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}>
                     <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
