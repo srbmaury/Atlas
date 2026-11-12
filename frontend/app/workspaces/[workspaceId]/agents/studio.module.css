@@ -565,3 +565,14 @@
 .studio .agentHeader p {
     overflow-wrap: anywhere;
 }
+
+.citationLink {
+    display: inline;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    color: var(--brand);
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
