@@ -164,6 +164,16 @@ def validate_sources(db, workspace_id, body, actor=None):
     }
 
 
+def source_scope_fingerprints(scopes):
+    """Serializable fingerprints for detecting later resource-grant changes."""
+    import hashlib
+
+    return {
+        provider: hashlib.sha256(repr(scope).encode('utf-8')).hexdigest()
+        for provider, scope in (scopes or {}).items()
+    }
+
+
 def public_run(run):
     return {
         'id': run.id,
@@ -286,6 +296,16 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
         if providers:
             try:
                 revalidate_access(workspaceId, actor, providers)
+                from .rbac import source_scope
+                from .db import ExternalConnection
+
+                saved = (run.result or {}).get('source_scope_fingerprints') or {}
+                current = {
+                    provider: source_scope(db, actor, db.get(ExternalConnection, (workspaceId, provider)))
+                    for provider in saved if provider != 'gmail'
+                }
+                if any(source_scope_fingerprints(current).get(provider) != fingerprint for provider, fingerprint in saved.items() if provider != 'gmail'):
+                    raise HTTPException(403, 'Source resource permissions changed.')
             except HTTPException:
                 item['result'] = {
                     'error': 'Connected source access has changed. Previous evidence is hidden.'
@@ -483,6 +503,7 @@ def execute_one_research_run():
         result['evidence_graph'] = graph
         result['claim_verification'] = assess_claims(result.get('answer', ''), sources)
         result['scope'] = sorted({s.get('provider', 'documents') for s in sources})
+        result['source_scope_fingerprints'] = source_scope_fingerprints(permission_scopes)
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
         if provider_scopes:
             revalidate_access(
