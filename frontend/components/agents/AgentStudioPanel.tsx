@@ -432,10 +432,10 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 </div>
                             )}
                             {activeRun.result?.claim_verification && <details open>
-                                <summary className={styles.hint} style={{ cursor: 'pointer' }}>Claim evidence review · {activeRun.result.claim_verification.needs_review} candidates · {activeRun.result.claim_verification.unsupported} unsupported</summary>
+                                <summary className={styles.hint} style={{ cursor: 'pointer' }}>Claim evidence review · {activeRun.result.claim_verification.needs_review} pending review · {activeRun.result.claim_verification.unsupported} unsupported or uncertain</summary>
                                 <p className={styles.hint}>{activeRun.result.claim_verification.disclaimer}</p>
                                 {activeRun.result.claim_verification.claims.map((claim, index) => <div className={styles.source} key={index}>
-                                    <strong>{claim.status === 'unsupported' ? 'Unsupported' : 'Needs review'} · {claim.source_ids.map((id) => `[${id}]`).join(', ') || 'No citation'}</strong>
+                                    <strong>{claim.status === 'supported' ? 'Model-supported' : claim.status === 'contradicted' ? 'Contradicted' : claim.status === 'unsupported' ? 'Unsupported' : 'Needs review'} · {claim.source_ids.map((id) => `[${id}]`).join(', ') || 'No citation'}</strong>
                                     <p>{claim.claim}</p>
                                 </div>)}
                             </details>}
