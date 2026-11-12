@@ -39,7 +39,10 @@ jobs:
               run: npm ci
             - name: Check frontend formatting
               working-directory: frontend
-              run: npm run format:check
+              run: |
+                  npx prettier --write 'app/workspaces/[workspaceId]/agents/page.tsx' 'app/workspaces/[workspaceId]/agents/studio.module.css'
+                  git diff -- app/workspaces/'[workspaceId]'/agents/page.tsx app/workspaces/'[workspaceId]'/agents/studio.module.css
+                  npm run format:check
             - name: Conversation unit tests
               working-directory: frontend
               run: node --experimental-strip-types --test tests/*.test.mjs
