@@ -52,3 +52,49 @@
 .agent-mention-menu small {
     color: var(--sub);
 }
+
+/* Agent autocomplete in the Overview composer, matching Atlas Chat. */
+.home-prompt-panel form { position: relative; }
+.home-agent-mention-menu {
+    position: absolute;
+    z-index: 35;
+    left: 12px;
+    right: 12px;
+    top: calc(100% - 5px);
+    max-width: 380px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px #0003;
+}
+.home-agent-mention-menu button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+}
+.home-agent-mention-menu button:hover,
+.home-agent-mention-menu button:focus-visible { background: var(--active); }
+.home-agent-mention-menu button > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.home-agent-mention-menu small { color: var(--sub); }
+.home-agent-suggestion-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    background: var(--active);
+    color: var(--brand);
+    border-radius: 9px;
+}
