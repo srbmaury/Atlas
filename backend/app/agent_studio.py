@@ -296,15 +296,22 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
         if providers:
             try:
                 revalidate_access(workspaceId, actor, providers)
-                from .rbac import source_scope
                 from .db import ExternalConnection
+                from .rbac import source_scope
 
                 saved = (run.result or {}).get('source_scope_fingerprints') or {}
                 current = {
-                    provider: source_scope(db, actor, db.get(ExternalConnection, (workspaceId, provider)))
-                    for provider in saved if provider != 'gmail'
+                    provider: source_scope(
+                        db, actor, db.get(ExternalConnection, (workspaceId, provider))
+                    )
+                    for provider in saved
+                    if provider != 'gmail'
                 }
-                if any(source_scope_fingerprints(current).get(provider) != fingerprint for provider, fingerprint in saved.items() if provider != 'gmail'):
+                if any(
+                    source_scope_fingerprints(current).get(provider) != fingerprint
+                    for provider, fingerprint in saved.items()
+                    if provider != 'gmail'
+                ):
                     raise HTTPException(403, 'Source resource permissions changed.')
             except HTTPException:
                 item['result'] = {
