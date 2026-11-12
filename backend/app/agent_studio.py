@@ -84,7 +84,7 @@ def public_agent(agent):
     }
 
 
-def validate_sources(db, workspace_id, body):
+def validate_sources(db, workspace_id, body, actor=None):
     from .external_sources import PROVIDERS
 
     providers = list(dict.fromkeys(body.providers))
@@ -94,6 +94,20 @@ def validate_sources(db, workspace_id, body):
         raise HTTPException(422, 'Document selection requires documents to be enabled.')
     if not (body.include_documents or body.include_gmail or providers):
         raise HTTPException(422, 'Select at least one research source.')
+    if actor is not None:
+        from .db import ExternalConnection, GmailConnection
+        from .rbac import require_connection
+
+        for provider in providers:
+            row = db.get(ExternalConnection, (workspace_id, provider))
+            if row is None:
+                raise HTTPException(404, 'Selected source is not connected.')
+            require_connection(db, actor, row)
+        if body.include_gmail:
+            row = db.get(GmailConnection, workspace_id)
+            if row is None:
+                raise HTTPException(404, 'Gmail is not connected.')
+            require_connection(db, actor, row)
     selected = list(dict.fromkeys(body.document_ids))
     if selected:
         found = (
@@ -174,7 +188,7 @@ def create_agent(workspaceId: str, body: CreateAgent, actor=Depends(user), db=De
         name=body.name.strip(),
         instructions=body.instructions,
         output_format=body.output_format,
-        source_config=validate_sources(db, workspaceId, body),
+        source_config=validate_sources(db, workspaceId, body, actor),
     )
     db.add(agent)
     db.commit()
@@ -192,7 +206,7 @@ def update_agent(
     agent.name = body.name.strip()
     agent.instructions = body.instructions
     agent.output_format = body.output_format
-    agent.source_config = validate_sources(db, workspaceId, body)
+    agent.source_config = validate_sources(db, workspaceId, body, actor)
     db.commit()
     return public_agent(agent)
 
