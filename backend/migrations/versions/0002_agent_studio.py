@@ -17,7 +17,12 @@ def upgrade():
     op.create_table(
         'agent_definitions',
         sa.Column('id', sa.String(), primary_key=True),
-        sa.Column('workspace_id', sa.String(), sa.ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False),
+        sa.Column(
+            'workspace_id',
+            sa.String(),
+            sa.ForeignKey('workspaces.id', ondelete='CASCADE'),
+            nullable=False,
+        ),
         sa.Column('owner_id', sa.String(), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=False),
         sa.Column('instructions', sa.Text(), nullable=False),
@@ -27,7 +32,12 @@ def upgrade():
     op.create_table(
         'agent_runs',
         sa.Column('id', sa.String(), primary_key=True),
-        sa.Column('workspace_id', sa.String(), sa.ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False),
+        sa.Column(
+            'workspace_id',
+            sa.String(),
+            sa.ForeignKey('workspaces.id', ondelete='CASCADE'),
+            nullable=False,
+        ),
         sa.Column('agent_id', sa.String(), nullable=False),
         sa.Column('actor_id', sa.String(), nullable=False),
         sa.Column('question', sa.Text(), nullable=False),
