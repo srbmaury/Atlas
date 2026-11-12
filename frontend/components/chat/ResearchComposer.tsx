@@ -164,12 +164,20 @@ export function ResearchComposer({
                     </div>
                 )}
             </div>
-            {matchingAgents.length > 0 && <div className="agent-mention-menu" role="listbox" aria-label="Mention an agent">
-                <span className="agent-mention-title">AGENT SUGGESTIONS</span>
-                {matchingAgents.map((agent) => <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
-                    <span>✦</span><span><strong>{agent.name}</strong><small>{agent.handle}</small></span>
-                </button>)}
-            </div>}
+            {matchingAgents.length > 0 && (
+                <div className="agent-mention-menu" role="listbox" aria-label="Mention an agent">
+                    <span className="agent-mention-title">AGENT SUGGESTIONS</span>
+                    {matchingAgents.map((agent) => (
+                        <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
+                            <span>✦</span>
+                            <span>
+                                <strong>{agent.name}</strong>
+                                <small>{agent.handle}</small>
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
             <textarea
                 aria-label="Your question"
                 aria-describedby="research-composer-help"
