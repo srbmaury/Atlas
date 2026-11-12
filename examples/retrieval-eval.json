@@ -1,0 +1,8 @@
+{
+  "description": "Synthetic example only; replace with real labeled Atlas retrieval runs before using scores to assess quality.",
+  "cases": [
+    {"query": "Where is the retention policy?", "relevant_ids": ["doc-1-chunk-2"], "ranked_ids": ["doc-1-chunk-2", "doc-2-chunk-1"]},
+    {"query": "Which document explains billing?", "relevant_ids": ["doc-3-chunk-1", "doc-3-chunk-2"], "ranked_ids": ["doc-3-chunk-2", "doc-1-chunk-2"]},
+    {"query": "What is the unpublished forecast?", "relevant_ids": [], "ranked_ids": []}
+  ]
+}
