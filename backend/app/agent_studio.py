@@ -62,7 +62,6 @@ class ResearchRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
 
 
-
 def public_agent(agent):
     return {
         'id': agent.id,
