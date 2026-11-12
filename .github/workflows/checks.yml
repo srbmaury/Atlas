@@ -19,7 +19,6 @@ jobs:
                   pip check
             - name: Check Python style
               run: |
-                  ruff format --diff backend/app/agent_studio.py backend/migrations/versions/0001_initial.py backend/migrations/versions/0002_agent_studio.py || true
                   ruff check backend evals ops
                   ruff format --check backend evals ops
             - name: Run API tests
