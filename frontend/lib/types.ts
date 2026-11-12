@@ -70,7 +70,7 @@ export type Answer = {
     };
     coverage_note?: string | null;
 };
-export type Message = { role: 'user' | 'assistant'; content: string; result?: Answer };
+export type Message = { role: 'user' | 'assistant'; content: string; result?: Answer; agent?: { id: string; name: string; run_id: string } };
 export type GmailMessage = {
     id: string;
     subject: string;
