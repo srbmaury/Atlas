@@ -8,6 +8,7 @@ import { FileBadge } from '../ui/WorkspacePrimitives';
 interface HomeViewProps {
     canEdit?: boolean;
     query: string;
+    mentionAgents?: { id: string; name: string; handle: string }[];
     onQueryChange: (value: string) => void;
     onAsk: () => void;
     hasAskSources: boolean;
@@ -35,6 +36,7 @@ interface HomeViewProps {
 export function HomeView({
     canEdit = true,
     query,
+    mentionAgents = [],
     onQueryChange,
     onAsk,
     hasAskSources,
@@ -59,6 +61,9 @@ export function HomeView({
     formatSize,
 }: HomeViewProps) {
     const voice = useVoiceInput();
+    const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
+    const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
+    const selectedAgent = mentionAgents.find((agent) => query.toLowerCase().includes(agent.handle + ' '));
 
     function addTranscript(transcript: string) {
         onQueryChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
@@ -84,6 +89,17 @@ export function HomeView({
                         onAsk();
                     }}
                 >
+                    {matchingAgents.length > 0 && (
+                        <div className="home-agent-mention-menu" role="listbox" aria-label="Mention an agent">
+                            <span className="agent-mention-title">AGENT SUGGESTIONS</span>
+                            {matchingAgents.map((agent) => (
+                                <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
+                                    <span className="home-agent-suggestion-icon"><Sparkles size={16} /></span>
+                                    <span><strong>{agent.name}</strong><small>{agent.handle}</small></span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <textarea
                         aria-label="Ask Atlas"
                         placeholder="Ask a question about your workspace…"
@@ -100,7 +116,7 @@ export function HomeView({
                     <div className="home-prompt-bottom">
                         <div className="home-scope-summary">
                             <FileText size={15} />
-                            <span aria-label="Sources included in this question">Selected for search: {sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}</span>
+                            <span aria-label="Sources included in this question">{selectedAgent ? `${selectedAgent.name} · Uses agent-configured sources` : `Selected for search: ${sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}`}</span>
                             <span>·</span>{' '}
                             <button type="button" onClick={onChooseSources}>
                                 Choose sources <ArrowUpRight size={13} />
