@@ -826,7 +826,10 @@
     position: relative;
     overflow: hidden;
     min-height: 270px;
-    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    transition:
+        border-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
 }
 .libraryCard:hover {
     border-color: var(--brand);
@@ -893,7 +896,14 @@
     font-weight: 750;
 }
 @media (max-width: 600px) {
-    .libraryTools { gap: 10px; }
-    .librarySearch { width: 100%; max-width: none; }
-    .libraryCard { min-height: 0; }
+    .libraryTools {
+        gap: 10px;
+    }
+    .librarySearch {
+        width: 100%;
+        max-width: none;
+    }
+    .libraryCard {
+        min-height: 0;
+    }
 }
