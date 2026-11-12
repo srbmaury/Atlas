@@ -384,11 +384,19 @@ def execute_one_research_run():
                     stats.get('scopes'),
                 )
                 permission_scopes.update(stats.get('scopes') or {})
-                payload = [e.as_prompt(i) | {'origin_id': e.source_id} for i, e in enumerate(evidence[:8], 1)]
+                payload = [
+                    e.as_prompt(i) | {'origin_id': e.source_id}
+                    for i, e in enumerate(evidence[:8], 1)
+                ]
                 found = connected_sources_for_payload(payload, original)
                 provider_scopes.extend(item.get('provider') for item in found)
             elif source_config.get('include_documents', True):
-                found = retrieve(workspace_id, query, document_ids=source_config.get('document_ids') or None, limit=8)
+                found = retrieve(
+                    workspace_id,
+                    query,
+                    document_ids=source_config.get('document_ids') or None,
+                    limit=8,
+                )
             else:
                 found = []
             for source in found:
@@ -420,7 +428,9 @@ def execute_one_research_run():
                 workspace_id, requesting_actor, set(provider_scopes), permission_scopes
             )
         with Session() as check_db:
-            require_workspace(check_db, check_db.get(User, requesting_actor.id), workspace_id, 'editor')
+            require_workspace(
+                check_db, check_db.get(User, requesting_actor.id), workspace_id, 'editor'
+            )
         status = 'failed' if result.get('mode') == 'citation_check_failed' else 'completed'
     except Exception:
         log.exception('Agent research execution failed for run %s', run_id)
