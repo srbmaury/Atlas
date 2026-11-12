@@ -1,4 +1,5 @@
 """Bounded, read-only research agents with workspace-scoped persistent traces."""
+
 import logging
 import time
 
@@ -24,7 +25,9 @@ log = logging.getLogger(__name__)
 class AgentDefinition(Base):
     __tablename__ = 'agent_definitions'
     id = Column(String, primary_key=True, default=uid)
-    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True)
+    workspace_id = Column(
+        String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     owner_id = Column(String, nullable=False)
     name = Column(String(100), nullable=False)
     instructions = Column(Text, nullable=False)
@@ -34,7 +37,9 @@ class AgentDefinition(Base):
 class AgentRun(Base):
     __tablename__ = 'agent_runs'
     id = Column(String, primary_key=True, default=uid)
-    workspace_id = Column(String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True)
+    workspace_id = Column(
+        String, ForeignKey('workspaces.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     agent_id = Column(String, nullable=False, index=True)
     actor_id = Column(String, nullable=False)
     question = Column(Text, nullable=False)
@@ -62,13 +67,22 @@ def initialize_agent_tables():
 
 
 def public_agent(agent):
-    return {'id': agent.id, 'name': agent.name, 'instructions': agent.instructions, 'created': agent.created}
+    return {
+        'id': agent.id,
+        'name': agent.name,
+        'instructions': agent.instructions,
+        'created': agent.created,
+    }
 
 
 def public_run(run):
     return {
-        'id': run.id, 'agent_id': run.agent_id, 'question': run.question,
-        'status': run.status, 'steps': run.steps, 'result': run.result,
+        'id': run.id,
+        'agent_id': run.agent_id,
+        'question': run.question,
+        'status': run.status,
+        'steps': run.steps,
+        'result': run.result,
         'created': run.created,
     }
 
@@ -78,14 +92,21 @@ def list_agents(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return [
         public_agent(a)
-        for a in db.query(AgentDefinition).filter_by(workspace_id=workspaceId).order_by(AgentDefinition.created.desc())
+        for a in db.query(AgentDefinition)
+        .filter_by(workspace_id=workspaceId)
+        .order_by(AgentDefinition.created.desc())
     ]
 
 
 @router.post('', dependencies=[Depends(workspace_permission('editor'))])
 def create_agent(workspaceId: str, body: CreateAgent, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
-    agent = AgentDefinition(workspace_id=workspaceId, owner_id=actor.id, name=body.name.strip(), instructions=body.instructions)
+    agent = AgentDefinition(
+        workspace_id=workspaceId,
+        owner_id=actor.id,
+        name=body.name.strip(),
+        instructions=body.instructions,
+    )
     db.add(agent)
     db.commit()
     return public_agent(agent)
@@ -98,7 +119,10 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
         raise HTTPException(404, 'Agent not found.')
     return [
         public_run(r)
-        for r in db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId).order_by(AgentRun.created.desc()).limit(30)
+        for r in db.query(AgentRun)
+        .filter_by(workspace_id=workspaceId, agent_id=agentId)
+        .order_by(AgentRun.created.desc())
+        .limit(30)
     ]
 
 
@@ -128,16 +152,16 @@ def cancel_research(
         )
     )
     db.commit()
-    run = db.query(AgentRun).filter_by(
-        workspace_id=workspaceId, agent_id=agentId, id=runId
-    ).first()
+    run = db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId).first()
     if run is None:
         raise HTTPException(404, 'Research run not found.')
     return public_run(run)
 
 
 @router.post('/{agentId}/runs', dependencies=[Depends(workspace_permission('editor'))])
-def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)):
+def run_research(
+    workspaceId: str, agentId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)
+):
     workspace(workspaceId, actor, db)
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
@@ -219,9 +243,7 @@ def execute_one_research_run():
         status = 'failed'
         result = {'error': 'Research failed. Check server logs.'}
     with Session() as db:
-        active = db.query(AgentRun).filter_by(
-            id=run_id, generation=generation, status='processing'
-        )
+        active = db.query(AgentRun).filter_by(id=run_id, generation=generation, status='processing')
         active.update({'status': status, 'result': result, 'steps': steps[:MAX_STEPS]})
         db.commit()
     return True
