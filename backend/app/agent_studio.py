@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
 
-from .ai import generate
 from .agent_evidence import evidence_graph, plan
+from .ai import generate
 from .api_dependencies import database, user, workspace
-from .db import Base, Document, engine, uid
+from .db import Base, engine, uid
 from .rbac import workspace_permission
 from .retrieval import retrieve
 
