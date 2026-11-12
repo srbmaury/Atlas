@@ -6,13 +6,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
 
 from .ai import generate
+from .agent_evidence import evidence_graph, plan
 from .api_dependencies import database, user, workspace
 from .db import Base, Document, engine, uid
 from .rbac import workspace_permission
 from .retrieval import retrieve
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
-MAX_STEPS = 3
+MAX_STEPS = 5
 
 
 class AgentDefinition(Base):
@@ -105,9 +106,21 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
     try:
         # Agent instructions are configuration, not an authority to bypass access checks.
         # Tool access is deliberately limited to workspace-scoped document retrieval.
-        sources = retrieve(workspaceId, body.question, limit=8)
+        questions = plan(body.question)
+        steps.append({'tool': 'research_plan', 'queries': questions})
+        sources = []
+        seen = set()
+        for query in questions:
+            for source in retrieve(workspaceId, query, limit=8):
+                key = source.get('chunk_id')
+                if key and key not in seen and len(sources) < 8:
+                    seen.add(key)
+                    sources.append(source)
         steps.append({'tool': 'workspace_retrieval', 'source_count': len(sources)})
+        graph = evidence_graph(sources)
+        steps.append({'tool': 'evidence_graph', 'nodes': len(graph['nodes'])})
         result = generate(body.question, sources)
+        result['evidence_graph'] = graph
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
         run.result = result
         run.status = 'completed'
