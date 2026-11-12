@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from . import config, connected_research
+from .agent_studio import initialize_agent_tables, router as agent_studio_router
 from .ai import generate
 from .api_dependencies import database, user, workspace
 from .config import DATA
@@ -37,6 +38,7 @@ from .worker import loop
 @asynccontextmanager
 async def lifespan(app):
     init_db()
+    initialize_agent_tables()
     (DATA / 'files').mkdir(exist_ok=True)
     stop = threading.Event()
     thread = None
@@ -53,6 +55,7 @@ app = FastAPI(
     title='Atlas Document Intelligence',
     lifespan=lifespan,
 )
+app.include_router(agent_studio_router)
 app.include_router(access_router)
 app.include_router(gmail_router)
 app.include_router(external_router)
