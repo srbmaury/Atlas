@@ -59,3 +59,36 @@ def test_model_assesses_cited_claim_without_claiming_independent_verification():
     assert result['method'] == 'llm_entailment_assessment'
     assert result['claims'][0]['status'] == 'supported'
     assert result['verified'] == 0
+
+
+def test_agent_source_config_excludes_unavailable_provider():
+    from app.agent_studio import authorized_source_config
+
+    actor = MagicMock()
+    db = MagicMock()
+    with patch('app.rbac.require_connection', side_effect=HTTPException(403, 'Forbidden')):
+        result = authorized_source_config(
+            db, 'workspace', actor,
+            {'include_documents': True, 'include_gmail': True, 'providers': ['github']},
+        )
+    assert result['include_documents'] is True
+    assert result['providers'] == []
+    assert result['include_gmail'] is False
+
+
+def test_revoked_agent_evidence_hidden_from_saved_conversation():
+    from app.routes.conversations import visible_messages
+
+    conversation = MagicMock()
+    conversation.workspace_id = 'workspace'
+    conversation.messages = [
+        {'role': 'user', 'content': 'Question'},
+        {'role': 'assistant', 'content': 'Secret source excerpt',
+         'agent': {'id': 'a', 'name': 'Researcher', 'providers': ['github']},
+         'result': {'sources': [{'text': 'Secret source excerpt'}]}},
+    ]
+    with patch('app.rbac.revalidate_access', side_effect=HTTPException(403, 'Forbidden')):
+        result = visible_messages(conversation, MagicMock())
+    assert result[0]['content'] == 'Question'
+    assert 'Secret source excerpt' not in str(result[1])
+    assert 'hidden' in result[1]['content']
