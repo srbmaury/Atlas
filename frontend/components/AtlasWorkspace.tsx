@@ -657,7 +657,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             query={query}
                             onQueryChange={setQuery}
                             onAsk={() => void ask(query, true)}
-                            hasAskSources={hasAskSources}
+                            hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}
                             busy={busy}
                             chats={chats}
