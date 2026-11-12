@@ -3,6 +3,7 @@
 Expected ranked IDs are ordered; relevant IDs are an unordered gold set.
 Empty gold sets are excluded from recall/MRR denominators and counted separately.
 """
+
 from dataclasses import dataclass
 from statistics import mean
 
@@ -25,8 +26,10 @@ def evaluate(cases: list[RetrievalCase], k: int = 10) -> dict:
         recalls.append(len(hits) / len(case.relevant_ids))
         precisions.append(len(hits) / k)
         reciprocal_ranks.append(
-            next((1 / rank for rank, identifier in enumerate(top, 1)
-                  if identifier in case.relevant_ids), 0.0)
+            next(
+                (1 / rank for rank, identifier in enumerate(top, 1) if identifier in case.relevant_ids),
+                0.0,
+            )
         )
     return {
         'cases': len(cases),
