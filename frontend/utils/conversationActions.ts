@@ -35,7 +35,7 @@ type Options = {
     setConnectedGmail: Setter<boolean>;
     setConnectedProviders: Setter<ResearchProvider[]>;
     setQuery: Setter<string>;
-    setTab: Setter<'overview' | 'documents' | 'chat' | 'sources'>;
+    setTab: Setter<'overview' | 'documents' | 'chat' | 'sources' | 'agents'>;
     setError: Setter<string>;
     setNotice: Setter<string>;
     setBusy: Setter<boolean>;
