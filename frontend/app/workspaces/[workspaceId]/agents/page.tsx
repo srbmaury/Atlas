@@ -9,7 +9,7 @@ type Run = {
   status: string;
   question: string;
   steps: { tool: string; source_count?: number; mode?: string }[];
-  result?: { answer?: string; error?: string; sources?: unknown[] };
+  result?: { answer?: string; error?: string; sources?: unknown[]; evidence_graph?: { nodes: { id: string; type: string; name?: string; page?: number; excerpt?: string }[]; edges: { from: string; to: string; type: string }[] } };
 };
 
 export default function AgentStudio() {
@@ -121,6 +121,13 @@ export default function AgentStudio() {
               </li>)}</ol>
             </details>
             <p>Sources returned: {run.result?.sources?.length || 0}</p>
+            {run.result?.evidence_graph && <details><summary>Evidence provenance</summary>
+              <p>Documents and source excerpts (relationships indicate provenance, not factual entailment).</p>
+              <ul>{run.result.evidence_graph.nodes.map((node) => <li key={node.id}>
+                <strong>{node.type === 'document' ? node.name : `Evidence on page ${node.page ?? 'unknown'}`}</strong>
+                {node.excerpt && <p style={{ whiteSpace: 'pre-wrap' }}>{node.excerpt}</p>}
+              </li>)}</ul>
+            </details>}
           </article>
         ))}
       </section>
