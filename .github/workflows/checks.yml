@@ -19,6 +19,7 @@ jobs:
                   pip check
             - name: Check Python style
               run: |
+                  ruff format --diff backend/app/agent_studio.py backend/migrations/versions/0001_initial.py backend/migrations/versions/0002_agent_studio.py || true
                   ruff check backend evals ops
                   ruff format --check backend evals ops
             - name: Run API tests
@@ -39,10 +40,7 @@ jobs:
               run: npm ci
             - name: Check frontend formatting
               working-directory: frontend
-              run: |
-                  npx prettier --write 'app/workspaces/[workspaceId]/agents/studio.module.css'
-                  git diff -- app/workspaces/'[workspaceId]'/agents/studio.module.css
-                  npm run format:check
+              run: npm run format:check
             - name: Conversation unit tests
               working-directory: frontend
               run: node --experimental-strip-types --test tests/*.test.mjs
