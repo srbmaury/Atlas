@@ -362,11 +362,11 @@ def run_research(
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
         raise HTTPException(404, 'Agent not found.')
-    # Serialize admission by locking the parent workspace on PostgreSQL.
-    # SQLite uses a database-level write lock; production multi-worker deployments use PostgreSQL.
+    # Serialize admission across workers on PostgreSQL and SQLite.
     from .db import Workspace
+    from .rbac import lock_resource
 
-    db.query(Workspace).filter_by(id=workspaceId).with_for_update().first()
+    lock_resource(db, Workspace, workspaceId)
     active = db.query(AgentRun).filter(
         AgentRun.workspace_id == workspaceId,
         AgentRun.status.in_(('queued', 'processing')),
