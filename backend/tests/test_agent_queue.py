@@ -1,4 +1,5 @@
 """Queued research dispatch and workspace access revocation regression tests."""
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
