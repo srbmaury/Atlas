@@ -6,7 +6,8 @@ import remarkGfm from 'remark-gfm';
 import { BookOpen, Bot, Check, Clock3, FileText, History, Layers3, LoaderCircle, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
-type Agent = { id: string; name: string; instructions: string; output_format: string };
+type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
+type Agent = { id: string; name: string; instructions: string; output_format: string; source_config?: SourceConfig };
 type EvidenceNode = { id: string; type: string; name?: string; page?: number; excerpt?: string };
 type EvidenceGraph = { nodes: EvidenceNode[]; edges: { from: string; to: string; type: string }[] };
 type Run = {
@@ -15,7 +16,7 @@ type Run = {
     question: string;
     created?: number;
     steps: { tool: string; source_count?: number; mode?: string; queries?: string[] }[];
-    result?: { answer?: string; error?: string; mode?: string; sources?: unknown[]; evidence_graph?: EvidenceGraph };
+    result?: { answer?: string; error?: string; mode?: string; sources?: unknown[]; evidence_graph?: EvidenceGraph; claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string } };
 };
 
 export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
@@ -27,6 +28,11 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     const [instructions, setInstructions] = useState('Find relevant evidence and cite sources.');
     const [outputFormat, setOutputFormat] = useState('detailed_notes');
     const [editing, setEditing] = useState(false);
+    const [sourceOptions, setSourceOptions] = useState<{ documents: { id: string; name: string }[]; providers: string[] }>({ documents: [], providers: [] });
+    const [includeDocuments, setIncludeDocuments] = useState(true);
+    const [documentIds, setDocumentIds] = useState<string[]>([]);
+    const [includeGmail, setIncludeGmail] = useState(false);
+    const [providers, setProviders] = useState<string[]>([]);
     const [question, setQuestion] = useState('');
     const [runs, setRuns] = useState<Run[]>([]);
     const [error, setError] = useState('');
@@ -55,7 +61,10 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     );
 
     useEffect(() => {
-        if (workspaceId) loadAgents().catch((err) => setError(err.message));
+        if (workspaceId) {
+            loadAgents().catch((err) => setError(err.message));
+            fetch(`${base}/sources`, { credentials: 'same-origin' }).then((response) => { if (!response.ok) throw new Error('Unable to load connected sources.'); return response.json(); }).then(setSourceOptions).catch((err) => setError(err.message));
+        }
     }, [workspaceId, loadAgents]);
 
     useEffect(() => {
@@ -80,7 +89,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 method: editing ? 'PATCH' : 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name.trim(), instructions, output_format: outputFormat }),
+                body: JSON.stringify({ name: name.trim(), instructions, output_format: outputFormat, include_documents: includeDocuments, document_ids: documentIds, include_gmail: includeGmail, providers }),
             });
             if (!response.ok) throw new Error('Unable to create agent.');
             const agent: Agent = await response.json();
@@ -103,6 +112,10 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
         setName(activeAgent.name);
         setInstructions(activeAgent.instructions);
         setOutputFormat(activeAgent.output_format || 'detailed_notes');
+        setIncludeDocuments(activeAgent.source_config?.include_documents ?? true);
+        setDocumentIds(activeAgent.source_config?.document_ids || []);
+        setIncludeGmail(activeAgent.source_config?.include_gmail || false);
+        setProviders(activeAgent.source_config?.providers || []);
         setEditing(true);
         setShowCreate(true);
     }
@@ -418,6 +431,14 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     {documents.length === 0 && <div className={styles.empty}>No provenance graph available.</div>}
                                 </div>
                             )}
+                            {activeRun.result?.claim_verification && <details open>
+                                <summary className={styles.hint} style={{ cursor: 'pointer' }}>Claim evidence review · {activeRun.result.claim_verification.needs_review} candidates · {activeRun.result.claim_verification.unsupported} unsupported</summary>
+                                <p className={styles.hint}>{activeRun.result.claim_verification.disclaimer}</p>
+                                {activeRun.result.claim_verification.claims.map((claim, index) => <div className={styles.source} key={index}>
+                                    <strong>{claim.status === 'unsupported' ? 'Unsupported' : 'Needs review'} · {claim.source_ids.map((id) => `[${id}]`).join(', ') || 'No citation'}</strong>
+                                    <p>{claim.claim}</p>
+                                </div>)}
+                            </details>}
                             <details>
                                 <summary className={styles.hint} style={{ cursor: 'pointer' }}>
                                     <Settings2 size={14} style={{ verticalAlign: 'middle' }} /> Execution trace
@@ -455,12 +476,22 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <option value="concise">Concise answer</option>
                             <option value="report">Structured report</option>
                         </select>
-                        <p className={styles.hint}>Knowledge scope: indexed workspace documents. Connected-source tools are not enabled for agents.</p>
+                        <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+                            <legend>Research sources</legend>
+                            <label><input type="checkbox" checked={includeDocuments} onChange={(event) => { setIncludeDocuments(event.target.checked); if (!event.target.checked) setDocumentIds([]); }} /> Workspace documents</label>
+                            {includeDocuments && <div style={{ maxHeight: 130, overflowY: 'auto' }}>
+                                <p className={styles.hint}>Leave all unchecked to search every indexed document.</p>
+                                {sourceOptions.documents.map((doc) => <label key={doc.id} style={{ display: 'block' }}><input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id))} /> {doc.name}</label>)}
+                            </div>}
+                            {sourceOptions.providers.includes('gmail') && <label style={{ display: 'block' }}><input type="checkbox" checked={includeGmail} onChange={(event) => setIncludeGmail(event.target.checked)} /> Gmail</label>}
+                            {sourceOptions.providers.filter((p) => p !== 'gmail').map((provider) => <label key={provider} style={{ display: 'block' }}><input type="checkbox" checked={providers.includes(provider)} onChange={(event) => setProviders((items) => event.target.checked ? [...items, provider] : items.filter((p) => p !== provider))} /> {provider}</label>)}
+                        </fieldset>
+                        <p className={styles.hint}>Connected sources are searched read-only using your existing workspace permissions.</p>
                         <div className={styles.modalActions}>
                             <button className={styles.button} onClick={() => setShowCreate(false)}>
                                 Cancel
                             </button>
-                            <button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim()}>
+                            <button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim() || !(includeDocuments || includeGmail || providers.length)}>
                                 <Check size={15} /> {editing ? 'Save changes' : 'Create agent'}
                             </button>
                         </div>
