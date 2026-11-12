@@ -116,7 +116,9 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
             setSelected('');
             setRuns([]);
             await loadAgents();
-        } catch (err) { setError(err instanceof Error ? err.message : 'Unable to delete agent.'); }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to delete agent.');
+        }
     }
 
     async function research() {
@@ -178,7 +180,16 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                     </h1>
                     <p>Create, run, and manage AI research agents for your workspace.</p>
                 </div>
-                <button className={`${styles.button} ${styles.primary}`} onClick={() => { setEditing(false); setName(''); setInstructions('Find relevant evidence and cite sources.'); setOutputFormat('detailed_notes'); setShowCreate(true); }}>
+                <button
+                    className={`${styles.button} ${styles.primary}`}
+                    onClick={() => {
+                        setEditing(false);
+                        setName('');
+                        setInstructions('Find relevant evidence and cite sources.');
+                        setOutputFormat('detailed_notes');
+                        setShowCreate(true);
+                    }}
+                >
                     <Plus size={17} /> Create Agent
                 </button>
             </div>
@@ -223,10 +234,19 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <p>{activeAgent?.instructions || 'Create an agent to begin source-grounded research.'}</p>
                         </div>
                     </div>
-                    {activeAgent && <div className={styles.formBottom} style={{ marginBottom: 14 }}>
-                        <span className={styles.hint}>Output: {activeAgent.output_format?.replaceAll('_', ' ') || 'detailed notes'} · Workspace documents</span>
-                        <span><button className={styles.button} onClick={editAgent}>Edit agent</button> <button className={styles.button} onClick={deleteAgent}>Delete</button></span>
-                    </div>}
+                    {activeAgent && (
+                        <div className={styles.formBottom} style={{ marginBottom: 14 }}>
+                            <span className={styles.hint}>Output: {activeAgent.output_format?.replaceAll('_', ' ') || 'detailed notes'} · Workspace documents</span>
+                            <span>
+                                <button className={styles.button} onClick={editAgent}>
+                                    Edit agent
+                                </button>{' '}
+                                <button className={styles.button} onClick={deleteAgent}>
+                                    Delete
+                                </button>
+                            </span>
+                        </div>
+                    )}
                     <div className={styles.tabs}>
                         <button className={`${styles.tab} ${view === 'run' ? styles.tabActive : ''}`} onClick={() => setView('run')}>
                             <Sparkles size={15} /> Run
@@ -303,8 +323,23 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <div className={styles.detailMeta}>
                                 <Clock3 size={14} style={{ verticalAlign: 'middle' }} /> {date(activeRun.created)} · {passages.length} evidence passages
                             </div>
-                            {activeRun.result?.mode === 'citation_check_failed' && <div role="alert" className={styles.error}>Answer validation failed. The model did not produce valid source citations. Review the evidence or retry the question.</div>}
-                            {activeRun.result?.mode === 'citation_check_failed' && <button className={styles.button} onClick={() => { setQuestion(activeRun.question); setView('run'); setDetailTab('evidence'); }}>Inspect evidence and retry</button>}
+                            {activeRun.result?.mode === 'citation_check_failed' && (
+                                <div role="alert" className={styles.error}>
+                                    Answer validation failed. The model did not produce valid source citations. Review the evidence or retry the question.
+                                </div>
+                            )}
+                            {activeRun.result?.mode === 'citation_check_failed' && (
+                                <button
+                                    className={styles.button}
+                                    onClick={() => {
+                                        setQuestion(activeRun.question);
+                                        setView('run');
+                                        setDetailTab('evidence');
+                                    }}
+                                >
+                                    Inspect evidence and retry
+                                </button>
+                            )}
                             <div className={`${styles.tabs} ${styles.rightTabs}`}>
                                 <button className={`${styles.tab} ${detailTab === 'answer' ? styles.tabActive : ''}`} onClick={() => setDetailTab('answer')}>
                                     Answer
@@ -320,7 +355,32 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 <div className={styles.card}>
                                     <h3>Research answer</h3>
                                     <div className={styles.answer}>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: ({ href, children }) => href?.startsWith('#agent-evidence-') ? <button type="button" className={styles.citationLink} onClick={() => { setDetailTab('evidence'); requestAnimationFrame(() => document.getElementById(href.slice(1))?.scrollIntoView({ block: 'nearest' })); }}>{children}</button> : <a href={href}>{children}</a> }}>{(activeRun.result?.answer || activeRun.result?.error || (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}</ReactMarkdown>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                a: ({ href, children }) =>
+                                                    href?.startsWith('#agent-evidence-') ? (
+                                                        <button
+                                                            type="button"
+                                                            className={styles.citationLink}
+                                                            onClick={() => {
+                                                                setDetailTab('evidence');
+                                                                requestAnimationFrame(() => document.getElementById(href.slice(1))?.scrollIntoView({ block: 'nearest' }));
+                                                            }}
+                                                        >
+                                                            {children}
+                                                        </button>
+                                                    ) : (
+                                                        <a href={href}>{children}</a>
+                                                    ),
+                                            }}
+                                        >
+                                            {(
+                                                activeRun.result?.answer ||
+                                                activeRun.result?.error ||
+                                                (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')
+                                            ).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}
+                                        </ReactMarkdown>
                                     </div>
                                 </div>
                             )}
@@ -390,7 +450,11 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                         <label htmlFor="agent-instructions">Instructions</label>
                         <textarea id="agent-instructions" className={styles.textarea} value={instructions} maxLength={2000} onChange={(event) => setInstructions(event.target.value)} />
                         <label htmlFor="agent-format">Output format</label>
-                        <select id="agent-format" className={styles.input} value={outputFormat} onChange={(event) => setOutputFormat(event.target.value)}><option value="detailed_notes">Detailed notes</option><option value="concise">Concise answer</option><option value="report">Structured report</option></select>
+                        <select id="agent-format" className={styles.input} value={outputFormat} onChange={(event) => setOutputFormat(event.target.value)}>
+                            <option value="detailed_notes">Detailed notes</option>
+                            <option value="concise">Concise answer</option>
+                            <option value="report">Structured report</option>
+                        </select>
                         <p className={styles.hint}>Knowledge scope: indexed workspace documents. Connected-source tools are not enabled for agents.</p>
                         <div className={styles.modalActions}>
                             <button className={styles.button} onClick={() => setShowCreate(false)}>
