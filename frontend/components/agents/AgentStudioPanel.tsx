@@ -3,7 +3,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { BookOpen, Bot, CalendarDays, Check, Clock3, Cloud, FileText, FolderOpen, Github, History, Layers3, LoaderCircle, Mail, MessageSquare, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
+import {
+    BookOpen,
+    Bot,
+    CalendarDays,
+    Check,
+    Clock3,
+    Cloud,
+    FileText,
+    FolderOpen,
+    Github,
+    History,
+    Layers3,
+    LoaderCircle,
+    Mail,
+    MessageSquare,
+    Plus,
+    Settings2,
+    Sparkles,
+    Square,
+    X,
+} from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
 type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
@@ -27,22 +47,42 @@ type Run = {
 };
 
 const SOURCE_NAMES: Record<string, string> = {
-    documents: 'Documents', gmail: 'Gmail', drive: 'Google Drive', github: 'GitHub',
-    notion: 'Notion', slack: 'Slack', calendar: 'Calendar', linear: 'Linear',
-    jira: 'Jira', onedrive: 'OneDrive', outlook: 'Outlook', sharepoint: 'SharePoint',
+    documents: 'Documents',
+    gmail: 'Gmail',
+    drive: 'Google Drive',
+    github: 'GitHub',
+    notion: 'Notion',
+    slack: 'Slack',
+    calendar: 'Calendar',
+    linear: 'Linear',
+    jira: 'Jira',
+    onedrive: 'OneDrive',
+    outlook: 'Outlook',
+    sharepoint: 'SharePoint',
 };
 
 function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }) {
     switch (provider) {
-        case 'documents': return <FileText size={size} />;
-        case 'gmail': case 'outlook': return <Mail size={size} />;
-        case 'drive': case 'onedrive': return <FolderOpen size={size} />;
-        case 'github': return <Github size={size} />;
-        case 'slack': return <MessageSquare size={size} />;
-        case 'calendar': return <CalendarDays size={size} />;
-        case 'sharepoint': return <Cloud size={size} />;
-        case 'notion': return <BookOpen size={size} />;
-        default: return <Layers3 size={size} />;
+        case 'documents':
+            return <FileText size={size} />;
+        case 'gmail':
+        case 'outlook':
+            return <Mail size={size} />;
+        case 'drive':
+        case 'onedrive':
+            return <FolderOpen size={size} />;
+        case 'github':
+            return <Github size={size} />;
+        case 'slack':
+            return <MessageSquare size={size} />;
+        case 'calendar':
+            return <CalendarDays size={size} />;
+        case 'sharepoint':
+            return <Cloud size={size} />;
+        case 'notion':
+            return <BookOpen size={size} />;
+        default:
+            return <Layers3 size={size} />;
     }
 }
 
@@ -265,11 +305,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 <div className={styles.libraryGrid}>
                     {filteredAgents.map((agent) => {
                         const scope = agent.source_config || {};
-                        const sourceTypes = [
-                            ...(scope.include_documents !== false ? ['documents'] : []),
-                            ...(scope.include_gmail ? ['gmail'] : []),
-                            ...(scope.providers || []),
-                        ];
+                        const sourceTypes = [...(scope.include_documents !== false ? ['documents'] : []), ...(scope.include_gmail ? ['gmail'] : []), ...(scope.providers || [])];
                         const handle =
                             '@' +
                             agent.name
@@ -285,14 +321,18 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     </span>
                                     <div>
                                         <h2>{agent.name}</h2>
-                                        <span>{sourceTypes.length} connected source{sourceTypes.length === 1 ? '' : 's'}</span>
+                                        <span>
+                                            {sourceTypes.length} connected source{sourceTypes.length === 1 ? '' : 's'}
+                                        </span>
                                     </div>
                                 </div>
                                 <p className={styles.libraryDescription}>{agent.instructions}</p>
                                 <div className={styles.librarySources} aria-label="Agent research sources">
                                     {sourceTypes.map((provider) => (
                                         <span className={styles.sourcePill} key={provider} title={SOURCE_NAMES[provider] || provider}>
-                                            <span className={styles.sourcePillIcon}><SourceIcon provider={provider} size={15} /></span>
+                                            <span className={styles.sourcePillIcon}>
+                                                <SourceIcon provider={provider} size={15} />
+                                            </span>
                                             <span>{provider === 'documents' && scope.document_ids?.length ? `${scope.document_ids.length} documents` : SOURCE_NAMES[provider] || provider}</span>
                                         </span>
                                     ))}
@@ -366,12 +406,21 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <legend>Knowledge & connected sources</legend>
                             <p className={styles.sourcePickerHint}>Choose what this agent can reference when answering in chat.</p>
                             <label className={styles.sourceOption}>
-                                <span className={styles.sourceOptionIcon}><SourceIcon provider="documents" size={19} /></span>
-                                <span className={styles.sourceOptionText}><strong>Workspace documents</strong><small>Indexed files in this workspace</small></span>
-                                <input type="checkbox" checked={includeDocuments} onChange={(event) => {
-                                    setIncludeDocuments(event.target.checked);
-                                    if (!event.target.checked) setDocumentIds([]);
-                                }} />
+                                <span className={styles.sourceOptionIcon}>
+                                    <SourceIcon provider="documents" size={19} />
+                                </span>
+                                <span className={styles.sourceOptionText}>
+                                    <strong>Workspace documents</strong>
+                                    <small>Indexed files in this workspace</small>
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={includeDocuments}
+                                    onChange={(event) => {
+                                        setIncludeDocuments(event.target.checked);
+                                        if (!event.target.checked) setDocumentIds([]);
+                                    }}
+                                />
                             </label>
                             {includeDocuments && (
                                 <div className={styles.documentPicker}>
@@ -380,19 +429,32 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                         <label key={doc.id} className={styles.documentOption}>
                                             <FileText size={15} />
                                             <span title={doc.name}>{doc.name}</span>
-                                            <input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id))} />
+                                            <input
+                                                type="checkbox"
+                                                checked={documentIds.includes(doc.id)}
+                                                onChange={(event) => setDocumentIds((ids) => (event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)))}
+                                            />
                                         </label>
                                     ))}
                                 </div>
                             )}
                             {sourceOptions.providers.map((provider) => (
                                 <label className={styles.sourceOption} key={provider}>
-                                    <span className={styles.sourceOptionIcon}><SourceIcon provider={provider} size={19} /></span>
-                                    <span className={styles.sourceOptionText}><strong>{SOURCE_NAMES[provider] || provider}</strong><small>Connected workspace source</small></span>
-                                    <input type="checkbox" checked={provider === 'gmail' ? includeGmail : providers.includes(provider)} onChange={(event) => {
-                                        if (provider === 'gmail') setIncludeGmail(event.target.checked);
-                                        else setProviders((items) => event.target.checked ? [...items, provider] : items.filter((item) => item !== provider));
-                                    }} />
+                                    <span className={styles.sourceOptionIcon}>
+                                        <SourceIcon provider={provider} size={19} />
+                                    </span>
+                                    <span className={styles.sourceOptionText}>
+                                        <strong>{SOURCE_NAMES[provider] || provider}</strong>
+                                        <small>Connected workspace source</small>
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        checked={provider === 'gmail' ? includeGmail : providers.includes(provider)}
+                                        onChange={(event) => {
+                                            if (provider === 'gmail') setIncludeGmail(event.target.checked);
+                                            else setProviders((items) => (event.target.checked ? [...items, provider] : items.filter((item) => item !== provider)));
+                                        }}
+                                    />
                                 </label>
                             ))}
                         </fieldset>
