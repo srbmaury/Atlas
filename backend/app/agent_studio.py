@@ -348,7 +348,7 @@ def cancel_research(
         )
     )
     db.commit()
-    run = db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId).first()
+    run = db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId, actor_id=actor.id).first()
     if run is None:
         raise HTTPException(404, 'Research run not found.')
     return public_run(run)
@@ -362,6 +362,11 @@ def run_research(
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
         raise HTTPException(404, 'Agent not found.')
+    # Serialize admission by locking the parent workspace on PostgreSQL.
+    # SQLite uses a database-level write lock; production multi-worker deployments use PostgreSQL.
+    from .db import Workspace
+
+    db.query(Workspace).filter_by(id=workspaceId).with_for_update().first()
     active = db.query(AgentRun).filter(
         AgentRun.workspace_id == workspaceId,
         AgentRun.status.in_(('queued', 'processing')),
