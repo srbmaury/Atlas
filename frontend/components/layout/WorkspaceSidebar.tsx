@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin, Plus, X } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin, Plus, X, Sparkles } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
-type Tab = 'overview' | 'chat' | 'documents' | 'sources';
+type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
 
 interface WorkspaceSidebarProps {
     open: boolean;
@@ -89,6 +89,7 @@ export function WorkspaceSidebar({
                         { id: 'chat', label: 'Ask Atlas', icon: MessageSquare },
                         { id: 'documents', label: 'Documents', icon: FileText },
                         { id: 'sources', label: 'Connected sources', icon: FolderOpen },
+                        { id: 'agents', label: 'Agents', icon: Sparkles },
                     ] as const
                 ).map((item) => (
                     <button key={item.id} className={tab === item.id ? 'active' : ''} title={item.label} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
