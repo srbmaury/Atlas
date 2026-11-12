@@ -2,14 +2,14 @@
 
 import logging
 import time
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import Literal
 from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
 from .agent_evidence import evidence_graph, plan
-from .ai import generate
+from .ai import generate_agent
 from .api_dependencies import database, user, workspace
 from .db import Base, Session, User, uid
 from .rbac import require_workspace, workspace_permission
@@ -270,8 +270,6 @@ def execute_one_research_run():
         steps.append({'tool': 'evidence_graph', 'nodes': len(graph['nodes'])})
         if not heartbeat(AgentRun, run_id, generation):
             return True
-        from .ai import generate_agent
-
         result = generate_agent(question, sources, agent_instructions, output_format)
         result['evidence_graph'] = graph
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
