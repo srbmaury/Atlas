@@ -506,7 +506,12 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                           : undefined,
                   }
                 : undefined;
-            const reply = { role: 'assistant' as const, content, result: agentResult, agent: { id: agent.id, name: agent.name, run_id: run.id, providers: (completed.result?.scope || []).filter((provider) => provider !== 'documents') } };
+            const reply = {
+                role: 'assistant' as const,
+                content,
+                result: agentResult,
+                agent: { id: agent.id, name: agent.name, run_id: run.id, providers: (completed.result?.scope || []).filter((provider) => provider !== 'documents') },
+            };
             chatMessages.current = [...chatMessages.current, reply];
             setMessages(chatMessages.current);
             await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
