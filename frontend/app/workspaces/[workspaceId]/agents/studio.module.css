@@ -29,7 +29,9 @@
     border-radius: 10px;
     color: #545977;
 }
-.shell { display: block; }
+.shell {
+    display: block;
+}
 .sidebar {
     background: var(--panel);
     border-right: 1px solid var(--line);
@@ -117,7 +119,9 @@
     border-color: var(--brand);
     color: var(--brandtext);
 }
-.primary:hover { background: var(--brandhover); }
+.primary:hover {
+    background: var(--brandhover);
+}
 .button:disabled {
     opacity: 0.55;
     cursor: not-allowed;
@@ -273,7 +277,8 @@
     font-size: 15px;
     margin: 0 0 14px;
 }
-.textarea, .input {
+.textarea,
+.input {
     width: 100%;
     box-sizing: border-box;
     border: 1px solid var(--line2);
@@ -384,7 +389,7 @@
 }
 .error {
     border: 1px solid #ffc5c5;
-    background: var(--panel)1f1;
+    background: var(--panel) 1f1;
     color: #a12d2d;
     border-radius: 10px;
     padding: 12px;
@@ -480,14 +485,59 @@
 }
 
 /* The existing Atlas shell owns the header, navigation, page width and theme. */
-.studio .pageHead { margin-bottom: 24px; }
-.studio .columns { grid-template-columns: minmax(190px, .8fr) minmax(320px, 1.8fr) minmax(270px, 1.1fr); }
-.studio .panel { box-shadow: none; }
-.studio .button, .studio .agentItem, .studio .runItem, .studio .card { background: var(--panel); color: var(--text); }
-.studio .primary { background: var(--brand); color: var(--brandtext); }
-.studio .agentItemSelected, .studio .runSelected { background: var(--active); border-color: var(--brand); }
-.studio .agentDesc, .studio .agentHeader p, .studio .hint, .studio .empty, .studio .detailMeta, .studio .runMeta { color: var(--sub); }
-.studio .modal { background: var(--panel); color: var(--text); }
-.studio .modalBackdrop { background: #0008; }
-@media(max-width:1250px) { .studio .columns { grid-template-columns: minmax(190px,1fr) minmax(310px,2fr); } .studio .details { grid-column:1/-1; } }
-@media(max-width:780px) { .studio .columns { grid-template-columns:1fr; } .studio .details { grid-column:auto; } }
+.studio .pageHead {
+    margin-bottom: 24px;
+}
+.studio .columns {
+    grid-template-columns: minmax(190px, 0.8fr) minmax(320px, 1.8fr) minmax(270px, 1.1fr);
+}
+.studio .panel {
+    box-shadow: none;
+}
+.studio .button,
+.studio .agentItem,
+.studio .runItem,
+.studio .card {
+    background: var(--panel);
+    color: var(--text);
+}
+.studio .primary {
+    background: var(--brand);
+    color: var(--brandtext);
+}
+.studio .agentItemSelected,
+.studio .runSelected {
+    background: var(--active);
+    border-color: var(--brand);
+}
+.studio .agentDesc,
+.studio .agentHeader p,
+.studio .hint,
+.studio .empty,
+.studio .detailMeta,
+.studio .runMeta {
+    color: var(--sub);
+}
+.studio .modal {
+    background: var(--panel);
+    color: var(--text);
+}
+.studio .modalBackdrop {
+    background: #0008;
+}
+@media (max-width: 1250px) {
+    .studio .columns {
+        grid-template-columns: minmax(190px, 1fr) minmax(310px, 2fr);
+    }
+    .studio .details {
+        grid-column: 1/-1;
+    }
+}
+@media (max-width: 780px) {
+    .studio .columns {
+        grid-template-columns: 1fr;
+    }
+    .studio .details {
+        grid-column: auto;
+    }
+}
