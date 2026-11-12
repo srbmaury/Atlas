@@ -14,7 +14,10 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('agent_definitions', sa.Column('source_config', sa.JSON(), nullable=False, server_default='{}'))
+    op.add_column(
+        'agent_definitions',
+        sa.Column('source_config', sa.JSON(), nullable=False, server_default='{}'),
+    )
 
 
 def downgrade():
