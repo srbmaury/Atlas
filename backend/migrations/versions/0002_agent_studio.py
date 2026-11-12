@@ -1,14 +1,14 @@
 """Add Agent Studio definitions and queued research runs.
 
-Revision ID: 0002_agent_studio
-Revises: 0001
+Revision ID: 0011_agent_studio
+Revises: 0010
 """
 
 from alembic import op
 import sqlalchemy as sa
 
-revision = '0002_agent_studio'
-down_revision = '0001'
+revision = '0011_agent_studio'
+down_revision = '0010'
 branch_labels = None
 depends_on = None
 
