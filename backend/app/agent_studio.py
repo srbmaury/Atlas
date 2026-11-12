@@ -74,13 +74,18 @@ class ResearchRequest(BaseModel):
 
 
 def public_agent(agent, actor=None, db=None):
-    config = agent.source_config or {'include_documents': True}
+    original = agent.source_config or {'include_documents': True}
+    config = original
     if actor is not None and db is not None:
-        config = authorized_source_config(db, agent.workspace_id, actor, config)
+        config = authorized_source_config(db, agent.workspace_id, actor, original)
+    restricted = bool(
+        set(original.get('providers') or []) - set(config.get('providers') or [])
+        or (original.get('include_gmail') and not config.get('include_gmail'))
+    )
     return {
         'id': agent.id,
         'name': agent.name,
-        'instructions': agent.instructions,
+        'instructions': 'Some agent instructions are hidden because source access is restricted.' if restricted else agent.instructions,
         'output_format': agent.output_format,
         'source_config': config,
         'created': agent.created,
