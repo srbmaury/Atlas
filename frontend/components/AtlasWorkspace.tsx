@@ -147,11 +147,12 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     useEffect(() => {
         void boot();
     }, [boot]);
+    const initialWorkspaceApplied = useRef(false);
     useEffect(() => {
-        if (initialWorkspaceId && workspaces.some((item) => item.id === initialWorkspaceId) && workspaceId !== initialWorkspaceId) {
-            setWorkspaceId(initialWorkspaceId);
-        }
-    }, [initialWorkspaceId, workspaces, workspaceId]);
+        if (!initialWorkspaceId || initialWorkspaceApplied.current || !workspaces.some((item) => item.id === initialWorkspaceId)) return;
+        initialWorkspaceApplied.current = true;
+        setWorkspaceId(initialWorkspaceId);
+    }, [initialWorkspaceId, workspaces]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
     useEffect(() => {
         chatLoadSequence.invalidate();
