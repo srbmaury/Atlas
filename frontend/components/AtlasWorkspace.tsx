@@ -427,13 +427,15 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
 
     async function askWithAgent(question?: string) {
         const text = (question ?? query).trim();
-        const match = /(?:^|\\s)(@[a-z0-9-]+)(?=\\s|$)/i.exec(text);
+        const match = /(?:^|\s)(@[a-z0-9-]+)(?=\s|$)/i.exec(text);
         const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
         if (!agent) {
             if (match) { setError(`Unknown agent ${match[1]}. Select an agent from the @ menu.`); return; }
             void ask(question);
             return;
         }
+        const agentQuestion = text.replace(match![0], ' ').trim();
+        if (agentQuestion.length < 3) { setError('Add a research question when mentioning an agent.'); return; }
         if (busy || agentBusy || !workspaceId) return;
         setAgentBusy(true);
         setQuery('');
