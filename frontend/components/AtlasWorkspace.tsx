@@ -425,7 +425,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         return () => controller.abort();
     }, [workspaceId, user, tab]);
 
-    async function askWithAgent(question?: string) {
+    async function askWithAgent(question?: string, fromOverview = false) {
         const text = (question ?? query).trim();
         const match = /(?:^|\s)(@[a-z0-9-]+)(?=\s|$)/i.exec(text);
         const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
@@ -434,7 +434,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 setError(`Unknown agent ${match[1]}. Select an agent from the @ menu.`);
                 return;
             }
-            void ask(question);
+            void ask(question, fromOverview);
             return;
         }
         const agentQuestion = text.replace(match![0], ' ').trim();
@@ -722,7 +722,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             query={query}
                             mentionAgents={mentionAgents}
                             onQueryChange={setQuery}
-                            onAsk={() => { navigate('chat'); void askWithAgent(query); }}
+                            onAsk={() => { navigate('chat'); void askWithAgent(query, true); }}
                             hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}
                             busy={busy || agentBusy}
