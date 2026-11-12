@@ -10,6 +10,7 @@ from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
 from .agent_claims import assess_claims
 from .agent_evidence import evidence_graph, plan
+from .connected_research import collect_connected_evidence, connected_sources_for_payload
 from .ai import generate_agent
 from .api_dependencies import database, user, workspace
 from .db import Base, Document, Session, User, uid
@@ -327,8 +328,8 @@ def execute_one_research_run():
         agent_instructions = agent.instructions
         output_format = agent.output_format
         source_config = agent.source_config or {'include_documents': True}
-        requesting_actor = requesting_user
         requesting_user = db.get(User, run.actor_id)
+        requesting_actor = requesting_user
         try:
             require_workspace(db, requesting_user, workspace_id, 'editor')
         except (HTTPException, AttributeError):
@@ -347,8 +348,6 @@ def execute_one_research_run():
             if not heartbeat(AgentRun, run_id, generation):
                 return True
             if source_config.get('include_gmail') or source_config.get('providers'):
-                from .connected_research import collect_connected_evidence, connected_sources_for_payload
-
                 body = ConnectedQuestion(
                     question=query,
                     include_documents=source_config.get('include_documents', True),
