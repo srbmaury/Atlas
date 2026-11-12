@@ -164,7 +164,7 @@ def run_research(workspaceId: str, agentId: str, body: ResearchRequest, actor=De
 
 def execute_one_research_run():
     """Claim one persisted run, recover expired leases, and persist a safe trace."""
-    claimed = claim(AgentRun)
+    claimed = claim(AgentRun, max_attempts=3)
     if not claimed:
         return False
     run_id, generation = claimed
