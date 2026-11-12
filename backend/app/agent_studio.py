@@ -370,7 +370,9 @@ def execute_one_research_run():
                         requesting_actor,
                         source_db,
                         stats,
-                        workspace_access=require_workspace,
+                        workspace_access=lambda wid, who, database: require_workspace(
+                            database, who, wid
+                        ),
                         retrieve_chunks=lambda wid, q, ids: retrieve(
                             wid, q, document_ids=ids or None
                         ),
