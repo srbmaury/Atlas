@@ -67,7 +67,7 @@ export function ResearchComposer({
         onChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
     }
 
-    const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
+    const mention = /(?:^|\s)@([a-z0-9-]*)$/i.exec(query);
     const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     return (
         <form
