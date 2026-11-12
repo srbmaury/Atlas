@@ -328,7 +328,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 <X size={17} />
                             </button>
                         </div>
-                        <p className={styles.hint}>Agents research your workspace's indexed documents.</p>
+                        <p className={styles.hint}>Configure instructions, output style, and the documents or connected sources this agent may search.</p>
                         <label htmlFor="agent-name">Agent name</label>
                         <input id="agent-name" className={styles.input} value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="Research Agent" />
                         <label htmlFor="agent-instructions">Instructions</label>
