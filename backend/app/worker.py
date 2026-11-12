@@ -29,17 +29,14 @@ def claim(model, max_attempts=None):
         )
         if max_attempts is not None:
             claim_query = claim_query.filter(model.attempts < max_attempts)
-        changed = (
-            claim_query
-            .update(
-                {
-                    'status': 'processing',
-                    'lease': now + 600,
-                    'generation': generation,
-                    'attempts': model.attempts + 1,
-                },
-                synchronize_session=False,
-            )
+        changed = claim_query.update(
+            {
+                'status': 'processing',
+                'lease': now + 600,
+                'generation': generation,
+                'attempts': model.attempts + 1,
+            },
+            synchronize_session=False,
         )
         db.commit()
         return (job.id, generation) if changed else None
