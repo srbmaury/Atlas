@@ -27,6 +27,7 @@ import { ResearchWorkspace } from './chat/ResearchWorkspace';
 import { WorkspaceSearchDialog } from './layout/WorkspaceSearchDialog';
 import { WorkspaceManagerDialog } from './layout/WorkspaceManagerDialog';
 import { WorkspaceSidebar } from './layout/WorkspaceSidebar';
+import { AgentStudioPanel } from './agents/AgentStudioPanel';
 
 import { WebPageImportForm } from './documents/WebPageImportForm';
 import { DocumentsView } from './documents/DocumentsView';
@@ -41,7 +42,7 @@ import { flushSync } from 'react-dom';
 import { prettyBytes } from '../utils/utils';
 import { PROVIDER_LABELS } from '../lib/providers';
 
-export function AtlasWorkspace() {
+export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { initialTab?: 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
     const { theme, toggleTheme } = useAtlasTheme();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -52,7 +53,7 @@ export function AtlasWorkspace() {
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [workspaceId, setWorkspaceId] = useState('');
     const [docs, setDocs] = useState<Doc[]>([]);
-    const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources'>('chat');
+    const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources' | 'agents'>(initialTab);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
     const [includeDocuments, setIncludeDocuments] = useState(true);
@@ -146,6 +147,11 @@ export function AtlasWorkspace() {
     useEffect(() => {
         void boot();
     }, [boot]);
+    useEffect(() => {
+        if (initialWorkspaceId && workspaces.some((item) => item.id === initialWorkspaceId) && workspaceId !== initialWorkspaceId) {
+            setWorkspaceId(initialWorkspaceId);
+        }
+    }, [initialWorkspaceId, workspaces, workspaceId]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
     useEffect(() => {
         chatLoadSequence.invalidate();
@@ -528,7 +534,7 @@ export function AtlasWorkspace() {
                         </Link>
                     </div>
                 </header>
-                <div className={`content ${tab === 'chat' ? 'content-research' : ''}`}>
+                <div className={`content ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
                     {error && (
                         <div className="feedback error" role="alert">
                             <AlertCircle />
@@ -693,6 +699,7 @@ export function AtlasWorkspace() {
                             hasAskSources={hasAskSources}
                         />
                     )}
+                    {workspaceId && tab === 'agents' && <AgentStudioPanel workspaceId={workspaceId} />}
                     {workspaceId && tab === 'documents' && (
                         <DocumentsView
                             uploadButton={uploadButton}
