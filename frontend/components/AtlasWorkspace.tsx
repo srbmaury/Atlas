@@ -108,6 +108,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
 
     const [chats, setChats] = useState<ChatSummary[]>([]);
     const [busy, setBusy] = useState(false);
+    const [agentBusy, setAgentBusy] = useState(false);
     const [answerProgress, setAnswerProgress] = useState('');
     const askController = useRef<AbortController | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -188,7 +189,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     }, [messages.length, busy, tab]);
 
     function newChat(preserveSourceSelection = false) {
-        if (busy) return;
+        if (busy || agentBusy) return;
         setSearchTarget(null);
         chatLoadSequence.invalidate();
         try {
@@ -366,7 +367,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const { loadChat, renameChat, deleteChat, deleteChats, ask, refreshChats, copyConversation } = createConversationActions({
         workspaceId,
         query,
-        busy,
+        busy: busy || agentBusy,
         hasAskSources,
         user,
         includeDocuments,
@@ -399,7 +400,6 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     });
 
     const [mentionAgents, setMentionAgents] = useState<{ id: string; name: string; handle: string }[]>([]);
-    const [agentBusy, setAgentBusy] = useState(false);
     useEffect(() => {
         if (!workspaceId || !user) return;
         const controller = new AbortController();
@@ -551,7 +551,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     }
 
     async function switchChat(id: string, target?: { index: number; phrase: string }) {
-        if (busy) return false;
+        if (busy || agentBusy) return false;
         setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
         try {
             sessionStorage.setItem(draftKey(chatId), query);
