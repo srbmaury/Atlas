@@ -27,3 +27,9 @@ Agents support editable names, instructions, and three output styles (detailed n
 A completed worker execution is not equivalent to a verified answer. Citation-validation failures now mark runs failed; the UI exposes the evidence and a retry path. Numbered citations link to retrieved passages, but this does **not** establish claim-level factual entailment.
 
 Agent retrieval remains restricted to indexed workspace documents. Connected Gmail/Drive tools, per-agent source selection, model settings, persistent memory, and workflow orchestration are not implemented; do not display these as enabled capabilities. Agent instructions are presentation/task preferences, not arbitrary executable tools.
+
+## Agent source tools and claim assessment
+
+Agent configuration now persists selected indexed-document IDs, Gmail enablement, and a list of connected provider names. The editor lists only workspace-accessible connections and ready documents. Worker research reuses Atlas's read-only connected evidence collector, per-provider permissions, and post-search access revalidation. Agent runs are restricted to eight evidence passages across at most three planned queries; selected document IDs are validated against the workspace. An empty document selection means all indexed workspace documents when documents are enabled.
+
+Each generated answer stores a bounded per-claim evidence assessment. Cited sentences are screened for lexical alignment, and, when an AI provider is configured, a separate entailment assessment labels claims supported, contradicted, or insufficient. This is **automated evidence assessment, not proof or independent fact checking**. The UI displays each claim and its cited source IDs, and does not equate a valid citation with a verified fact. Without an AI provider or if assessment fails, the system reports lexical candidates and uncertainty rather than fabricating verification.
