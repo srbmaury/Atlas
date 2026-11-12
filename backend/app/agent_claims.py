@@ -19,7 +19,7 @@ def verify_claims(answer, sources):
     ]
     checks = []
     for sentence in sentences:
-        if sentence.startswith(('#', '|', '```')) or len(tokens(sentence)) < 3:
+        if sentence.startswith(('#', '|', '```')) or len(tokens(sentence)) < 2:
             continue
         cited = [int(number) for number in re.findall(r'\[(\d+)\]', sentence)]
         valid = sorted(set(number for number in cited if 1 <= number <= len(sources)))
