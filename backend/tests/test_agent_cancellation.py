@@ -2,8 +2,8 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from fastapi import HTTPException
 import pytest
+from fastapi import HTTPException
 
 from app.agent_studio import cancel_research
 
