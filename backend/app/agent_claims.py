@@ -145,7 +145,8 @@ def assess_claims(answer, sources):
         screening['disclaimer'] = (
             'Model-assessed support is not independent verification; inspect cited passages.'
         )
-    except (ValueError, KeyError, TypeError, AttributeError, RuntimeError):
+    except Exception:
+        logging.getLogger(__name__).exception('Claim entailment assessment unavailable')
         screening['disclaimer'] = (
             'Automated entailment assessment unavailable; lexical screening only.'
         )
