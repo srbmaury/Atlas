@@ -10,8 +10,8 @@ from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
 from .agent_evidence import evidence_graph, plan
 from .ai import generate
 from .api_dependencies import database, user, workspace
-from .db import Base, Session, engine, uid
-from .rbac import workspace_permission
+from .db import Base, Session, User, engine, uid
+from .rbac import require_workspace, workspace_permission
 from .retrieval import retrieve
 from .worker import claim, heartbeat
 
@@ -124,6 +124,14 @@ def execute_one_research_run():
         if run is None:
             return True
         workspace_id, question = run.workspace_id, run.question
+        requesting_user = db.get(User, run.actor_id)
+        try:
+            require_workspace(db, requesting_user, workspace_id, 'editor')
+        except Exception:
+            run.status = 'failed'
+            run.result = {'error': 'Workspace access is no longer authorized.'}
+            db.commit()
+            return True
     steps = []
     try:
         questions = plan(question)
