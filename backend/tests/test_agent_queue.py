@@ -3,10 +3,14 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+from fastapi import HTTPException
+
 from app import agent_studio
 
 
 def test_worker_does_not_execute_without_claim(monkeypatch):
+    session = MagicMock()
+    monkeypatch.setattr(agent_studio, 'Session', lambda: session)
     monkeypatch.setattr(agent_studio, 'claim', lambda model, **kwargs: None)
     assert agent_studio.execute_one_research_run() is False
 
@@ -29,10 +33,10 @@ def test_queued_run_revalidates_workspace_access(monkeypatch):
     monkeypatch.setattr(agent_studio, 'claim', lambda model, **kwargs: ('run-1', 1))
 
     def deny(*args):
-        raise ValueError('revoked')
+        raise HTTPException(403, 'revoked')
 
     monkeypatch.setattr(agent_studio, 'require_workspace', deny)
     assert agent_studio.execute_one_research_run() is True
     assert run.status == 'failed'
     assert run.result['error'] == 'Workspace access is no longer authorized.'
-    db.commit.assert_called_once()
+    assert db.commit.call_count == 2
