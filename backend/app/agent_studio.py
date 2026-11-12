@@ -5,6 +5,7 @@ import time
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from typing import Literal
 from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 
 from .agent_evidence import evidence_graph, plan
@@ -57,7 +58,7 @@ class AgentRun(Base):
 class CreateAgent(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     instructions: str = Field(default='Find relevant evidence and cite sources.', max_length=2000)
-    output_format: str = Field(default='detailed_notes', pattern=r'^(detailed_notes|concise|report)
+    output_format: Literal['detailed_notes', 'concise', 'report'] = 'detailed_notes'
 
 
 class ResearchRequest(BaseModel):
