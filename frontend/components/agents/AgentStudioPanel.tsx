@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { BookOpen, Bot, Check, Clock3, FileText, History, Layers3, LoaderCircle, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
@@ -318,9 +320,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 <div className={styles.card}>
                                     <h3>Research answer</h3>
                                     <div className={styles.answer}>
-                                        {activeRun.result?.answer ||
-                                            activeRun.result?.error ||
-                                            (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')}
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{(activeRun.result?.answer || activeRun.result?.error || (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}</ReactMarkdown>
                                     </div>
                                 </div>
                             )}
@@ -328,8 +328,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 <div>
                                     <p className={styles.hint}>Retrieved passages are evidence candidates, not independently verified claims.</p>
                                     {passages.length === 0 && <div className={styles.empty}>No evidence passages available.</div>}
-                                    {passages.map((node) => (
-                                        <div className={styles.source} key={node.id}>
+                                    {passages.map((node, index) => (
+                                        <div id={`agent-evidence-${index + 1}`} className={styles.source} key={node.id}>
                                             <strong>
                                                 <FileText size={14} style={{ verticalAlign: 'middle' }} /> Page {node.page ?? 'unknown'}
                                             </strong>
