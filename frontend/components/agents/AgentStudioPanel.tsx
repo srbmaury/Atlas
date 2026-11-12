@@ -320,7 +320,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                 <div className={styles.card}>
                                     <h3>Research answer</h3>
                                     <div className={styles.answer}>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{(activeRun.result?.answer || activeRun.result?.error || (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}</ReactMarkdown>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: ({ href, children }) => href?.startsWith('#agent-evidence-') ? <button type="button" className={styles.citationLink} onClick={() => { setDetailTab('evidence'); requestAnimationFrame(() => document.getElementById(href.slice(1))?.scrollIntoView({ block: 'nearest' })); }}>{children}</button> : <a href={href}>{children}</a> }}>{(activeRun.result?.answer || activeRun.result?.error || (isRunning(activeRun.status) ? 'Research is in progress. This panel will update automatically.' : 'No answer available.')).replace(/\\[(\\d+)\\]/g, (_match, id: string) => `[Source ${id}](#agent-evidence-${id})`)}</ReactMarkdown>
                                     </div>
                                 </div>
                             )}
