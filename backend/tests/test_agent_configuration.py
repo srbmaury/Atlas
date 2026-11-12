@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
-from app.ai import generate_agent
 from app.agent_studio import CreateAgent
+from app.ai import generate_agent
 
 
 def test_agent_configuration_validates_output_format():
