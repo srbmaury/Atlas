@@ -68,7 +68,9 @@ def test_agent_source_config_excludes_unavailable_provider():
     db = MagicMock()
     with patch('app.rbac.require_connection', side_effect=HTTPException(403, 'Forbidden')):
         result = authorized_source_config(
-            db, 'workspace', actor,
+            db,
+            'workspace',
+            actor,
             {'include_documents': True, 'include_gmail': True, 'providers': ['github']},
         )
     assert result['include_documents'] is True
@@ -83,9 +85,12 @@ def test_revoked_agent_evidence_hidden_from_saved_conversation():
     conversation.workspace_id = 'workspace'
     conversation.messages = [
         {'role': 'user', 'content': 'Question'},
-        {'role': 'assistant', 'content': 'Secret source excerpt',
-         'agent': {'id': 'a', 'name': 'Researcher', 'providers': ['github']},
-         'result': {'sources': [{'text': 'Secret source excerpt'}]}},
+        {
+            'role': 'assistant',
+            'content': 'Secret source excerpt',
+            'agent': {'id': 'a', 'name': 'Researcher', 'providers': ['github']},
+            'result': {'sources': [{'text': 'Secret source excerpt'}]},
+        },
     ]
     with patch('app.rbac.revalidate_access', side_effect=HTTPException(403, 'Forbidden')):
         result = visible_messages(conversation, MagicMock())
