@@ -49,6 +49,28 @@ def heartbeat(model, job_id, generation):
         return bool(changed)
 
 
+def queue_snapshot(model=Document, *, now=None):
+    """Return aggregate queue health without exposing document or tenant data."""
+    now = time.time() if now is None else now
+    with Session() as db:
+        rows = db.query(model.status, model.lease, model.attempts).all()
+    return {
+        'queued': sum(row.status == 'queued' for row in rows),
+        'processing': sum(row.status == 'processing' for row in rows),
+        'failed': sum(row.status == 'failed' for row in rows),
+        'ready': sum(row.status == 'ready' for row in rows),
+        'expired_leases': sum(
+            row.status == 'processing' and row.lease < now for row in rows
+        ),
+        'retry_pending': sum(
+            row.status == 'queued' and row.attempts > 0 for row in rows
+        ),
+        'terminal_failures': sum(
+            row.status == 'failed' and row.attempts >= 3 for row in rows
+        ),
+    }
+
+
 def run_one():
     for model, handler in [(Document, ingest)]:
         claimed = claim(model)
