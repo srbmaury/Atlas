@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from . import config, connected_research
+from . import agent_studio, config, connected_research
 from .ai import generate
 from .api_dependencies import database, user, workspace
 from .config import DATA
@@ -53,6 +53,7 @@ app = FastAPI(
     title='Atlas Document Intelligence',
     lifespan=lifespan,
 )
+app.include_router(agent_studio.router)
 app.include_router(access_router)
 app.include_router(gmail_router)
 app.include_router(external_router)

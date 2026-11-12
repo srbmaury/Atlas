@@ -1,0 +1,909 @@
+.studio {
+    width: 100%;
+    color: var(--text);
+    font-family: inherit;
+}
+.topbar {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+}
+.brand {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #1a1835;
+}
+.brandMark {
+    color: var(--brand);
+    margin-right: 10px;
+}
+.workspaceTag {
+    font-size: 13px;
+    padding: 9px 15px;
+    border: 1px solid #e5e6f1;
+    border-radius: 10px;
+    color: #545977;
+}
+.shell {
+    display: block;
+}
+.sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 24px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.navLink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 11px;
+    color: #404760;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+.navLink:hover,
+.navActive {
+    background: var(--active);
+    color: var(--brand);
+}
+.sideFooter {
+    margin-top: auto;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: #69718a;
+    font-size: 12px;
+}
+.content {
+    width: 100%;
+    min-width: 0;
+}
+.pageHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 26px;
+}
+.pageHead h1 {
+    font-size: 26px;
+    letter-spacing: -0.8px;
+    margin: 0 0 5px;
+    font-weight: 800;
+    color: var(--text);
+}
+.pageHead p {
+    margin: 0;
+    color: #69718a;
+    font-size: 14px;
+}
+.beta {
+    font-size: 11px;
+    color: var(--brand);
+    background: #f2e8ff;
+    border-radius: 30px;
+    padding: 5px 9px;
+    vertical-align: middle;
+    letter-spacing: 0;
+}
+.button {
+    border: 1px solid var(--line2);
+    background: var(--panel);
+    color: #313651;
+    border-radius: 10px;
+    padding: 10px 15px;
+    font: inherit;
+    font-weight: 650;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+.button:hover {
+    border-color: #a99cf3;
+}
+.primary {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--brandtext);
+}
+.primary:hover {
+    background: var(--brandhover);
+}
+.button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.columns {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.86fr) minmax(370px, 1.75fr) minmax(290px, 1.2fr);
+    gap: 14px;
+    align-items: stretch;
+}
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    min-width: 0;
+}
+.agentPanel,
+.middle,
+.details {
+    padding: 17px;
+}
+.panelTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 18px;
+    font-size: 17px;
+    font-weight: 800;
+}
+.count {
+    border-radius: 20px;
+    background: #ececf7;
+    padding: 4px 9px;
+    font-size: 12px;
+    margin-left: 6px;
+}
+.agentItem {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 10px;
+    margin-bottom: 9px;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+}
+.agentItemSelected {
+    border-color: #b9a6ff;
+    background: var(--active);
+    box-shadow: 0 0 0 1px #d8cbff;
+}
+.agentIcon {
+    width: 37px;
+    height: 37px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: var(--active);
+    color: var(--brand);
+    border-radius: 11px;
+    font-size: 20px;
+}
+.agentName {
+    font-size: 13px;
+    font-weight: 800;
+    display: block;
+}
+.agentDesc {
+    font-size: 11px;
+    color: #72778f;
+    line-height: 1.5;
+    margin-top: 4px;
+    display: block;
+    overflow-wrap: anywhere;
+}
+.agentHeader {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.agentHeader h2 {
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+.agentHeader p {
+    font-size: 12px;
+    color: #7a8097;
+    margin: 5px 0 0;
+}
+.status {
+    font-size: 11px;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-weight: 700;
+    background: #f1f2f8;
+    color: #677088;
+}
+.completed {
+    background: #e4f9ed;
+    color: #137447;
+}
+.processing {
+    background: #e9edff;
+    color: #4e55c9;
+}
+.failed {
+    background: #ffeded;
+    color: #bb3333;
+}
+.cancelled {
+    background: #f1f2f7;
+    color: #666e82;
+}
+.tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+    margin: 0 -17px 17px;
+    padding: 0 17px;
+}
+.tab {
+    padding: 11px 13px;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: #646b83;
+    font-weight: 700;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+}
+.tabActive {
+    color: var(--brand);
+    border-color: var(--brand);
+    background: var(--active);
+}
+.card {
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 17px;
+    margin-bottom: 14px;
+    background: var(--panel);
+}
+.card h3 {
+    font-size: 15px;
+    margin: 0 0 14px;
+}
+.textarea,
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--line2);
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 12px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+}
+.textarea:focus,
+.input:focus {
+    border-color: #8b6af1;
+    box-shadow: 0 0 0 3px #ede6ff;
+}
+.textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+.formBottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.hint {
+    font-size: 12px;
+    color: #798098;
+}
+.runItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    margin-top: 8px;
+    cursor: pointer;
+    background: var(--panel);
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+.runSelected {
+    background: var(--active);
+    border-color: #ddd1ff;
+}
+.runMain {
+    min-width: 0;
+    flex: 1;
+}
+.runQuestion {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 750;
+    font-size: 12px;
+}
+.runMeta {
+    display: block;
+    color: #858ba0;
+    font-size: 11px;
+    margin-top: 5px;
+}
+.detailQuestion {
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 4px 0 14px;
+}
+.detailMeta {
+    font-size: 12px;
+    color: #777f97;
+    margin-bottom: 18px;
+}
+.answer {
+    white-space: pre-wrap;
+    line-height: 1.65;
+    font-size: 13px;
+    color: #3b425c;
+}
+.source {
+    padding: 12px;
+    border: 1px solid #ececf4;
+    border-radius: 10px;
+    margin: 9px 0;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+.source strong {
+    display: block;
+    margin-bottom: 5px;
+}
+.source p {
+    white-space: pre-wrap;
+    color: #68708b;
+    margin: 5px 0;
+}
+.empty {
+    color: #8a90a3;
+    text-align: center;
+    padding: 35px 12px;
+    font-size: 13px;
+}
+.error {
+    border: 1px solid #ffc5c5;
+    background: var(--panel) 1f1;
+    color: #a12d2d;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: #10142a70;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    z-index: 50;
+}
+.modal {
+    background: var(--panel);
+    border-radius: 17px;
+    padding: 24px;
+    width: min(460px, 100%);
+    box-shadow: 0 24px 80px #10142a40;
+}
+.modal h2 {
+    margin: 0 0 10px;
+}
+.modal label {
+    font-size: 12px;
+    font-weight: 700;
+    display: block;
+    margin: 14px 0 7px;
+}
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 18px;
+}
+.graphEdge {
+    font-size: 11px;
+    color: #8a8fa5;
+    padding: 4px 0;
+}
+.trace {
+    font-size: 12px;
+    line-height: 1.9;
+    color: #656b85;
+}
+.rightTabs {
+    margin-top: 10px;
+}
+.mobileNav {
+    display: none;
+}
+@media (max-width: 1250px) {
+    .columns {
+        grid-template-columns: minmax(200px, 1fr) minmax(360px, 2fr);
+    }
+    .details {
+        grid-column: 1/-1;
+    }
+}
+@media (max-width: 780px) {
+    .shell {
+        display: block;
+    }
+    .sidebar {
+        display: none;
+    }
+    .content {
+        padding: 18px;
+    }
+    .columns {
+        grid-template-columns: 1fr;
+    }
+    .details {
+        grid-column: auto;
+    }
+    .pageHead {
+        align-items: flex-start;
+    }
+    .pageHead h1 {
+        font-size: 23px;
+    }
+    .topbar {
+        padding: 0 16px;
+    }
+    .mobileNav {
+        display: block;
+    }
+    .workspaceTag {
+        display: none;
+    }
+}
+
+/* The existing Atlas shell owns the header, navigation, page width and theme. */
+.studio .pageHead {
+    margin-bottom: 24px;
+}
+.studio .columns {
+    grid-template-columns: minmax(190px, 0.8fr) minmax(320px, 1.8fr) minmax(270px, 1.1fr);
+}
+.studio .panel {
+    box-shadow: none;
+}
+.studio .button,
+.studio .agentItem,
+.studio .runItem,
+.studio .card {
+    background: var(--panel);
+    color: var(--text);
+}
+.studio .primary {
+    background: var(--brand);
+    color: var(--brandtext);
+}
+.studio .agentItemSelected,
+.studio .runSelected {
+    background: var(--active);
+    border-color: var(--brand);
+}
+.studio .agentDesc,
+.studio .agentHeader p,
+.studio .hint,
+.studio .empty,
+.studio .detailMeta,
+.studio .runMeta {
+    color: var(--sub);
+}
+.studio .modal {
+    background: var(--panel);
+    color: var(--text);
+}
+.studio .modalBackdrop {
+    background: #0008;
+}
+@media (max-width: 1250px) {
+    .studio .columns {
+        grid-template-columns: minmax(190px, 1fr) minmax(310px, 2fr);
+    }
+    .studio .details {
+        grid-column: 1/-1;
+    }
+}
+@media (max-width: 780px) {
+    .studio .columns {
+        grid-template-columns: 1fr;
+    }
+    .studio .details {
+        grid-column: auto;
+    }
+}
+
+/* Agent research content must remain readable in both Atlas themes. */
+.studio .answer {
+    color: var(--text);
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+.studio .trace {
+    color: var(--text);
+}
+.studio .source p {
+    color: var(--text);
+    opacity: 0.85;
+}
+.studio .source strong {
+    color: var(--text);
+}
+.studio .modal {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.studio .agentHeader p {
+    overflow-wrap: anywhere;
+}
+
+.citationLink {
+    display: inline;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    color: var(--brand);
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
+
+.libraryTools {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 20px 0 22px;
+    color: var(--sub);
+}
+.libraryTools input {
+    max-width: 440px;
+}
+.libraryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 18px;
+}
+.libraryCard {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 240px;
+}
+.libraryCardTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.libraryCardTitle h2 {
+    margin: 0;
+    font-size: 17px;
+    color: var(--text);
+}
+.libraryCardTitle span {
+    font-size: 12px;
+    color: var(--sub);
+}
+.libraryDescription {
+    color: var(--sub);
+    line-height: 1.5;
+    margin: 15px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.librarySources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+.librarySources span {
+    font-size: 12px;
+    color: var(--text);
+    background: var(--active);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 5px 9px;
+}
+.libraryFooter {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.libraryFooter code {
+    font-size: 12px;
+    color: var(--brand);
+    overflow-wrap: anywhere;
+}
+.libraryFooter > div {
+    display: flex;
+    gap: 6px;
+}
+.libraryEmpty {
+    padding: 64px 20px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    color: var(--sub);
+}
+@media (max-width: 650px) {
+    .libraryGrid {
+        grid-template-columns: 1fr;
+    }
+    .libraryTools {
+        flex-wrap: wrap;
+    }
+}
+
+/* Provider-aware source surfaces, consistent with the Atlas design language. */
+.librarySources .sourcePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 10px 5px 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 550;
+}
+.sourcePillIcon,
+.sourceOptionIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--brand);
+    background: var(--active);
+    border-radius: 7px;
+}
+.sourcePillIcon {
+    width: 25px;
+    height: 25px;
+}
+.sourcePicker {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 16px 0 0;
+    min-width: 0;
+}
+.sourcePicker legend {
+    color: var(--text);
+    font-weight: 700;
+    padding: 0 7px;
+}
+.sourcePickerHint {
+    font-size: 12px;
+    color: var(--sub);
+    margin: 0 0 12px;
+}
+.sourceOption {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 8px 0;
+    background: var(--panel);
+    cursor: pointer;
+}
+.sourceOption:hover {
+    background: var(--active);
+}
+.sourceOptionIcon {
+    width: 38px;
+    height: 38px;
+}
+.sourceOptionText {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.sourceOptionText strong {
+    font-size: 13px;
+    color: var(--text);
+}
+.sourceOptionText small {
+    font-size: 11px;
+    color: var(--sub);
+}
+.sourceOption input,
+.documentOption input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--brand);
+    cursor: pointer;
+}
+.documentPicker {
+    max-height: 185px;
+    overflow-y: auto;
+    padding: 4px 12px 7px 55px;
+}
+.documentOption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    color: var(--text);
+    font-size: 12px;
+}
+.documentOption span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Wider agent editor without exceeding the viewport on smaller screens. */
+.studio .modal {
+    width: min(760px, calc(100vw - 32px));
+    max-width: 760px;
+    max-height: min(88vh, 920px);
+    overflow-y: auto;
+}
+@media (max-width: 600px) {
+    .studio .modal {
+        width: calc(100vw - 24px);
+        max-width: none;
+        padding: 18px;
+    }
+}
+
+/* Agent library visual refresh */
+.librarySearch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 520px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 0 12px;
+    color: var(--sub);
+    background: var(--panel);
+}
+.librarySearch:focus-within {
+    border-color: var(--brand);
+    outline: 2px solid var(--active);
+}
+.libraryTools .librarySearch input {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.libraryCount {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+}
+.libraryCard {
+    position: relative;
+    overflow: hidden;
+    min-height: 270px;
+    transition:
+        border-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+.libraryCard:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px #00000012;
+}
+.libraryCardAccent {
+    height: 3px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, var(--brand), transparent);
+}
+.librarySourceHeading {
+    color: var(--sub);
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    font-weight: 750;
+    margin: auto 0 9px;
+}
+.librarySources {
+    margin-bottom: 16px;
+}
+.mentionCopy {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 9px;
+    background: var(--active);
+    color: var(--brand);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    max-width: 55%;
+}
+.mentionCopy:hover,
+.mentionCopy:focus-visible {
+    border-color: var(--brand);
+}
+.mentionCopy code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.modalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--line);
+}
+.modalHeader h2 {
+    margin: 5px 0 0;
+}
+.modalEyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--brand);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    font-weight: 750;
+}
+@media (max-width: 600px) {
+    .libraryTools {
+        gap: 10px;
+    }
+    .librarySearch {
+        width: 100%;
+        max-width: none;
+    }
+    .libraryCard {
+        min-height: 0;
+    }
+}

@@ -107,8 +107,9 @@ export function ConversationTranscript({
                                 </div>
                             )}
                             <div className="answer-head">
-                                <strong>Atlas</strong>
+                                <strong>{m.agent ? m.agent.name : 'Atlas'}</strong>
                                 <span>
+                                    {m.agent ? 'Agent research · ' : ''}
                                     {m.result?.mode === 'ai'
                                         ? 'AI synthesis'
                                         : m.result?.mode === 'connected'

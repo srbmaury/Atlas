@@ -1360,7 +1360,7 @@ const ragPipeline = {
                 {
                     "id": "rag-answer",
                     "path": "backend/app/ai.py",
-                    "anchor": "def generate(question, sources, history=None):",
+                    "anchor": "def generate(question, sources, history=None, agent_instructions=None, output_format=None):",
                     "title": "Generate grounded answer",
                     "detail": "Pass the question and numbered retrieved evidence to the configured model; the whole document is not sent.",
                     "values": {

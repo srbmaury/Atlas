@@ -19,7 +19,12 @@ def upgrade():
     connection = op.get_bind()
     if connection.dialect.name == 'postgresql':
         connection.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
-    Base.metadata.create_all(connection, checkfirst=True)
+    legacy_tables = [
+        table
+        for table in Base.metadata.sorted_tables
+        if table.name not in {'agent_definitions', 'agent_runs'}
+    ]
+    Base.metadata.create_all(connection, tables=legacy_tables, checkfirst=True)
     if connection.dialect.name == 'postgresql':
         connection.execute(
             text(
