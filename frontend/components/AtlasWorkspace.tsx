@@ -720,11 +720,12 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                         <HomeView
                             canEdit={canEdit}
                             query={query}
+                            mentionAgents={mentionAgents}
                             onQueryChange={setQuery}
-                            onAsk={() => void ask(query, true)}
+                            onAsk={() => { navigate('chat'); void askWithAgent(query); }}
                             hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}
-                            busy={busy}
+                            busy={busy || agentBusy}
                             chats={chats}
                             docs={docs}
                             onChooseSources={() => newChat(true)}
