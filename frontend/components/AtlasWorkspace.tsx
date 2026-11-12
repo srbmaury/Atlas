@@ -404,9 +404,24 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (!workspaceId || !user) return;
         const controller = new AbortController();
         fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/agents`, { credentials: 'same-origin', signal: controller.signal })
-            .then((response) => response.ok ? response.json() : [])
-            .then((items: { id: string; name: string }[]) => setMentionAgents(items.map((item) => ({ ...item, handle: '@' + item.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }))))
-            .catch(() => { if (!controller.signal.aborted) setMentionAgents([]); });
+            .then((response) => (response.ok ? response.json() : []))
+            .then((items: { id: string; name: string }[]) =>
+                setMentionAgents(
+                    items.map((item) => ({
+                        ...item,
+                        handle:
+                            '@' +
+                            item.name
+                                .toLowerCase()
+                                .trim()
+                                .replace(/[^a-z0-9]+/g, '-')
+                                .replace(/^-|-$/g, ''),
+                    })),
+                ),
+            )
+            .catch(() => {
+                if (!controller.signal.aborted) setMentionAgents([]);
+            });
         return () => controller.abort();
     }, [workspaceId, user, tab]);
 
@@ -414,7 +429,10 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         const text = (question ?? query).trim();
         const match = /^(@[a-z0-9-]+)\\s+([\\s\\S]+)$/i.exec(text);
         const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
-        if (!agent) { void ask(question); return; }
+        if (!agent) {
+            void ask(question);
+            return;
+        }
         if (busy || agentBusy || !workspaceId) return;
         setAgentBusy(true);
         setQuery('');
@@ -439,9 +457,12 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 await new Promise((resolve) => window.setTimeout(resolve, 2000));
                 const response = await fetch(base, { credentials: 'same-origin' });
                 if (!response.ok) throw new Error('Could not load agent research results.');
-                const runs: typeof completed[] = await response.json();
+                const runs: (typeof completed)[] = await response.json();
                 const current = runs.find((item) => item?.id === run.id);
-                if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) { completed = current; break; }
+                if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) {
+                    completed = current;
+                    break;
+                }
             }
             if (!completed) throw new Error('Agent is still running. Check its run history later.');
             const audit = completed.result?.claim_verification;
@@ -463,9 +484,15 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
             if (conversationId) {
-                try { await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current); } catch { /* Keep visible error. */ }
+                try {
+                    await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
+                } catch {
+                    /* Keep visible error. */
+                }
             }
-        } finally { setAgentBusy(false); }
+        } finally {
+            setAgentBusy(false);
+        }
     }
 
     // Drafts are scoped to workspace and conversation, including the unsaved new chat.
