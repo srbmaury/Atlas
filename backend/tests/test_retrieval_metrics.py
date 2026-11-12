@@ -22,5 +22,6 @@ def test_empty_gold_is_not_reported_as_perfect_recall():
 
 def test_invalid_k():
     import pytest
+
     with pytest.raises(ValueError):
         evaluate([], k=0)
