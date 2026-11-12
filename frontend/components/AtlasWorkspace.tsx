@@ -454,7 +454,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 scope: completed.result.scope || [],
                 citation_audit: audit ? { claims: (audit.claims || []).map((claim) => ({ claim: claim.claim, citations: claim.source_ids, overlap: 0, status: claim.status })), needs_review: audit.unsupported, note: 'Automated model assessment; not independent factual verification.' } : undefined,
             } : undefined;
-            const reply = { role: 'assistant' as const, content, result: agentResult };
+            const reply = { role: 'assistant' as const, content, result: agentResult, agent: { id: agent.id, name: agent.name, run_id: run.id } };
             setMessages((previous) => [...previous, reply]);
             chatMessages.current = [...chatMessages.current, reply];
             await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
