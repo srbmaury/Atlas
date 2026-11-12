@@ -40,6 +40,28 @@ export default function AgentStudio() {
     if (workspaceId) loadAgents().catch((e) => setError(e.message));
   }, [workspaceId]);
 
+  useEffect(() => {
+    if (!selected) return;
+    const interval = setInterval(() => {
+      loadRuns(selected).catch((err) => setError(err.message));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [selected, workspaceId]);
+
+  async function cancelRun(runId: string) {
+    if (!selected) return;
+    setError('');
+    try {
+      const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs/${encodeURIComponent(runId)}/cancel`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Unable to cancel run.');
+      await loadRuns(selected);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cancellation failed.');
+    }
+  }
+
   async function createAgent() {
     setBusy(true);
     setError('');
@@ -114,6 +136,9 @@ export default function AgentStudio() {
           <article key={run.id} style={{ borderTop: '1px solid #888', padding: '1rem 0' }}>
             <h3>{run.question}</h3>
             <p>Status: {run.status}</p>
+            {(run.status === 'queued' || run.status === 'processing') && (
+              <button onClick={() => cancelRun(run.id)}>Cancel run</button>
+            )}
             <p style={{ whiteSpace: 'pre-wrap' }}>{run.result?.answer || run.result?.error}</p>
             <details><summary>Execution trace</summary>
               <ol>{run.steps.map((step, index) => <li key={index}>
