@@ -19,3 +19,11 @@ Requests use existing session authentication and workspace RBAC. Runs plan up to
 - Add workspace-specific budgets, permissioned tool registry, execution-cost tracking, approval gates and multi-agent delegation.
 - Add migrations rather than relying on metadata table creation for production schema changes.
 - Run backend integration tests with multiple workspaces and authenticated users before production deployment.
+
+## Agent configuration and research results
+
+Agents support editable names, instructions, and three output styles (detailed notes, concise, and report). Preferences are applied to grounded answer generation and cannot override the citation or source-trust policy. Deleting an agent also removes its history, and is blocked while research is queued or processing.
+
+A completed worker execution is not equivalent to a verified answer. Citation-validation failures now mark runs failed; the UI exposes the evidence and a retry path. Numbered citations link to retrieved passages, but this does **not** establish claim-level factual entailment.
+
+Agent retrieval remains restricted to indexed workspace documents. Connected Gmail/Drive tools, per-agent source selection, model settings, persistent memory, and workflow orchestration are not implemented; do not display these as enabled capabilities. Agent instructions are presentation/task preferences, not arbitrary executable tools.
