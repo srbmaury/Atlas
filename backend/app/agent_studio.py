@@ -344,6 +344,7 @@ def execute_one_research_run():
         sources = []
         seen = set()
         provider_scopes = []
+        permission_scopes = {}
         for query in questions:
             if not heartbeat(AgentRun, run_id, generation):
                 return True
@@ -363,6 +364,7 @@ def execute_one_research_run():
                         retrieve_chunks=lambda wid, q, ids: retrieve(wid, q, document_ids=ids or None),
                     )
                 revalidate_access(workspace_id, requesting_actor, {e.provider for e in evidence}, stats.get('scopes'))
+                permission_scopes.update(stats.get('scopes') or {})
                 payload = [e.as_prompt(i) | {'origin_id': e.source_id} for i, e in enumerate(evidence[:8], 1)]
                 found = connected_sources_for_payload(payload, original)
                 provider_scopes.extend(item.get('provider') for item in found)
@@ -386,7 +388,7 @@ def execute_one_research_run():
         result['scope'] = sorted({s.get('provider', 'documents') for s in sources})
         steps.append({'tool': 'grounded_answer', 'mode': result.get('mode', 'unknown')})
         if provider_scopes:
-            revalidate_access(workspace_id, requesting_actor, set(provider_scopes))
+            revalidate_access(workspace_id, requesting_actor, set(provider_scopes), permission_scopes)
         with Session() as check_db:
             require_workspace(check_db, check_db.get(User, requesting_actor.id), workspace_id, 'editor')
         status = 'failed' if result.get('mode') == 'citation_check_failed' else 'completed'
