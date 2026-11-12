@@ -3,6 +3,7 @@
 This module never uses retrieved source text as instructions. Graph nodes are
 limited to evidence returned by the workspace-scoped retrieval tool.
 """
+
 import re
 
 MAX_QUESTIONS = 3
@@ -39,20 +40,24 @@ def evidence_graph(sources: list[dict]) -> dict:
         doc_key = f'document:{document_id}'
         chunk_key = f'chunk:{chunk_id}'
         if doc_key not in seen_documents:
-            nodes.append({
-                'id': doc_key,
-                'type': 'document',
-                'name': str(source.get('name') or 'Document')[:200],
-            })
+            nodes.append(
+                {
+                    'id': doc_key,
+                    'type': 'document',
+                    'name': str(source.get('name') or 'Document')[:200],
+                }
+            )
             seen_documents.add(doc_key)
         if chunk_key in seen_chunks:
             continue
-        nodes.append({
-            'id': chunk_key,
-            'type': 'evidence',
-            'page': source.get('page'),
-            'excerpt': str(source.get('text') or '')[:MAX_EXCERPT],
-        })
+        nodes.append(
+            {
+                'id': chunk_key,
+                'type': 'evidence',
+                'page': source.get('page'),
+                'excerpt': str(source.get('text') or '')[:MAX_EXCERPT],
+            }
+        )
         edges.append({'from': doc_key, 'to': chunk_key, 'type': 'contains'})
         seen_chunks.add(chunk_key)
     return {'nodes': nodes, 'edges': edges, 'relationship_scope': 'provenance_only'}
