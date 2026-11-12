@@ -7,13 +7,14 @@ Agent Studio provides workspace-scoped saved research agent configurations, boun
 - GET /api/workspaces/{workspaceId}/agents — list saved agents (viewer)
 - POST /api/workspaces/{workspaceId}/agents — create agent (editor)
 - GET /api/workspaces/{workspaceId}/agents/{agentId}/runs — inspect recent runs (viewer)
-- POST /api/workspaces/{workspaceId}/agents/{agentId}/runs — execute research (editor)
+- POST /api/workspaces/{workspaceId}/agents/{agentId}/runs — enqueue research (editor)
+- POST /api/workspaces/{workspaceId}/agents/{agentId}/runs/{runId}/cancel — cancel queued or processing research (editor)
 
 Requests use existing session authentication and workspace RBAC. Runs plan up to three bounded retrieval queries, retrieve only ready documents from the requested workspace, deduplicate at most eight evidence passages, and generate grounded answers through Atlas's existing RAG engine. Each run also includes a document-to-passage provenance graph, visible in Agent Studio. Graph edges indicate containment, not semantic entailment. Source text is untrusted. Agent instructions are stored but **not used as privileged prompts**.
 
 ## Limitations and next steps
 
-- Runs are now persisted as queued jobs and dispatched by the existing worker loop, with generation/lease-based claiming and workspace permission revalidation at execution. Add cancellation, explicit timeouts, concurrency limits, retry classification, dead-letter handling and budgets before production use.
+- Runs are now persisted as queued jobs and dispatched by the existing worker loop, with generation/lease-based claiming and workspace permission revalidation at execution. Cancellation invalidates the generation of queued/processing runs and workers check ownership at checkpoints. It does not forcibly interrupt an in-flight model request. Add explicit timeouts, concurrency limits, retry classification, dead-letter handling and budgets before production use.
 - Research currently uses only workspace document retrieval, not cross-provider tool orchestration.
 - Add workspace-specific budgets, permissioned tool registry, execution-cost tracking, approval gates and multi-agent delegation.
 - Add migrations rather than relying on metadata table creation for production schema changes.
