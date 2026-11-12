@@ -38,6 +38,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     workspaceId: string;
+    mentionAgents?: { id: string; name: string; handle: string }[];
     searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
     onOpenNavigation: () => void;
@@ -469,6 +470,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         )}
                         <ResearchComposer
+                            mentionAgents={props.mentionAgents}
                             query={props.query}
                             onChange={props.setQuery}
                             onSubmit={() => props.onAsk()}
