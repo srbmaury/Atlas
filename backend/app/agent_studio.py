@@ -73,15 +73,47 @@ class ResearchRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
 
 
-def public_agent(agent):
+def public_agent(agent, actor=None, db=None):
+    config = agent.source_config or {'include_documents': True}
+    if actor is not None and db is not None:
+        config = authorized_source_config(db, agent.workspace_id, actor, config)
     return {
         'id': agent.id,
         'name': agent.name,
         'instructions': agent.instructions,
         'output_format': agent.output_format,
-        'source_config': agent.source_config or {'include_documents': True},
+        'source_config': config,
         'created': agent.created,
     }
+
+
+def authorized_source_config(db, workspace_id, actor, config):
+    """Never expose or use connected providers beyond the requesting user's access."""
+    from .db import ExternalConnection, GmailConnection
+    from .rbac import require_connection
+
+    allowed = dict(config)
+    providers = []
+    for provider in config.get('providers') or []:
+        row = db.get(ExternalConnection, (workspace_id, provider))
+        try:
+            if row is None:
+                continue
+            require_connection(db, actor, row)
+            providers.append(provider)
+        except HTTPException:
+            continue
+    allowed['providers'] = providers
+    allowed['include_gmail'] = False
+    if config.get('include_gmail'):
+        row = db.get(GmailConnection, workspace_id)
+        if row is not None:
+            try:
+                require_connection(db, actor, row)
+                allowed['include_gmail'] = True
+            except HTTPException:
+                pass
+    return allowed
 
 
 def validate_sources(db, workspace_id, body, actor=None):
@@ -141,7 +173,7 @@ def public_run(run):
 def list_agents(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     return [
-        public_agent(a)
+        public_agent(a, actor, db)
         for a in db.query(AgentDefinition)
         .filter_by(workspace_id=workspaceId)
         .order_by(AgentDefinition.created.desc())
@@ -270,7 +302,7 @@ def cancel_research(
     workspace(workspaceId, actor, db)
     (
         db.query(AgentRun)
-        .filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId)
+        .filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId, actor_id=actor.id)
         .filter(AgentRun.status.in_(('queued', 'processing')))
         .update(
             {
@@ -356,7 +388,9 @@ def execute_one_research_run():
             return True
         agent_instructions = agent.instructions
         output_format = agent.output_format
-        source_config = agent.source_config or {'include_documents': True}
+        source_config = authorized_source_config(
+            db, workspace_id, requesting_actor, agent.source_config or {'include_documents': True}
+        )
     steps = []
     try:
         questions = plan(question)
@@ -365,6 +399,8 @@ def execute_one_research_run():
         seen = set()
         provider_scopes = []
         permission_scopes = {}
+        if not (source_config.get('include_documents') or source_config.get('include_gmail') or source_config.get('providers')):
+            raise HTTPException(403, 'You do not have access to this agent\'s configured sources.')
         for query in questions:
             if not heartbeat(AgentRun, run_id, generation):
                 return True
