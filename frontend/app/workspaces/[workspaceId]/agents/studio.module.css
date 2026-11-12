@@ -576,3 +576,19 @@
     cursor: pointer;
     font: inherit;
 }
+
+.libraryTools { display:flex; align-items:center; gap:18px; margin:20px 0 22px; color:var(--sub); }
+.libraryTools input { max-width:440px; }
+.libraryGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:18px; }
+.libraryCard { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; min-height:240px; }
+.libraryCardTitle { display:flex; align-items:center; gap:12px; }
+.libraryCardTitle h2 { margin:0; font-size:17px; color:var(--text); }
+.libraryCardTitle span { font-size:12px; color:var(--sub); }
+.libraryDescription { color:var(--sub); line-height:1.5; margin:15px 0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.librarySources { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+.librarySources span { font-size:12px; color:var(--text); background:var(--active); border:1px solid var(--line); border-radius:7px; padding:5px 9px; }
+.libraryFooter { border-top:1px solid var(--line); padding-top:14px; margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.libraryFooter code { font-size:12px; color:var(--brand); overflow-wrap:anywhere; }
+.libraryFooter > div { display:flex; gap:6px; }
+.libraryEmpty { padding:64px 20px; text-align:center; border:1px dashed var(--line); border-radius:14px; color:var(--sub); }
+@media(max-width:650px) { .libraryGrid { grid-template-columns:1fr; } .libraryTools { flex-wrap:wrap; } }
