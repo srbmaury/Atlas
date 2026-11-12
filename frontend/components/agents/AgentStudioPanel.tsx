@@ -16,7 +16,14 @@ type Run = {
     question: string;
     created?: number;
     steps: { tool: string; source_count?: number; mode?: string; queries?: string[] }[];
-    result?: { answer?: string; error?: string; mode?: string; sources?: unknown[]; evidence_graph?: EvidenceGraph; claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string } };
+    result?: {
+        answer?: string;
+        error?: string;
+        mode?: string;
+        sources?: unknown[];
+        evidence_graph?: EvidenceGraph;
+        claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string };
+    };
 };
 
 export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
@@ -63,7 +70,13 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     useEffect(() => {
         if (workspaceId) {
             loadAgents().catch((err) => setError(err.message));
-            fetch(`${base}/sources`, { credentials: 'same-origin' }).then((response) => { if (!response.ok) throw new Error('Unable to load connected sources.'); return response.json(); }).then(setSourceOptions).catch((err) => setError(err.message));
+            fetch(`${base}/sources`, { credentials: 'same-origin' })
+                .then((response) => {
+                    if (!response.ok) throw new Error('Unable to load connected sources.');
+                    return response.json();
+                })
+                .then(setSourceOptions)
+                .catch((err) => setError(err.message));
         }
     }, [workspaceId, loadAgents]);
 
@@ -89,7 +102,15 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 method: editing ? 'PATCH' : 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name.trim(), instructions, output_format: outputFormat, include_documents: includeDocuments, document_ids: documentIds, include_gmail: includeGmail, providers }),
+                body: JSON.stringify({
+                    name: name.trim(),
+                    instructions,
+                    output_format: outputFormat,
+                    include_documents: includeDocuments,
+                    document_ids: documentIds,
+                    include_gmail: includeGmail,
+                    providers,
+                }),
             });
             if (!response.ok) throw new Error('Unable to create agent.');
             const agent: Agent = await response.json();
@@ -431,14 +452,30 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     {documents.length === 0 && <div className={styles.empty}>No provenance graph available.</div>}
                                 </div>
                             )}
-                            {activeRun.result?.claim_verification && <details open>
-                                <summary className={styles.hint} style={{ cursor: 'pointer' }}>Claim evidence review · {activeRun.result.claim_verification.needs_review} pending review · {activeRun.result.claim_verification.unsupported} unsupported or uncertain</summary>
-                                <p className={styles.hint}>{activeRun.result.claim_verification.disclaimer}</p>
-                                {activeRun.result.claim_verification.claims.map((claim, index) => <div className={styles.source} key={index}>
-                                    <strong>{claim.status === 'supported' ? 'Model-supported' : claim.status === 'contradicted' ? 'Contradicted' : claim.status === 'unsupported' ? 'Unsupported' : 'Needs review'} · {claim.source_ids.map((id) => `[${id}]`).join(', ') || 'No citation'}</strong>
-                                    <p>{claim.claim}</p>
-                                </div>)}
-                            </details>}
+                            {activeRun.result?.claim_verification && (
+                                <details open>
+                                    <summary className={styles.hint} style={{ cursor: 'pointer' }}>
+                                        Claim evidence review · {activeRun.result.claim_verification.needs_review} pending review · {activeRun.result.claim_verification.unsupported} unsupported or
+                                        uncertain
+                                    </summary>
+                                    <p className={styles.hint}>{activeRun.result.claim_verification.disclaimer}</p>
+                                    {activeRun.result.claim_verification.claims.map((claim, index) => (
+                                        <div className={styles.source} key={index}>
+                                            <strong>
+                                                {claim.status === 'supported'
+                                                    ? 'Model-supported'
+                                                    : claim.status === 'contradicted'
+                                                      ? 'Contradicted'
+                                                      : claim.status === 'unsupported'
+                                                        ? 'Unsupported'
+                                                        : 'Needs review'}{' '}
+                                                · {claim.source_ids.map((id) => `[${id}]`).join(', ') || 'No citation'}
+                                            </strong>
+                                            <p>{claim.claim}</p>
+                                        </div>
+                                    ))}
+                                </details>
+                            )}
                             <details>
                                 <summary className={styles.hint} style={{ cursor: 'pointer' }}>
                                     <Settings2 size={14} style={{ verticalAlign: 'middle' }} /> Execution trace
@@ -478,13 +515,49 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                         </select>
                         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
                             <legend>Research sources</legend>
-                            <label><input type="checkbox" checked={includeDocuments} onChange={(event) => { setIncludeDocuments(event.target.checked); if (!event.target.checked) setDocumentIds([]); }} /> Workspace documents</label>
-                            {includeDocuments && <div style={{ maxHeight: 130, overflowY: 'auto' }}>
-                                <p className={styles.hint}>Leave all unchecked to search every indexed document.</p>
-                                {sourceOptions.documents.map((doc) => <label key={doc.id} style={{ display: 'block' }}><input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id))} /> {doc.name}</label>)}
-                            </div>}
-                            {sourceOptions.providers.includes('gmail') && <label style={{ display: 'block' }}><input type="checkbox" checked={includeGmail} onChange={(event) => setIncludeGmail(event.target.checked)} /> Gmail</label>}
-                            {sourceOptions.providers.filter((p) => p !== 'gmail').map((provider) => <label key={provider} style={{ display: 'block' }}><input type="checkbox" checked={providers.includes(provider)} onChange={(event) => setProviders((items) => event.target.checked ? [...items, provider] : items.filter((p) => p !== provider))} /> {provider}</label>)}
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={includeDocuments}
+                                    onChange={(event) => {
+                                        setIncludeDocuments(event.target.checked);
+                                        if (!event.target.checked) setDocumentIds([]);
+                                    }}
+                                />{' '}
+                                Workspace documents
+                            </label>
+                            {includeDocuments && (
+                                <div style={{ maxHeight: 130, overflowY: 'auto' }}>
+                                    <p className={styles.hint}>Leave all unchecked to search every indexed document.</p>
+                                    {sourceOptions.documents.map((doc) => (
+                                        <label key={doc.id} style={{ display: 'block' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={documentIds.includes(doc.id)}
+                                                onChange={(event) => setDocumentIds((ids) => (event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)))}
+                                            />{' '}
+                                            {doc.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                            {sourceOptions.providers.includes('gmail') && (
+                                <label style={{ display: 'block' }}>
+                                    <input type="checkbox" checked={includeGmail} onChange={(event) => setIncludeGmail(event.target.checked)} /> Gmail
+                                </label>
+                            )}
+                            {sourceOptions.providers
+                                .filter((p) => p !== 'gmail')
+                                .map((provider) => (
+                                    <label key={provider} style={{ display: 'block' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={providers.includes(provider)}
+                                            onChange={(event) => setProviders((items) => (event.target.checked ? [...items, provider] : items.filter((p) => p !== provider)))}
+                                        />{' '}
+                                        {provider}
+                                    </label>
+                                ))}
                         </fieldset>
                         <p className={styles.hint}>Connected sources are searched read-only using your existing workspace permissions.</p>
                         <div className={styles.modalActions}>
