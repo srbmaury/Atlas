@@ -380,7 +380,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                         <label key={doc.id} className={styles.documentOption}>
                                             <FileText size={15} />
                                             <span title={doc.name}>{doc.name}</span>
-                                            <input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)} />
+                                            <input type="checkbox" checked={documentIds.includes(doc.id)} onChange={(event) => setDocumentIds((ids) => event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id))} />
                                         </label>
                                     ))}
                                 </div>
