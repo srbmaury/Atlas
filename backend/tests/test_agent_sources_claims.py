@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from app.agent_claims import verify_claims
+from app.agent_claims import assess_claims, verify_claims
 from app.agent_studio import CreateAgent, validate_sources
 
 
@@ -42,3 +42,20 @@ def test_document_selection_is_workspace_scoped():
             validate_sources(db, 'workspace', body)
         assert exc.value.status_code == 404
         assert document.id is not None
+
+
+def test_model_assesses_cited_claim_without_claiming_independent_verification():
+    with (
+        patch('app.ai.enabled', return_value=True),
+        patch('app.ai.config.AI_PROVIDER', 'openai'),
+        patch('app.ai.client') as client,
+    ):
+        client.return_value.responses.create.return_value.output_text = (
+            '{"assessments":[{"id":1,"status":"supported","reason":"The passage states this."}]}'
+        )
+        result = assess_claims(
+            'LangChain is a framework [1].', [{'text': 'LangChain is a framework.'}]
+        )
+    assert result['method'] == 'llm_entailment_assessment'
+    assert result['claims'][0]['status'] == 'supported'
+    assert result['verified'] == 0
