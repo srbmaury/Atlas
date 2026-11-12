@@ -17,6 +17,8 @@ jobs:
               run: |
                   pip install -r backend/requirements.lock
                   pip check
+            - name: Show Python formatter diff
+              run: ruff format --diff backend/app/agent_evidence.py backend/app/agent_studio.py backend/app/worker.py backend/tests/test_agent_cancellation.py backend/tests/test_agent_queue.py || true
             - name: Check Python style
               run: |
                   ruff check backend evals ops
@@ -37,6 +39,9 @@ jobs:
             - name: Install frontend
               working-directory: frontend
               run: npm ci
+            - name: Show frontend formatter diff
+              working-directory: frontend
+              run: npx prettier --write 'app/workspaces/[workspaceId]/agents/page.tsx' && git diff -- 'app/workspaces/[workspaceId]/agents/page.tsx'
             - name: Check frontend formatting
               working-directory: frontend
               run: npm run format:check
