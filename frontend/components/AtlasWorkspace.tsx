@@ -452,7 +452,21 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
             const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: match![2] }) });
             if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
             const run: { id: string } = await started.json();
-            let completed: { id: string; status: string; result?: { answer?: string; error?: string; mode?: string; sources?: Source[]; scope?: string[]; claim_verification?: { unsupported: number; supported?: number; claims?: { claim: string; status: string; source_ids: number[] }[] } }; error?: string } | undefined;
+            let completed:
+                | {
+                      id: string;
+                      status: string;
+                      result?: {
+                          answer?: string;
+                          error?: string;
+                          mode?: string;
+                          sources?: Source[];
+                          scope?: string[];
+                          claim_verification?: { unsupported: number; supported?: number; claims?: { claim: string; status: string; source_ids: number[] }[] };
+                      };
+                      error?: string;
+                  }
+                | undefined;
             for (let attempt = 0; attempt < 90; attempt++) {
                 await new Promise((resolve) => window.setTimeout(resolve, 2000));
                 const response = await fetch(base, { credentials: 'same-origin' });
