@@ -94,8 +94,13 @@ export function HomeView({
                             <span className="agent-mention-title">AGENT SUGGESTIONS</span>
                             {matchingAgents.map((agent) => (
                                 <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
-                                    <span className="home-agent-suggestion-icon"><Sparkles size={16} /></span>
-                                    <span><strong>{agent.name}</strong><small>{agent.handle}</small></span>
+                                    <span className="home-agent-suggestion-icon">
+                                        <Sparkles size={16} />
+                                    </span>
+                                    <span>
+                                        <strong>{agent.name}</strong>
+                                        <small>{agent.handle}</small>
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -116,7 +121,11 @@ export function HomeView({
                     <div className="home-prompt-bottom">
                         <div className="home-scope-summary">
                             <FileText size={15} />
-                            <span aria-label="Sources included in this question">{selectedAgent ? `${selectedAgent.name} · Uses agent-configured sources` : `Selected for search: ${sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}`}</span>
+                            <span aria-label="Sources included in this question">
+                                {selectedAgent
+                                    ? `${selectedAgent.name} · Uses agent-configured sources`
+                                    : `Selected for search: ${sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}`}
+                            </span>
                             <span>·</span>{' '}
                             <button type="button" onClick={onChooseSources}>
                                 Choose sources <ArrowUpRight size={13} />
