@@ -4,8 +4,8 @@ Revision ID: 0011_agent_studio
 Revises: 0010
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = '0011_agent_studio'
 down_revision = '0010'
