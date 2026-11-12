@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { BookOpen, Bot, Check, Clock3, FileText, History, Layers3, LoaderCircle, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
+import { BookOpen, Bot, CalendarDays, Check, Clock3, Cloud, FileText, FolderOpen, Github, History, Layers3, LoaderCircle, Mail, MessageSquare, Plus, Settings2, Sparkles, Square, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
 type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
@@ -25,6 +25,26 @@ type Run = {
         claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string };
     };
 };
+
+const SOURCE_NAMES: Record<string, string> = {
+    documents: 'Documents', gmail: 'Gmail', drive: 'Google Drive', github: 'GitHub',
+    notion: 'Notion', slack: 'Slack', calendar: 'Calendar', linear: 'Linear',
+    jira: 'Jira', onedrive: 'OneDrive', outlook: 'Outlook', sharepoint: 'SharePoint',
+};
+
+function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }) {
+    switch (provider) {
+        case 'documents': return <FileText size={size} />;
+        case 'gmail': case 'outlook': return <Mail size={size} />;
+        case 'drive': case 'onedrive': return <FolderOpen size={size} />;
+        case 'github': return <Github size={size} />;
+        case 'slack': return <MessageSquare size={size} />;
+        case 'calendar': return <CalendarDays size={size} />;
+        case 'sharepoint': return <Cloud size={size} />;
+        case 'notion': return <BookOpen size={size} />;
+        default: return <Layers3 size={size} />;
+    }
+}
 
 export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents`;
@@ -245,9 +265,9 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                 <div className={styles.libraryGrid}>
                     {filteredAgents.map((agent) => {
                         const scope = agent.source_config || {};
-                        const labels = [
-                            ...(scope.include_documents !== false ? [scope.document_ids?.length ? `${scope.document_ids.length} documents` : 'Documents'] : []),
-                            ...(scope.include_gmail ? ['Gmail'] : []),
+                        const sourceTypes = [
+                            ...(scope.include_documents !== false ? ['documents'] : []),
+                            ...(scope.include_gmail ? ['gmail'] : []),
                             ...(scope.providers || []),
                         ];
                         const handle =
@@ -265,13 +285,16 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     </span>
                                     <div>
                                         <h2>{agent.name}</h2>
-                                        <span>{labels.length} source types</span>
+                                        <span>{sourceTypes.length} connected source{sourceTypes.length === 1 ? '' : 's'}</span>
                                     </div>
                                 </div>
                                 <p className={styles.libraryDescription}>{agent.instructions}</p>
-                                <div className={styles.librarySources}>
-                                    {labels.map((label) => (
-                                        <span key={label}>{label}</span>
+                                <div className={styles.librarySources} aria-label="Agent research sources">
+                                    {sourceTypes.map((provider) => (
+                                        <span className={styles.sourcePill} key={provider} title={SOURCE_NAMES[provider] || provider}>
+                                            <span className={styles.sourcePillIcon}><SourceIcon provider={provider} size={15} /></span>
+                                            <span>{provider === 'documents' && scope.document_ids?.length ? `${scope.document_ids.length} documents` : SOURCE_NAMES[provider] || provider}</span>
+                                        </span>
                                     ))}
                                 </div>
                                 <div className={styles.libraryFooter}>
