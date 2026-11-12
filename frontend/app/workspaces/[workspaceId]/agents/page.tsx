@@ -67,10 +67,7 @@ export default function AgentStudio() {
         if (!selected) return;
         setError('');
         try {
-            const response = await fetch(
-                `${base}/${encodeURIComponent(selected)}/runs/${encodeURIComponent(runId)}/cancel`,
-                { method: 'POST' },
-            );
+            const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs/${encodeURIComponent(runId)}/cancel`, { method: 'POST' });
             if (!response.ok) throw new Error('Unable to cancel run.');
             await loadRuns(selected);
         } catch (err) {
@@ -128,13 +125,7 @@ export default function AgentStudio() {
             <p>Create a read-only research agent for this workspace and inspect its evidence trace.</p>
             <section>
                 <h2>New agent</h2>
-                <input
-                    aria-label="Agent name"
-                    value={name}
-                    maxLength={100}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Research Assistant"
-                />
+                <input aria-label="Agent name" value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="Research Assistant" />
                 <button disabled={busy || !name.trim()} onClick={createAgent}>
                     Create agent
                 </button>
@@ -159,13 +150,7 @@ export default function AgentStudio() {
                         </option>
                     ))}
                 </select>
-                <textarea
-                    aria-label="Research question"
-                    value={question}
-                    maxLength={2000}
-                    onChange={(event) => setQuestion(event.target.value)}
-                    placeholder="What do our documents say about…?"
-                />
+                <textarea aria-label="Research question" value={question} maxLength={2000} onChange={(event) => setQuestion(event.target.value)} placeholder="What do our documents say about…?" />
                 <button disabled={busy || !selected || question.trim().length < 3} onClick={research}>
                     {busy ? 'Working…' : 'Run research'}
                 </button>
@@ -174,27 +159,17 @@ export default function AgentStudio() {
             <section aria-label="Research runs">
                 <h2>Run history</h2>
                 {runs.map((run) => (
-                    <article
-                        key={run.id}
-                        style={{ borderTop: '1px solid #888', padding: '1rem 0' }}
-                    >
+                    <article key={run.id} style={{ borderTop: '1px solid #888', padding: '1rem 0' }}>
                         <h3>{run.question}</h3>
                         <p>Status: {run.status}</p>
-                        {(run.status === 'queued' || run.status === 'processing') && (
-                            <button onClick={() => cancelRun(run.id)}>Cancel run</button>
-                        )}
-                        <p style={{ whiteSpace: 'pre-wrap' }}>
-                            {run.result?.answer || run.result?.error}
-                        </p>
+                        {(run.status === 'queued' || run.status === 'processing') && <button onClick={() => cancelRun(run.id)}>Cancel run</button>}
+                        <p style={{ whiteSpace: 'pre-wrap' }}>{run.result?.answer || run.result?.error}</p>
                         <details>
                             <summary>Execution trace</summary>
                             <ol>
                                 {run.steps.map((step, index) => (
                                     <li key={index}>
-                                        {step.tool}{' '}
-                                        {step.source_count === undefined
-                                            ? ''
-                                            : `(${step.source_count} sources)`}
+                                        {step.tool} {step.source_count === undefined ? '' : `(${step.source_count} sources)`}
                                     </li>
                                 ))}
                             </ol>
@@ -203,23 +178,12 @@ export default function AgentStudio() {
                         {run.result?.evidence_graph && (
                             <details>
                                 <summary>Evidence provenance</summary>
-                                <p>
-                                    Documents and source excerpts (relationships indicate provenance,
-                                    not factual entailment).
-                                </p>
+                                <p>Documents and source excerpts (relationships indicate provenance, not factual entailment).</p>
                                 <ul>
                                     {run.result.evidence_graph.nodes.map((node) => (
                                         <li key={node.id}>
-                                            <strong>
-                                                {node.type === 'document'
-                                                    ? node.name
-                                                    : `Evidence on page ${node.page ?? 'unknown'}`}
-                                            </strong>
-                                            {node.excerpt && (
-                                                <p style={{ whiteSpace: 'pre-wrap' }}>
-                                                    {node.excerpt}
-                                                </p>
-                                            )}
+                                            <strong>{node.type === 'document' ? node.name : `Evidence on page ${node.page ?? 'unknown'}`}</strong>
+                                            {node.excerpt && <p style={{ whiteSpace: 'pre-wrap' }}>{node.excerpt}</p>}
                                         </li>
                                     ))}
                                 </ul>
