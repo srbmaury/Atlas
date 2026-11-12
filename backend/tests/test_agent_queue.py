@@ -6,7 +6,7 @@ from app import agent_studio
 
 
 def test_worker_does_not_execute_without_claim(monkeypatch):
-    monkeypatch.setattr(agent_studio, 'claim', lambda model: None)
+    monkeypatch.setattr(agent_studio, 'claim', lambda model, **kwargs: None)
     assert agent_studio.execute_one_research_run() is False
 
 
@@ -25,7 +25,7 @@ def test_queued_run_revalidates_workspace_access(monkeypatch):
     session = MagicMock()
     session.__enter__.return_value = db
     monkeypatch.setattr(agent_studio, 'Session', lambda: session)
-    monkeypatch.setattr(agent_studio, 'claim', lambda model: ('run-1', 1))
+    monkeypatch.setattr(agent_studio, 'claim', lambda model, **kwargs: ('run-1', 1))
 
     def deny(*args):
         raise ValueError('revoked')
