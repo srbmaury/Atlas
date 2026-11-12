@@ -1,6 +1,6 @@
 # Atlas database design
 
-Atlas uses SQLite for local development and PostgreSQL with pgvector for deployments. The diagrams cover the 17 application tables. **FK** identifies a database foreign key. **App link** identifies a stored reference resolved by Atlas. Mermaid solid and dotted lines denote identifying and non-identifying relationships, respectively.
+Atlas uses SQLite for local development and PostgreSQL with pgvector for deployments. The diagrams summarize core application tables and the Agent Studio tables; they are not an exhaustive inventory of every table or migration. **FK** identifies a database foreign key. **App link** identifies a stored reference resolved by Atlas. Mermaid solid and dotted lines denote identifying and non-identifying relationships, respectively.
 
 [SQLAlchemy models](../backend/app/db.py) · [Alembic migrations](../backend/migrations/versions)
 
@@ -61,6 +61,10 @@ erDiagram
     DOCUMENTS ||..o{ CHUNKS : splits
     WORKSPACES ||..o{ CONVERSATIONS : contains
     USERS |o..o{ CONVERSATIONS : "authors via app link"
+    WORKSPACES ||..o{ AGENT_DEFINITIONS : configures
+    WORKSPACES ||..o{ AGENT_RUNS : executes
+    AGENT_DEFINITIONS ||..o{ AGENT_RUNS : "runs via app link"
+    USERS |o..o{ AGENT_RUNS : "invokes via app link"
 
     DOCUMENTS {
         string id PK
@@ -84,9 +88,27 @@ erDiagram
         string title
         json messages "includes answers and citations"
     }
+    AGENT_DEFINITIONS {
+        string id PK
+        string workspace_id FK
+        string owner_id "app link"
+        string name
+        text instructions
+        string output_format
+        json source_config
+    }
+    AGENT_RUNS {
+        string id PK
+        string workspace_id FK
+        string agent_id "app link"
+        string actor_id "app link"
+        string status
+        json steps
+        json result
+    }
 ```
 
-Documents are unique by `(workspace_id, digest)`. A chunk has separate foreign keys to its document and workspace. Atlas keeps those references consistent when indexing. Conversation history is private to its author. Messages and citations are stored in `conversations.messages`.
+Documents are unique by `(workspace_id, digest)`. A chunk has separate foreign keys to its document and workspace. Atlas keeps those references consistent when indexing. Conversation history is private to its author. Messages and citations are stored in `conversations.messages`. Agent definitions and runs are declared in `backend/app/agent_studio.py`; each run records the invoking user, status, execution steps and evidence result. Agent responses copied into conversations include attribution and permission metadata used to hide restricted evidence when source access changes.
 
 SQLite can also maintain `chunks_fts`, an FTS5 virtual table synchronized with `chunks` by triggers. Alembic tracks the migration revision in `alembic_version`.
 
