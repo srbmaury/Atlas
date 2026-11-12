@@ -19,6 +19,7 @@ jobs:
                   pip check
             - name: Check Python style
               run: |
+                  ruff format --diff backend/app/agent_studio.py || true
                   ruff check backend evals ops
                   ruff format --check backend evals ops
             - name: Run API tests
