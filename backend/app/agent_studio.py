@@ -96,9 +96,11 @@ def validate_sources(db, workspace_id, body):
         raise HTTPException(422, 'Select at least one research source.')
     selected = list(dict.fromkeys(body.document_ids))
     if selected:
-        found = db.query(Document.id).filter(
-            Document.workspace_id == workspace_id, Document.id.in_(selected)
-        ).count()
+        found = (
+            db.query(Document.id)
+            .filter(Document.workspace_id == workspace_id, Document.id.in_(selected))
+            .count()
+        )
         if found != len(selected):
             raise HTTPException(404, 'Selected document not found.')
     return {
@@ -155,7 +157,9 @@ def list_agent_sources(workspaceId: str, actor=Depends(user), db=Depends(databas
     return {
         'documents': [
             {'id': d.id, 'name': d.name}
-            for d in db.query(Document).filter_by(workspace_id=workspaceId, status='ready').order_by(Document.name)
+            for d in db.query(Document)
+            .filter_by(workspace_id=workspaceId, status='ready')
+            .order_by(Document.name)
         ],
         'providers': sorted(set(connected)),
     }
@@ -230,7 +234,9 @@ def list_runs(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(da
             try:
                 revalidate_access(workspaceId, actor, providers)
             except HTTPException:
-                item['result'] = {'error': 'Connected source access has changed. Previous evidence is hidden.'}
+                item['result'] = {
+                    'error': 'Connected source access has changed. Previous evidence is hidden.'
+                }
                 item['steps'] = []
         visible.append(item)
     return visible
@@ -377,7 +383,16 @@ def execute_one_research_run():
                 if key[1] and key not in seen and len(sources) < 8:
                     seen.add(key)
                     sources.append(source)
-        steps.append({'tool': 'workspace_retrieval', 'source_count': len(sources), 'providers': sorted(set(provider_scopes) | ({'documents'} if source_config.get('include_documents') else set()))})
+        steps.append(
+            {
+                'tool': 'workspace_retrieval',
+                'source_count': len(sources),
+                'providers': sorted(
+                    set(provider_scopes)
+                    | ({'documents'} if source_config.get('include_documents') else set())
+                ),
+            }
+        )
         graph = evidence_graph(sources)
         steps.append({'tool': 'evidence_graph', 'nodes': len(graph['nodes'])})
         if not heartbeat(AgentRun, run_id, generation):
