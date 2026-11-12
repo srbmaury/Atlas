@@ -10,20 +10,27 @@ from .ingest import ingest
 log = logging.getLogger(__name__)
 
 
-def claim(model):
+def claim(model, max_attempts=None):
     now = time.time()
     with Session() as db:
         eligible = or_(
             and_(model.status == 'queued', model.lease <= now),
             and_(model.status == 'processing', model.lease < now),
         )
-        job = db.query(model).filter(eligible).order_by(model.created).first()
+        query = db.query(model).filter(eligible)
+        if max_attempts is not None:
+            query = query.filter(model.attempts < max_attempts)
+        job = query.order_by(model.created).first()
         if not job:
             return None
         generation = job.generation + 1
+        claim_query = db.query(model).filter(
+            model.id == job.id, model.generation == job.generation, eligible
+        )
+        if max_attempts is not None:
+            claim_query = claim_query.filter(model.attempts < max_attempts)
         changed = (
-            db.query(model)
-            .filter(model.id == job.id, model.generation == job.generation, eligible)
+            claim_query
             .update(
                 {
                     'status': 'processing',
