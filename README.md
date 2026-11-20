@@ -164,10 +164,10 @@ Agent runs are read-only and use the invoking user's permissions, not the agent 
 | Frontend workspace | `frontend/app/page.tsx` | `components/AtlasWorkspace.tsx`, `components/chat/`, `components/documents/` |
 | Upload and background indexing | `backend/app/main.py` document/upload routes | `worker.py`, `ingest.py`, `db.py` |
 | Document retrieval | `backend/app/main.py` chat routes | `retrieval.py`, `ai.py` |
-| Cross-source answers | `backend/app/main.py` connected-chat routes | `external_sources.py`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
+| Cross-source answers | `backend/app/main.py` connected-chat routes | `external_sources.py`, `github_search.py`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
 | Citation display | `frontend/components/chat/ResearchAnswer.tsx` | `frontend/lib/evidence.ts` |
 | Agent creation, runs and authorization | `backend/app/agent_studio.py` | `agent_evidence.py`, `agent_claims.py`, `rbac.py` |
-| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
+| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `hooks/useAgentResearch.ts`, `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
 
 
 
@@ -393,7 +393,8 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 - `backend/app/ingest.py`: file parsing, OCR, and chunking.
 - `backend/app/retrieval.py`: keyword/vector retrieval and ranking.
 - `backend/app/ai.py`: embeddings and grounded answer generation.
-- `backend/app/external_sources.py`: GitHub, Notion, and Slack adapters.
+- `backend/app/external_sources.py`: Connected-source routes, credentials, and search dispatch.
+- `backend/app/github_search.py`: GitHub query parsing, code flow tracing, and repository evidence retrieval.
 - `backend/app/drive.py` and `backend/app/gmail.py`: Google connectors.
 - `backend/app/worker.py`: background document ingestion and agent research execution.
 - `backend/app/agent_studio.py`: agent definitions, run lifecycle, source authorization and trace persistence.

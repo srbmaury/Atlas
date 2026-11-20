@@ -1,6 +1,5 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
-import { persistConversation } from '../lib/researchRequests';
 import Link from 'next/link';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
 import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
@@ -15,6 +14,7 @@ import { FolderOpen, Layers3, Plus, Search, Upload, X, LoaderCircle, Moon, Sun, 
 import type { User, Workspace, Doc, Source, Answer, ChatSummary, DocumentPreview } from '../lib/types';
 
 import { useConversation } from '../hooks/useConversation';
+import { useAgentResearch } from '../hooks/useAgentResearch';
 import { useAtlasTheme } from '../hooks/useAtlasTheme';
 import { useSourceConnections } from '../hooks/useSourceConnections';
 import { useGmailWorkspace } from '../hooks/useGmailWorkspace';
@@ -60,7 +60,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const [includeDocuments, setIncludeDocuments] = useState(true);
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState('');
-    const { messages, chatId, setMessages, setChatId, activeChat, chatMessages, chatTitle } = useConversation();
+    const conversation = useConversation();
+    const { messages, chatId, setMessages, setChatId, activeChat, chatMessages, chatTitle } = conversation;
     const sourceState = useSourceConnections();
     const gmailState = useGmailWorkspace();
 
@@ -108,7 +109,6 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
 
     const [chats, setChats] = useState<ChatSummary[]>([]);
     const [busy, setBusy] = useState(false);
-    const [agentBusy, setAgentBusy] = useState(false);
     const [answerProgress, setAnswerProgress] = useState('');
     const askController = useRef<AbortController | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -137,6 +137,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const chatThread = useRef<HTMLDivElement>(null);
     const scope = useRef('');
     scope.current = workspaceId;
+    const { agentBusy, mentionAgents, handleAgentMention, stopAgent } = useAgentResearch({ workspaceId, userId: user?.id, tab, busy, scope, conversation, setChats, setQuery, setError });
 
     const themeButton = (
         <button type="button" className="icon-button" aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={toggleTheme}>
@@ -159,10 +160,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     useEffect(() => {
         chatLoadSequence.invalidate();
         setDocs([]);
-        setMessages([]);
-        setChatId(null);
-        activeChat.current = null;
-        chatMessages.current = [];
+        conversation.reset();
         setChats([]);
         setSelected([]);
         setPreview(null);
@@ -399,143 +397,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         newChat,
     });
 
-    const [mentionAgents, setMentionAgents] = useState<{ id: string; name: string; handle: string }[]>([]);
-    useEffect(() => {
-        if (!workspaceId || !user) return;
-        const controller = new AbortController();
-        fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/agents`, { credentials: 'same-origin', signal: controller.signal })
-            .then((response) => (response.ok ? response.json() : []))
-            .then((items: { id: string; name: string }[]) =>
-                setMentionAgents(
-                    items.map((item) => ({
-                        ...item,
-                        handle:
-                            '@' +
-                            item.name
-                                .toLowerCase()
-                                .trim()
-                                .replace(/[^a-z0-9]+/g, '-')
-                                .replace(/^-|-$/g, ''),
-                    })),
-                ),
-            )
-            .catch(() => {
-                if (!controller.signal.aborted) setMentionAgents([]);
-            });
-        return () => controller.abort();
-    }, [workspaceId, user, tab]);
-
-    async function askWithAgent(question?: string, fromOverview = false) {
-        const text = (question ?? query).trim();
-        const match = /(?:^|\s)(@[a-z0-9-]+)(?=\s|$)/i.exec(text);
-        const agent = match && mentionAgents.find((item) => item.handle === match[1].toLowerCase());
-        if (!agent) {
-            if (match) {
-                setError(`Unknown agent ${match[1]}. Select an agent from the @ menu.`);
-                return;
-            }
-            void ask(question, fromOverview);
-            return;
-        }
-        const agentQuestion = text.replace(match![0], ' ').trim();
-        if (agentQuestion.length < 3) {
-            setError('Add a research question when mentioning an agent.');
-            return;
-        }
-        if (busy || agentBusy || !workspaceId) return;
-        setAgentBusy(true);
-        setQuery('');
-        const questionMessage = { role: 'user' as const, content: text };
-        chatMessages.current = [...chatMessages.current, questionMessage];
-        setMessages(chatMessages.current);
-        const conversationTitle = chatTitle.current === 'New chat' ? text.slice(0, 100) : chatTitle.current;
-        let conversationId = activeChat.current;
-        try {
-            const saved = await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
-            conversationId = saved.id;
-            activeChat.current = saved.id;
-            setChatId(saved.id);
-            chatTitle.current = conversationTitle;
-            setChats((previous) => [{ id: saved.id, title: conversationTitle, updated: saved.updated }, ...previous.filter((item) => item.id !== saved.id)]);
-            const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents/${encodeURIComponent(agent.id)}/runs`;
-            const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: agentQuestion }) });
-            if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
-            const run: { id: string } = await started.json();
-            let completed:
-                | {
-                      id: string;
-                      status: string;
-                      result?: {
-                          answer?: string;
-                          error?: string;
-                          mode?: string;
-                          sources?: Source[];
-                          scope?: string[];
-                          source_scope_fingerprints?: Record<string, string>;
-                          claim_verification?: { unsupported: number; supported?: number; claims?: { claim: string; status: string; source_ids: number[] }[] };
-                      };
-                      error?: string;
-                  }
-                | undefined;
-            for (let attempt = 0; attempt < 90; attempt++) {
-                await new Promise((resolve) => window.setTimeout(resolve, 2000));
-                const response = await fetch(base, { credentials: 'same-origin' });
-                if (!response.ok) throw new Error('Could not load agent research results.');
-                const runs: (typeof completed)[] = await response.json();
-                const current = runs.find((item) => item?.id === run.id);
-                if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) {
-                    completed = current;
-                    break;
-                }
-            }
-            if (!completed) throw new Error('Agent is still running. Check its run history later.');
-            const audit = completed.result?.claim_verification;
-            const answer = completed.result?.answer || completed.result?.error || completed.error || 'No answer available.';
-            const content = `**${agent.name}** · Agent\\n\\n${answer}${audit ? `\\n\\nEvidence assessment: ${audit.supported || 0} model-supported · ${audit.unsupported} uncertain or unsupported. Review original sources before relying on claims.` : ''}`;
-            const agentResult = completed.result?.answer
-                ? {
-                      answer: completed.result.answer,
-                      sources: completed.result.sources || [],
-                      mode: completed.result.mode || 'agent_research',
-                      scope: completed.result.scope || [],
-                      citation_audit: audit
-                          ? {
-                                claims: (audit.claims || []).map((claim) => ({ claim: claim.claim, citations: claim.source_ids, overlap: 0, status: claim.status })),
-                                needs_review: audit.unsupported,
-                                note: 'Automated model assessment; not independent factual verification.',
-                            }
-                          : undefined,
-                  }
-                : undefined;
-            const reply = {
-                role: 'assistant' as const,
-                content,
-                result: agentResult,
-                agent: {
-                    id: agent.id,
-                    name: agent.name,
-                    run_id: run.id,
-                    providers: (completed.result?.scope || []).filter((provider) => provider !== 'documents'),
-                    scope_fingerprints: completed.result?.source_scope_fingerprints || {},
-                },
-            };
-            chatMessages.current = [...chatMessages.current, reply];
-            setMessages(chatMessages.current);
-            await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
-        } catch (error) {
-            const reply = { role: 'assistant' as const, content: `**${agent.name}** · ${error instanceof Error ? error.message : 'Research failed.'}` };
-            chatMessages.current = [...chatMessages.current, reply];
-            setMessages(chatMessages.current);
-            if (conversationId) {
-                try {
-                    await persistConversation(workspaceId, conversationId, conversationTitle, chatMessages.current);
-                } catch {
-                    /* Keep visible error. */
-                }
-            }
-        } finally {
-            setAgentBusy(false);
-        }
+    function askWithAgent(question?: string, fromOverview = false) {
+        if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview);
     }
 
     // Drafts are scoped to workspace and conversation, including the unsaved new chat.
@@ -817,7 +680,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             initials={initials}
                             renderAnswer={renderAnswer}
                             answerProgress={answerProgress}
-                            onStop={() => askController.current?.abort()}
+                            onStop={() => (agentBusy ? stopAgent() : askController.current?.abort())}
                             threadRef={chatThread}
                             endRef={chatEnd}
                             query={query}

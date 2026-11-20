@@ -23,7 +23,7 @@ def test_inspection_returns_real_file_metadata(monkeypatch):
     monkeypatch.setattr(
         module,
         'github_repository_file_search',
-        lambda token, repo, query, limit: [
+        lambda token, repo, query, limit, *, http_json: [
             {
                 'title': 'owner/repo/README.md',
                 'url': 'https://github.com/owner/repo/blob/main/README.md',
@@ -183,7 +183,7 @@ def test_followup_passes_bounded_history_and_retrieves_fresh_evidence(monkeypatc
     monkeypatch.setattr(
         module,
         'github_repository_file_search',
-        lambda token, repo, query, limit: (
+        lambda token, repo, query, limit, *, http_json: (
             searches.append(query)
             or [
                 {

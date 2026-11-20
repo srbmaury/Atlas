@@ -12,6 +12,7 @@ test.beforeEach(async ({ page }) => {
         if (path.endsWith('/audit')) return json({ events: [], next_cursor: null });
         if (path === '/me') return json({ id: 'u1', email: 'test@example.com', mode: 'ai', max_file_bytes: 10485760 });
         if (path === '/workspaces') return json([{ id: 'w1', name: 'Test workspace', role: 'manager' }]);
+        if (path === '/workspaces/w1/agents') return json([{ id: 'a1', name: 'Research Analyst' }]);
         if (path === '/workspaces/w1/documents') return json([{ id: 'd1', name: 'notes.md', size: 128, status: 'ready', pages: 1, chunk_count: 1 }]);
         if (path === '/gmail/status') return json({ connected: false, email: null, configured: false });
         if (path === '/drive/status') return json({ connected: false, account: null, configured: false });
@@ -127,6 +128,34 @@ test('Home question begins an independent conversation', async ({ page }) => {
     await page.getByRole('button', { name: 'Ask Atlas', exact: true }).last().click();
     await expect(page.getByText('Fresh question from home').first()).toBeVisible();
     await expect(page.locator('.user-message')).toHaveCount(1);
+});
+
+test('stopping an agent before startup returns cancels the run when its ID arrives', async ({ page }) => {
+    let releaseStart!: () => void;
+    const startResponse = new Promise<void>((resolve) => {
+        releaseStart = resolve;
+    });
+    await page.route('**/api/workspaces/w1/agents/a1/runs', async (route) => {
+        await startResponse;
+        await route.fulfill({ json: { id: 'run-1' } });
+    });
+    await page.route('**/api/workspaces/w1/agents/a1/runs/run-1/cancel', (route) => route.fulfill({ json: { status: 'cancelled' } }));
+
+    const question = page.getByRole('textbox', { name: 'Your question' });
+    await question.fill('@');
+    await expect(page.getByRole('listbox', { name: 'Mention an agent' })).toContainText('Research Analyst');
+    await question.fill('@research-analyst Summarize the notes');
+    const started = page.waitForRequest((request) => request.url().endsWith('/agents/a1/runs') && request.method() === 'POST');
+    await page.getByRole('button', { name: 'Send question' }).click();
+    expect((await started).postDataJSON()).toEqual({ question: 'Summarize the notes' });
+
+    const cancelled = page.waitForResponse((response) => response.url().endsWith('/runs/run-1/cancel'));
+    const stop = page.getByRole('button', { name: 'Stop', exact: true });
+    await stop.click();
+    await expect(stop).toBeHidden();
+    releaseStart();
+    expect((await cancelled).ok()).toBe(true);
+    await expect(page.locator('.answer-row')).toHaveCount(0);
 });
 
 test('composer remains in view after long response', async ({ page }) => {

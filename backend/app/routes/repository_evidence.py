@@ -11,7 +11,8 @@ from pydantic import BaseModel, Field
 from ..ai import enabled as ai_enabled
 from ..ai import generate
 from ..api_dependencies import database, user
-from ..external_sources import github_repository_file_search, http_json, read_connection
+from ..external_sources import http_json, read_connection
+from ..github_search import github_repository_file_search
 from ..rbac import revalidate_access, workspace_permission
 
 router = APIRouter(prefix='/api')
@@ -191,7 +192,9 @@ def inspect_repository(
     retrieval_query = ' '.join(
         [body.question] + [item['content'][:160] for item in recent if item['role'] == 'user'][-2:]
     )[:600]
-    results = github_repository_file_search(token, repository, retrieval_query, limit=8)
+    results = github_repository_file_search(
+        token, repository, retrieval_query, limit=8, http_json=http_json
+    )
     web_results = search_public_web(body.question) if body.include_web else []
     evidence = [
         {
