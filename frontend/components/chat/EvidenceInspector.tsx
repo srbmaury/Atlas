@@ -117,7 +117,7 @@ export function EvidenceInspector({
           : null;
 
     return (
-        <Dialog title={source ? 'Source passage' : 'Document preview'} closeLabel="Close preview" className="evidence-inspector" onClose={onClose}>
+        <Dialog title={source ? 'Source passage' : 'Document preview'} closeLabel="Close preview" className={source ? 'evidence-inspector citation-inspector' : 'evidence-inspector'} onClose={onClose}>
             <div className="drawer-header">
                 {source && <FileBadge name={sourceDisplayName(source)} />}
                 <div className="evidence-inspector-heading">

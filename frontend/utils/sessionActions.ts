@@ -74,7 +74,9 @@ export async function refreshWorkspaceMetadata({
             .then((chats) => {
                 if (scope.current === workspaceId) setChats(chats);
             })
-            .catch((error) => setError(error.message)),
+            .catch((error) => {
+                if (scope.current === workspaceId) setError(error.message);
+            }),
     ]);
 }
 

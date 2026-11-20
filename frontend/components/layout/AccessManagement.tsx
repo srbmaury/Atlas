@@ -152,7 +152,11 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
             )}
             {kind === 'workspace' && (
                 <p>
-                    Your role: <strong>{workspace?.role || 'No workspace selected'}</strong>. Viewers read and ask; editors also manage documents; managers also manage members and connections.
+                    Your role:{' '}
+                    <strong>
+                        {workspace && (workspace.owner_id === userId || members.some((member) => member.owner && member.id === userId)) ? 'Owner' : workspace?.role || 'No workspace selected'}
+                    </strong>
+                    . Viewers read and ask; editors also manage documents; managers also manage members and connections.
                 </p>
             )}
             {error && (
@@ -164,6 +168,7 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
             {loading && <p role="status">Loading access…</p>}
             {!loading && base && (
                 <>
+                    <h3>Members</h3>
                     {members.length > 0 && (
                         <ul className="access-members">
                             {members.map((member) => (
@@ -226,6 +231,7 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
                             onChange={(connection, shared, ids, resources) => void changeSharing(connection, shared, ids, resources)}
                         />
                     )}
+                    {canManage && <SecurityAudit key={base} base={base} members={members} revision={revision} />}
                     {members.some((member) => member.owner && member.id === userId) && (
                         <OwnershipTransfer
                             name={kind === 'workspace' ? workspace?.name || '' : organisation?.name || ''}
@@ -236,7 +242,6 @@ export function AccessManagement({ workspace, userId, onRefresh, view }: { works
                             }
                         />
                     )}
-                    {canManage && <SecurityAudit key={base} base={base} members={members} revision={revision} />}
                     {kind === 'organisation' && canManage && (
                         <form
                             className="access-form"

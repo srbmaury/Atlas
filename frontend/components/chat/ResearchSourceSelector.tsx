@@ -17,6 +17,10 @@ interface ResearchSourceSelectorProps {
     onToggleProvider: (provider: ResearchProvider, enabled: boolean) => void;
     onSelectAll: (select: boolean) => void;
     onManage: () => void;
+    onBrowseDocuments: () => void;
+    selectedCount: number;
+    sourceLoadFailed?: boolean;
+    onRetrySources: () => void;
 }
 
 export function ResearchSourceSelector({
@@ -31,6 +35,10 @@ export function ResearchSourceSelector({
     onToggleProvider,
     onSelectAll,
     onManage,
+    onBrowseDocuments,
+    selectedCount,
+    sourceLoadFailed,
+    onRetrySources,
 }: ResearchSourceSelectorProps) {
     const [open, setOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -72,9 +80,29 @@ export function ResearchSourceSelector({
                         >
                             {allSelected ? 'Unselect all' : 'Select all'}
                         </button>
+                        {sourceLoadFailed && (
+                            <div className="source-load-notice" role="status">
+                                Some connections couldn’t be loaded.{' '}
+                                <button type="button" onClick={onRetrySources}>
+                                    Retry
+                                </button>
+                            </div>
+                        )}
                         <label>
                             <input type="checkbox" checked={includeDocuments} onChange={(e) => onIncludeDocuments(e.target.checked)} /> Documents
                         </label>
+                        {includeDocuments && (
+                            <button
+                                type="button"
+                                className="unified-source-manage"
+                                onClick={() => {
+                                    setOpen(false);
+                                    onBrowseDocuments();
+                                }}
+                            >
+                                {selectedCount ? selectedCount + ' documents selected' : 'All documents'} · Change
+                            </button>
+                        )}
                         <label>
                             <input type="checkbox" disabled={!gmailStatus?.connected} checked={connectedGmail} onChange={(e) => onIncludeGmail(e.target.checked)} /> Gmail
                         </label>

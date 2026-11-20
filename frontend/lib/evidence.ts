@@ -8,7 +8,7 @@ export function visibleEvidence(result: Answer | undefined) {
 }
 
 /** Connected records have provider metadata, rather than numbered document sections. */
-export function sourceLocation(source: Source) {
+export function sourceLocation(source: Source, citationNumber?: number) {
     if (source.provider && source.provider !== 'documents')
         return (
             (
@@ -27,6 +27,7 @@ export function sourceLocation(source: Source) {
                 } as Record<string, string>
             )[source.provider] || source.provider
         );
+    if (citationNumber && source.location_type !== 'page' && source.page <= 1) return 'Passage ' + citationNumber;
     return source.page > 0 ? `${source.location_type === 'page' ? 'Page' : 'Section'} ${source.page}` : 'Source excerpt';
 }
 
@@ -73,4 +74,15 @@ export function extractionWarning(text: string, ocr = false) {
     const isolated = words.filter((word) => word.length === 1 && !/^[aAiI]$/.test(word)).length;
     if (words.length > 35 && isolated / words.length > 0.28) return 'Text formatting looks irregular · verify this passage against the original.';
     return null;
+}
+
+export function evidencePreview(text: string | undefined, answer: string | undefined, citation: number) {
+    if (!text?.trim()) return '';
+    const claim = answer
+        ?.split(/\n+/)
+        .find((line) => line.includes('[' + citation + ']'))
+        ?.replace(/\[\d+\]/g, '');
+    const sentence = citedSentence(text, claim) || text.trim().split(/(?<=[.!?])\s+/)[0] || '';
+    const normalized = sentence.replace(/\s+/g, ' ');
+    return normalized.length > 165 ? normalized.slice(0, 165).replace(/\s+\S*$/, '') + '…' : normalized;
 }

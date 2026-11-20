@@ -16,7 +16,6 @@ interface ResearchComposerProps {
     hasAskSources: boolean;
     hasMessages: boolean;
     selectedDocuments: { id: string; name: string }[];
-    allDocumentsActive: boolean;
     pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
     uploadProgress: string;
@@ -37,7 +36,6 @@ export function ResearchComposer({
     hasAskSources,
     hasMessages,
     selectedDocuments,
-    allDocumentsActive,
     pendingDocuments,
     onRemoveDocument,
     uploadProgress,
@@ -77,13 +75,8 @@ export function ResearchComposer({
                 onSubmit();
             }}
         >
-            {(allDocumentsActive || selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && (
+            {(selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && (
                 <div className="composer-context" aria-label="Question context">
-                    {allDocumentsActive && (
-                        <button type="button" className="composer-all-documents" onClick={onBrowseLibrary}>
-                            <FolderOpen size={13} /> All documents <span>· Change</span>
-                        </button>
-                    )}
                     {selectedDocuments.length > 0 && (
                         <div className="composer-context-documents">
                             {selectedDocuments.map((doc) => (

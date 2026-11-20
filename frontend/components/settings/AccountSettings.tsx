@@ -329,11 +329,16 @@ export function AccountSettings() {
                             <label className="settings-workspace-picker">
                                 Workspace
                                 <select value={workspaceId} onChange={(event) => navigate('workspace', event.target.value)}>
-                                    {workspaces.map((item) => (
-                                        <option value={item.id} key={item.id}>
-                                            {item.name} · {item.role || 'viewer'}
-                                        </option>
-                                    ))}
+                                    {workspaces.map((item) => {
+                                        const duplicate = workspaces.some((other) => other.id !== item.id && other.name === item.name);
+                                        const role = item.owner_id === user.id ? 'Owner' : item.role || 'viewer';
+                                        return (
+                                            <option value={item.id} key={item.id}>
+                                                {item.name} · {role}
+                                                {duplicate && ' · ' + (item.organisation_id ? 'Organisation' : 'Personal') + ' · ' + item.id.slice(0, 8)}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </label>
                         )}

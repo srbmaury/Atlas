@@ -15,6 +15,7 @@ interface ChatMessagesProps {
     prompts: string[];
     onPrompt: (text: string) => void;
     initials: string;
+    railAnswer?: Answer;
     renderAnswer: (answer: Answer, onPrompt: (prompt: string) => void) => ReactNode;
     answerProgress: string;
     onStop: () => void;
@@ -32,6 +33,7 @@ export function ConversationTranscript({
     prompts,
     onPrompt,
     initials,
+    railAnswer,
     renderAnswer,
     answerProgress,
     onStop,
@@ -93,7 +95,7 @@ export function ConversationTranscript({
                         </div>
                     </div>
                 ) : (
-                    <div className={`answer-row ${focusedIndex === i ? 'message-search-focused' : ''}`} key={i} data-message-index={i}>
+                    <div className={`answer-row ${focusedIndex === i ? 'message-search-focused' : ''}`} key={i} data-message-index={i} data-evidence-in-rail={!!railAnswer && m.result === railAnswer}>
                         <span className="assistant-mark">A</span>
                         <div className="answer">
                             {focusedIndex === i && searchPhrase.trim() && m.content.toLocaleLowerCase().includes(searchPhrase.trim().toLocaleLowerCase()) && (

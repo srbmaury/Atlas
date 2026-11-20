@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, type MutableRefObject } from 'react';
+import { useEffect, useState, type MutableRefObject } from 'react';
 import { api } from '../lib/api';
 import type {
     ConnectedSourceSearchResponse,
@@ -79,25 +79,15 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
             setGmailBusy(false);
         }
     }
+    const [sourceFailure, setSourceFailure] = useState<{ workspaceId: string; failed: boolean }>();
     useEffect(() => {
-        if ((tab === 'sources' || tab === 'chat') && workspaceId) {
-            void refreshDrive();
-            void api<ConnectedSourceStatus[]>(`/workspaces/${workspaceId}/sources`)
-                .then((status) => {
-                    if (scope.current === workspaceId) setSourceStatuses(status);
-                })
-                .catch((e) => setError((e as Error).message));
-            void loadSourceChecks();
-        }
+        if ((tab === 'sources' || tab === 'chat' || tab === 'overview') && workspaceId) void refreshConnections();
     }, [tab, workspaceId]);
+
     async function refreshDrive() {
         if (!workspaceId) return;
-        try {
-            const status = await api<DriveConnectionStatus>(`/workspaces/${workspaceId}/drive/status`);
-            if (scope.current === workspaceId) setDriveStatus(status);
-        } catch (e) {
-            setError((e as Error).message);
-        }
+        const status = await api<DriveConnectionStatus>(`/workspaces/${workspaceId}/drive/status`);
+        if (scope.current === workspaceId) setDriveStatus(status);
     }
     async function connectDrive() {
         setDriveBusy(true);
@@ -142,16 +132,15 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
     }
     async function refreshConnections() {
         const target = workspaceId;
-        await Promise.all([
+        const outcomes = await Promise.allSettled([
             refreshDrive(),
             refreshSourceStatuses(),
             loadSourceChecks(),
-            api<GmailStatus>(`/gmail/status?workspaceId=${encodeURIComponent(target)}`)
-                .then((status) => {
-                    if (scope.current === target) setGmailStatus(status);
-                })
-                .catch((e) => setError(e.message)),
+            api<GmailStatus>(`/gmail/status?workspaceId=${encodeURIComponent(target)}`).then((status) => {
+                if (scope.current === target) setGmailStatus(status);
+            }),
         ]);
+        if (scope.current === target) setSourceFailure({ workspaceId: target, failed: outcomes.some((outcome) => outcome.status === 'rejected') });
     }
     async function verifySourceConnections() {
         if (!workspaceId || sourceChecksBusy) return;
@@ -172,12 +161,8 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
     }
     async function refreshSourceStatuses() {
         if (!workspaceId) return;
-        try {
-            const status = await api<ConnectedSourceStatus[]>(`/workspaces/${workspaceId}/sources`);
-            if (scope.current === workspaceId) setSourceStatuses(status);
-        } catch (e) {
-            setError((e as Error).message);
-        }
+        const status = await api<ConnectedSourceStatus[]>(`/workspaces/${workspaceId}/sources`);
+        if (scope.current === workspaceId) setSourceStatuses(status);
     }
     async function loadSourceChecks() {
         if (!workspaceId) return;
@@ -340,6 +325,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         disconnectDrive,
         searchDrive,
         refreshConnections,
+        sourceLoadFailed: sourceFailure?.workspaceId === workspaceId && sourceFailure.failed,
         verifySourceConnections,
         refreshSourceStatuses,
         loadSourceChecks,

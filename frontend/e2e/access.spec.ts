@@ -55,7 +55,8 @@ test('manager adds a member and explicitly shares a connection', async ({ page }
 test('viewer sees role guidance and has no document or member mutation controls', async ({ page }) => {
     await setup(page, 'viewer');
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Add documents', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Add', exact: true })).toHaveCount(0);
+    await expect(page.getByText('You have viewer access. Ask an editor or manager to add documents.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete notes.md', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reindex notes.md', exact: true })).toHaveCount(0);
     await page.goto('/settings?section=workspace&workspaceId=w1');

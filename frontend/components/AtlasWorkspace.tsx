@@ -223,6 +223,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         disconnectDrive,
         searchDrive,
         refreshConnections,
+        sourceLoadFailed,
         verifySourceConnections,
         connectSource,
         connectOAuthSource,
@@ -653,6 +654,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             setConnectedGmailQuery={setConnectedGmailQuery}
                             driveStatus={driveStatus}
                             sourceStatuses={sourceStatuses}
+                            sourceLoadFailed={sourceLoadFailed}
+                            onRetrySources={() => void refreshConnections()}
                             connectedProviders={connectedProviders}
                             setConnectedProviders={setConnectedProviders}
                             selectedCount={selected.length}
@@ -709,10 +712,23 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             hasAskSources={hasAskSources}
                         />
                     )}
-                    {workspaceId && tab === 'agents' && <AgentStudioPanel workspaceId={workspaceId} />}
+                    {workspaceId && tab === 'agents' && (
+                        <AgentStudioPanel
+                            key={workspaceId}
+                            workspaceId={workspaceId}
+                            canEdit={canEdit}
+                            onUse={
+                                canEdit && !busy && !agentBusy
+                                    ? (handle) => {
+                                          newChat(true);
+                                          setQuery(handle + ' ');
+                                      }
+                                    : undefined
+                            }
+                        />
+                    )}
                     {workspaceId && tab === 'documents' && (
                         <DocumentsView
-                            uploadButton={uploadButton}
                             canEdit={canEdit}
                             webImport={
                                 canEdit ? (
@@ -723,8 +739,9 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             }
                             totalDocuments={docs.length}
                             readyDocuments={ready.length}
+                            failedDocuments={docs.filter((doc) => doc.status === 'failed').length}
+                            indexingDocuments={docs.filter((doc) => ['queued', 'processing'].includes(doc.status)).length}
                             storageLabel={storage ? prettyBytes(storage) : '0 KB'}
-                            filteredCount={filtered.length}
                             filter={filter}
                             onFilter={setFilter}
                             documentTable={
@@ -770,7 +787,11 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                                             <button className="btn" onClick={() => void refreshConnections()}>
                                                 Refresh list
                                             </button>
-                                            <button className="btn primary" disabled={sourceChecksBusy || !canManage} onClick={() => void verifySourceConnections()}>
+                                            <button
+                                                className="btn primary"
+                                                disabled={sourceChecksBusy || !canManage || !(gmailStatus?.connected || driveStatus?.connected || sourceStatuses.some((source) => source.connected))}
+                                                onClick={() => void verifySourceConnections()}
+                                            >
                                                 {sourceChecksBusy ? (
                                                     <>
                                                         <LoaderCircle className="spin" />
@@ -782,6 +803,14 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                                             </button>
                                         </div>
                                     </div>
+                                    {sourceLoadFailed && (
+                                        <p role="status" className="source-load-notice">
+                                            Some connections couldn’t be loaded.{' '}
+                                            <button type="button" onClick={() => void refreshConnections()}>
+                                                Retry
+                                            </button>
+                                        </p>
+                                    )}
                                     <IntegrationsGallery
                                         gmailStatus={gmailStatus}
                                         driveStatus={driveStatus}

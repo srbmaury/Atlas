@@ -3,7 +3,7 @@ import type { ExternalSourceProvider } from './providers';
 export type { ExternalSourceProvider, IntegrationProvider, ResearchProvider } from './providers';
 
 export type User = { id: string; email: string; display_name?: string | null; mode: string; max_file_bytes: number };
-export type Workspace = { id: string; name: string; role?: 'manager' | 'editor' | 'viewer'; organisation_id?: string | null };
+export type Workspace = { id: string; name: string; role?: 'manager' | 'editor' | 'viewer'; organisation_id?: string | null; owner_id?: string };
 export type Doc = {
     id: string;
     name: string;
