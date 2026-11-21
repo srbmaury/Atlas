@@ -907,3 +907,43 @@
         min-height: 0;
     }
 }
+
+/* Agent Studio empty-state and keyboard accessibility refinements */
+.libraryEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 240px;
+    padding: 36px 20px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 16px;
+    color: var(--sub);
+}
+.libraryEmpty h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 19px;
+}
+.libraryEmpty p {
+    margin: 0 0 8px;
+    max-width: 380px;
+    line-height: 1.55;
+}
+.studio button:focus-visible,
+.studio input:focus-visible,
+.studio textarea:focus-visible,
+.studio select:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .libraryCard {
+        transition: none;
+    }
+    .libraryCard:hover {
+        transform: none;
+    }
+}

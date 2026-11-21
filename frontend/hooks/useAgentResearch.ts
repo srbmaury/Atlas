@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import { persistConversation } from '../lib/researchRequests';
@@ -6,6 +6,18 @@ import type { ChatSummary, Source } from '../lib/types';
 import type { useConversation } from './useConversation';
 
 type AgentMention = { id: string; name: string; handle: string };
+
+type ActiveAgentRun = {
+    controller: AbortController;
+    start?: Promise<{ id: string; url: string }>;
+    cancelling: boolean;
+};
+
+async function cancelAgentRun(start: NonNullable<ActiveAgentRun['start']>) {
+    const { url } = await start;
+    const response = await fetch(`${url}/cancel`, { method: 'POST', credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Could not stop agent research. Try Stop again.');
+}
 
 type AgentResearchOptions = {
     workspaceId: string;
@@ -22,16 +34,37 @@ type AgentResearchOptions = {
 export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conversation, setChats, setQuery, setError }: AgentResearchOptions) {
     const { activeChat, chatMessages, chatTitle, setChatId, setMessages } = conversation;
     const [agentBusy, setAgentBusy] = useState(false);
-    const activeRun = useRef<AbortController | null>(null);
-    const stopAgent = useCallback(() => {
-        const controller = activeRun.current;
-        if (!controller) return;
-        activeRun.current = null;
-        controller.abort();
-        setAgentBusy(false);
-    }, []);
+    const activeRun = useRef<ActiveAgentRun | null>(null);
 
-    useLayoutEffect(() => stopAgent, [workspaceId, userId, stopAgent]);
+    async function stopAgent() {
+        const run = activeRun.current;
+        if (!run || run.cancelling) return;
+        setError('');
+        run.cancelling = true;
+        try {
+            if (run.start) await cancelAgentRun(run.start);
+            if (activeRun.current !== run) return;
+            activeRun.current = null;
+            run.controller.abort();
+            setAgentBusy(false);
+        } catch {
+            if (activeRun.current === run) setError('Could not stop agent research. Try Stop again.');
+        } finally {
+            run.cancelling = false;
+        }
+    }
+
+    useLayoutEffect(
+        () => () => {
+            const run = activeRun.current;
+            if (!run) return;
+            activeRun.current = null;
+            run.controller.abort();
+            setAgentBusy(false);
+            if (run.start && !run.cancelling) void cancelAgentRun(run.start).catch(() => {});
+        },
+        [workspaceId, userId],
+    );
 
     const [agentList, setAgentList] = useState<{ workspaceId: string; userId: string; agents: AgentMention[] }>();
     useEffect(() => {
@@ -84,7 +117,8 @@ export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conver
     async function runAgent(agent: AgentMention, text: string, agentQuestion: string) {
         const controller = new AbortController();
         const { signal } = controller;
-        activeRun.current = controller;
+        const pending: ActiveAgentRun = { controller, cancelling: false };
+        activeRun.current = pending;
         const sequence = chatLoadSequence.next();
         const isCurrent = () => !signal.aborted && scope.current === workspaceId && chatLoadSequence.isCurrent(sequence);
         setAgentBusy(true);
@@ -102,17 +136,17 @@ export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conver
             chatTitle.current = conversationTitle;
             setChats((previous) => [{ id: saved.id, title: conversationTitle, updated: saved.updated }, ...previous.filter((item) => item.id !== saved.id)]);
             const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents/${encodeURIComponent(agent.id)}/runs`;
-            const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: agentQuestion }) });
-            if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
-            const run: { id: string } = await started.json();
-            const cancelRun = () => {
-                void fetch(`${base}/${encodeURIComponent(run.id)}/cancel`, { method: 'POST', credentials: 'same-origin' }).catch(() => {});
-            };
+            pending.start = (async () => {
+                const started = await fetch(base, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: agentQuestion }) });
+                if (!started.ok) throw new Error(`Agent could not start (HTTP ${started.status}).`);
+                const run: { id: string } = await started.json();
+                return { id: run.id, url: `${base}/${encodeURIComponent(run.id)}` };
+            })();
+            const run = await pending.start;
             if (!isCurrent()) {
-                cancelRun();
+                if (!signal.aborted) void cancelAgentRun(pending.start).catch(() => {});
                 return;
             }
-            signal.addEventListener('abort', cancelRun, { once: true });
             let completed:
                 | {
                       id: string;
@@ -142,7 +176,6 @@ export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conver
                     break;
                 }
             }
-            signal.removeEventListener('abort', cancelRun);
             if (!completed) throw new Error('Agent is still running. Check its run history later.');
             const audit = completed.result?.claim_verification;
             const answer = completed.result?.answer || completed.result?.error || completed.error || 'No answer available.';
@@ -188,7 +221,7 @@ export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conver
                 }
             }
         } finally {
-            if (activeRun.current === controller) {
+            if (activeRun.current === pending) {
                 activeRun.current = null;
                 setAgentBusy(false);
             }

@@ -106,9 +106,11 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         setError('');
         try {
             await api(`/workspaces/${workspaceId}/drive`, { method: 'DELETE' });
-            await refreshDrive();
+            if (scope.current !== workspaceId) return;
+            setDriveStatus((status) => status && { ...status, connected: false, account: null });
             setDriveResults([]);
             setConnectedProviders((old) => old.filter((p) => p !== 'drive'));
+            await refreshConnections();
         } catch (e) {
             setError((e as Error).message);
         } finally {
@@ -208,9 +210,11 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         setError('');
         try {
             await api(`/workspaces/${workspaceId}/sources/${provider}`, { method: 'DELETE' });
-            await refreshSourceStatuses();
+            if (scope.current !== workspaceId) return;
+            setSourceStatuses((items) => items.map((item) => (item.provider === provider ? { ...item, connected: false, account: null } : item)));
             setSourceResults([]);
             setConnectedProviders((old) => old.filter((p) => p !== provider));
+            await refreshConnections();
         } catch (e) {
             setError((e as Error).message);
         } finally {

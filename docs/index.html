@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Atlas architecture, RAG research flow, source permissions, and Agent Studio documentation.">
+  <meta name="color-scheme" content="light dark">
+  <title>Atlas | Developer documentation</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color-scheme:light dark;--accent:#6366f1}
+    *{box-sizing:border-box}body{margin:0;line-height:1.6;background:Canvas;color:CanvasText}
+    header,main,footer{max-width:1060px;margin:auto;padding:24px}header{padding-top:64px}
+    .eyebrow{color:var(--accent);font-weight:750;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem}
+    h1{font-size:clamp(2.1rem,5vw,3.7rem);line-height:1.1;margin:.3em 0}h2{margin-top:2.3rem}
+    .lead{max-width:720px;font-size:1.12rem;opacity:.8}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:16px}
+    .card{border:1px solid color-mix(in srgb,CanvasText 20%,transparent);border-radius:16px;padding:22px}
+    .card h3{margin:0 0 8px}.card p{margin:0 0 14px;opacity:.8}
+    a{color:var(--accent);text-underline-offset:3px}a:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+    ol li{margin-bottom:12px}code{background:color-mix(in srgb,CanvasText 8%,transparent);padding:2px 5px;border-radius:4px}
+    .notice{border-left:4px solid var(--accent);padding:12px 20px;background:color-mix(in srgb,var(--accent) 7%,Canvas)}
+    footer{border-top:1px solid color-mix(in srgb,CanvasText 20%,transparent);font-size:.9rem;opacity:.8}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Atlas / Documentation</div>
+  <h1>Research you can trace.</h1>
+  <p class="lead">A developer guide to Atlas: workspace-scoped retrieval, connected sources, evidence-backed answers, and configurable research agents.</p>
+  <p><a href="../README.md">Getting started</a> · <a href="AGENT_STUDIO.md">Agent Studio</a> · <a href="SOURCE_SETUP.md">Connect sources</a></p>
+</header>
+<main id="main">
+  <section aria-labelledby="guides"><h2 id="guides">Explore the guides</h2>
+    <div class="grid">
+      <article class="card"><h3>Getting started</h3><p>Local setup, Docker, deployment and tests.</p><a href="../README.md">Read README</a></article>
+      <article class="card"><h3>Agent Studio</h3><p>Create agents, use @mentions, review traces and permission boundaries.</p><a href="AGENT_STUDIO.md">Agent guide</a></article>
+      <article class="card"><h3>Data sources</h3><p>Connect Google Workspace, Microsoft 365 and engineering tools.</p><a href="SOURCE_SETUP.md">Source setup</a></article>
+      <article class="card"><h3>Data model</h3><p>Workspace membership, indexed chunks, conversations and agent runs.</p><a href="DATABASE.md">Database design</a></article>
+      <article class="card"><h3>Security</h3><p>Deployment safeguards, permissions and operational readiness.</p><a href="../SECURITY.md">Security checklist</a></article>
+      <article class="card"><h3>Retrieval evaluation</h3><p>Inspect reproducible lexical retrieval metrics and their limitations.</p><a href="../evals/retrieval_eval.py">Evaluation harness</a></article>
+    </div>
+  </section>
+  <section aria-labelledby="flow"><h2 id="flow">How research works</h2>
+    <ol>
+      <li><strong>Ingest:</strong> extract text from uploaded files, chunk it, and optionally generate embeddings.</li>
+      <li><strong>Retrieve:</strong> search ready documents using lexical ranking and optional semantic similarity. Connected sources are queried on demand under user permissions.</li>
+      <li><strong>Ground:</strong> prepare bounded passages and ask the selected model to cite source IDs; without a model, return relevant excerpts.</li>
+      <li><strong>Inspect:</strong> show citations, retrieval traces and automated claim assessments. A valid citation is not proof of factual support.</li>
+      <li><strong>Reuse:</strong> save agent instructions and source selection, then invoke the agent from Home or Chat with an <code>@mention</code>.</li>
+    </ol>
+    <div class="notice"><strong>Permission boundary:</strong> an agent's configured sources never automatically grant a caller access to those sources. Delegated source access requires a separately designed, explicit authorization system.</div>
+  </section>
+  <section aria-labelledby="limitations"><h2 id="limitations">Known limitations</h2>
+    <p>Current offline evaluation is synthetic, so it cannot establish real-world answer accuracy. Automated claim assessments are advisory. Long-running agents require the background worker, and connector credentials need independent deployment testing.</p>
+  </section>
+</main>
+<footer>Atlas documentation · <a href="https://github.com/srbmaury/Atlas">Source repository</a></footer>
+</body>
+</html>

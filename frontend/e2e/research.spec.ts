@@ -154,16 +154,23 @@ test('agent cards can open a new chat with the mention filled in', async ({ page
     await expect(page.getByRole('complementary', { name: 'Supporting evidence' })).toBeHidden();
 });
 
-test('stopping an agent before startup returns cancels the run when its ID arrives', async ({ page }) => {
+test('stopping before agent startup supports retry when cancellation fails', async ({ page }) => {
     let releaseStart!: () => void;
     const startResponse = new Promise<void>((resolve) => {
         releaseStart = resolve;
     });
     await page.route('**/api/workspaces/w1/agents/a1/runs', async (route) => {
+        if (route.request().method() === 'GET') {
+            await route.fulfill({ json: [{ id: 'run-1', status: 'processing' }] });
+            return;
+        }
         await startResponse;
         await route.fulfill({ json: { id: 'run-1' } });
     });
-    await page.route('**/api/workspaces/w1/agents/a1/runs/run-1/cancel', (route) => route.fulfill({ json: { status: 'cancelled' } }));
+    let cancellationAttempts = 0;
+    await page.route('**/api/workspaces/w1/agents/a1/runs/run-1/cancel', (route) =>
+        ++cancellationAttempts === 1 ? route.fulfill({ status: 503 }) : route.fulfill({ json: { status: 'cancelled' } }),
+    );
 
     const question = page.getByRole('textbox', { name: 'Your question' });
     await question.fill('@');
@@ -173,12 +180,14 @@ test('stopping an agent before startup returns cancels the run when its ID arriv
     await page.getByRole('button', { name: 'Send question' }).click();
     expect((await started).postDataJSON()).toEqual({ question: 'Summarize the notes' });
 
-    const cancelled = page.waitForResponse((response) => response.url().endsWith('/runs/run-1/cancel'));
     const stop = page.getByRole('button', { name: 'Stop', exact: true });
     await stop.click();
-    await expect(stop).toBeHidden();
     releaseStart();
+    await expect(page.getByText('Could not stop agent research. Try Stop again.')).toBeVisible();
+    const cancelled = page.waitForResponse((response) => response.url().endsWith('/runs/run-1/cancel'));
+    await stop.click();
     expect((await cancelled).ok()).toBe(true);
+    await expect(stop).toBeHidden();
     await expect(page.locator('.answer-row')).toHaveCount(0);
 });
 
