@@ -97,7 +97,7 @@ def github_repository_file_search(token, repository, query, limit=12, *, http_js
             continue
         basename = parts[-1]
         suffix = '.' + basename.rsplit('.', 1)[-1] if '.' in basename else ''
-        if suffix not in allowed_suffixes and basename not in {'dockerfile', 'makefile'}:
+        if suffix not in allowed_suffixes and basename != 'dockerfile':
             continue
         if any(basename.endswith(ext) for ext in ('.lock', '.min.js', '.map')):
             continue

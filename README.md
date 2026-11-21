@@ -349,9 +349,21 @@ npm run build
 
 The tests use an isolated temporary database and mock provider calls. They do not verify OAuth credentials or live access to Gmail, Drive, GitHub, Notion, or Slack.
 
-Install the development requirements before running style checks. From the repository root,
-`make format` applies Ruff import sorting/formatting and Prettier; `make format-check`
-checks Python lint/formatting and frontend formatting without changing files.
+Install the development requirements before running style checks. From the repository root:
+
+```sh
+.venv/bin/ruff check backend evals ops
+.venv/bin/ruff format --check backend evals ops
+(cd frontend && npm run format:check)
+```
+
+To apply import sorting and formatting:
+
+```sh
+.venv/bin/ruff check --select I --fix backend evals ops
+.venv/bin/ruff format backend evals ops
+(cd frontend && npm run format)
+```
 
 For browser tests, install Playwright and Chromium:
 
@@ -488,11 +500,13 @@ a pre-upgrade backup if a rollback is required.
 
 ## Security and production readiness
 
-See [SECURITY.md](SECURITY.md) for implemented safeguards and the explicit
-production-hardening checklist. Local unit tests do not verify real provider OAuth
+Local unit tests do not verify real provider OAuth
 configuration or deployed infrastructure. Do not expose a production deployment
 until staging, secrets, network, backup, monitoring, and independent-review gates
 have been completed.
+
+Report vulnerabilities privately to the repository maintainers. Avoid posting secrets,
+personal data, or exploit details in public issues.
 
 Citation auditing checks reference validity, lexical overlap, numbers, and common
 negation patterns. It deliberately reports semantic entailment as **not evaluated**;
