@@ -412,11 +412,41 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                     })}
                 </div>
             ) : (
-                <div className={styles.libraryEmpty}>{agents.length ? 'No agents match your search.' : 'No agents yet. Create your first agent to use it in Atlas Chat.'}</div>
+                <div className={styles.libraryEmpty} role="status">
+                    <Bot size={28} aria-hidden="true" />
+                    <h2>{agents.length ? 'No matching agents' : 'Build your first research agent'}</h2>
+                    <p>{agents.length ? 'Try a different name or purpose to find an agent.' : 'Choose trusted knowledge sources, define instructions, and use the agent directly in Chat.'}</p>
+                    {agents.length ? (
+                        <button className={styles.button} onClick={() => setAgentSearch('')}>
+                            Clear search
+                        </button>
+                    ) : (
+                        <button className={styles.primaryButton} onClick={() => setShowCreate(true)}>
+                            <Plus size={16} /> Create agent
+                        </button>
+                    )}
+                </div>
             )}
             {showCreate && (
-                <div className={styles.modalBackdrop} onClick={() => setShowCreate(false)}>
-                    <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onClick={(event) => event.stopPropagation()}>
+                <div
+                    className={styles.modalBackdrop}
+                    onClick={() => {
+                        if (!busy) setShowCreate(false);
+                    }}
+                >
+                    <div
+                        className={styles.modal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="create-agent-title"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape' && !busy) {
+                                event.stopPropagation();
+                                setShowCreate(false);
+                            }
+                        }}
+                    >
                         <div className={styles.modalHeader}>
                             <div>
                                 <div className={styles.modalEyebrow}>

@@ -13,8 +13,8 @@ from .agent_evidence import evidence_graph, plan
 from .ai import generate_agent
 from .api_dependencies import database, user, workspace
 from .connected_research import collect_connected_evidence, connected_sources_for_payload
-from .db import Base, Document, Session, User, uid
-from .rbac import require_workspace, revalidate_access, workspace_permission
+from .db import Base, Document, Session, User, Workspace, uid
+from .rbac import lock_resource, require_workspace, revalidate_access, workspace_permission
 from .retrieval import retrieve
 from .schemas import ConnectedQuestion
 from .worker import claim, heartbeat
@@ -334,11 +334,11 @@ def cancel_research(
     db=Depends(database),
 ):
     workspace(workspaceId, actor, db)
+    owned_run = db.query(AgentRun).filter_by(
+        workspace_id=workspaceId, agent_id=agentId, id=runId, actor_id=actor.id
+    )
     (
-        db.query(AgentRun)
-        .filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId, actor_id=actor.id)
-        .filter(AgentRun.status.in_(('queued', 'processing')))
-        .update(
+        owned_run.filter(AgentRun.status.in_(('queued', 'processing'))).update(
             {
                 'status': 'cancelled',
                 'lease': 0,
@@ -348,10 +348,10 @@ def cancel_research(
         )
     )
     db.commit()
-    run = db.query(AgentRun).filter_by(workspace_id=workspaceId, agent_id=agentId, id=runId).first()
+    run = owned_run.first()
     if run is None:
         raise HTTPException(404, 'Research run not found.')
-    return public_run(run)
+    return {'id': run.id, 'status': run.status}
 
 
 @router.post('/{agentId}/runs', dependencies=[Depends(workspace_permission('editor'))])
@@ -362,6 +362,8 @@ def run_research(
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
         raise HTTPException(404, 'Agent not found.')
+    # Serialize admission across workers on PostgreSQL and SQLite.
+    lock_resource(db, Workspace, workspaceId)
     active = db.query(AgentRun).filter(
         AgentRun.workspace_id == workspaceId,
         AgentRun.status.in_(('queued', 'processing')),

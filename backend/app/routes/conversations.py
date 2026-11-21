@@ -36,6 +36,18 @@ def visible_messages(item, actor=None):
         entry = dict(message)
         agent = entry.get('agent')
         if actor is not None and isinstance(agent, dict):
+            # Legacy agent messages lack the provenance needed to safely recheck grants.
+            # Fail closed rather than returning evidence after a source is revoked.
+            has_provenance = 'providers' in agent and 'scope_fingerprints' in agent
+            if not has_provenance:
+                visible.append(
+                    {
+                        'role': entry.get('role', 'assistant'),
+                        'content': 'This older agent response is hidden because its source permissions cannot be verified.',
+                        'agent': {'id': agent.get('id'), 'name': agent.get('name')},
+                    }
+                )
+                continue
             providers = set(agent.get('providers') or [])
             if not providers:
                 providers = set((entry.get('result') or {}).get('scope') or [])
