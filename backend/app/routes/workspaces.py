@@ -5,7 +5,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 
-from ..access_audit import record
 from ..api_dependencies import database, user, workspace
 from ..db import (
     Chunk,
@@ -20,9 +19,15 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
-from ..original_storage import delete_original
-from ..rbac import require_organisation, require_workspace, workspace_permission, workspace_role
+from ..documents.original_storage import delete_original
 from ..schemas import DeleteWorkspaceRequest, Named
+from ..security.access_audit import record
+from ..security.rbac import (
+    require_organisation,
+    require_workspace,
+    workspace_permission,
+    workspace_role,
+)
 
 
 class WorkspaceCreate(Named):

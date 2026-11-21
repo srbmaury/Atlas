@@ -108,7 +108,7 @@ erDiagram
     }
 ```
 
-Documents are unique by `(workspace_id, digest)`. A chunk has separate foreign keys to its document and workspace. Atlas keeps those references consistent when indexing. Conversation history is private to its author. Messages and citations are stored in `conversations.messages`. Agent definitions and runs are declared in `backend/app/agent_studio.py`; each run records the invoking user, status, execution steps and evidence result. Agent responses copied into conversations include attribution and permission metadata used to hide restricted evidence when source access changes.
+Documents are unique by `(workspace_id, digest)`. A chunk has separate foreign keys to its document and workspace. Atlas keeps those references consistent when indexing. Conversation history is private to its author. Messages and citations are stored in `conversations.messages`. Agent definitions and runs are declared in `backend/app/agents/models.py`; each run records the invoking user, status, execution steps and evidence result. Agent responses copied into conversations include attribution and permission metadata used to hide restricted evidence when source access changes.
 
 SQLite can also maintain `chunks_fts`, an FTS5 virtual table synchronized with `chunks` by triggers. Alembic tracks the migration revision in `alembic_version`.
 

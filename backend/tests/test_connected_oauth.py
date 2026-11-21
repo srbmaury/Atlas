@@ -7,7 +7,7 @@ import json
 import pytest
 from fastapi import HTTPException
 
-from app import connected_oauth
+from app.connectors import connected_oauth
 
 
 def test_pkce_challenge_matches_verifier():

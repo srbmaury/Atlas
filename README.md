@@ -23,18 +23,18 @@ flowchart LR
   API --> Files[("Original uploaded files<br/>Local disk or private Supabase Storage")]
   API --> Conn["On-demand provider adapters<br/>Google · Microsoft · GitHub · Notion · Slack · Jira · Linear"]
   Conn --> Providers["External provider APIs"]
-  API --> Retrieval["Keyword / vector retrieval<br/>backend/app/retrieval.py"]
+  API --> Retrieval["Keyword / vector retrieval<br/>backend/app/research/retrieval.py"]
   Retrieval --> DB
   API --> Synthesis["Grounded answer generation<br/>ai.py / connected_synthesis.py"]
   Synthesis --> Model["Optional Ollama or OpenAI"]
-  API --> Agents["Agent definitions and runs<br/>backend/app/agent_studio.py"]
+  API --> Agents["Agent definitions and runs<br/>backend/app/routes/agents.py"]
   Agents --> DB
   Agents --> Conn
   Agents --> Retrieval
   Agents --> Worker
   API --> Queue["Document status / lease<br/>stored in database"]
   Queue --> Worker["Ingestion worker<br/>backend/app/worker.py"]
-  Worker --> Parser["Parsing · OCR · chunking<br/>backend/app/ingest.py"]
+  Worker --> Parser["Parsing · OCR · chunking<br/>backend/app/documents/ingest.py"]
   Parser --> Files
   Parser --> Model
   Worker --> DB
@@ -162,12 +162,12 @@ Agent runs are read-only and use the invoking user's permissions, not the agent 
 | Workflow | Entry point | Key modules |
 | --- | --- | --- |
 | Frontend workspace | `frontend/app/page.tsx` | `components/AtlasWorkspace.tsx`, `components/chat/`, `components/documents/` |
-| Upload and background indexing | `backend/app/main.py` document/upload routes | `worker.py`, `ingest.py`, `db.py` |
-| Document retrieval | `backend/app/main.py` chat routes | `retrieval.py`, `ai.py` |
-| Cross-source answers | `backend/app/main.py` connected-chat routes | `external_sources.py`, `github_search.py`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
+| Upload and background indexing | `backend/app/routes/documents.py` | `worker.py`, `documents/ingest.py`, `db.py` |
+| Document retrieval | `backend/app/routes/chat.py` | `research/retrieval.py`, `research/ai.py` |
+| Cross-source answers | `backend/app/routes/chat.py` | `connectors/external_sources.py`, `connectors/github/`, `connectors/gmail.py`, `connectors/drive.py`, `research/connected_synthesis.py` |
 | Citation display | `frontend/components/chat/ResearchAnswer.tsx` | `frontend/lib/evidence.ts` |
-| Agent creation, runs and authorization | `backend/app/agent_studio.py` | `agent_evidence.py`, `agent_claims.py`, `rbac.py` |
-| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `hooks/useAgentResearch.ts`, `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
+| Agent creation, runs and authorization | `backend/app/routes/agents.py` | `agents/`, `security/rbac.py` |
+| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `components/agents/useAgentResearch.ts`, `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
 
 
 
@@ -389,16 +389,17 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 
 ## Project layout
 
-- `backend/app/main.py`: API, authentication, access checks, uploads, chat, and conversations.
-- `backend/app/ingest.py`: file parsing, OCR, and chunking.
-- `backend/app/retrieval.py`: keyword/vector retrieval and ranking.
-- `backend/app/ai.py`: embeddings and grounded answer generation.
-- `backend/app/external_sources.py`: Connected-source routes, credentials, and search dispatch.
-- `backend/app/github_search.py`: GitHub query parsing, code flow tracing, and repository evidence retrieval.
-- `backend/app/drive.py` and `backend/app/gmail.py`: Google connectors.
+- `backend/app/main.py`: application setup, router registration, and request middleware.
+- `backend/app/routes/chat.py`: document and connected chat, including streaming.
+- `backend/app/documents/ingest.py`: file parsing, OCR, and chunking.
+- `backend/app/research/retrieval.py`: keyword/vector retrieval and ranking.
+- `backend/app/research/ai.py`: embeddings and grounded answer generation.
+- `backend/app/connectors/external_sources.py`: Connected-source routes, credentials, and search dispatch.
+- `backend/app/connectors/github/`: GitHub query parsing, code flow tracing, and repository evidence retrieval.
+- `backend/app/connectors/drive.py` and `backend/app/connectors/gmail.py`: Google connectors.
 - `backend/app/worker.py`: background document ingestion and agent research execution.
-- `backend/app/agent_studio.py`: agent definitions, run lifecycle, source authorization and trace persistence.
-- `backend/app/agent_evidence.py` and `backend/app/agent_claims.py`: research planning, evidence graph and claim assessment.
+- `backend/app/routes/agents.py`: agent definition and run endpoints.
+- `backend/app/agents/`: agent models, source authorization, execution, evidence graph and claim assessment.
 - `frontend/app/page.tsx`: lightweight Next.js entry point.
 - `frontend/components/AtlasWorkspace.tsx`: workspace state and screen composition.
 - `frontend/components/{home,documents,chat,agents,sources,auth,layout,ui}/`: feature-level UI and shared components.

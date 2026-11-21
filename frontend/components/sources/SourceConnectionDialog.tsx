@@ -1,7 +1,7 @@
 'use client';
 import { ArrowUpRight } from 'lucide-react';
 import { Dialog } from '../ui/WorkspacePrimitives';
-import { useSourceConnections } from '../../hooks/useSourceConnections';
+import { useSourceConnections } from './useSourceConnections';
 import type { ExternalSourceProvider } from '../../lib/providers';
 type State = ReturnType<typeof useSourceConnections>;
 

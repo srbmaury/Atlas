@@ -2,9 +2,9 @@
 
 import pytest
 
-from app import batch_connectors
-from app.source_contract import normalize_evidence
-from app.sources import Evidence
+from app.connectors import batch_connectors
+from app.research.source_contract import normalize_evidence
+from app.research.sources import Evidence
 
 
 @pytest.mark.parametrize('provider', batch_connectors.NEW_PROVIDERS)

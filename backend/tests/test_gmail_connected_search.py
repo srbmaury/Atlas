@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from app.connected_research import _search_gmail
-from app.research_queries import gmail_query_for_question
+from app.research.connected_research import _search_gmail
+from app.research.research_queries import gmail_query_for_question
 
 
 def test_connected_search_does_not_reuse_previous_sender():
@@ -114,9 +114,9 @@ def test_cited_evidence_rejects_invalid_message_ids():
 
 
 def test_gmail_listing_uses_every_distinct_message():
-    from app.connected_research import connected_source_listing_result, retrieval_trace
-    from app.evidence_quality import prepare_evidence
-    from app.source_contract import Evidence
+    from app.research.connected_research import connected_source_listing_result, retrieval_trace
+    from app.research.evidence_quality import prepare_evidence
+    from app.research.source_contract import Evidence
 
     rows = [
         Evidence(
@@ -151,7 +151,7 @@ def test_gmail_listing_uses_every_distinct_message():
 def test_connected_search_keeps_available_messages_after_a_deleted_hit(monkeypatch):
     import httpx
 
-    from app import gmail
+    from app.connectors import gmail
 
     def fake_get(url, **kwargs):
         request = httpx.Request('GET', url)
@@ -179,8 +179,8 @@ def test_connected_search_keeps_available_messages_after_a_deleted_hit(monkeypat
 
 
 def test_record_listing_does_not_drop_retrieved_documents():
-    from app.connected_research import direct_connected_result
-    from app.source_contract import Evidence
+    from app.research.connected_research import direct_connected_result
+    from app.research.source_contract import Evidence
 
     body = SimpleNamespace(include_documents=True, include_gmail=True, providers=[])
     evidence = [

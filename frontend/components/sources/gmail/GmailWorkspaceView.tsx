@@ -2,7 +2,7 @@
 import { ArrowUpRight, LoaderCircle, Copy, CheckCircle2, RotateCcw, FileText, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useGmailWorkspace } from '../../../hooks/useGmailWorkspace';
+import { useGmailWorkspace } from './useGmailWorkspace';
 type State = ReturnType<typeof useGmailWorkspace>;
 
 interface GmailWorkspaceViewProps {

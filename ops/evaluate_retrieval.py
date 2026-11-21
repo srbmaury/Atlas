@@ -9,7 +9,7 @@ import argparse
 import json
 from pathlib import Path
 
-from app.retrieval_metrics import RetrievalCase, evaluate
+from app.research.retrieval_metrics import RetrievalCase, evaluate
 
 
 def main():

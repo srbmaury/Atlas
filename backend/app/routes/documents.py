@@ -10,13 +10,13 @@ from sqlalchemy.exc import IntegrityError
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 
-from .. import original_storage, uploads
 from ..api_dependencies import database, document, public_doc, user, workspace
 from ..config import DATA, MAX_FILE_BYTES
 from ..db import Chunk, Document, uid
-from ..ingest import SUPPORTED
-from ..rbac import workspace_permission
+from ..documents import original_storage, uploads
+from ..documents.ingest import SUPPORTED
 from ..schemas import UploadRequest
+from ..security.rbac import workspace_permission
 
 router = APIRouter()
 

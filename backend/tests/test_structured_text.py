@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from app.ingest import SUPPORTED, extract
-from app.structured_text import extract_structured
+from app.documents.ingest import SUPPORTED, extract
+from app.documents.structured_text import extract_structured
 
 
 def test_csv_extraction(tmp_path):

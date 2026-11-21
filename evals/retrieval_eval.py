@@ -49,7 +49,7 @@ def lexical_rank(query, candidates):
     # Same BM25 implementation as production retrieval (without DB dependency).
     from types import SimpleNamespace
 
-    from app.retrieval import bm25
+    from app.research.retrieval import bm25
 
     rows = [SimpleNamespace(id=c['id'], text=c['text']) for c in candidates]
     return [c.id for c, score in bm25(query, rows)]

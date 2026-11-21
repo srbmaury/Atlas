@@ -6,8 +6,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'evals'))
 from retrieval_eval import evaluate, score_case
 
-from app.source_contract import normalize_evidence
-from app.web_sources import extract_html, validate_public_url
+from app.research.source_contract import normalize_evidence
+from app.routes.web_sources import extract_html, validate_public_url
 
 
 def test_retrieval_metrics():

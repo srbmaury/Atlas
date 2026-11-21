@@ -1,4 +1,4 @@
-from app.retrieval_metrics import RetrievalCase, evaluate
+from app.research.retrieval_metrics import RetrievalCase, evaluate
 
 
 def test_ranking_metrics_and_deduplication():

@@ -5,10 +5,11 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from app import ai, config
+from app import config
 from app.db import Chunk, Document, Session
-from app.ingest import split_text
+from app.documents.ingest import split_text
 from app.main import app
+from app.research import ai
 from app.worker import claim, run_one
 
 
@@ -301,7 +302,7 @@ def test_upload_limits(client, monkeypatch):
 
 
 def test_hybrid_semantic_retrieval(client, monkeypatch):
-    from app import retrieval
+    from app.research import retrieval
 
     w = workspaceId(client)
     d = upload(client, w, 'retention.md', 'Customer churn fell by ten percent.')
@@ -321,7 +322,7 @@ def test_hybrid_semantic_retrieval(client, monkeypatch):
 
 
 def test_stale_job_cannot_publish_after_reindex(client):
-    from app.ingest import ingest
+    from app.documents.ingest import ingest
 
     w = workspaceId(client)
     upload(client, w)
@@ -376,7 +377,7 @@ def test_local_chat_is_question_specific_and_topic_changes_do_not_reuse_history(
 
 
 def test_explicit_followup_retains_context_without_contaminating_new_topics():
-    from app.query_context import retrieval_query
+    from app.research.query_context import retrieval_query
 
     history = [SimpleNamespace(role='user', content='Tell me about the Atlas pilot')]
     assert retrieval_query('What is its budget?', history).endswith('Tell me about the Atlas pilot')
@@ -547,7 +548,7 @@ def test_workspace_deletion_requires_owner_and_confirmation(client):
 
 
 def test_gmail_routes_are_authenticated_and_config_guarded(client, monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     w = workspaceId(client)
     route = f'/api/workspaces/{w}/gmail'
@@ -561,7 +562,7 @@ def test_gmail_routes_are_authenticated_and_config_guarded(client, monkeypatch):
 
 
 def test_gmail_summary_reports_provider_configuration_without_gmail_access(client, monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     w = workspaceId(client)
     monkeypatch.setattr(gmail.config, 'AI_PROVIDER', 'none')
@@ -574,7 +575,7 @@ def test_gmail_summary_reports_provider_configuration_without_gmail_access(clien
 def test_gmail_email_text_decoder():
     import base64
 
-    from app.gmail import text_body
+    from app.connectors.gmail import text_body
 
     original = 'A deadline is next Tuesday.'
     encoded = base64.urlsafe_b64encode(original.encode()).decode().rstrip('=')
@@ -600,14 +601,14 @@ def test_connected_chat_requires_sign_in():
 def test_connected_chat_rejects_invalid_gmail_scope(client):
     import pytest
 
-    from app.main import ConnectedQuestion
+    from app.schemas import ConnectedQuestion
 
     with pytest.raises(ValueError):
         ConnectedQuestion(question='What changed?', include_gmail=True, gmail_query='x' * 401)
 
 
 def test_connected_source_evidence_contract():
-    from app.sources import Evidence
+    from app.research.sources import Evidence
 
     source = Evidence(
         'gmail', 'message-id', 'Update', 'The launch was moved.', 'https://mail.google.com/'
@@ -619,7 +620,7 @@ def test_connected_source_evidence_contract():
 
 
 def test_notion_source_search_reads_shared_page_content(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     page_id = '29601486-3e4f-8030-b34b-d03b4a4f6944'
     calls = []
@@ -671,7 +672,7 @@ def test_notion_source_search_reads_shared_page_content(monkeypatch):
 def test_slack_bot_token_error_explains_user_search_token_requirement(monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources
+    from app.connectors import external_sources
 
     monkeypatch.setattr(
         external_sources,
@@ -686,7 +687,7 @@ def test_slack_bot_token_error_explains_user_search_token_requirement(monkeypatc
 
 
 def test_slack_search_keeps_long_message_text_for_relevant_evidence(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     full_text = (
         'Deforestation note. '
@@ -716,7 +717,7 @@ def test_slack_search_keeps_long_message_text_for_relevant_evidence(monkeypatch)
 
 
 def test_slack_search_uses_message_text_when_channel_label_is_an_id(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     monkeypatch.setattr(
         external_sources,
@@ -742,8 +743,8 @@ def test_slack_search_uses_message_text_when_channel_label_is_an_id(monkeypatch)
 
 
 def test_connected_payload_keeps_relevant_late_slack_details_and_ranks_them_first():
-    from app.connected_synthesis import bounded_payload
-    from app.sources import Evidence
+    from app.research.connected_synthesis import bounded_payload
+    from app.research.sources import Evidence
 
     slack_text = (
         'Deforestation overview. '
@@ -773,8 +774,8 @@ def test_connected_payload_keeps_relevant_late_slack_details_and_ranks_them_firs
 
 
 def test_connected_synthesis_fits_local_model_and_preserves_citations():
-    from app.connected_synthesis import synthesize_connected
-    from app.sources import Evidence
+    from app.research.connected_synthesis import synthesize_connected
+    from app.research.sources import Evidence
 
     evidence = [Evidence('documents', 'd', 'Document', 'important fact ' * 1000)]
     evidence += [Evidence('gmail', str(i), 'Mail', 'other fact ' * 1000) for i in range(8)]
@@ -801,8 +802,8 @@ def test_connected_synthesis_fits_local_model_and_preserves_citations():
 
 
 def test_connected_synthesis_includes_broad_repository_inventory():
-    from app.connected_synthesis import bounded_payload
-    from app.sources import Evidence
+    from app.research.connected_synthesis import bounded_payload
+    from app.research.sources import Evidence
 
     evidence = [
         Evidence(
@@ -821,8 +822,8 @@ def test_connected_synthesis_includes_broad_repository_inventory():
 def test_connected_synthesis_hides_reasoning_and_validates_before_emitting(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     lines = [
         {'message': {'content': 'Let me analyze the source first. '}},
@@ -865,8 +866,8 @@ def test_connected_synthesis_hides_reasoning_and_validates_before_emitting(monke
 def test_connected_synthesis_emits_only_citation_checked_final_text(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     lines = [
         {'message': {'content': 'The change adds a retry [1].'}},
@@ -907,8 +908,8 @@ def test_connected_synthesis_emits_only_citation_checked_final_text(monkeypatch)
 def test_local_connected_synthesis_timeout_does_not_masquerade_as_answer(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     class Response:
         def raise_for_status(self):
@@ -983,8 +984,9 @@ def test_connected_chat_stream_keeps_local_excerpt_mode_without_model(client, mo
 def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_match(
     client, monkeypatch
 ):
-    from app import external_sources, main
+    from app.connectors import external_sources
     from app.db import ExternalConnection, Session
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     with Session() as db:
@@ -993,7 +995,7 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
         )
         db.commit()
     monkeypatch.setattr(
-        main,
+        chat_api,
         'retrieve',
         lambda *args, **kwargs: (_ for _ in ()).throw(
             AssertionError('documents should be excluded')
@@ -1021,7 +1023,9 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
 
 
 def test_connected_chat_preserves_full_slack_message_through_retrieval(client, monkeypatch):
-    from app import connected_synthesis, external_sources, main
+    from app.connectors import external_sources
+    from app.research import connected_synthesis
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     from app.db import ExternalConnection
@@ -1039,7 +1043,7 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
             'timber logging, mining activities, and forest fires.'
         )
     )
-    monkeypatch.setattr(main, 'retrieve', lambda *args, **kwargs: [])
+    monkeypatch.setattr(chat_api, 'retrieve', lambda *args, **kwargs: [])
     monkeypatch.setattr(external_sources, 'read_connection', lambda *args: (None, 'token'))
     monkeypatch.setattr(
         external_sources,
@@ -1080,8 +1084,10 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sources):
     import json
 
-    from app import batch_connectors, connected_synthesis, drive, external_sources, gmail, main
+    from app.connectors import batch_connectors, drive, external_sources, gmail
     from app.db import ExternalConnection
+    from app.research import connected_synthesis
+    from app.routes import chat as chat_api
 
     question = 'Write an essay on  deforestation'
     slack_url = 'https://slack.test/archives/environment/p1'
@@ -1137,7 +1143,7 @@ def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sou
             'mode': 'connected',
         }
 
-    monkeypatch.setattr(main, 'retrieve', retrieve_documents)
+    monkeypatch.setattr(chat_api, 'retrieve', retrieve_documents)
     monkeypatch.setattr(gmail, 'connection', lambda *_: None)
     monkeypatch.setattr(gmail, 'access_token', lambda *_: 'token')
     monkeypatch.setattr(gmail, 'gmail_get', gmail_get)
@@ -1183,7 +1189,7 @@ def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sou
 
 
 def test_natural_language_connected_queries_are_simplified():
-    from app.research_queries import drive_query_for_question, gmail_query_for_question
+    from app.research.research_queries import drive_query_for_question, gmail_query_for_question
 
     assert (
         gmail_query_for_question(
@@ -1206,7 +1212,7 @@ def test_natural_language_connected_queries_are_simplified():
 
 
 def test_document_retrieval_requires_multiple_concept_matches_for_specific_questions():
-    from app.retrieval import has_query_support, minimum_query_overlap
+    from app.research.retrieval import has_query_support, minimum_query_overlap
 
     question = 'What is the recipe for matcha ice cream in my documents?'
     assert minimum_query_overlap(question) == 2
@@ -1223,8 +1229,9 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
 ):
     import base64
 
-    from app import gmail, main
+    from app.connectors import gmail
     from app.db import Session, User
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     actor_id = client.get('/api/me').json()['id']
@@ -1268,10 +1275,12 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
             else messages[url.rsplit('/', 1)[-1]]
         ),
     )
-    body = main.ConnectedQuestion(question=question, include_documents=False, include_gmail=True)
+    body = chat_api.ConnectedQuestion(
+        question=question, include_documents=False, include_gmail=True
+    )
     with Session() as db:
         actor = db.get(User, actor_id)
-        evidence, _ = main.collect_connected_evidence(w, body, actor, db)
+        evidence, _ = chat_api.collect_connected_evidence(w, body, actor, db)
 
     assert len(evidence) == 1
     assert evidence[0].provider == 'gmail'
@@ -1281,7 +1290,7 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
 
 
 def test_github_pull_request_search_honors_requested_count(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1299,7 +1308,7 @@ def test_github_pull_request_search_honors_requested_count(monkeypatch):
 
 
 def test_github_own_pull_requests_are_scoped_to_authenticated_login(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     requests = []
 
@@ -1331,7 +1340,7 @@ def test_github_own_pull_requests_are_scoped_to_authenticated_login(monkeypatch)
 def test_github_own_pull_requests_fail_closed_without_identity(monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources
+    from app.connectors import external_sources
 
     def fake_http(url, token, provider, params=None, method='GET'):
         return {} if url.endswith('/user') else {'items': []}
@@ -1342,7 +1351,7 @@ def test_github_own_pull_requests_fail_closed_without_identity(monkeypatch):
 
 
 def test_github_pull_requests_from_my_github_are_scoped_to_the_connected_author(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1358,7 +1367,7 @@ def test_github_pull_requests_from_my_github_are_scoped_to_the_connected_author(
 
 
 def test_source_health_check_distinguishes_unconnected_from_healthy(client, monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
     from app.db import ExternalConnection, Session
 
     w = workspaceId(client)
@@ -1390,13 +1399,13 @@ def test_source_health_check_distinguishes_unconnected_from_healthy(client, monk
 
 
 def test_github_search_query_preserves_filters_and_simplifies_questions():
-    from app.external_sources import slack_search_query
-    from app.github_search import (
+    from app.connectors.external_sources import slack_search_query
+    from app.connectors.github.queries import (
         github_pull_request_query,
         github_repository_query,
         github_search_query,
     )
-    from app.research_queries import requested_result_limit
+    from app.research.research_queries import requested_result_limit
 
     assert (
         github_search_query('repo:owner/project is:issue bug') == 'repo:owner/project is:issue bug'
@@ -1449,7 +1458,7 @@ def test_relative_data_dir_is_anchored_to_project_root(tmp_path):
 def test_drive_search_scope_and_connect_requires_login(client):
     from pydantic import ValidationError
 
-    from app.drive import SCOPE, DriveSearch
+    from app.connectors.drive import SCOPE, DriveSearch
 
     assert SCOPE == 'https://www.googleapis.com/auth/drive.readonly'
     assert client.get('/api/drive/connect?workspaceId=missing').status_code in (404, 503)
@@ -1458,7 +1467,7 @@ def test_drive_search_scope_and_connect_requires_login(client):
 
 
 def test_drive_search_builds_safe_query(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     captured = {}
 
@@ -1473,7 +1482,7 @@ def test_drive_search_builds_safe_query(monkeypatch):
 
 
 def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     monkeypatch.setattr(
         drive,
@@ -1498,7 +1507,8 @@ def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatc
 
 
 def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch):
-    from app import connected_synthesis, main
+    from app.research import connected_synthesis
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
 
@@ -1519,7 +1529,7 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
             {**evidence[0].as_prompt(1), 'origin_id': evidence[0].source_id}
         ]
 
-    monkeypatch.setattr(main, 'retrieve', fake_retrieve)
+    monkeypatch.setattr(chat_api, 'retrieve', fake_retrieve)
     monkeypatch.setattr(connected_synthesis, 'synthesize_connected', fake_synthesize)
     response = client.post(
         f'/api/workspaces/{w}/connected-chat', json={'question': 'What milestone was agreed?'}
@@ -1534,8 +1544,8 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
 
 
 def test_github_pull_request_listing_uses_connected_records_without_model(client, monkeypatch):
-    from app import main
-    from app.sources import Evidence
+    from app.research.sources import Evidence
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     from app.db import ExternalConnection
@@ -1561,7 +1571,7 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
             'https://github.com/me/repo/pull/2',
         ),
     ]
-    monkeypatch.setattr(main, 'collect_connected_evidence', lambda *args: (records, {}))
+    monkeypatch.setattr(chat_api, 'collect_connected_evidence', lambda *args: (records, {}))
     response = client.post(
         f'/api/workspaces/{w}/connected-chat',
         json={'question': 'my pull requests', 'include_documents': False, 'providers': ['github']},
@@ -1577,7 +1587,7 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
 
 
 def test_unqualified_github_search_is_scoped_to_connected_users_repositories(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1593,7 +1603,7 @@ def test_unqualified_github_search_is_scoped_to_connected_users_repositories(mon
 
 
 def test_unqualified_github_pr_search_is_scoped_to_connected_users_repositories(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1621,7 +1631,7 @@ def test_health_and_processing_stats(client):
 
 
 def test_retrieval_diversifies_sources():
-    from app.retrieval import diversify_ranked_chunks
+    from app.research.retrieval import diversify_ranked_chunks
 
     ranked = [SimpleNamespace(id=f'a{i}', document_id='a') for i in range(6)]
     ranked += [SimpleNamespace(id=f'b{i}', document_id='b') for i in range(3)]
@@ -1694,7 +1704,7 @@ def test_disabled_provider_never_calls_openai_with_saved_key(monkeypatch):
 
 
 def test_selected_document_retrieval_scopes_before_limit(client):
-    from app.retrieval import retrieve
+    from app.research.retrieval import retrieve
 
     w = workspaceId(client)
     with Session() as db:
@@ -1725,8 +1735,9 @@ def test_selected_document_retrieval_scopes_before_limit(client):
 def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources, main
+    from app.connectors import external_sources
     from app.db import User, Workspace
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     seen = []
@@ -1749,7 +1760,7 @@ def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
 
     monkeypatch.setattr(external_sources, 'read_connection', credentials)
     monkeypatch.setattr(external_sources, 'source_search', search)
-    body = main.ConnectedQuestion(
+    body = chat_api.ConnectedQuestion(
         question='Who approved that?',
         include_documents=False,
         providers=['notion', 'slack'],
@@ -1758,7 +1769,7 @@ def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     stats = {}
     with Session() as db:
         owner = db.get(User, db.get(Workspace, w).owner_id)
-        evidence, _ = main.collect_connected_evidence(w, body, owner, db, stats)
+        evidence, _ = chat_api.collect_connected_evidence(w, body, owner, db, stats)
     assert evidence
     assert stats['failed'] == ['notion']
     assert stats['found']['slack'] == 1
@@ -1770,7 +1781,7 @@ def test_private_storage_keeps_original_available_without_local_copy(client, mon
 
     import httpx
 
-    from app import original_storage
+    from app.documents import original_storage
 
     objects = {}
     monkeypatch.setenv('ATLAS_STORAGE_URL', 'https://example.supabase.co')
@@ -1833,7 +1844,7 @@ def test_profile_display_name_can_be_saved_and_cleared(client):
 
 
 def test_drive_evidence_skips_folders_before_applying_fetch_limit(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     calls = []
 

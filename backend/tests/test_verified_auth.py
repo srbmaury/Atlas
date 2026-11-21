@@ -4,9 +4,9 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app import supabase_auth
 from app.db import Session, User
 from app.main import app
+from app.security import supabase_auth
 
 
 @pytest.fixture

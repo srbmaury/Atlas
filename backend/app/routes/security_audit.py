@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..api_dependencies import database, user
 from ..db import AccessEvent, User
-from ..rbac import (
+from ..security.rbac import (
     organisation_permission,
     require_organisation,
     require_workspace,

@@ -7,7 +7,7 @@ os.environ['AI_PROVIDER'] = 'ollama'
 sys.path.insert(0, 'backend')
 
 from app.db import Document, Session
-from app.ingest import ingest
+from app.documents.ingest import ingest
 
 
 def main():

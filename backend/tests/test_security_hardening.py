@@ -6,8 +6,8 @@ from threading import Event
 import pytest
 from fastapi.testclient import TestClient
 
-from app import web_sources
 from app.main import app
+from app.routes import web_sources
 
 
 def test_web_fetch_connects_only_to_the_validated_public_address(monkeypatch):

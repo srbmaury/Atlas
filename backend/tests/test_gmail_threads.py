@@ -1,6 +1,6 @@
 """Regression tests for Gmail thread-aware search grouping."""
 
-from app.gmail import email_from_json, group_email_threads
+from app.connectors.gmail import email_from_json, group_email_threads
 
 
 def test_threads_group_by_id_and_order_by_internal_date():
@@ -43,7 +43,7 @@ def test_gmail_json_retains_internal_date_and_source_link():
 
 
 def test_expand_threads_bounds_requests_and_preserves_message_order(monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     calls = []
 
@@ -76,7 +76,7 @@ def test_expand_threads_bounds_requests_and_preserves_message_order(monkeypatch)
 
 
 def test_expand_threads_skips_missing_thread_ids(monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     calls = []
     monkeypatch.setattr(gmail, 'gmail_get', lambda *args, **kwargs: calls.append(args))
@@ -85,7 +85,7 @@ def test_expand_threads_skips_missing_thread_ids(monkeypatch):
 
 
 def test_citation_audit_resolves_references_and_rejects_invalid_numbers():
-    from app.gmail import audit_gmail_citations
+    from app.connectors.gmail import audit_gmail_citations
 
     result = audit_gmail_citations('Decision approved [2]. Deadline [1].', 2)
     assert result['status'] == 'references_present'
@@ -102,7 +102,7 @@ def test_follow_up_request_validation():
     import pytest
     from pydantic import ValidationError
 
-    from app.gmail import SummaryRequest
+    from app.connectors.gmail import SummaryRequest
 
     request = SummaryRequest(message_ids=['abc'], intelligence=True, follow_up='Who owns this?')
     assert request.follow_up == 'Who owns this?'
