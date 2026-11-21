@@ -1,6 +1,7 @@
 """Source selection and evidence permissions for research agents."""
 
 import hashlib
+import json
 
 from fastapi import HTTPException
 
@@ -72,12 +73,24 @@ def validate_sources(db, workspace_id, body, actor=None):
     }
 
 
+def _scope_fingerprint(scope):
+    credential, resource_ids = scope
+    payload = [credential.hex(), None if resource_ids is None else sorted(resource_ids)]
+    encoded = json.dumps(payload, separators=(',', ':')).encode('utf-8')
+    return 'v1:' + hashlib.sha256(encoded).hexdigest()
+
+
 def source_scope_fingerprints(scopes):
-    """Serializable fingerprints for detecting later resource-grant changes."""
-    return {
-        provider: hashlib.sha256(repr(scope).encode('utf-8')).hexdigest()
-        for provider, scope in (scopes or {}).items()
-    }
+    """Serialize scope fingerprints consistently across API and worker processes."""
+    return {provider: _scope_fingerprint(scope) for provider, scope in (scopes or {}).items()}
+
+
+def _matches_scope_fingerprint(scope, saved):
+    if saved == _scope_fingerprint(scope):
+        return True
+    # Older results can still be shown when their original hash matches exactly.
+    # A legacy mismatch cannot distinguish a changed grant from a different set order.
+    return saved == hashlib.sha256(repr(scope).encode('utf-8')).hexdigest()
 
 
 def require_saved_evidence_access(workspace_id, actor, providers, fingerprints):
@@ -97,6 +110,6 @@ def require_saved_evidence_access(workspace_id, actor, providers, fingerprints):
                 raise HTTPException(403, 'Source connection is no longer available.')
             require_connection(db, actor, row)
             if provider in RESOURCE_SCOPED_PROVIDERS:
-                current = source_scope_fingerprints({provider: source_scope(db, actor, row)})
-                if current[provider] != (fingerprints or {}).get(provider):
+                saved = fingerprints.get(provider) if isinstance(fingerprints, dict) else None
+                if not _matches_scope_fingerprint(source_scope(db, actor, row), saved):
                     raise HTTPException(403, 'Source resource permissions changed.')

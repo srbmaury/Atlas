@@ -132,3 +132,49 @@ def test_legacy_agent_answer_without_provenance_is_hidden():
     assert len(visible) == 1
     assert 'Historical connected-source secret' not in str(visible)
     assert 'cannot be verified' in visible[0]['content']
+
+
+def test_scope_fingerprint_is_canonical_and_preserves_resource_boundaries():
+    import hashlib
+
+    from app.agents.sources import source_scope_fingerprints
+
+    fingerprint = source_scope_fingerprints({'slack': (b'key', frozenset({'z', 'a'}))})['slack']
+    canonical_payload = b'["6b6579",["a","z"]]'
+    assert fingerprint == 'v1:' + hashlib.sha256(canonical_payload).hexdigest()
+    assert source_scope_fingerprints({'slack': (b'key', frozenset({'a'}))})['slack'] != fingerprint
+    assert source_scope_fingerprints({'slack': (b'key', None)}) != source_scope_fingerprints(
+        {'slack': (b'key', frozenset())}
+    )
+
+
+def test_saved_evidence_accepts_matching_legacy_and_current_fingerprints(monkeypatch):
+    import hashlib
+
+    from app.agents import sources
+
+    session = MagicMock()
+    db = session.return_value.__enter__.return_value
+    row = db.get.return_value
+    old_scope = (b'key', frozenset({'channel'}))
+    legacy = hashlib.sha256(repr(old_scope).encode('utf-8')).hexdigest()
+    current = sources.source_scope_fingerprints({'slack': old_scope})['slack']
+    scope = MagicMock(return_value=old_scope)
+
+    monkeypatch.setattr(sources, 'Session', session)
+    monkeypatch.setattr(sources, 'require_workspace', MagicMock())
+    monkeypatch.setattr(sources, 'require_connection', MagicMock())
+    monkeypatch.setattr(sources, 'source_scope', scope)
+
+    for fingerprint in (legacy, current):
+        scope.return_value = old_scope
+        sources.require_saved_evidence_access(
+            'workspace', object(), {'slack'}, {'slack': fingerprint}
+        )
+        scope.return_value = (b'key', frozenset({'other-channel'}))
+        with pytest.raises(HTTPException, match='Source resource permissions changed'):
+            sources.require_saved_evidence_access(
+                'workspace', object(), {'slack'}, {'slack': fingerprint}
+            )
+
+    assert scope.call_args.args[2] is row

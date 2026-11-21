@@ -9,8 +9,8 @@ from ..agents.sources import (
     validate_sources,
 )
 from ..api_dependencies import database, user, workspace
-from ..db import Document, Workspace
-from ..rbac import lock_resource, workspace_permission
+from ..db import Document
+from ..rbac import require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
 MAX_ACTIVE_RUNS_PER_WORKSPACE = 5
@@ -126,8 +126,7 @@ def update_agent(
 
 @router.delete('/{agentId}', dependencies=[Depends(workspace_permission('editor'))])
 def delete_agent(workspaceId: str, agentId: str, actor=Depends(user), db=Depends(database)):
-    lock_resource(db, Workspace, workspaceId)
-    workspace(workspaceId, actor, db)
+    require_workspace(db, actor, workspaceId, 'editor', lock=True)
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if agent is None:
         raise HTTPException(404, 'Agent not found.')
@@ -208,8 +207,7 @@ def cancel_research(
 def run_research(
     workspaceId: str, agentId: str, body: ResearchRequest, actor=Depends(user), db=Depends(database)
 ):
-    lock_resource(db, Workspace, workspaceId)
-    workspace(workspaceId, actor, db)
+    require_workspace(db, actor, workspaceId, 'editor', lock=True)
     agent = db.query(AgentDefinition).filter_by(id=agentId, workspace_id=workspaceId).first()
     if not agent:
         raise HTTPException(404, 'Agent not found.')
