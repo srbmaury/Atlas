@@ -1,0 +1,371 @@
+"""Document chat and connected research HTTP endpoints."""
+
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
+
+from .. import config
+from ..api_dependencies import database, user, workspace
+from ..db import Chunk, Document
+from ..research import connected_research
+from ..research.ai import generate
+from ..research.connected_research import (
+    attach_retrieval_trace,
+    connected_scope,
+    connected_sources_for_payload,
+    direct_connected_result,
+    no_evidence_result,
+)
+from ..research.query_context import retrieval_query
+from ..research.retrieval import retrieve
+from ..schemas import ConnectedQuestion, Question
+from ..security.rbac import revalidate_access, workspace_permission
+
+router = APIRouter()
+log = logging.getLogger(__name__)
+
+
+def collect_connected_evidence(workspaceId, body, actor, db, retrieval_stats=None):
+    return connected_research.collect_connected_evidence(
+        workspaceId,
+        body,
+        actor,
+        db,
+        retrieval_stats,
+        workspace_access=workspace,
+        retrieve_chunks=retrieve,
+    )
+
+
+def prepare_connected_answer(workspace_id, body, actor, db):
+    """Retrieve and authorize evidence before returning a direct or generated result."""
+    stats = {}
+    evidence, document_evidence = collect_connected_evidence(workspace_id, body, actor, db, stats)
+    revalidate_access(
+        workspace_id, actor, {item.provider for item in evidence}, stats.get('scopes')
+    )
+    if not evidence:
+        return evidence, document_evidence, stats, no_evidence_result(body, stats)
+    direct = direct_connected_result(body.question, body, evidence, document_evidence)
+    if direct:
+        direct = attach_retrieval_trace(direct, body, evidence, stats)
+    return evidence, document_evidence, stats, direct
+
+
+@router.post(
+    '/api/workspaces/{workspaceId}/connected-chat',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
+def connected_chat(
+    workspaceId: str,
+    body: ConnectedQuestion,
+    request: Request,
+    actor=Depends(user),
+    db=Depends(database),
+):
+    """Retrieve evidence across workspace documents and optionally live Gmail."""
+    from ..research.ai import client, ollama_chat
+
+    evidence, document_evidence, retrieval_stats, direct_result = prepare_connected_answer(
+        workspaceId, body, actor, db
+    )
+    if direct_result is not None:
+        return direct_result
+    # Keep source IDs stable across retries so citations refer to the same evidence.
+    from ..research.connected_synthesis import synthesize_connected
+
+    try:
+        answer, payload = synthesize_connected(
+            body.question,
+            evidence,
+            config.AI_PROVIDER,
+            config.API_KEY,
+            config.CHAT_MODEL,
+            client,
+            ollama_chat,
+            history=[turn.model_dump() for turn in body.history],
+        )
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            'Connected model reached generation/context limit: %s', exc
+        )
+        raise HTTPException(
+            422,
+            'The local model could not complete this cross-source answer. Try a narrower Gmail query or fewer source types.',
+        ) from exc
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).exception('Connected synthesis failed')
+        raise HTTPException(
+            502, 'Connected answer generation failed. Check the AI provider logs.'
+        ) from exc
+    revalidate_access(
+        workspaceId, actor, {item.provider for item in evidence}, retrieval_stats.get('scopes')
+    )
+    from ..research.connected_synthesis import has_valid_citations
+
+    if not has_valid_citations(answer or '', payload):
+        return attach_retrieval_trace(
+            {
+                'answer': 'The model returned an answer without usable source citations. Please retry; no unverified answer is shown.',
+                'sources': [],
+                'mode': 'citation_check_failed',
+                'evidence_sources': connected_sources_for_payload(
+                    payload
+                    or [
+                        item.as_prompt(index) | {'origin_id': item.source_id}
+                        for index, item in enumerate(evidence[:30], 1)
+                    ],
+                    document_evidence,
+                ),
+                'citation_note': 'Retrieved passages are available for inspection, but none were verified as supporting the generated answer.',
+                'scope': connected_scope(body),
+            },
+            body,
+            evidence,
+            retrieval_stats,
+            [],
+        )
+    # Preserve positional [n] citations used by the standard chat renderer.
+    # Non-document evidence carries a URL so the UI opens the original record.
+    sources = connected_sources_for_payload(payload, document_evidence)
+    from ..research.citation_audit import audit_citations
+    from ..research.decision_links import decision_timeline, related_sources
+
+    return attach_retrieval_trace(
+        {
+            'answer': answer,
+            'sources': sources,
+            'related_sources': related_sources(payload),
+            'decision_timeline': decision_timeline(payload),
+            'mode': 'connected',
+            'citation_audit': audit_citations(answer, payload),
+            'scope': connected_scope(body),
+        },
+        body,
+        evidence,
+        retrieval_stats,
+        payload,
+    )
+
+
+@router.post(
+    '/api/workspaces/{workspaceId}/connected-chat/stream',
+    dependencies=[Depends(workspace_permission('viewer'))],
+)
+def connected_chat_stream(
+    workspaceId: str,
+    body: ConnectedQuestion,
+    request: Request,
+    actor=Depends(user),
+    db=Depends(database),
+):
+    """Stream answer progress and text as newline-delimited JSON events."""
+    import json
+
+    def events():
+        effective_body = body
+        provider_labels = {
+            'documents': 'Documents',
+            'gmail': 'Gmail',
+            'drive': 'Google Drive',
+            'github': 'GitHub',
+            'notion': 'Notion',
+            'slack': 'Slack',
+            'calendar': 'Calendar',
+            'linear': 'Linear',
+            'jira': 'Jira',
+            'onedrive': 'OneDrive',
+            'outlook': 'Outlook',
+            'sharepoint': 'SharePoint',
+        }
+        selected_sources = connected_scope(effective_body)
+        source_names = [provider_labels.get(provider, provider) for provider in selected_sources]
+        if len(source_names) > 2:
+            sources_label = f'{", ".join(source_names[:-1])}, and {source_names[-1]}'
+        else:
+            sources_label = ' and '.join(source_names)
+        search_status = (
+            f'Searching {sources_label}…' if sources_label else 'Choose sources to search…'
+        )
+        yield (json.dumps({'type': 'status', 'text': search_status}, ensure_ascii=False) + '\n')
+        try:
+            evidence, document_evidence, retrieval_stats, direct_result = prepare_connected_answer(
+                workspaceId, effective_body, actor, db
+            )
+            if direct_result is not None:
+                yield (
+                    json.dumps({'type': 'done', 'result': direct_result}, ensure_ascii=False) + '\n'
+                )
+                return
+            yield (
+                json.dumps(
+                    {
+                        'type': 'status',
+                        'text': f'Retrieval complete · {len(evidence)} passages retained. Writing an answer…',
+                    },
+                    ensure_ascii=False,
+                )
+                + '\n'
+            )
+            # Document-only questions use the dedicated citation-checked answer generator.
+            # This avoids the cross-source streaming model's short timeout and keeps
+            # ordinary document Q&A focused on the user's requested answer.
+            if (
+                effective_body.include_documents
+                and not effective_body.include_gmail
+                and not effective_body.providers
+            ):
+                doc_sources = [
+                    document_evidence[item.source_id]
+                    for item in evidence
+                    if item.provider == 'documents' and item.source_id in document_evidence
+                ]
+                result = generate(
+                    effective_body.question, doc_sources, [t.model_dump() for t in body.history]
+                )
+                revalidate_access(workspaceId, actor)
+                result['scope'] = connected_scope(effective_body)
+                attach_retrieval_trace(result, effective_body, evidence, retrieval_stats)
+                if result.get('mode') in ('ai', 'connected') and result.get('sources'):
+                    from ..research.citation_audit import audit_citations
+
+                    result['citation_audit'] = audit_citations(result['answer'], result['sources'])
+                yield (
+                    json.dumps({'type': 'delta', 'text': result['answer']}, ensure_ascii=False)
+                    + '\n'
+                )
+                yield json.dumps({'type': 'done', 'result': result}, ensure_ascii=False) + '\n'
+                return
+            from ..research.ai import client
+            from ..research.connected_synthesis import stream_connected, stream_with_heartbeats
+
+            def answer_events(cancellation):
+                return stream_connected(
+                    effective_body.question,
+                    evidence,
+                    config.AI_PROVIDER,
+                    config.API_KEY,
+                    config.CHAT_MODEL,
+                    client,
+                    config.OLLAMA_URL,
+                    config.OLLAMA_CHAT_MODEL,
+                    cancellation,
+                    history=[turn.model_dump() for turn in body.history],
+                )
+
+            for event in stream_with_heartbeats(answer_events):
+                if event['type'] in ('delta', 'complete'):
+                    revalidate_access(
+                        workspaceId,
+                        actor,
+                        {item.provider for item in evidence},
+                        retrieval_stats.get('scopes'),
+                    )
+                if event['type'] == 'complete':
+                    public_sources = (
+                        connected_sources_for_payload(event['sources'], document_evidence)
+                        if event['sources']
+                        else []
+                    )
+                    from ..research.decision_links import decision_timeline, related_sources
+
+                    result = {
+                        'answer': event['answer'],
+                        'sources': public_sources,
+                        'related_sources': related_sources(event['sources']),
+                        'decision_timeline': decision_timeline(event['sources']),
+                        'mode': event['mode'],
+                        'scope': connected_scope(effective_body),
+                        'citation_audit': event.get('citation_audit'),
+                        'coverage_note': event.get('coverage_note'),
+                    }
+                    if event['mode'] == 'citation_check_failed':
+                        # Preserve retrieved provenance separately from validated
+                        # citations. Never label these passages as cited claims.
+                        result['evidence_sources'] = connected_sources_for_payload(
+                            [
+                                item.as_prompt(index) | {'origin_id': item.source_id}
+                                for index, item in enumerate(evidence[:30], 1)
+                            ],
+                            document_evidence,
+                        )
+                    attach_retrieval_trace(
+                        result, effective_body, evidence, retrieval_stats, event['sources']
+                    )
+                    yield json.dumps({'type': 'done', 'result': result}, ensure_ascii=False) + '\n'
+                elif event['type'] == 'heartbeat':
+                    yield (
+                        json.dumps(
+                            {'type': 'status', 'text': 'Still preparing a cited answer…'},
+                            ensure_ascii=False,
+                        )
+                        + '\n'
+                    )
+                else:
+                    yield json.dumps(event, ensure_ascii=False) + '\n'
+        except HTTPException as exc:
+            yield json.dumps({'type': 'error', 'message': exc.detail}, ensure_ascii=False) + '\n'
+        except Exception as exc:
+            log.exception('Connected streaming answer failed')
+            message = 'The answer could not be completed. Check the source connection and AI provider, then retry.'
+            if isinstance(exc, ValueError):
+                message = str(exc)
+            yield json.dumps({'type': 'error', 'message': message}, ensure_ascii=False) + '\n'
+
+    return StreamingResponse(
+        events(),
+        media_type='application/x-ndjson',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
+
+
+@router.post(
+    '/api/workspaces/{workspaceId}/chat', dependencies=[Depends(workspace_permission('viewer'))]
+)
+def chat(workspaceId: str, body: Question, actor=Depends(user), db=Depends(database)):
+    workspace(workspaceId, actor, db)
+    if not body.question.strip():
+        raise HTTPException(422, 'Enter a question.')
+    if body.document_ids:
+        found = (
+            db.query(Document)
+            .filter(Document.workspace_id == workspaceId, Document.id.in_(body.document_ids))
+            .count()
+        )
+        if found != len(set(body.document_ids)):
+            raise HTTPException(404, 'Selected document not found.')
+    query = retrieval_query(body.question, body.history)
+    try:
+        sources = retrieve(workspaceId, query, body.document_ids)
+        result = generate(body.question, sources, [t.model_dump() for t in body.history])
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).exception('Chat retrieval or generation failed')
+        if isinstance(exc, (ConnectionError, TimeoutError)):
+            detail = (
+                'AI provider connection failed or timed out. Check the provider service and retry.'
+            )
+        else:
+            detail = 'Answer generation failed. Check your AI provider configuration and server logs, then retry.'
+        raise HTTPException(502, detail) from exc
+    revalidate_access(workspaceId, actor)
+    # Do not return passages for documents deleted or reindexed during the provider call.
+    if sources:
+        current = (
+            db.query(Chunk.id)
+            .filter(
+                Chunk.workspace_id == workspaceId, Chunk.id.in_([s['chunk_id'] for s in sources])
+            )
+            .count()
+        )
+        if current != len(sources):
+            raise HTTPException(409, 'Sources changed during the answer. Ask again.')
+    return result

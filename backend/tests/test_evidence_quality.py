@@ -1,5 +1,5 @@
-from app.evidence_quality import canonical_url, prepare_evidence
-from app.sources import Evidence
+from app.research.evidence_quality import canonical_url, prepare_evidence
+from app.research.sources import Evidence
 
 
 def item(provider, sid, title, text, url=None):
@@ -70,7 +70,7 @@ def test_repository_listing_keeps_github_repos_without_prompt_word_overlap():
 
 
 def test_conversational_github_repository_list_request_is_structured():
-    from app.evidence_quality import is_listing_question
+    from app.research.evidence_quality import is_listing_question
 
     assert is_listing_question('Still tell me 5 of my github repos')
     assert is_listing_question('Give me 5 of my GitHub repositories')
@@ -78,13 +78,13 @@ def test_conversational_github_repository_list_request_is_structured():
 
 
 def test_explanatory_repository_question_is_not_a_listing():
-    from app.evidence_quality import is_listing_question
+    from app.research.evidence_quality import is_listing_question
 
     assert not is_listing_question('Tell me why my GitHub repo is failing')
 
 
 def test_gmail_fragment_urls_do_not_collapse_distinct_messages():
-    from app.evidence_quality import fingerprint
+    from app.research.evidence_quality import fingerprint
 
     rows = [
         item(
@@ -123,7 +123,7 @@ def test_gmail_same_message_id_is_still_deduplicated():
 
 
 def test_mail_listing_and_rfc2822_dates_are_supported():
-    from app.evidence_quality import activity_timestamp, is_listing_question
+    from app.research.evidence_quality import activity_timestamp, is_listing_question
 
     assert is_listing_question('List all important mails')
     assert is_listing_question('Any funds related emails')

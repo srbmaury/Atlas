@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from app.external_sources import http_json
+from app.connectors.external_sources import http_json
 
 
 @pytest.mark.parametrize('status,expected', [(401, 422), (403, 422), (429, 429), (500, 502)])
@@ -18,7 +18,7 @@ def test_provider_http_errors_are_normalized_without_secrets(monkeypatch, status
     transport = httpx.MockTransport(responder)
     real_client = httpx.Client
     monkeypatch.setattr(
-        'app.external_sources.httpx.Client',
+        'app.connectors.external_sources.httpx.Client',
         lambda **kwargs: real_client(transport=transport, **kwargs),
     )
     with pytest.raises(HTTPException) as error:
@@ -34,7 +34,7 @@ def test_provider_does_not_follow_redirects(monkeypatch):
     transport = httpx.MockTransport(responder)
     real_client = httpx.Client
     monkeypatch.setattr(
-        'app.external_sources.httpx.Client',
+        'app.connectors.external_sources.httpx.Client',
         lambda **kwargs: real_client(transport=transport, **kwargs),
     )
     with pytest.raises(HTTPException) as error:
@@ -49,7 +49,7 @@ def test_provider_network_failure_is_normalized(monkeypatch):
     transport = httpx.MockTransport(responder)
     real_client = httpx.Client
     monkeypatch.setattr(
-        'app.external_sources.httpx.Client',
+        'app.connectors.external_sources.httpx.Client',
         lambda **kwargs: real_client(transport=transport, **kwargs),
     )
     with pytest.raises(HTTPException) as error:

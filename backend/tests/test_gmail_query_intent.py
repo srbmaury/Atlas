@@ -1,6 +1,6 @@
 """Gmail natural-language query translation regressions."""
 
-from app.research_queries import gmail_query_for_question
+from app.research.research_queries import gmail_query_for_question
 
 
 def test_important_recent_mail_uses_gmail_operators():

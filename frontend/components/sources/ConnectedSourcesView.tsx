@@ -3,9 +3,9 @@ import { LoaderCircle } from 'lucide-react';
 import { IntegrationsGallery } from './IntegrationsGallery';
 import { SourceConnectionDialog } from './SourceConnectionDialog';
 import { GmailWorkspaceView } from './gmail/GmailWorkspaceView';
-import type { useSourceConnections } from '../../hooks/useSourceConnections';
-import type { useGmailWorkspace } from '../../hooks/useGmailWorkspace';
-import type { useConnectedSourcesController } from '../../hooks/useConnectedSourcesController';
+import type { useSourceConnections } from './useSourceConnections';
+import type { useGmailWorkspace } from './gmail/useGmailWorkspace';
+import type { useConnectedSourcesController } from './useConnectedSourcesController';
 
 type Props = {
     sourceState: ReturnType<typeof useSourceConnections>;

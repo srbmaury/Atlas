@@ -1,9 +1,9 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
-import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
-import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
-import { createConversationActions } from '../utils/conversationActions';
+import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from './auth/sessionActions';
+import { refreshDocuments, createDocumentActions } from './documents/documentActions';
+import { createConversationActions } from './chat/conversationActions';
 import { IntegrationsGallery } from './sources/IntegrationsGallery';
 import { SourceConnectionDialog } from './sources/SourceConnectionDialog';
 import { GmailWorkspaceView } from './sources/gmail/GmailWorkspaceView';
@@ -13,12 +13,14 @@ import { FolderOpen, Layers3, Plus, Search, Upload, X, LoaderCircle, Moon, Sun, 
 
 import type { User, Workspace, Doc, Source, Answer, ChatSummary, DocumentPreview } from '../lib/types';
 
-import { useConversation } from '../hooks/useConversation';
-import { useAgentResearch } from '../hooks/useAgentResearch';
+import { useConversation } from './chat/useConversation';
+import { useConversationDraft } from './chat/useConversationDraft';
+import { useConversationNavigation, type ConversationSearchTarget } from './chat/useConversationNavigation';
+import { useAgentResearch } from './agents/useAgentResearch';
 import { useAtlasTheme } from '../hooks/useAtlasTheme';
-import { useSourceConnections } from '../hooks/useSourceConnections';
-import { useGmailWorkspace } from '../hooks/useGmailWorkspace';
-import { useConnectedSourcesController } from '../hooks/useConnectedSourcesController';
+import { useSourceConnections } from './sources/useSourceConnections';
+import { useGmailWorkspace } from './sources/gmail/useGmailWorkspace';
+import { useConnectedSourcesController } from './sources/useConnectedSourcesController';
 
 import '../app/rebuild.css';
 import { ResearchAnswer } from './chat/ResearchAnswer';
@@ -129,8 +131,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const [scopeOpen, setScopeOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [globalQuery, setGlobalQuery] = useState('');
-    const [searchTarget, setSearchTarget] = useState<{ chatId: string; index: number; phrase: string; token: number } | null>(null);
-    const searchToken = useRef(0);
+    const [searchTarget, setSearchTarget] = useState<ConversationSearchTarget | null>(null);
     const [copied, setCopied] = useState(false);
     const input = useRef<HTMLInputElement>(null);
     const chatEnd = useRef<HTMLDivElement>(null);
@@ -186,15 +187,13 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
     }, [messages.length, busy, tab]);
 
+    const { saveDraft, restoreDraft } = useConversationDraft(workspaceId, chatId, query, setQuery);
+
     function newChat(preserveSourceSelection = false) {
         if (busy || agentBusy) return;
         setSearchTarget(null);
         chatLoadSequence.invalidate();
-        try {
-            if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
-        } catch {
-            /* Storage unavailable. */
-        }
+        saveDraft();
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
@@ -402,43 +401,14 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview);
     }
 
-    // Drafts are scoped to workspace and conversation, including the unsaved new chat.
-    const draftKey = (id: string | null) => `atlas:draft:${workspaceId}:${id || 'new'}`;
-    useEffect(() => {
-        if (!workspaceId) return;
-        const key = draftKey(chatId);
-        const timer = window.setTimeout(() => {
-            try {
-                if (query) sessionStorage.setItem(key, query);
-                else sessionStorage.removeItem(key);
-            } catch {
-                /* Private browsing can disable session storage. */
-            }
-        }, 250);
-        return () => window.clearTimeout(timer);
-    }, [workspaceId, chatId, query]);
-
-    function restoreDraft(id: string | null) {
-        try {
-            setQuery(sessionStorage.getItem(draftKey(id)) || '');
-        } catch {
-            setQuery('');
-        }
-    }
-
-    async function switchChat(id: string, target?: { index: number; phrase: string }) {
-        if (busy || agentBusy) return false;
-        setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
-        try {
-            sessionStorage.setItem(draftKey(chatId), query);
-        } catch {
-            /* Storage unavailable. */
-        }
-        await loadChat(id);
-        if (activeChat.current !== id) return false;
-        restoreDraft(id);
-        return true;
-    }
+    const { switchChat } = useConversationNavigation({
+        busy: busy || agentBusy,
+        activeChat,
+        loadChat,
+        saveDraft,
+        restoreDraft,
+        setSearchTarget,
+    });
 
     const uploadButton = (
         <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>

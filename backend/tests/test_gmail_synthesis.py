@@ -2,8 +2,8 @@
 
 import json
 
-from app import connected_synthesis
-from app.source_contract import Evidence
+from app.research import connected_synthesis
+from app.research.source_contract import Evidence
 
 
 def _gmail_rows(count):

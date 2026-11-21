@@ -3,7 +3,7 @@
 These tests intentionally do not claim semantic entailment verification.
 """
 
-from app.citation_audit import audit_citations
+from app.research.citation_audit import audit_citations
 
 
 def _status(answer, evidence):

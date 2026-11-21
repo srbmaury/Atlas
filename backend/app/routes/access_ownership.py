@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ..access_audit import record
 from ..api_dependencies import database, user
 from ..db import (
     Conversation,
@@ -15,7 +14,8 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
-from ..rbac import (
+from ..security.access_audit import record
+from ..security.rbac import (
     organisation_permission,
     organisation_role,
     require_organisation,

@@ -6,7 +6,6 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ..access_audit import record, reset_grants
 from ..api_dependencies import database, user
 from ..db import (
     ExternalConnection,
@@ -19,7 +18,9 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
-from ..rbac import (
+from ..schemas import Named
+from ..security.access_audit import record, reset_grants
+from ..security.rbac import (
     RESOURCE_SCOPED_PROVIDERS,
     connection_owner,
     connection_visible,
@@ -32,7 +33,6 @@ from ..rbac import (
     workspace_permission,
     workspace_role,
 )
-from ..schemas import Named
 from .access_ownership import router as ownership_router
 from .security_audit import router as audit_router
 

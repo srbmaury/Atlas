@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from app.connected_synthesis import stream_connected
-from app.retrieval import has_query_support, tokens
+from app.research.connected_synthesis import stream_connected
+from app.research.retrieval import has_query_support, tokens
 
 
 def test_format_words_are_not_retrieval_concepts():
@@ -147,7 +147,7 @@ def test_valid_cited_answer_remains_synthesis():
 def test_connected_synthesis_receives_bounded_history():
     import json
 
-    from app.connected_synthesis import synthesize_connected
+    from app.research.connected_synthesis import synthesize_connected
 
     captured = []
 
@@ -196,7 +196,7 @@ def test_connected_synthesis_receives_bounded_history():
 
 
 def test_partial_connector_failure_marks_answer_coverage():
-    from app.connected_research import attach_retrieval_trace
+    from app.research.connected_research import attach_retrieval_trace
     from app.schemas import ConnectedQuestion
 
     body = ConnectedQuestion(

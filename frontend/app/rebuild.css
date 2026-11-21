@@ -2,6 +2,9 @@
 @import './styles/workspace-layout.css';
 @import './styles/workspace-theme.css';
 @import './styles/workspace-refinements.css';
+@import './styles/research-composer.css';
+@import './styles/research-source-refinements.css';
+@import './styles/research-diagrams.css';
 
 /* Workspace agent mentions share the native Atlas composer surface. */
 .research-composer-v2 {
