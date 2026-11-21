@@ -282,7 +282,7 @@ function renderTree(entries) {
         return details;
     }
     for (const entry of entries) {
-        if (entry.type !== 'blob' || entry.size > 250_000 || !/\.(?:py|tsx?|m?js|css|html|md|ya?ml|json|txt|toml|ini|sh)$|(?:^|\/)(?:Dockerfile|Makefile|\.gitignore)$/i.test(entry.path)) continue;
+        if (entry.type !== 'blob' || entry.size > 250_000 || !/\.(?:py|tsx?|m?js|css|html|md|ya?ml|json|txt|toml|ini|sh)$|(?:^|\/)(?:Dockerfile|\.gitignore)$/i.test(entry.path)) continue;
         const parts = entry.path.split('/');
         const name = parts.pop();
         const button = element('button', name, 'tree-file');
