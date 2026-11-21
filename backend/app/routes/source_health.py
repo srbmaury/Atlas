@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..api_dependencies import database, user, workspace
 from ..db import ExternalConnection, GmailConnection, SourceHealthCheck
-from ..rbac import (
+from ..security.rbac import (
     RESOURCE_SCOPED_PROVIDERS,
     connection_diagnostics_visible,
     connection_owner,

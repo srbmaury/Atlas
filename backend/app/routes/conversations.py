@@ -8,8 +8,8 @@ from pydantic import BaseModel
 from ..agents.sources import require_saved_evidence_access
 from ..api_dependencies import database, user, workspace
 from ..db import Conversation
-from ..rbac import workspace_permission
 from ..schemas import ConversationPayload, ConversationRename
+from ..security.rbac import workspace_permission
 
 router = APIRouter()
 

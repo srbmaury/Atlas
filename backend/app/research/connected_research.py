@@ -10,10 +10,10 @@ from dataclasses import replace
 
 from fastapi import HTTPException
 
-from .db import Document, ExternalConnection
-from .original_storage import original_path
+from ..db import Document, ExternalConnection
+from ..documents.original_storage import original_path
+from ..security.rbac import source_scope
 from .query_context import retrieval_query
-from .rbac import source_scope
 from .research_queries import drive_query_for_question, gmail_query_for_question
 from .source_contract import Evidence, normalize_results
 
@@ -37,10 +37,10 @@ def collect_connected_evidence(
         )
         if count != len(set(body.document_ids)):
             raise HTTPException(404, 'Selected document not found.')
-    from .connectors.drive import access_token as drive_access_token
-    from .connectors.drive import drive_evidence, drive_search
-    from .connectors.external_sources import PROVIDERS, read_connection, source_search
-    from .connectors.gmail import GMAIL_API, access_token, connection, email_from_json, gmail_get
+    from ..connectors.drive import access_token as drive_access_token
+    from ..connectors.drive import drive_evidence, drive_search
+    from ..connectors.external_sources import PROVIDERS, read_connection, source_search
+    from ..connectors.gmail import GMAIL_API, access_token, connection, email_from_json, gmail_get
 
     if any(p not in (*PROVIDERS, 'drive') for p in body.providers):
         raise HTTPException(422, 'Unknown connected provider.')

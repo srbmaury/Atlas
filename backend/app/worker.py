@@ -5,7 +5,7 @@ import time
 from sqlalchemy import and_, or_
 
 from .db import Document, Session
-from .ingest import ingest
+from .documents.ingest import ingest
 
 log = logging.getLogger(__name__)
 

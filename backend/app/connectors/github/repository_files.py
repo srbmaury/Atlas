@@ -4,7 +4,7 @@ import base64
 import re
 from urllib.parse import quote
 
-from ...research_queries import GITHUB_QUERY_STOPWORDS
+from ...research.research_queries import GITHUB_QUERY_STOPWORDS
 from .queries import github_query_without_repository
 
 

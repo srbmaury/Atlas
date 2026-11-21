@@ -6,8 +6,8 @@ from functools import lru_cache
 
 from sqlalchemy import column, select, table, text
 
+from ..db import Chunk, Document, Session, engine
 from .ai import embed, embedding_model_id, enabled
-from .db import Chunk, Document, Session, engine
 from .research_queries import QUERY_STOPWORDS
 
 STOP = QUERY_STOPWORDS | set(

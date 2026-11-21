@@ -12,9 +12,9 @@ from pathlib import Path
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 
+from ..config import DATA
+from ..db import Document, uid
 from . import original_storage
-from .config import DATA
-from .db import Document, uid
 
 PART_BYTES = 8 * 1024 * 1024
 TTL = 24 * 60 * 60

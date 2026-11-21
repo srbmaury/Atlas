@@ -4,7 +4,7 @@ Never record credentials, OAuth codes, prompts, source excerpts, or request bodi
 There are intentionally no API routes for editing or deleting these events.
 """
 
-from .db import AccessEvent, SourceGrant, Workspace
+from ..db import AccessEvent, SourceGrant, Workspace
 
 
 def record(db, actor_id, scope_type, scope_id, action, target_id=None, **details):

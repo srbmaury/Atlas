@@ -1,6 +1,6 @@
-from app.connected_research import direct_connected_result
+from app.research.connected_research import direct_connected_result
+from app.research.sources import Evidence
 from app.schemas import ConnectedQuestion
-from app.sources import Evidence
 
 
 def test_recent_source_records_are_ranked_from_provider_timestamps():

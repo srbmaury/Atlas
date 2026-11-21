@@ -5,10 +5,11 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from app import ai, config
+from app import config
 from app.db import Chunk, Document, Session
-from app.ingest import split_text
+from app.documents.ingest import split_text
 from app.main import app
+from app.research import ai
 from app.worker import claim, run_one
 
 
@@ -301,7 +302,7 @@ def test_upload_limits(client, monkeypatch):
 
 
 def test_hybrid_semantic_retrieval(client, monkeypatch):
-    from app import retrieval
+    from app.research import retrieval
 
     w = workspaceId(client)
     d = upload(client, w, 'retention.md', 'Customer churn fell by ten percent.')
@@ -321,7 +322,7 @@ def test_hybrid_semantic_retrieval(client, monkeypatch):
 
 
 def test_stale_job_cannot_publish_after_reindex(client):
-    from app.ingest import ingest
+    from app.documents.ingest import ingest
 
     w = workspaceId(client)
     upload(client, w)
@@ -376,7 +377,7 @@ def test_local_chat_is_question_specific_and_topic_changes_do_not_reuse_history(
 
 
 def test_explicit_followup_retains_context_without_contaminating_new_topics():
-    from app.query_context import retrieval_query
+    from app.research.query_context import retrieval_query
 
     history = [SimpleNamespace(role='user', content='Tell me about the Atlas pilot')]
     assert retrieval_query('What is its budget?', history).endswith('Tell me about the Atlas pilot')
@@ -607,7 +608,7 @@ def test_connected_chat_rejects_invalid_gmail_scope(client):
 
 
 def test_connected_source_evidence_contract():
-    from app.sources import Evidence
+    from app.research.sources import Evidence
 
     source = Evidence(
         'gmail', 'message-id', 'Update', 'The launch was moved.', 'https://mail.google.com/'
@@ -742,8 +743,8 @@ def test_slack_search_uses_message_text_when_channel_label_is_an_id(monkeypatch)
 
 
 def test_connected_payload_keeps_relevant_late_slack_details_and_ranks_them_first():
-    from app.connected_synthesis import bounded_payload
-    from app.sources import Evidence
+    from app.research.connected_synthesis import bounded_payload
+    from app.research.sources import Evidence
 
     slack_text = (
         'Deforestation overview. '
@@ -773,8 +774,8 @@ def test_connected_payload_keeps_relevant_late_slack_details_and_ranks_them_firs
 
 
 def test_connected_synthesis_fits_local_model_and_preserves_citations():
-    from app.connected_synthesis import synthesize_connected
-    from app.sources import Evidence
+    from app.research.connected_synthesis import synthesize_connected
+    from app.research.sources import Evidence
 
     evidence = [Evidence('documents', 'd', 'Document', 'important fact ' * 1000)]
     evidence += [Evidence('gmail', str(i), 'Mail', 'other fact ' * 1000) for i in range(8)]
@@ -801,8 +802,8 @@ def test_connected_synthesis_fits_local_model_and_preserves_citations():
 
 
 def test_connected_synthesis_includes_broad_repository_inventory():
-    from app.connected_synthesis import bounded_payload
-    from app.sources import Evidence
+    from app.research.connected_synthesis import bounded_payload
+    from app.research.sources import Evidence
 
     evidence = [
         Evidence(
@@ -821,8 +822,8 @@ def test_connected_synthesis_includes_broad_repository_inventory():
 def test_connected_synthesis_hides_reasoning_and_validates_before_emitting(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     lines = [
         {'message': {'content': 'Let me analyze the source first. '}},
@@ -865,8 +866,8 @@ def test_connected_synthesis_hides_reasoning_and_validates_before_emitting(monke
 def test_connected_synthesis_emits_only_citation_checked_final_text(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     lines = [
         {'message': {'content': 'The change adds a retry [1].'}},
@@ -907,8 +908,8 @@ def test_connected_synthesis_emits_only_citation_checked_final_text(monkeypatch)
 def test_local_connected_synthesis_timeout_does_not_masquerade_as_answer(monkeypatch):
     from contextlib import contextmanager
 
-    from app import connected_synthesis
-    from app.sources import Evidence
+    from app.research import connected_synthesis
+    from app.research.sources import Evidence
 
     class Response:
         def raise_for_status(self):
@@ -1022,8 +1023,8 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
 
 
 def test_connected_chat_preserves_full_slack_message_through_retrieval(client, monkeypatch):
-    from app import connected_synthesis
     from app.connectors import external_sources
+    from app.research import connected_synthesis
     from app.routes import chat as chat_api
 
     w = workspaceId(client)
@@ -1083,9 +1084,9 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sources):
     import json
 
-    from app import connected_synthesis
     from app.connectors import batch_connectors, drive, external_sources, gmail
     from app.db import ExternalConnection
+    from app.research import connected_synthesis
     from app.routes import chat as chat_api
 
     question = 'Write an essay on  deforestation'
@@ -1188,7 +1189,7 @@ def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sou
 
 
 def test_natural_language_connected_queries_are_simplified():
-    from app.research_queries import drive_query_for_question, gmail_query_for_question
+    from app.research.research_queries import drive_query_for_question, gmail_query_for_question
 
     assert (
         gmail_query_for_question(
@@ -1211,7 +1212,7 @@ def test_natural_language_connected_queries_are_simplified():
 
 
 def test_document_retrieval_requires_multiple_concept_matches_for_specific_questions():
-    from app.retrieval import has_query_support, minimum_query_overlap
+    from app.research.retrieval import has_query_support, minimum_query_overlap
 
     question = 'What is the recipe for matcha ice cream in my documents?'
     assert minimum_query_overlap(question) == 2
@@ -1404,7 +1405,7 @@ def test_github_search_query_preserves_filters_and_simplifies_questions():
         github_repository_query,
         github_search_query,
     )
-    from app.research_queries import requested_result_limit
+    from app.research.research_queries import requested_result_limit
 
     assert (
         github_search_query('repo:owner/project is:issue bug') == 'repo:owner/project is:issue bug'
@@ -1506,7 +1507,7 @@ def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatc
 
 
 def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch):
-    from app import connected_synthesis
+    from app.research import connected_synthesis
     from app.routes import chat as chat_api
 
     w = workspaceId(client)
@@ -1543,8 +1544,8 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
 
 
 def test_github_pull_request_listing_uses_connected_records_without_model(client, monkeypatch):
+    from app.research.sources import Evidence
     from app.routes import chat as chat_api
-    from app.sources import Evidence
 
     w = workspaceId(client)
     from app.db import ExternalConnection
@@ -1630,7 +1631,7 @@ def test_health_and_processing_stats(client):
 
 
 def test_retrieval_diversifies_sources():
-    from app.retrieval import diversify_ranked_chunks
+    from app.research.retrieval import diversify_ranked_chunks
 
     ranked = [SimpleNamespace(id=f'a{i}', document_id='a') for i in range(6)]
     ranked += [SimpleNamespace(id=f'b{i}', document_id='b') for i in range(3)]
@@ -1703,7 +1704,7 @@ def test_disabled_provider_never_calls_openai_with_saved_key(monkeypatch):
 
 
 def test_selected_document_retrieval_scopes_before_limit(client):
-    from app.retrieval import retrieve
+    from app.research.retrieval import retrieve
 
     w = workspaceId(client)
     with Session() as db:
@@ -1780,7 +1781,7 @@ def test_private_storage_keeps_original_available_without_local_copy(client, mon
 
     import httpx
 
-    from app import original_storage
+    from app.documents import original_storage
 
     objects = {}
     monkeypatch.setenv('ATLAS_STORAGE_URL', 'https://example.supabase.co')

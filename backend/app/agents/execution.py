@@ -5,12 +5,12 @@ import time
 
 from fastapi import HTTPException
 
-from ..ai import generate_agent
-from ..connected_research import collect_connected_evidence, connected_sources_for_payload
 from ..db import Session, User
-from ..rbac import require_workspace, revalidate_access
-from ..retrieval import retrieve
+from ..research.ai import generate_agent
+from ..research.connected_research import collect_connected_evidence, connected_sources_for_payload
+from ..research.retrieval import retrieve
 from ..schemas import ConnectedQuestion
+from ..security.rbac import require_workspace, revalidate_access
 from ..worker import claim, heartbeat
 from .claims import assess_claims
 from .evidence import evidence_graph, plan

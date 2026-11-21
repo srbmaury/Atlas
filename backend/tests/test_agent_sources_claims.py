@@ -47,9 +47,9 @@ def test_document_selection_is_workspace_scoped():
 
 def test_model_assesses_cited_claim_without_claiming_independent_verification():
     with (
-        patch('app.ai.enabled', return_value=True),
-        patch('app.ai.config.AI_PROVIDER', 'openai'),
-        patch('app.ai.client') as client,
+        patch('app.research.ai.enabled', return_value=True),
+        patch('app.research.ai.config.AI_PROVIDER', 'openai'),
+        patch('app.research.ai.client') as client,
     ):
         client.return_value.responses.create.return_value.output_text = (
             '{"assessments":[{"id":1,"status":"supported","reason":"The passage states this."}]}'

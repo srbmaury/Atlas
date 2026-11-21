@@ -4,7 +4,7 @@ import re
 
 from fastapi import HTTPException
 
-from ...research_queries import requested_result_limit
+from ...research.research_queries import requested_result_limit
 from .code_flow import github_flow_search
 from .queries import (
     github_code_search_query,

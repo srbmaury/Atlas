@@ -349,9 +349,9 @@ def test_upgrade_preserves_legacy_ownership_and_privacy(tmp_path):
 def test_unsharing_during_stream_does_not_release_answer(accounts, monkeypatch):
     import json
 
-    from app import connected_synthesis
+    from app.research import connected_synthesis
+    from app.research.source_contract import Evidence
     from app.routes import chat as chat_api
-    from app.source_contract import Evidence
 
     owner, member, _, workspace = accounts
     grant(owner, member, workspace, 'viewer')
@@ -534,9 +534,9 @@ def test_source_member_grants_restrict_status_search_and_chat(accounts, monkeypa
     from fastapi import HTTPException
 
     from app.db import SourceGrant, User
-    from app.rbac import revalidate_access
     from app.routes import chat as chat_api
     from app.schemas import ConnectedQuestion
+    from app.security.rbac import revalidate_access
 
     owner, allowed, denied, workspace = accounts
     grant(owner, allowed, workspace, 'viewer')
@@ -913,7 +913,7 @@ def test_resource_scopes_filter_direct_search_and_chat(accounts, monkeypatch, pr
 
 
 def test_narrowing_slack_scope_during_synthesis_blocks_response(accounts, monkeypatch):
-    from app import connected_synthesis
+    from app.research import connected_synthesis
 
     owner, member, _, workspace = accounts
     grant(owner, member, workspace, 'viewer')

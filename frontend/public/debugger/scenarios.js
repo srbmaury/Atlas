@@ -143,7 +143,7 @@ const linearScenarios = [
             ),
             step(
                 'resolve-the-effective-role',
-                api + 'rbac.py',
+                api + 'security/rbac.py',
                 'def workspace_role(',
                 'Resolve the effective role',
                 'Atlas checks ownership and the workspace membership. Organisation membership does not create a workspace role.',
@@ -153,7 +153,7 @@ const linearScenarios = [
             ),
             step(
                 'enforce-the-minimum-role',
-                api + 'rbac.py',
+                api + 'security/rbac.py',
                 'def require_workspace(',
                 'Enforce the minimum role',
                 'A viewer can ask questions, while an upload requires editor access.',
@@ -190,7 +190,7 @@ const linearScenarios = [
             ),
             step(
                 'store-the-original',
-                api + 'original_storage.py',
+                api + 'documents/original_storage.py',
                 'def store_original(',
                 'Store the original',
                 'Original storage uses the configured private bucket when available. Local mode uses the staged file on disk.',
@@ -210,7 +210,7 @@ const linearScenarios = [
             ),
             step(
                 'extract-text-and-ocr',
-                api + 'ingest.py',
+                api + 'documents/ingest.py',
                 'def extract(',
                 'Extract text and OCR',
                 'The parser extracts PDF text and can apply OCR to image-only pages.',
@@ -220,7 +220,7 @@ const linearScenarios = [
             ),
             step(
                 'persist-passages',
-                api + 'ingest.py',
+                api + 'documents/ingest.py',
                 'def ingest(',
                 'Persist passages',
                 'Ingestion splits extracted text, optionally embeds the passages, and marks the document ready.',
@@ -247,7 +247,7 @@ const linearScenarios = [
             ),
             step(
                 'create-an-upload-session',
-                api + 'uploads.py',
+                api + 'documents/uploads.py',
                 'def start(',
                 'Create an upload session',
                 'Atlas records the expected size and owner of the staged upload.',
@@ -257,7 +257,7 @@ const linearScenarios = [
             ),
             step(
                 'append-the-next-part',
-                api + 'uploads.py',
+                api + 'documents/uploads.py',
                 'def append(',
                 'Append the next part',
                 'The session checks the supplied offset before writing bytes. The client can query the accepted offset before resuming.',
@@ -267,7 +267,7 @@ const linearScenarios = [
             ),
             step(
                 'finalize-the-file',
-                api + 'uploads.py',
+                api + 'documents/uploads.py',
                 'def finish(',
                 'Finalize the file',
                 'Once the recorded size is complete, Atlas stores the original and creates a queued document.',
@@ -336,7 +336,7 @@ const linearScenarios = [
             ),
             step(
                 'collect-permitted-evidence',
-                api + 'connected_research.py',
+                api + 'research/connected_research.py',
                 'def collect_connected_evidence(',
                 'Collect permitted evidence',
                 'Atlas retrieves document passages and queries selected live providers using the caller’s effective connection scope.',
@@ -346,7 +346,7 @@ const linearScenarios = [
             ),
             step(
                 'rank-document-passages',
-                api + 'retrieval.py',
+                api + 'research/retrieval.py',
                 'def retrieve(',
                 'Rank document passages',
                 'The document branch limits retrieval to ready documents in the workspace and ranks candidate passages.',
@@ -356,7 +356,7 @@ const linearScenarios = [
             ),
             step(
                 'generate-a-grounded-answer',
-                api + 'connected_synthesis.py',
+                api + 'research/connected_synthesis.py',
                 'def stream_connected(',
                 'Generate a grounded answer',
                 'The model receives numbered evidence. Atlas buffers its draft while the API can send status updates. The draft stays buffered until Atlas checks the citation references.',
@@ -366,7 +366,7 @@ const linearScenarios = [
             ),
             step(
                 'release-checked-answer',
-                api + 'connected_synthesis.py',
+                api + 'research/connected_synthesis.py',
                 "if mode == 'connected':",
                 'Release the citation-checked answer',
                 'Only the connected result emits answer text as a delta. A complete event carries the final result.',
@@ -514,7 +514,7 @@ const linearScenarios = [
             ),
             step(
                 'snapshot-effective-access',
-                api + 'rbac.py',
+                api + 'security/rbac.py',
                 'def source_scope(',
                 'Snapshot effective access',
                 'Atlas records the effective allowlist and credential version so it can detect changes while processing.',
@@ -534,7 +534,7 @@ const linearScenarios = [
             ),
             step(
                 'recheck-before-returning-an-answer',
-                api + 'rbac.py',
+                api + 'security/rbac.py',
                 'def revalidate_access(',
                 'Recheck before returning an answer',
                 'If scope changes during a search, Atlas checks again before releasing results and rejects the stale request.',
@@ -673,7 +673,7 @@ const linearScenarios = [
             ),
             step(
                 'authorize-the-import',
-                api + 'web_sources.py',
+                api + 'routes/web_sources.py',
                 'return save_webpage(workspaceId, body.url, db)',
                 'Hand the authorized URL to the importer',
                 'The editor-only route accepts a public webpage URL when import is enabled.',
@@ -683,7 +683,7 @@ const linearScenarios = [
             ),
             step(
                 'start-webpage-fetch',
-                api + 'web_sources.py',
+                api + 'routes/web_sources.py',
                 'title, body = fetch_page(url)',
                 'Call the webpage fetcher',
                 'The importer asks the fetcher for a title and readable text before it creates a document.',
@@ -694,7 +694,7 @@ const linearScenarios = [
             ),
             step(
                 'fetch-and-extract-readable-text',
-                api + 'web_sources.py',
+                api + 'routes/web_sources.py',
                 'def fetch_page(',
                 'Fetch and extract readable text',
                 'The fetcher checks the destination and redirects, then extracts readable HTML content.',
@@ -704,7 +704,7 @@ const linearScenarios = [
             ),
             step(
                 'queue-it-as-a-document',
-                api + 'web_sources.py',
+                api + 'routes/web_sources.py',
                 'original_storage.store_original(did, path)',
                 'Queue it as a document',
                 'The import preserves the original URL in the stored Markdown and queues it for normal indexing.',
@@ -948,7 +948,7 @@ const linearScenarios = [
             ),
             step(
                 'retrieve-matching-messages',
-                api + 'connected_research.py',
+                api + 'research/connected_research.py',
                 'def _search_gmail(',
                 'Retrieve matching messages',
                 'The research adapter fetches matching messages or reloads exact message IDs for a cited follow-up.',
@@ -1056,7 +1056,7 @@ const indexSteps = [
     upload.steps[4],
     step(
         'check-worker-generation',
-        api + 'ingest.py',
+        api + 'documents/ingest.py',
         "if not doc or doc.generation != generation or doc.status != 'processing':",
         'Check that this worker still owns the attempt',
         'Before replacing chunks, ingestion checks that the job generation and status still match. A worker whose lease was reclaimed cannot publish stale chunks.',
@@ -1148,7 +1148,7 @@ const scopeCheck = {
 };
 const answerFailure = step(
     'withhold-unverified-draft',
-    api + 'connected_synthesis.py',
+    api + 'research/connected_synthesis.py',
     "mode = 'citation_check_failed'",
     'Withhold the unverified draft',
     'If citation repair cannot produce a valid answer, the caller receives a failure result. Atlas does not emit the model draft as an answer delta.',
@@ -1159,7 +1159,7 @@ const answerFailure = step(
 );
 const partial = step(
     'continue-with-partial-coverage',
-    api + 'connected_research.py',
+    api + 'research/connected_research.py',
     'if failures and not evidence:',
     'Keep evidence from successful sources',
     'Atlas continues when at least one source returned usable evidence. The coverage note records the unavailable source.',
@@ -1200,7 +1200,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-extract",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "def extract(",
                     "title": "Extract text and OCR",
                     "detail": "Read PDF pages, DOCX blocks, or supported text files. Image-only PDF pages may use OCR.",
@@ -1218,7 +1218,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-split",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "def split_text(text, size=1800, overlap=240):",
                     "title": "Split into overlapping chunks",
                     "detail": "The actual splitter uses up to 1,800 characters with 240-character overlap, preferring newline or sentence boundaries. The short passages here illustrate the concept rather than literal chunk sizes.",
@@ -1240,7 +1240,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-embed",
-                    "path": "backend/app/ai.py",
+                    "path": "backend/app/research/ai.py",
                     "anchor": "def embed(texts):",
                     "title": "Generate embeddings",
                     "detail": "The worker embeds batches of 32 passages. OpenAI produces 1,536-dimensional vectors; shorter Ollama vectors are padded. No provider means null embeddings.",
@@ -1260,7 +1260,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-store",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "db.add_all(chunks)",
                     "title": "Store indexed chunks",
                     "detail": "Replace existing Chunk rows for this document and commit text, page, ordinal, vector and embedding model. Mark the document ready.",
@@ -1280,7 +1280,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-query",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "def retrieve(workspace_id, query, document_ids=None, limit=8):",
                     "title": "Ask a question",
                     "detail": "Search ready documents in the workspace, optionally filtered by document IDs.",
@@ -1298,7 +1298,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-lexical",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "if engine.dialect.name == 'postgresql':",
                     "title": "Keyword search",
                     "detail": "Use PostgreSQL full-text search, SQLite FTS5, or an in-process BM25 fallback.",
@@ -1316,7 +1316,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-semantic",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "if engine.dialect.name == 'postgresql' and enabled():",
                     "title": "Vector similarity search",
                     "detail": "Embed the question and compare it with stored vectors of the same embedding model, using pgvector or Python cosine similarity.",
@@ -1334,7 +1334,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-rank",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "for ranking, weight in [(lexical, 4.0), (semantic, 1.0)]:",
                     "title": "Fuse, filter, diversify",
                     "detail": "Rank fusion weights lexical hits 4:1 versus semantic hits, filters unsupported matches and diversifies across documents.",
@@ -1359,7 +1359,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-answer",
-                    "path": "backend/app/ai.py",
+                    "path": "backend/app/research/ai.py",
                     "anchor": "def generate(question, sources, history=None, agent_instructions=None, output_format=None):",
                     "title": "Generate grounded answer",
                     "detail": "Pass the question and numbered retrieved evidence to the configured model; the whole document is not sent.",
@@ -1383,7 +1383,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-citations",
-                    "path": "backend/app/ai.py",
+                    "path": "backend/app/research/ai.py",
                     "anchor": "refs = {int(n) for n in re.findall",
                     "title": "Validate citations",
                     "detail": "Validate cited source numbers, not claim-level factual correctness.",
@@ -1433,7 +1433,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-extract",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "def extract(",
                     "title": "Extract text and OCR",
                     "detail": "Read PDF pages, DOCX blocks, or supported text files. Image-only PDF pages may use OCR.",
@@ -1451,7 +1451,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-split",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "def split_text(text, size=1800, overlap=240):",
                     "title": "Split into overlapping chunks",
                     "detail": "The actual splitter uses up to 1,800 characters with 240-character overlap, preferring newline or sentence boundaries. The short passages here illustrate the concept rather than literal chunk sizes.",
@@ -1473,7 +1473,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-embed",
-                    "path": "backend/app/ai.py",
+                    "path": "backend/app/research/ai.py",
                     "anchor": "def embed(texts):",
                     "title": "Generate embeddings",
                     "detail": "With AI_PROVIDER=none, embed() returns null vectors. Keyword indexing still works.",
@@ -1494,7 +1494,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-store",
-                    "path": "backend/app/ingest.py",
+                    "path": "backend/app/documents/ingest.py",
                     "anchor": "db.add_all(chunks)",
                     "title": "Store indexed chunks",
                     "detail": "Replace existing Chunk rows for this document and commit text, page, ordinal, vector and embedding model. Mark the document ready.",
@@ -1514,7 +1514,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-query",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "def retrieve(workspace_id, query, document_ids=None, limit=8):",
                     "title": "Ask a question",
                     "detail": "Search ready documents in the workspace, optionally filtered by document IDs.",
@@ -1532,7 +1532,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-lexical",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "if engine.dialect.name == 'postgresql':",
                     "title": "Keyword search",
                     "detail": "Use PostgreSQL full-text search, SQLite FTS5, or an in-process BM25 fallback.",
@@ -1550,7 +1550,7 @@ const ragPipeline = {
                 },
                 {
                     "id": "rag-rank",
-                    "path": "backend/app/retrieval.py",
+                    "path": "backend/app/research/retrieval.py",
                     "anchor": "for ranking, weight in [(lexical, 4.0), (semantic, 1.0)]:",
                     "title": "Fuse, filter, diversify",
                     "detail": "Only lexical matches contribute. The system returns matching excerpts without LLM synthesis.",

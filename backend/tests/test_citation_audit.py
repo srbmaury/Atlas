@@ -1,4 +1,4 @@
-from app.citation_audit import audit_citations
+from app.research.citation_audit import audit_citations
 
 
 def test_citation_audit_detects_missing_and_wrong_refs():

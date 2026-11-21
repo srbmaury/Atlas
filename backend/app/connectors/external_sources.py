@@ -11,9 +11,13 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from ..access_audit import record, reset_grants
 from ..db import ExternalConnection, Session, SourceHealthCheck
-from ..rbac import (
+from ..research.research_queries import (
+    SLACK_QUERY_STOPWORDS,
+    provider_query_terms,
+)
+from ..security.access_audit import record, reset_grants
+from ..security.rbac import (
     connection_for_change,
     connection_visible,
     require_connection,
@@ -21,10 +25,6 @@ from ..rbac import (
     revalidate_access,
     source_scope,
     workspace_permission,
-)
-from ..research_queries import (
-    SLACK_QUERY_STOPWORDS,
-    provider_query_terms,
 )
 from . import batch_connectors
 from .github.search import search as search_github

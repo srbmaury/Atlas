@@ -1,6 +1,6 @@
 """Source routing must honor structured request fields, not question keywords."""
 
-from app.connected_research import connected_scope
+from app.research.connected_research import connected_scope
 from app.schemas import ConnectedQuestion
 
 

@@ -1,4 +1,4 @@
-from app.decision_links import references, related_sources
+from app.research.decision_links import references, related_sources
 
 
 def test_explicit_issue_link_only():
@@ -39,7 +39,7 @@ def test_pr_reference_parsing():
 
 
 def test_timeline_requires_two_sources_and_explicit_dated_actions():
-    from app.decision_links import decision_timeline
+    from app.research.decision_links import decision_timeline
 
     sources = [
         {
@@ -63,7 +63,7 @@ def test_timeline_requires_two_sources_and_explicit_dated_actions():
 
 
 def test_timeline_does_not_infer_events_from_title_or_keywords():
-    from app.decision_links import decision_timeline
+    from app.research.decision_links import decision_timeline
 
     sources = [
         {

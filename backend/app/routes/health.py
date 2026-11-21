@@ -7,14 +7,14 @@ from alembic.script import ScriptDirectory
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import text
 
-from .connectors.gmail import actor, allowed_workspace
-from .db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
-from .rbac import connection_diagnostics_visible, workspace_permission
+from ..connectors.gmail import actor, allowed_workspace
+from ..db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
+from ..security.rbac import connection_diagnostics_visible, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
 SCHEMA_HEAD = ScriptDirectory(
-    str(Path(__file__).resolve().parents[1] / 'migrations')
+    str(Path(__file__).resolve().parents[2] / 'migrations')
 ).get_current_head()
 
 

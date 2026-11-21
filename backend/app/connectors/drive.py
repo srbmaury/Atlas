@@ -17,9 +17,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from ..access_audit import record, reset_grants
 from ..db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
-from ..rbac import (
+from ..security.access_audit import record, reset_grants
+from ..security.rbac import (
     connection_for_change,
     connection_visible,
     require_connection,

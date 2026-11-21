@@ -9,7 +9,7 @@ from urllib.parse import quote, urlsplit
 
 import httpx
 
-from .config import DATA
+from ..config import DATA
 
 log = logging.getLogger(__name__)
 

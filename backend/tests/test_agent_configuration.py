@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from app.agents.models import CreateAgent
-from app.ai import generate_agent
+from app.research.ai import generate_agent
 
 
 def test_agent_configuration_validates_output_format():
@@ -10,9 +10,9 @@ def test_agent_configuration_validates_output_format():
 
 def test_agent_instructions_reach_generation_without_changing_system_grounding():
     with (
-        patch('app.ai.enabled', return_value=True),
-        patch('app.ai.config.AI_PROVIDER', 'openai'),
-        patch('app.ai.client') as client,
+        patch('app.research.ai.enabled', return_value=True),
+        patch('app.research.ai.config.AI_PROVIDER', 'openai'),
+        patch('app.research.ai.client') as client,
     ):
         client.return_value.responses.create.return_value.output_text = (
             'LangChain is a framework [1].'

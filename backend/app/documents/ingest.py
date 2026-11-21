@@ -7,8 +7,8 @@ from docx import Document as WordDocument
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 
-from .ai import embed, embedding_model_id
-from .db import Chunk, Document, Session
+from ..db import Chunk, Document, Session
+from ..research.ai import embed, embedding_model_id
 from .original_storage import original_path
 from .structured_text import extract_structured
 

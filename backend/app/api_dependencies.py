@@ -22,7 +22,7 @@ def user(request: Request, db=Depends(database)):
 
 
 def workspace(workspace_id: str, actor: User, db: Session) -> Workspace:
-    from .rbac import require_workspace
+    from .security.rbac import require_workspace
 
     return require_workspace(db, actor, workspace_id)
 

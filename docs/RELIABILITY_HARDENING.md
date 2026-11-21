@@ -3,7 +3,7 @@
 This document tracks engineering acceptance criteria. A checklist is not evidence that a control is implemented.
 
 ## Retrieval
-- [x] PostgreSQL native full-text ranking and pgvector hybrid candidates (existing implementation in `backend/app/retrieval.py`).
+- [x] PostgreSQL native full-text ranking and pgvector hybrid candidates (existing implementation in `backend/app/research/retrieval.py`).
 - [x] SQLite FTS fallback (existing implementation).
 - [x] Deterministic Recall@K, Precision@K and MRR@K scoring utility.
 - [ ] Curated, versioned relevance judgments and real database benchmark runs.

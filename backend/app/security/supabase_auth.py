@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi import HTTPException
 
-from .config import COOKIE_SECURE
+from ..config import COOKIE_SECURE
 
 
 @dataclass(frozen=True)

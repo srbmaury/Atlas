@@ -10,7 +10,7 @@ from ..agents.sources import (
 )
 from ..api_dependencies import database, user, workspace
 from ..db import Document
-from ..rbac import require_workspace, workspace_permission
+from ..security.rbac import require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/workspaces/{workspaceId}/agents', tags=['agents'])
 MAX_ACTIVE_RUNS_PER_WORKSPACE = 5
@@ -65,7 +65,7 @@ def list_agents(workspaceId: str, actor=Depends(user), db=Depends(database)):
 def list_agent_sources(workspaceId: str, actor=Depends(user), db=Depends(database)):
     workspace(workspaceId, actor, db)
     from ..db import ExternalConnection, GmailConnection
-    from ..rbac import require_connection
+    from ..security.rbac import require_connection
 
     connected = []
     for row in db.query(ExternalConnection).filter_by(workspace_id=workspaceId):

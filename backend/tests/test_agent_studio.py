@@ -29,8 +29,8 @@ def test_agent_mutations_recheck_editor_role_under_lock(monkeypatch):
     import pytest
     from fastapi import HTTPException
 
-    from app import rbac
     from app.routes import agents
+    from app.security import rbac
 
     workspace = SimpleNamespace(id='workspace', organisation_id=None)
     actor = SimpleNamespace(id='member')

@@ -14,8 +14,6 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.exc import IntegrityError
 
-from .. import supabase_auth
-from ..ai import enabled
 from ..api_dependencies import database, user
 from ..config import COOKIE_SECURE, MAX_FILE_BYTES
 from ..db import (
@@ -29,9 +27,11 @@ from ..db import (
     Workspace,
     WorkspaceMember,
 )
-from ..original_storage import delete_original
-from ..rbac import lock_resource
+from ..documents.original_storage import delete_original
+from ..research.ai import enabled
 from ..schemas import Credentials
+from ..security import supabase_auth
+from ..security.rbac import lock_resource
 
 router = APIRouter()
 SESSION_SECONDS = 604800

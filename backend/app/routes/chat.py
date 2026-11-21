@@ -5,21 +5,22 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from .. import config, connected_research
-from ..ai import generate
+from .. import config
 from ..api_dependencies import database, user, workspace
-from ..connected_research import (
+from ..db import Chunk, Document
+from ..research import connected_research
+from ..research.ai import generate
+from ..research.connected_research import (
     attach_retrieval_trace,
     connected_scope,
     connected_sources_for_payload,
     direct_connected_result,
     no_evidence_result,
 )
-from ..db import Chunk, Document
-from ..query_context import retrieval_query
-from ..rbac import revalidate_access, workspace_permission
-from ..retrieval import retrieve
+from ..research.query_context import retrieval_query
+from ..research.retrieval import retrieve
 from ..schemas import ConnectedQuestion, Question
+from ..security.rbac import revalidate_access, workspace_permission
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def connected_chat(
     db=Depends(database),
 ):
     """Retrieve evidence across workspace documents and optionally live Gmail."""
-    from ..ai import client, ollama_chat
+    from ..research.ai import client, ollama_chat
 
     evidence, document_evidence, retrieval_stats, direct_result = prepare_connected_answer(
         workspaceId, body, actor, db
@@ -72,7 +73,7 @@ def connected_chat(
     if direct_result is not None:
         return direct_result
     # Keep source IDs stable across retries so citations refer to the same evidence.
-    from ..connected_synthesis import synthesize_connected
+    from ..research.connected_synthesis import synthesize_connected
 
     try:
         answer, payload = synthesize_connected(
@@ -107,7 +108,7 @@ def connected_chat(
     revalidate_access(
         workspaceId, actor, {item.provider for item in evidence}, retrieval_stats.get('scopes')
     )
-    from ..connected_synthesis import has_valid_citations
+    from ..research.connected_synthesis import has_valid_citations
 
     if not has_valid_citations(answer or '', payload):
         return attach_retrieval_trace(
@@ -134,8 +135,8 @@ def connected_chat(
     # Preserve positional [n] citations used by the standard chat renderer.
     # Non-document evidence carries a URL so the UI opens the original record.
     sources = connected_sources_for_payload(payload, document_evidence)
-    from ..citation_audit import audit_citations
-    from ..decision_links import decision_timeline, related_sources
+    from ..research.citation_audit import audit_citations
+    from ..research.decision_links import decision_timeline, related_sources
 
     return attach_retrieval_trace(
         {
@@ -233,7 +234,7 @@ def connected_chat_stream(
                 result['scope'] = connected_scope(effective_body)
                 attach_retrieval_trace(result, effective_body, evidence, retrieval_stats)
                 if result.get('mode') in ('ai', 'connected') and result.get('sources'):
-                    from ..citation_audit import audit_citations
+                    from ..research.citation_audit import audit_citations
 
                     result['citation_audit'] = audit_citations(result['answer'], result['sources'])
                 yield (
@@ -242,8 +243,8 @@ def connected_chat_stream(
                 )
                 yield json.dumps({'type': 'done', 'result': result}, ensure_ascii=False) + '\n'
                 return
-            from ..ai import client
-            from ..connected_synthesis import stream_connected, stream_with_heartbeats
+            from ..research.ai import client
+            from ..research.connected_synthesis import stream_connected, stream_with_heartbeats
 
             def answer_events(cancellation):
                 return stream_connected(
@@ -273,7 +274,7 @@ def connected_chat_stream(
                         if event['sources']
                         else []
                     )
-                    from ..decision_links import decision_timeline, related_sources
+                    from ..research.decision_links import decision_timeline, related_sources
 
                     result = {
                         'answer': event['answer'],

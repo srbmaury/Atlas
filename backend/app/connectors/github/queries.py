@@ -4,7 +4,7 @@ import re
 
 from fastapi import HTTPException
 
-from ...research_queries import GITHUB_QUERY_STOPWORDS, provider_query_terms
+from ...research.research_queries import GITHUB_QUERY_STOPWORDS, provider_query_terms
 
 
 def github_search_query(query):

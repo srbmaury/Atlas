@@ -6,7 +6,12 @@ import json
 from fastapi import HTTPException
 
 from ..db import Document, ExternalConnection, GmailConnection, Session
-from ..rbac import RESOURCE_SCOPED_PROVIDERS, require_connection, require_workspace, source_scope
+from ..security.rbac import (
+    RESOURCE_SCOPED_PROVIDERS,
+    require_connection,
+    require_workspace,
+    source_scope,
+)
 
 
 def authorized_source_config(db, workspace_id, actor, config):
