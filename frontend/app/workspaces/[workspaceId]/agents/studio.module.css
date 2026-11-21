@@ -940,6 +940,10 @@
     outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
-    .libraryCard { transition: none; }
-    .libraryCard:hover { transform: none; }
+    .libraryCard {
+        transition: none;
+    }
+    .libraryCard:hover {
+        transform: none;
+    }
 }
