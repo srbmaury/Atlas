@@ -88,7 +88,7 @@ function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }
     }
 }
 
-export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
+export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId: string; canEdit: boolean; onUse?: (handle: string) => void }) {
     const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents`;
     const [agents, setAgents] = useState<Agent[]>([]);
     const [selected, setSelected] = useState('');
@@ -99,6 +99,8 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
     const [editing, setEditing] = useState(false);
     const [sourceOptions, setSourceOptions] = useState<{ documents: { id: string; name: string }[]; providers: string[] }>({ documents: [], providers: [] });
     const [includeDocuments, setIncludeDocuments] = useState(true);
+    const [documentScope, setDocumentScope] = useState<'all' | 'selected'>('all');
+    const [sourcesFailed, setSourcesFailed] = useState(false);
     const [documentIds, setDocumentIds] = useState<string[]>([]);
     const [includeGmail, setIncludeGmail] = useState(false);
     const [providers, setProviders] = useState<string[]>([]);
@@ -129,18 +131,23 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
         [base],
     );
 
+    const loadSourceOptions = useCallback(async () => {
+        setSourcesFailed(false);
+        try {
+            const response = await fetch(base + '/sources', { credentials: 'same-origin' });
+            if (!response.ok) throw new Error();
+            setSourceOptions(await response.json());
+        } catch {
+            setSourcesFailed(true);
+        }
+    }, [base]);
+
     useEffect(() => {
         if (workspaceId) {
             loadAgents().catch((err) => setError(err.message));
-            fetch(`${base}/sources`, { credentials: 'same-origin' })
-                .then((response) => {
-                    if (!response.ok) throw new Error('Unable to load connected sources.');
-                    return response.json();
-                })
-                .then(setSourceOptions)
-                .catch((err) => setError(err.message));
+            void loadSourceOptions();
         }
-    }, [workspaceId, loadAgents]);
+    }, [workspaceId, loadAgents, loadSourceOptions]);
 
     useEffect(() => {
         if (!selected) {
@@ -155,8 +162,10 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
         return () => clearInterval(interval);
     }, [selected, loadRuns]);
 
+    const missingSelectedDocuments = includeDocuments && documentScope === 'selected' && !documentIds.length;
+
     async function createAgent() {
-        if (!name.trim()) return;
+        if (!name.trim() || missingSelectedDocuments) return;
         setBusy(true);
         setError('');
         try {
@@ -169,7 +178,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                     instructions,
                     output_format: outputFormat,
                     include_documents: includeDocuments,
-                    document_ids: documentIds,
+                    document_ids: documentScope === 'selected' ? documentIds : [],
                     include_gmail: includeGmail,
                     providers,
                 }),
@@ -197,6 +206,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
         setOutputFormat(activeAgent.output_format || 'detailed_notes');
         setIncludeDocuments(activeAgent.source_config?.include_documents ?? true);
         setDocumentIds(activeAgent.source_config?.document_ids || []);
+        setDocumentScope(activeAgent.source_config?.document_ids?.length ? 'selected' : 'all');
         setIncludeGmail(activeAgent.source_config?.include_gmail || false);
         setProviders(activeAgent.source_config?.providers || []);
         setEditing(true);
@@ -278,22 +288,25 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                     <h1>Agents</h1>
                     <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
                 </div>
-                <button
-                    className={`${styles.button} ${styles.primary}`}
-                    onClick={() => {
-                        setEditing(false);
-                        setName('');
-                        setInstructions('Find relevant evidence and cite sources.');
-                        setOutputFormat('detailed_notes');
-                        setIncludeDocuments(true);
-                        setDocumentIds([]);
-                        setIncludeGmail(false);
-                        setProviders([]);
-                        setShowCreate(true);
-                    }}
-                >
-                    <Plus size={17} /> Create agent
-                </button>
+                {canEdit && (
+                    <button
+                        className={`${styles.button} ${styles.primary}`}
+                        onClick={() => {
+                            setEditing(false);
+                            setName('');
+                            setInstructions('Find relevant evidence and cite sources.');
+                            setOutputFormat('detailed_notes');
+                            setIncludeDocuments(true);
+                            setDocumentIds([]);
+                            setDocumentScope('all');
+                            setIncludeGmail(false);
+                            setProviders([]);
+                            setShowCreate(true);
+                        }}
+                    >
+                        <Plus size={17} /> Create agent
+                    </button>
+                )}
             </div>
             {error && (
                 <div role="alert" className={styles.error}>
@@ -337,7 +350,7 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     <div>
                                         <h2>{agent.name}</h2>
                                         <span>
-                                            {sourceTypes.length} connected source{sourceTypes.length === 1 ? '' : 's'}
+                                            {sourceTypes.length} search source{sourceTypes.length === 1 ? '' : 's'}
                                         </span>
                                     </div>
                                 </div>
@@ -354,6 +367,11 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                     ))}
                                 </div>
                                 <div className={styles.libraryFooter}>
+                                    {onUse && handle.length > 1 && (
+                                        <button type="button" className={styles.mentionCopy} onClick={() => onUse(handle)}>
+                                            Use in chat
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className={styles.mentionCopy}
@@ -371,41 +389,44 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                                         <code>{handle}</code>
                                         {copiedHandle === handle ? <Check size={14} /> : <Copy size={14} />}
                                     </button>
-                                    <div>
-                                        <button
-                                            className={styles.button}
-                                            onClick={() => {
-                                                setSelected(agent.id);
-                                                setName(agent.name);
-                                                setInstructions(agent.instructions);
-                                                setOutputFormat(agent.output_format || 'detailed_notes');
-                                                setIncludeDocuments(scope.include_documents ?? true);
-                                                setDocumentIds(scope.document_ids || []);
-                                                setIncludeGmail(scope.include_gmail || false);
-                                                setProviders(scope.providers || []);
-                                                setEditing(true);
-                                                setShowCreate(true);
-                                            }}
-                                        >
-                                            <Settings2 size={14} /> Edit
-                                        </button>
-                                        <button
-                                            className={styles.button}
-                                            aria-label={`Delete ${agent.name}`}
-                                            onClick={async () => {
-                                                if (!window.confirm(`Delete ${agent.name} and its runs?`)) return;
-                                                try {
-                                                    const response = await fetch(`${base}/${encodeURIComponent(agent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
-                                                    if (!response.ok) throw new Error('Unable to delete agent.');
-                                                    await loadAgents();
-                                                } catch (err) {
-                                                    setError(err instanceof Error ? err.message : 'Delete failed.');
-                                                }
-                                            }}
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
+                                    {canEdit && (
+                                        <div>
+                                            <button
+                                                className={styles.button}
+                                                onClick={() => {
+                                                    setSelected(agent.id);
+                                                    setName(agent.name);
+                                                    setInstructions(agent.instructions);
+                                                    setOutputFormat(agent.output_format || 'detailed_notes');
+                                                    setIncludeDocuments(scope.include_documents ?? true);
+                                                    setDocumentIds(scope.document_ids || []);
+                                                    setDocumentScope(scope.document_ids?.length ? 'selected' : 'all');
+                                                    setIncludeGmail(scope.include_gmail || false);
+                                                    setProviders(scope.providers || []);
+                                                    setEditing(true);
+                                                    setShowCreate(true);
+                                                }}
+                                            >
+                                                <Settings2 size={14} /> Edit
+                                            </button>
+                                            <button
+                                                className={styles.button}
+                                                aria-label={`Delete ${agent.name}`}
+                                                onClick={async () => {
+                                                    if (!window.confirm(`Delete ${agent.name} and its runs?`)) return;
+                                                    try {
+                                                        const response = await fetch(`${base}/${encodeURIComponent(agent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
+                                                        if (!response.ok) throw new Error('Unable to delete agent.');
+                                                        await loadAgents();
+                                                    } catch (err) {
+                                                        setError(err instanceof Error ? err.message : 'Delete failed.');
+                                                    }
+                                                }}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </article>
                         );
@@ -414,17 +435,23 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
             ) : (
                 <div className={styles.libraryEmpty} role="status">
                     <Bot size={28} aria-hidden="true" />
-                    <h2>{agents.length ? 'No matching agents' : 'Build your first research agent'}</h2>
-                    <p>{agents.length ? 'Try a different name or purpose to find an agent.' : 'Choose trusted knowledge sources, define instructions, and use the agent directly in Chat.'}</p>
+                    <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents yet'}</h2>
+                    <p>
+                        {agents.length
+                            ? 'Try a different name or purpose to find an agent.'
+                            : canEdit
+                              ? 'Choose trusted knowledge sources, define instructions, and use the agent directly in Chat.'
+                              : 'An editor or manager can create one.'}
+                    </p>
                     {agents.length ? (
                         <button className={styles.button} onClick={() => setAgentSearch('')}>
                             Clear search
                         </button>
-                    ) : (
+                    ) : canEdit ? (
                         <button className={styles.primaryButton} onClick={() => setShowCreate(true)}>
                             <Plus size={16} /> Create agent
                         </button>
-                    )}
+                    ) : null}
                 </div>
             )}
             {showCreate && (
@@ -471,6 +498,14 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                         </select>
                         <fieldset className={styles.sourcePicker}>
                             <legend>Knowledge & connected sources</legend>
+                            {sourcesFailed && (
+                                <p role="status" className={styles.hint}>
+                                    Source options couldn’t be loaded.{' '}
+                                    <button type="button" onClick={() => void loadSourceOptions()}>
+                                        Retry
+                                    </button>
+                                </p>
+                            )}
                             <p className={styles.sourcePickerHint}>Choose what this agent can reference when answering in chat.</p>
                             <label className={styles.sourceOption}>
                                 <span className={styles.sourceOptionIcon}>
@@ -491,18 +526,25 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             </label>
                             {includeDocuments && (
                                 <div className={styles.documentPicker}>
-                                    <p className={styles.hint}>No selection means all indexed documents.</p>
-                                    {sourceOptions.documents.map((doc) => (
-                                        <label key={doc.id} className={styles.documentOption}>
-                                            <FileText size={15} />
-                                            <span title={doc.name}>{doc.name}</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={documentIds.includes(doc.id)}
-                                                onChange={(event) => setDocumentIds((ids) => (event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)))}
-                                            />
-                                        </label>
-                                    ))}
+                                    <label>
+                                        Document scope
+                                        <select value={documentScope} onChange={(event) => setDocumentScope(event.target.value === 'selected' ? 'selected' : 'all')}>
+                                            <option value="all">All documents</option>
+                                            <option value="selected">Selected documents</option>
+                                        </select>
+                                    </label>
+                                    {documentScope === 'selected' &&
+                                        sourceOptions.documents.map((doc) => (
+                                            <label key={doc.id} className={styles.documentOption}>
+                                                <FileText size={15} />
+                                                <span title={doc.name}>{doc.name}</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={documentIds.includes(doc.id)}
+                                                    onChange={(event) => setDocumentIds((ids) => (event.target.checked ? [...ids, doc.id] : ids.filter((id) => id !== doc.id)))}
+                                                />
+                                            </label>
+                                        ))}
                                 </div>
                             )}
                             {sourceOptions.providers.map((provider) => (
@@ -530,7 +572,11 @@ export function AgentStudioPanel({ workspaceId }: { workspaceId: string }) {
                             <button className={styles.button} onClick={() => setShowCreate(false)}>
                                 Cancel
                             </button>
-                            <button className={`${styles.button} ${styles.primary}`} onClick={createAgent} disabled={busy || !name.trim() || !(includeDocuments || includeGmail || providers.length)}>
+                            <button
+                                className={`${styles.button} ${styles.primary}`}
+                                onClick={createAgent}
+                                disabled={busy || !name.trim() || missingSelectedDocuments || !(includeDocuments || includeGmail || providers.length)}
+                            >
                                 <Check size={15} /> {editing ? 'Save changes' : 'Create agent'}
                             </button>
                         </div>

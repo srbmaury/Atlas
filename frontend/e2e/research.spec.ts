@@ -12,6 +12,8 @@ test.beforeEach(async ({ page }) => {
         if (path.endsWith('/audit')) return json({ events: [], next_cursor: null });
         if (path === '/me') return json({ id: 'u1', email: 'test@example.com', mode: 'ai', max_file_bytes: 10485760 });
         if (path === '/workspaces') return json([{ id: 'w1', name: 'Test workspace', role: 'manager' }]);
+        if (path === '/workspaces/w1/agents/sources') return json({ documents: [{ id: 'd1', name: 'notes.md' }], providers: [] });
+        if (path === '/workspaces/w1/agents') return json([{ id: 'a1', name: 'Research Analyst' }]);
         if (path === '/workspaces/w1/documents') return json([{ id: 'd1', name: 'notes.md', size: 128, status: 'ready', pages: 1, chunk_count: 1 }]);
         if (path === '/gmail/status') return json({ connected: false, email: null, configured: false });
         if (path === '/drive/status') return json({ connected: false, account: null, configured: false });
@@ -129,6 +131,66 @@ test('Home question begins an independent conversation', async ({ page }) => {
     await expect(page.locator('.user-message')).toHaveCount(1);
 });
 
+test('connection discovery failures stay in the source picker and can be retried', async ({ page }) => {
+    let healthy = false;
+    await page.route('**/api/workspaces/w1/sources', (route) =>
+        healthy ? route.fulfill({ json: [{ provider: 'github', connected: true }] }) : route.fulfill({ status: 401, json: { detail: 'Sign in to Atlas first.' } }),
+    );
+    await page.reload();
+    await openSourcePicker(page);
+    const picker = page.getByRole('dialog', { name: 'Choose search sources' });
+    await expect(picker.getByText('Some connections couldn’t be loaded.')).toBeVisible();
+    await expect(page.getByText('Sign in to Atlas first.')).toHaveCount(0);
+    healthy = true;
+    await picker.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(picker.getByRole('checkbox', { name: 'GitHub' })).toBeEnabled();
+    await expect(picker.getByRole('button', { name: 'Retry', exact: true })).toBeHidden();
+});
+
+test('agent cards can open a new chat with the mention filled in', async ({ page }) => {
+    await page.getByRole('button', { name: 'Agents', exact: true }).click();
+    await page.getByRole('button', { name: 'Use in chat', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Your question' })).toHaveValue('@research-analyst ');
+    await expect(page.getByRole('complementary', { name: 'Supporting evidence' })).toBeHidden();
+});
+
+test('stopping before agent startup supports retry when cancellation fails', async ({ page }) => {
+    let releaseStart!: () => void;
+    const startResponse = new Promise<void>((resolve) => {
+        releaseStart = resolve;
+    });
+    await page.route('**/api/workspaces/w1/agents/a1/runs', async (route) => {
+        if (route.request().method() === 'GET') {
+            await route.fulfill({ json: [{ id: 'run-1', status: 'processing' }] });
+            return;
+        }
+        await startResponse;
+        await route.fulfill({ json: { id: 'run-1' } });
+    });
+    let cancellationAttempts = 0;
+    await page.route('**/api/workspaces/w1/agents/a1/runs/run-1/cancel', (route) =>
+        ++cancellationAttempts === 1 ? route.fulfill({ status: 503 }) : route.fulfill({ json: { status: 'cancelled' } }),
+    );
+
+    const question = page.getByRole('textbox', { name: 'Your question' });
+    await question.fill('@');
+    await expect(page.getByRole('listbox', { name: 'Mention an agent' })).toContainText('Research Analyst');
+    await question.fill('@research-analyst Summarize the notes');
+    const started = page.waitForRequest((request) => request.url().endsWith('/agents/a1/runs') && request.method() === 'POST');
+    await page.getByRole('button', { name: 'Send question' }).click();
+    expect((await started).postDataJSON()).toEqual({ question: 'Summarize the notes' });
+
+    const stop = page.getByRole('button', { name: 'Stop', exact: true });
+    await stop.click();
+    releaseStart();
+    await expect(page.getByText('Could not stop agent research. Try Stop again.')).toBeVisible();
+    const cancelled = page.waitForResponse((response) => response.url().endsWith('/runs/run-1/cancel'));
+    await stop.click();
+    expect((await cancelled).ok()).toBe(true);
+    await expect(stop).toBeHidden();
+    await expect(page.locator('.answer-row')).toHaveCount(0);
+});
+
 test('composer remains in view after long response', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Your question' }).fill('Write a long answer');
     await page.getByRole('button', { name: 'Send question' }).click();
@@ -168,10 +230,9 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
 
 test('phone Focus chat tools and compact drawer stay usable', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
-    await expect(page.getByRole('button', { name: /Sources:/ })).toBeHidden();
-    await page.getByLabel('More chat actions').click();
-    await page.getByRole('button', { name: 'Sources', exact: true }).click();
-    await openSourcePicker(page);
+    const sourceTrigger = page.getByRole('button', { name: /Sources:/ });
+    await expect(sourceTrigger).toBeInViewport();
+    await sourceTrigger.click();
     await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeVisible();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
@@ -279,7 +340,7 @@ test('Gmail replaces sources gallery without stacking beneath it', async ({ page
     await expect(page.getByRole('heading', { name: 'Gmail', exact: true })).toBeVisible();
     await expect(page.locator('.integrations-grid')).toHaveCount(0);
     await page.getByRole('button', { name: /All sources/ }).click();
-    await expect(page.locator('.integrations-grid')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Available integrations' })).toBeVisible();
 });
 
 test('All conversations opens the saved history panel', async ({ page }) => {
@@ -412,7 +473,7 @@ test('answer shows readable source previews, evidence review, and follow-up prom
     await page.getByRole('checkbox', { name: 'GitHub' }).check();
     await page.getByRole('textbox', { name: 'Your question' }).fill('Summarize this pull request');
     await page.getByRole('button', { name: 'Send question' }).click();
-    await expect(page.locator('.citation-preview')).toContainText('First source line.');
+    await expect(page.getByRole('complementary', { name: 'Supporting evidence' })).toContainText('First source line.');
     await expect(page.getByText('Some claims may need a closer look.')).toBeVisible();
     await expect(page.getByText('Some claims were omitted because the selected passages did not support them.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Explain this evidence' })).toBeVisible();
@@ -519,9 +580,8 @@ test('pull-request questions use the selected GitHub scope', async ({ page }) =>
     await openSourcePicker(page);
     await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeChecked();
     await expect(page.locator('.evidence-panel')).toHaveCount(0);
-    await expect(page.locator('.answer .source-chip .file.source')).toHaveText('SRC');
-    const badge = await page.locator('.answer .source-chip .file.source').boundingBox();
-    expect(badge?.width).toBe(25);
+    await expect(page.getByRole('complementary', { name: 'Supporting evidence' }).locator('.research-rail-item')).toHaveCount(1);
+    await expect(page.locator('.answer .source-chip')).toBeHidden();
     const research = await page.locator('.chat-workspace .research').evaluate((node) => getComputedStyle(node).gridTemplateColumns);
     expect(research.trim().split(/\s+/)).toHaveLength(2);
 });
@@ -604,7 +664,7 @@ test('Home keeps the primary research entry accessible on mobile', async ({ page
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
     await page.getByRole('button', { name: 'Overview', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Ask anything across your knowledge' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Resume your research' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask Atlas' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
@@ -848,6 +908,7 @@ test('web import reports success and clears its input', async ({ page }) => {
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name: 'Article', duplicate: false }) });
     });
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
     await page.getByLabel('Save public web page').fill('https://example.com/article');
     await page.getByRole('button', { name: 'Add URL', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Added Article to your library for indexing.' })).toBeVisible();

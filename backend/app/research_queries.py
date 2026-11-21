@@ -308,3 +308,30 @@ def drive_query_for_question(question):
 def provider_query_terms(question, *, limit=8, extra_stopwords=()):
     """Return concise lexical terms for providers without a natural-language parser."""
     return natural_search_terms(question, extra_stopwords=extra_stopwords)[:limit]
+
+
+def requested_result_limit(query, default=30, max_limit=None):
+    """Honor a small explicit result count in a natural language request."""
+    numbers = {
+        'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5,
+        'six': 6,
+        'seven': 7,
+        'eight': 8,
+        'nine': 9,
+        'ten': 10,
+    }
+    match = re.search(
+        r'\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\b'
+        r'.{0,70}\b(?:pull\s*requests?|prs?|events?|appointments?|meetings?|'
+        r'files?|documents?|emails?|messages?|projects?|repositories?|repos?|results?|items?)\b',
+        query,
+        re.I,
+    )
+    if not match:
+        return default
+    value = match.group(1).lower()
+    return min(int(value) if value.isdigit() else numbers[value], max_limit or default)

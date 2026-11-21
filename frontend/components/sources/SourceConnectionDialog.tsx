@@ -122,6 +122,14 @@ export function SourceConnectionDialog({
                                         ? 'Authorize read-only access through your provider. Atlas keeps the refresh credential encrypted.'
                                         : 'Connect with a provider-issued read-only access token. Atlas encrypts it at rest.'}
                             </p>
+                            {sourceProvider === 'github' && (
+                                <p className="caption">
+                                    <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank" rel="noreferrer">
+                                        Create a fine-grained GitHub token
+                                    </a>{' '}
+                                    for the repositories you want to search. Grant read access to Contents, Issues, and Pull requests as needed.
+                                </p>
+                            )}
                             {['calendar', 'onedrive', 'outlook'].includes(sourceProvider) && (
                                 <div className="source-search-controls">
                                     <button className="btn primary" disabled={sourceBusy} onClick={onConnectOAuthSource}>

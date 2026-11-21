@@ -34,35 +34,39 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
             return [id, name, description, Icon, status?.connected, status?.account] as const;
         }),
     ] as const;
-    const connectedCount = providers.filter(([, , , , connected]) => connected).length;
-    const orderedProviders = [...providers].sort((left, right) => Number(Boolean(right[4])) - Number(Boolean(left[4])));
+    const connectedProviders = providers.filter((provider) => provider[4]);
+    const availableProviders = providers.filter((provider) => !provider[4]);
+    const tiles = (items: (typeof providers)[number][]) =>
+        items.map(([id, name, description, Icon, connected, account]) => (
+            <IntegrationTile
+                key={id}
+                name={name}
+                description={description}
+                icon={<Icon size={19} />}
+                connected={!!connected}
+                account={account}
+                health={connected ? sourceChecks[id] : undefined}
+                onClick={() => onOpen(id)}
+            />
+        ));
     return (
         <>
             <div className="integration-overview">
-                <div>
-                    <h2>Your connections</h2>
-                    <p>Connect the tools your team uses, and inspect connection health and access.</p>
-                </div>
-                <span>{connectedCount} connected</span>
-                <button type="button" className="btn primary mobile-source-catalog" aria-expanded={catalogOpen} aria-controls="atlas-provider-list" onClick={() => setCatalogOpen((open) => !open)}>
-                    {catalogOpen ? 'Hide catalog' : 'Add a source'}
-                </button>
+                <h2>Your connections</h2>
+                <span>{connectedProviders.length} connected</span>
+                {availableProviders.length > 0 && (
+                    <button type="button" className="btn primary mobile-source-catalog" aria-expanded={catalogOpen} aria-controls="atlas-provider-list" onClick={() => setCatalogOpen((open) => !open)}>
+                        {catalogOpen ? 'Hide catalog' : 'Add a source'}
+                    </button>
+                )}
             </div>
-            {!connectedCount && !catalogOpen && <p className="mobile-source-empty">No sources connected. Add a source to get started.</p>}
-            <div className="integrations-grid" id="atlas-provider-list" data-catalog-open={catalogOpen}>
-                {orderedProviders.map(([id, name, description, Icon, connected, account]) => (
-                    <IntegrationTile
-                        key={id}
-                        name={name}
-                        description={description}
-                        icon={<Icon size={23} />}
-                        connected={!!connected}
-                        account={account}
-                        health={sourceChecks[id]}
-                        onClick={() => onOpen(id)}
-                    />
-                ))}
-            </div>
+            {connectedProviders.length ? <div className="integrations-grid">{tiles(connectedProviders)}</div> : <p className="integration-empty">No sources connected.</p>}
+            {availableProviders.length > 0 && (
+                <section className="integration-catalog" id="atlas-provider-list" data-catalog-open={catalogOpen} aria-label="Available integrations">
+                    <h2>Available integrations</h2>
+                    <div className="integrations-grid">{tiles(availableProviders)}</div>
+                </section>
+            )}
         </>
     );
 }

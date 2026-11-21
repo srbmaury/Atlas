@@ -26,7 +26,7 @@ import {
 import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
-import { visibleEvidence, sourceDisplayName, sourceLocation } from '../../lib/evidence';
+import { visibleEvidence, sourceDisplayName, sourceLocation, evidencePreview } from '../../lib/evidence';
 import { prompts } from '../../utils/utils';
 import { conversationExportName, conversationMarkdown, downloadConversationMarkdown } from '../../lib/conversationExport';
 import { ConversationHistory } from './ConversationHistory';
@@ -54,6 +54,8 @@ interface ResearchWorkspaceProps {
     connectedGmailQuery: string;
     setConnectedGmailQuery: Setter<string>;
     driveStatus: DriveConnectionStatus | null;
+    sourceLoadFailed?: boolean;
+    onRetrySources: () => void;
     sourceStatuses: ConnectedSourceStatus[];
     connectedProviders: ResearchProvider[];
     setConnectedProviders: Setter<ResearchProvider[]>;
@@ -101,7 +103,7 @@ interface ResearchWorkspaceProps {
 
 export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const mobileActions = useRef<HTMLDetailsElement>(null);
-    const [mobilePanel, setMobilePanel] = useState<'sources' | 'find' | null>(null);
+    const [mobilePanel, setMobilePanel] = useState<'find' | null>(null);
     function chooseMobileAction(action: () => void) {
         if (mobileActions.current) mobileActions.current.open = false;
         action();
@@ -153,7 +155,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
 
     const [messageSearch, setMessageSearch] = useState('');
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-    const [evidenceOpen, setEvidenceOpen] = useState(true);
+    const [evidenceHidden, setEvidenceHidden] = useState(false);
     function focusMatch(index: number) {
         setFocusedIndex(index);
         const node = props.threadRef.current?.querySelector<HTMLElement>(`[data-message-index="${index}"]`);
@@ -222,7 +224,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
         ? props.messages.map((message, index) => ({ message, index })).filter(({ message }) => message.content.toLocaleLowerCase().includes(messageSearch.trim().toLocaleLowerCase()))
         : [];
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
-    const evidence = latestAnswer ? visibleEvidence(latestAnswer) : [];
+    const evidence = visibleEvidence(latestAnswer);
+    const evidenceOpen = evidence.length > 0 && !evidenceHidden;
     const allSelected =
         props.includeDocuments &&
         (!props.gmailStatus?.connected || props.connectedGmail) &&
@@ -260,9 +263,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         <Ellipsis />
                     </summary>
                     <div className="focus-chat-menu">
-                        <button type="button" onClick={() => chooseMobileAction(() => setMobilePanel((panel) => (panel === 'sources' ? null : 'sources')))}>
-                            Sources
-                        </button>
                         <button type="button" disabled={!props.messages.length} onClick={() => chooseMobileAction(() => setMobilePanel((panel) => (panel === 'find' ? null : 'find')))}>
                             Find in conversation
                         </button>
@@ -310,38 +310,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </button>
                 </div>
             </div>
-            <div className="research-source-toolbar">
-                <ResearchSourceSelector
-                    includeDocuments={props.includeDocuments}
-                    onIncludeDocuments={props.setIncludeDocuments}
-                    gmailStatus={props.gmailStatus}
-                    connectedGmail={props.connectedGmail}
-                    onIncludeGmail={props.setConnectedGmail}
-                    driveStatus={props.driveStatus}
-                    sourceStatuses={props.sourceStatuses}
-                    connectedProviders={props.connectedProviders}
-                    onSelectAll={(select) => {
-                        props.setIncludeDocuments(select);
-                        props.setConnectedGmail(select && !!props.gmailStatus?.connected);
-                        props.setConnectedProviders(
-                            select
-                                ? RESEARCH_PROVIDERS.filter((provider) =>
-                                      provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
-                                  )
-                                : [],
-                        );
-                    }}
-                    onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
-                    onManage={props.onManageSources}
-                />
-            </div>
-            {props.connectedGmail && (
-                <div className="unified-gmail-scope">
-                    <label>
-                        Gmail search scope <input aria-label="Gmail search scope" value={props.connectedGmailQuery} onChange={(event) => props.setConnectedGmailQuery(event.target.value)} />
-                    </label>
-                </div>
-            )}
             {props.userMode !== 'ai' && (
                 <div className="feedback" role="status">
                     <CircleHelp />
@@ -434,9 +402,10 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 <button
                                     type="button"
                                     className="evidence-toggle-inline"
+                                    hidden={!evidence.length}
                                     aria-expanded={evidenceOpen}
                                     aria-controls="atlas-evidence-panel"
-                                    onClick={() => setEvidenceOpen((open) => !open)}
+                                    onClick={() => setEvidenceHidden((hidden) => !hidden)}
                                     title={evidenceOpen ? 'Hide evidence' : 'Show evidence'}
                                 >
                                     {evidenceOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
@@ -454,6 +423,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             prompts={prompts}
                             onPrompt={props.onAsk}
                             initials={props.initials}
+                            railAnswer={evidenceOpen ? latestAnswer : undefined}
                             renderAnswer={props.renderAnswer}
                             answerProgress={props.answerProgress}
                             onStop={props.onStop}
@@ -469,6 +439,43 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 ))}
                             </div>
                         )}
+                        <div className="research-source-toolbar">
+                            <ResearchSourceSelector
+                                includeDocuments={props.includeDocuments}
+                                onIncludeDocuments={props.setIncludeDocuments}
+                                gmailStatus={props.gmailStatus}
+                                connectedGmail={props.connectedGmail}
+                                onIncludeGmail={props.setConnectedGmail}
+                                driveStatus={props.driveStatus}
+                                sourceStatuses={props.sourceStatuses}
+                                connectedProviders={props.connectedProviders}
+                                onSelectAll={(select) => {
+                                    props.setIncludeDocuments(select);
+                                    props.setConnectedGmail(select && !!props.gmailStatus?.connected);
+                                    props.setConnectedProviders(
+                                        select
+                                            ? RESEARCH_PROVIDERS.filter((provider) =>
+                                                  provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                              )
+                                            : [],
+                                    );
+                                }}
+                                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
+                                onManage={props.onManageSources}
+                                onBrowseDocuments={props.onBrowseLibrary}
+                                selectedCount={props.selectedCount}
+                                sourceLoadFailed={props.sourceLoadFailed}
+                                onRetrySources={props.onRetrySources}
+                            />
+                        </div>
+                        {props.connectedGmail && (
+                            <div className="unified-gmail-scope">
+                                <label>
+                                    Gmail search scope{' '}
+                                    <input aria-label="Gmail search scope" value={props.connectedGmailQuery} onChange={(event) => props.setConnectedGmailQuery(event.target.value)} />
+                                </label>
+                            </div>
+                        )}
                         <ResearchComposer
                             mentionAgents={props.mentionAgents}
                             query={props.query}
@@ -478,7 +485,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             onBrowseLibrary={props.onBrowseLibrary}
                             canUpload={props.canUpload}
                             selectedDocuments={props.selectedDocuments}
-                            allDocumentsActive={props.includeDocuments && props.selectedCount === 0 && props.readyCount > 0}
                             pendingDocuments={props.pendingDocuments}
                             onRemoveDocument={props.onRemoveDocument}
                             uploadProgress={props.uploadProgress}
@@ -522,7 +528,11 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                             <span>
                                                 {step.status === 'failed'
                                                     ? 'Search failed'
-                                                    : `${step.status === 'partial' ? 'Partial search · ' : ''}${step.found} found · ${step.considered} retained · ${step.used} cited`}
+                                                    : step.status === 'partial'
+                                                      ? 'Partial search · ' + step.found + ' matches'
+                                                      : step.found
+                                                        ? 'Searched · ' + step.found + ' matches'
+                                                        : 'No matches'}
                                             </span>
                                         </li>
                                     ))}
@@ -567,11 +577,8 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                                 <button type="button" className="research-rail-item" key={`${number}-${source.chunk_id}`} onClick={() => props.onOpenSource(source)}>
                                                     <span className="research-rail-number">{number}</span>
                                                     <span className="research-rail-copy">
-                                                        <small>{sourceLocation(source)}</small>
-                                                        <span>
-                                                            {source.text?.replace(/\s+/g, ' ').slice(0, 110) || 'Open supporting passage'}
-                                                            {(source.text?.length || 0) > 110 ? '…' : ''}
-                                                        </span>
+                                                        <small>{sourceLocation(source, number)}</small>
+                                                        <span>{evidencePreview(source.text, latestAnswer?.answer, number) || 'Open supporting passage'}</span>
                                                     </span>
                                                     <ArrowUpRight size={14} />
                                                 </button>

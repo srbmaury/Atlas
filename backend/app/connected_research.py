@@ -430,7 +430,7 @@ def connected_source_listing_result(question, body, evidence, document_evidence)
 
         matches.sort(key=activity_timestamp, reverse=True)
 
-    from .external_sources import requested_result_limit
+    from .research_queries import requested_result_limit
 
     default_limit = (
         1

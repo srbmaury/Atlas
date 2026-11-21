@@ -4,7 +4,7 @@ import { Check, Copy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Answer, Source } from '../../lib/types';
-import { visibleEvidence, sourceDisplayName, sourceLocation } from '../../lib/evidence';
+import { visibleEvidence, sourceDisplayName, sourceLocation, evidencePreview } from '../../lib/evidence';
 import { SOURCE_LABELS } from '../../lib/providers';
 import { FileBadge } from '../ui/WorkspacePrimitives';
 import { MermaidDiagram } from './MermaidDiagram';
@@ -172,14 +172,9 @@ export const ResearchAnswer = memo(function ResearchAnswer({
                             <span>
                                 <b>{sourceDisplayName(source)}</b>
                                 <small>
-                                    {result.mode === 'local_excerpts' ? 'Search match' : 'Citation'} [{number}] · {sourceLocation(source)}
+                                    {result.mode === 'local_excerpts' ? 'Search match' : 'Citation'} [{number}] · {sourceLocation(source, number)}
                                 </small>
-                                {source.text?.trim() && (
-                                    <small className="citation-preview">
-                                        “{source.text.trim().replace(/\s+/g, ' ').slice(0, 200)}
-                                        {source.text.trim().length > 200 ? '…' : ''}”
-                                    </small>
-                                )}
+                                {source.text?.trim() && <small className="citation-preview">“{evidencePreview(source.text, result.answer, number)}”</small>}
                             </span>
                         </button>
                     ))}
@@ -208,7 +203,7 @@ function AnswerTrace({ result, onOpenSource }: { result: Answer; onOpenSource: (
             <summary>
                 Sources and evidence{' '}
                 <span>
-                    {retrieval.sources.length} searched · {citations.size} citations
+                    {retrieval.sources.filter((item) => item.status !== 'failed').length} searched · {citations.size} citations
                 </span>
             </summary>
             <div className="answer-trace-flow" aria-label="Answer generation steps">
@@ -228,8 +223,8 @@ function AnswerTrace({ result, onOpenSource }: { result: Answer; onOpenSource: (
                                 {item.status === 'failed'
                                     ? 'Could not search this source'
                                     : item.found === 0
-                                      ? 'No matching passages'
-                                      : `${item.status === 'partial' ? 'Partial search · ' : ''}${item.found} matches · ${item.considered} kept · ${item.used} ${isListing ? 'shown' : 'cited'}`}
+                                      ? 'No matches'
+                                      : `${item.status === 'partial' ? 'Partial search · ' : 'Searched · '}${item.found} matches · ${item.considered} kept · ${item.used} ${isListing ? 'shown' : 'cited'}`}
                             </span>
                             {sourceCitations.length > 0 && (
                                 <span className="answer-trace-citations">

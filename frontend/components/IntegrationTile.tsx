@@ -52,9 +52,7 @@ export function IntegrationTile({ name, description, connected, account, icon, o
                     </>
                 )}
             </span>
-            <span className="mobile-source-tile-action" aria-hidden="true">
-                {connected ? 'Manage' : 'Connect'}
-            </span>
+            <span className="mobile-source-tile-action">{connected ? 'Manage' : 'Connect'}</span>
         </button>
     );
 }

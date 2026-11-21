@@ -1,15 +1,15 @@
 'use client';
 import { useState, type ReactNode } from 'react';
-import { Search, Upload, Plus, FileText, CheckCircle2, HardDrive } from 'lucide-react';
+import { Search, Upload, Plus } from 'lucide-react';
 
 interface DocumentsViewProps {
     canEdit?: boolean;
-    uploadButton: ReactNode;
     webImport: ReactNode;
     totalDocuments: number;
     readyDocuments: number;
+    failedDocuments: number;
+    indexingDocuments: number;
     storageLabel: string;
-    filteredCount: number;
     filter: string;
     onFilter: (value: string) => void;
     documentTable: ReactNode;
@@ -23,12 +23,12 @@ interface DocumentsViewProps {
 
 export function DocumentsView({
     canEdit = true,
-    uploadButton,
     webImport,
     totalDocuments,
     readyDocuments,
+    failedDocuments,
+    indexingDocuments,
     storageLabel,
-    filteredCount,
     filter,
     onFilter,
     documentTable,
@@ -42,59 +42,30 @@ export function DocumentsView({
     const [addOpen, setAddOpen] = useState(false);
     return (
         <section className="document-library-v3">
-            <div className="crumb">
-                Workspace<span>›</span>Library
-            </div>
             <div className="library-intro">
                 <div>
-                    <span className="section-kicker">WORKSPACE / DOCUMENTS</span>
                     <h1>Documents</h1>
-                    <p>Search, inspect, and manage the files behind your research.</p>
+                    <p className="library-summary">
+                        {totalDocuments} {totalDocuments === 1 ? 'file' : 'files'} · {readyDocuments} ready to search · {storageLabel}
+                        {indexingDocuments > 0 && ' · ' + indexingDocuments + ' indexing'}
+                        {failedDocuments > 0 && ' · ' + failedDocuments + ' failed'}
+                    </p>
                 </div>
-                <div className="library-desktop-upload">{uploadButton}</div>
                 {canEdit && (
-                    <button type="button" className="btn primary library-mobile-add" aria-expanded={addOpen} aria-controls="library-import-actions" onClick={() => setAddOpen((open) => !open)}>
+                    <button type="button" className="btn primary" aria-expanded={addOpen} aria-controls="library-import-actions" onClick={() => setAddOpen((open) => !open)}>
                         <Plus size={16} /> Add
                     </button>
                 )}
             </div>
-            <div id="library-import-actions" className="library-import-actions" data-open={addOpen || !canEdit}>
+            <div id="library-import-actions" className="library-import-actions" hidden={canEdit && !addOpen}>
                 {canEdit && (
-                    <div className="library-mobile-upload">
-                        <button type="button" className="btn" disabled={uploading} onClick={onBrowse}>
-                            Upload files
-                        </button>
-                    </div>
+                    <button type="button" className="btn" disabled={uploading} onClick={onBrowse}>
+                        Upload files
+                    </button>
                 )}
                 {webImport}
             </div>
-            <p className="library-mobile-summary">
-                {totalDocuments} {totalDocuments === 1 ? 'file' : 'files'} · {readyDocuments} ready to search · {storageLabel}
-            </p>
-            <div className="library-stat-strip library-metrics">
-                <span>
-                    <FileText size={17} />
-                    <strong>{totalDocuments}</strong> Documents
-                </span>
-                <span>
-                    <CheckCircle2 size={17} />
-                    <strong>{readyDocuments}</strong> Ready to search
-                </span>
-                <span>
-                    <HardDrive size={17} />
-                    <strong>{storageLabel}</strong> Storage used
-                </span>
-            </div>
             <div className="library-workspace">
-                <div className="library-workspace-heading">
-                    <div>
-                        <h2>All documents</h2>
-                        <p>Search and manage files in this workspace</p>
-                    </div>
-                    <span>
-                        {filteredCount} {filteredCount === 1 ? 'file' : 'files'}
-                    </span>
-                </div>
                 <div className="library-search-row">
                     <label>
                         <Search size={17} />

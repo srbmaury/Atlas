@@ -1390,13 +1390,13 @@ def test_source_health_check_distinguishes_unconnected_from_healthy(client, monk
 
 
 def test_github_search_query_preserves_filters_and_simplifies_questions():
-    from app.external_sources import (
+    from app.external_sources import slack_search_query
+    from app.github_search import (
         github_pull_request_query,
         github_repository_query,
         github_search_query,
-        requested_result_limit,
-        slack_search_query,
     )
+    from app.research_queries import requested_result_limit
 
     assert (
         github_search_query('repo:owner/project is:issue bug') == 'repo:owner/project is:issue bug'

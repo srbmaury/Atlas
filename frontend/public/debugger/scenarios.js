@@ -751,7 +751,7 @@ const linearScenarios = [
             ),
             step(
                 'read-matching-source-files',
-                api + 'external_sources.py',
+                api + 'github_search.py',
                 'def github_repository_file_search(',
                 'Read matching source files',
                 'Repository search inspects likely files and returns snippets linked to the repository.',
