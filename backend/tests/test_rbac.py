@@ -10,7 +10,7 @@ import pytest
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
-from app import external_sources, gmail
+from app.connectors import external_sources, gmail
 from app.db import ConnectedOAuthState, ExternalConnection, GmailConnection, Session
 from app.main import app
 
@@ -254,7 +254,7 @@ def test_private_connectors_are_hidden_until_owner_shares(accounts, monkeypatch)
 def test_revocation_prevents_oauth_completion(accounts, monkeypatch):
     import hashlib
 
-    from app import connected_oauth
+    from app.connectors import connected_oauth
 
     owner, manager, _, workspace = accounts
     grant(owner, manager, workspace, 'manager')
@@ -816,7 +816,7 @@ def test_concurrent_ownership_transfers_have_one_winner(accounts):
 
 @pytest.mark.parametrize('provider', ['drive', 'slack'])
 def test_resource_scopes_filter_direct_search_and_chat(accounts, monkeypatch, provider):
-    from app import drive
+    from app.connectors import drive
 
     owner, member, _, workspace = accounts
     grant(owner, member, workspace, 'viewer')

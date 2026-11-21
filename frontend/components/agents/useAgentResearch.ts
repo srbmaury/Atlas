@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
-import { chatLoadSequence } from '../lib/chatLoadSequence';
-import { persistConversation } from '../lib/researchRequests';
-import type { ChatSummary, Source } from '../lib/types';
-import type { useConversation } from './useConversation';
+import { chatLoadSequence } from '../../lib/chatLoadSequence';
+import { persistConversation } from '../../lib/researchRequests';
+import type { ChatSummary, Source } from '../../lib/types';
+import type { useConversation } from '../chat/useConversation';
 
 type AgentMention = { id: string; name: string; handle: string };
 

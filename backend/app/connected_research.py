@@ -37,10 +37,10 @@ def collect_connected_evidence(
         )
         if count != len(set(body.document_ids)):
             raise HTTPException(404, 'Selected document not found.')
-    from .drive import access_token as drive_access_token
-    from .drive import drive_evidence, drive_search
-    from .external_sources import PROVIDERS, read_connection, source_search
-    from .gmail import GMAIL_API, access_token, connection, email_from_json, gmail_get
+    from .connectors.drive import access_token as drive_access_token
+    from .connectors.drive import drive_evidence, drive_search
+    from .connectors.external_sources import PROVIDERS, read_connection, source_search
+    from .connectors.gmail import GMAIL_API, access_token, connection, email_from_json, gmail_get
 
     if any(p not in (*PROVIDERS, 'drive') for p in body.providers):
         raise HTTPException(422, 'Unknown connected provider.')

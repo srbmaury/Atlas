@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction, RefObject, FormEvent } from 'react';
-import { api } from '../lib/api';
-import type { User, Workspace, Doc, DocumentPreview, Source, Message, GmailStatus, ChatSummary } from '../lib/types';
+import { api } from '../../lib/api';
+import type { User, Workspace, Doc, DocumentPreview, Source, Message, GmailStatus, ChatSummary } from '../../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 

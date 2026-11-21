@@ -2,7 +2,7 @@
 
 import pytest
 
-from app import batch_connectors
+from app.connectors import batch_connectors
 from app.source_contract import normalize_evidence
 from app.sources import Evidence
 

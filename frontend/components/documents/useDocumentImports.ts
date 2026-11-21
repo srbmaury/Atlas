@@ -1,7 +1,7 @@
 'use client';
 import { useState, type RefObject, type FormEvent } from 'react';
-import { api } from '../lib/api';
-import type { Doc } from '../lib/types';
+import { api } from '../../lib/api';
+import type { Doc } from '../../lib/types';
 
 type Options = {
     workspaceId: string;

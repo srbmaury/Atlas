@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import type { GmailStatus, GmailMessage, GmailSummary, GmailThread } from '../lib/types';
+import type { GmailStatus, GmailMessage, GmailSummary, GmailThread } from '../../../lib/types';
 
 /** Gmail search, selection, preview and summary state. */
 export function useGmailWorkspace() {

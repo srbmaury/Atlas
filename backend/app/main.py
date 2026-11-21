@@ -9,11 +9,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .config import DATA
-from .connected_oauth import router as connected_oauth_router
+from .connectors.connected_oauth import router as connected_oauth_router
+from .connectors.drive import router as drive_router
+from .connectors.external_sources import router as external_router
+from .connectors.gmail import router as gmail_router
 from .db import init_db
-from .drive import router as drive_router
-from .external_sources import router as external_router
-from .gmail import router as gmail_router
 from .health import router as health_router
 from .original_storage import StorageError
 from .routes.access import router as access_router

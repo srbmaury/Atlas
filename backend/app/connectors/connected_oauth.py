@@ -16,10 +16,15 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .access_audit import record, reset_grants
-from .db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
+from ..access_audit import record, reset_grants
+from ..db import ConnectedOAuthState, ExternalConnection, Session, SourceHealthCheck, User
+from ..rbac import (
+    connection_for_change,
+    require_connection,
+    require_workspace,
+    workspace_permission,
+)
 from .gmail import actor, allowed_workspace, crypt
-from .rbac import connection_for_change, require_connection, require_workspace, workspace_permission
 
 router = APIRouter(prefix='/api/connected-oauth')
 PROVIDERS = {'calendar', 'onedrive', 'outlook', 'sharepoint'}

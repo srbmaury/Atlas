@@ -11,12 +11,9 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from . import batch_connectors
-from .access_audit import record, reset_grants
-from .connectors.github.search import search as search_github
-from .db import ExternalConnection, Session, SourceHealthCheck
-from .gmail import actor, allowed_workspace, crypt
-from .rbac import (
+from ..access_audit import record, reset_grants
+from ..db import ExternalConnection, Session, SourceHealthCheck
+from ..rbac import (
     connection_for_change,
     connection_visible,
     require_connection,
@@ -25,10 +22,13 @@ from .rbac import (
     source_scope,
     workspace_permission,
 )
-from .research_queries import (
+from ..research_queries import (
     SLACK_QUERY_STOPWORDS,
     provider_query_terms,
 )
+from . import batch_connectors
+from .github.search import search as search_github
+from .gmail import actor, allowed_workspace, crypt
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)

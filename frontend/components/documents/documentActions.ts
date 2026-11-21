@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction, RefObject, FormEvent } from 'react';
-import { api } from '../lib/api';
-import { uploadDocument } from '../lib/uploadDocuments';
-import type { User, Doc, DocumentPreview, Source } from '../lib/types';
+import { api } from '../../lib/api';
+import { uploadDocument } from '../../lib/uploadDocuments';
+import type { User, Doc, DocumentPreview, Source } from '../../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 

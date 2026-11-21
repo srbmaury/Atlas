@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { ConnectedSourceSearchResult, ConnectedSourceStatus, DriveConnectionStatus, DriveSearchResult, ExternalSourceProvider, ResearchProvider, SourceHealth } from '../lib/types';
+import type { ConnectedSourceSearchResult, ConnectedSourceStatus, DriveConnectionStatus, DriveSearchResult, ExternalSourceProvider, ResearchProvider, SourceHealth } from '../../lib/types';
 
 /** Source connection, provider discovery and research selection state. */
 export function useSourceConnections() {

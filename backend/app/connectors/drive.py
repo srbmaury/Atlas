@@ -17,10 +17,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from .access_audit import record, reset_grants
-from .db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
-from .gmail import actor, allowed_workspace, crypt
-from .rbac import (
+from ..access_audit import record, reset_grants
+from ..db import DriveOAuthState, ExternalConnection, Session, SourceHealthCheck, User
+from ..rbac import (
     connection_for_change,
     connection_visible,
     require_connection,
@@ -29,6 +28,7 @@ from .rbac import (
     source_scope,
     workspace_permission,
 )
+from .gmail import actor, allowed_workspace, crypt
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)

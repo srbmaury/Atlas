@@ -164,10 +164,10 @@ Agent runs are read-only and use the invoking user's permissions, not the agent 
 | Frontend workspace | `frontend/app/page.tsx` | `components/AtlasWorkspace.tsx`, `components/chat/`, `components/documents/` |
 | Upload and background indexing | `backend/app/routes/documents.py` | `worker.py`, `ingest.py`, `db.py` |
 | Document retrieval | `backend/app/routes/chat.py` | `retrieval.py`, `ai.py` |
-| Cross-source answers | `backend/app/routes/chat.py` | `external_sources.py`, `connectors/github/`, `gmail.py`, `drive.py`, `connected_synthesis.py` |
+| Cross-source answers | `backend/app/routes/chat.py` | `connectors/external_sources.py`, `connectors/github/`, `connectors/gmail.py`, `connectors/drive.py`, `connected_synthesis.py` |
 | Citation display | `frontend/components/chat/ResearchAnswer.tsx` | `frontend/lib/evidence.ts` |
 | Agent creation, runs and authorization | `backend/app/routes/agents.py` | `agents/`, `rbac.py` |
-| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `hooks/useAgentResearch.ts`, `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
+| Agent library and `@` mentions | `frontend/components/agents/AgentStudioPanel.tsx` | `components/agents/useAgentResearch.ts`, `components/chat/ResearchComposer.tsx`, `components/home/HomeView.tsx` |
 
 
 
@@ -394,9 +394,9 @@ Tokens and originals are workspace data. Protect the database, document volume, 
 - `backend/app/ingest.py`: file parsing, OCR, and chunking.
 - `backend/app/retrieval.py`: keyword/vector retrieval and ranking.
 - `backend/app/ai.py`: embeddings and grounded answer generation.
-- `backend/app/external_sources.py`: Connected-source routes, credentials, and search dispatch.
+- `backend/app/connectors/external_sources.py`: Connected-source routes, credentials, and search dispatch.
 - `backend/app/connectors/github/`: GitHub query parsing, code flow tracing, and repository evidence retrieval.
-- `backend/app/drive.py` and `backend/app/gmail.py`: Google connectors.
+- `backend/app/connectors/drive.py` and `backend/app/connectors/gmail.py`: Google connectors.
 - `backend/app/worker.py`: background document ingestion and agent research execution.
 - `backend/app/routes/agents.py`: agent definition and run endpoints.
 - `backend/app/agents/`: agent models, source authorization, execution, evidence graph and claim assessment.

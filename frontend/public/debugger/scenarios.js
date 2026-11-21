@@ -101,7 +101,7 @@ const linearScenarios = [
             ),
             step(
                 'post-workspace',
-                web + 'utils/sessionActions.ts',
+                web + 'components/auth/sessionActions.ts',
                 'async function addWorkspace(',
                 'Submit the workspace request',
                 'The dialog calls the workspace handler, which posts the name and optional organisation ID.',
@@ -404,7 +404,7 @@ const linearScenarios = [
             ),
             step(
                 'request-drive-authorization',
-                web + 'hooks/useConnectedSourcesController.ts',
+                web + 'components/sources/useConnectedSourcesController.ts',
                 '/drive/connect?workspaceId=',
                 'Request the Drive authorization URL',
                 'The dialog handler calls Atlas for an authorization URL, then redirects the browser to it.',
@@ -415,7 +415,7 @@ const linearScenarios = [
             ),
             step(
                 'start-drive-oauth',
-                api + 'drive.py',
+                api + 'connectors/drive.py',
                 'def connect(',
                 'Start Drive OAuth',
                 'Atlas creates an expiring state associated with the caller and workspace before redirecting to Google.',
@@ -425,7 +425,7 @@ const linearScenarios = [
             ),
             step(
                 'store-the-connection',
-                api + 'drive.py',
+                api + 'connectors/drive.py',
                 'def callback(',
                 'Store the connection',
                 'The callback validates the state and stores the encrypted refresh credential. The connection starts private.',
@@ -446,7 +446,7 @@ const linearScenarios = [
             ),
             step(
                 'resolve-search-access',
-                api + 'drive.py',
+                api + 'connectors/drive.py',
                 'def access_token(',
                 'Resolve search access',
                 'Atlas checks workspace and connection visibility, then exchanges the refresh credential for a provider access token.',
@@ -456,7 +456,7 @@ const linearScenarios = [
             ),
             step(
                 'search-and-filter-files',
-                api + 'drive.py',
+                api + 'connectors/drive.py',
                 'def drive_search(',
                 'Search the owner’s Drive',
                 'Atlas queries Drive with the owner’s credential. Shared member searches additionally apply the file allowlist.',
@@ -466,7 +466,7 @@ const linearScenarios = [
             ),
             step(
                 'read-matching-content',
-                api + 'drive.py',
+                api + 'connectors/drive.py',
                 'def drive_evidence(',
                 'Read matching content',
                 'Atlas extracts supported text from selected Drive files to use as answer evidence.',
@@ -524,7 +524,7 @@ const linearScenarios = [
             ),
             step(
                 'filter-upstream-results',
-                api + 'external_sources.py',
+                api + 'connectors/external_sources.py',
                 'def source_search(',
                 'Filter upstream results',
                 'The Slack adapter keeps verified results from allowed channel IDs and excludes direct and group messages.',
@@ -581,7 +581,7 @@ const linearScenarios = [
             ),
             step(
                 'request-answer-after-saving-question',
-                web + 'utils/conversationActions.ts',
+                web + 'components/chat/conversationActions.ts',
                 'result = await requestResearchAnswer(',
                 'Request the answer for the saved turn',
                 'The first question already has a conversation ID when Atlas starts its regular research request.',
@@ -592,7 +592,7 @@ const linearScenarios = [
             ),
             step(
                 'update-completed-transcript',
-                web + 'utils/conversationActions.ts',
+                web + 'components/chat/conversationActions.ts',
                 'const saved = await persistConversation(target, id, title, completed)',
                 'Update the chat after generation',
                 'When generation completes, Atlas updates the existing conversation with the answer and its result metadata.',
@@ -614,7 +614,7 @@ const linearScenarios = [
             ),
             step(
                 'fetch-saved-conversation',
-                web + 'utils/conversationActions.ts',
+                web + 'components/chat/conversationActions.ts',
                 'const item = await api<SavedChat>',
                 'Request the selected conversation',
                 'The history click reaches the loader, which fetches the conversation by workspace and ID.',
@@ -635,7 +635,7 @@ const linearScenarios = [
             ),
             step(
                 'restore-the-conversation',
-                web + 'utils/conversationActions.ts',
+                web + 'components/chat/conversationActions.ts',
                 'setMessages(item.messages);',
                 'Restore the conversation',
                 'After loading an authorized chat, the client restores its messages and source scope.',
@@ -662,7 +662,7 @@ const linearScenarios = [
             ),
             step(
                 'post-webpage-url',
-                web + 'utils/documentActions.ts',
+                web + 'components/documents/documentActions.ts',
                 '/web-pages`',
                 'Submit the URL to the workspace API',
                 'The form handler sends the entered URL to the workspace import route.',
@@ -906,7 +906,7 @@ const linearScenarios = [
             ),
             step(
                 'request-gmail-authorization',
-                web + 'hooks/useConnectedSourcesController.ts',
+                web + 'components/sources/useConnectedSourcesController.ts',
                 '/gmail/connect?workspaceId=',
                 'Request the Gmail authorization URL',
                 'The mailbox button calls Atlas for an authorization URL and redirects to it.',
@@ -917,7 +917,7 @@ const linearScenarios = [
             ),
             step(
                 'begin-mailbox-authorization',
-                api + 'gmail.py',
+                api + 'connectors/gmail.py',
                 'def connect(',
                 'Begin mailbox authorization',
                 'Atlas stores an expiring OAuth state for the workspace before redirecting to Google.',
@@ -927,7 +927,7 @@ const linearScenarios = [
             ),
             step(
                 'save-the-mailbox-credential',
-                api + 'gmail.py',
+                api + 'connectors/gmail.py',
                 'def callback(',
                 'Save the mailbox credential',
                 'The callback validates the authorization and saves the encrypted refresh token.',

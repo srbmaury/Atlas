@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi import HTTPException
 
-from app import batch_connectors
+from app.connectors import batch_connectors
 
 
 def test_jira_host_restricted(monkeypatch):

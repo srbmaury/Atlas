@@ -1,9 +1,9 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
-import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from '../utils/sessionActions';
-import { refreshDocuments, createDocumentActions } from '../utils/documentActions';
-import { createConversationActions } from '../utils/conversationActions';
+import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from './auth/sessionActions';
+import { refreshDocuments, createDocumentActions } from './documents/documentActions';
+import { createConversationActions } from './chat/conversationActions';
 import { IntegrationsGallery } from './sources/IntegrationsGallery';
 import { SourceConnectionDialog } from './sources/SourceConnectionDialog';
 import { GmailWorkspaceView } from './sources/gmail/GmailWorkspaceView';
@@ -13,14 +13,14 @@ import { FolderOpen, Layers3, Plus, Search, Upload, X, LoaderCircle, Moon, Sun, 
 
 import type { User, Workspace, Doc, Source, Answer, ChatSummary, DocumentPreview } from '../lib/types';
 
-import { useConversation } from '../hooks/useConversation';
-import { useConversationDraft } from '../hooks/useConversationDraft';
-import { useConversationNavigation, type ConversationSearchTarget } from '../hooks/useConversationNavigation';
-import { useAgentResearch } from '../hooks/useAgentResearch';
+import { useConversation } from './chat/useConversation';
+import { useConversationDraft } from './chat/useConversationDraft';
+import { useConversationNavigation, type ConversationSearchTarget } from './chat/useConversationNavigation';
+import { useAgentResearch } from './agents/useAgentResearch';
 import { useAtlasTheme } from '../hooks/useAtlasTheme';
-import { useSourceConnections } from '../hooks/useSourceConnections';
-import { useGmailWorkspace } from '../hooks/useGmailWorkspace';
-import { useConnectedSourcesController } from '../hooks/useConnectedSourcesController';
+import { useSourceConnections } from './sources/useSourceConnections';
+import { useGmailWorkspace } from './sources/gmail/useGmailWorkspace';
+import { useConnectedSourcesController } from './sources/useConnectedSourcesController';
 
 import '../app/rebuild.css';
 import { ResearchAnswer } from './chat/ResearchAnswer';

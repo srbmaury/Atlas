@@ -36,7 +36,7 @@ def authorized_source_config(db, workspace_id, actor, config):
 
 
 def validate_sources(db, workspace_id, body, actor=None):
-    from ..external_sources import PROVIDERS
+    from ..connectors.external_sources import PROVIDERS
 
     providers = list(dict.fromkeys(body.providers))
     if any(p not in (*PROVIDERS, 'drive') for p in providers):

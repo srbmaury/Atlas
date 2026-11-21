@@ -547,7 +547,7 @@ def test_workspace_deletion_requires_owner_and_confirmation(client):
 
 
 def test_gmail_routes_are_authenticated_and_config_guarded(client, monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     w = workspaceId(client)
     route = f'/api/workspaces/{w}/gmail'
@@ -561,7 +561,7 @@ def test_gmail_routes_are_authenticated_and_config_guarded(client, monkeypatch):
 
 
 def test_gmail_summary_reports_provider_configuration_without_gmail_access(client, monkeypatch):
-    from app import gmail
+    from app.connectors import gmail
 
     w = workspaceId(client)
     monkeypatch.setattr(gmail.config, 'AI_PROVIDER', 'none')
@@ -574,7 +574,7 @@ def test_gmail_summary_reports_provider_configuration_without_gmail_access(clien
 def test_gmail_email_text_decoder():
     import base64
 
-    from app.gmail import text_body
+    from app.connectors.gmail import text_body
 
     original = 'A deadline is next Tuesday.'
     encoded = base64.urlsafe_b64encode(original.encode()).decode().rstrip('=')
@@ -619,7 +619,7 @@ def test_connected_source_evidence_contract():
 
 
 def test_notion_source_search_reads_shared_page_content(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     page_id = '29601486-3e4f-8030-b34b-d03b4a4f6944'
     calls = []
@@ -671,7 +671,7 @@ def test_notion_source_search_reads_shared_page_content(monkeypatch):
 def test_slack_bot_token_error_explains_user_search_token_requirement(monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources
+    from app.connectors import external_sources
 
     monkeypatch.setattr(
         external_sources,
@@ -686,7 +686,7 @@ def test_slack_bot_token_error_explains_user_search_token_requirement(monkeypatc
 
 
 def test_slack_search_keeps_long_message_text_for_relevant_evidence(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     full_text = (
         'Deforestation note. '
@@ -716,7 +716,7 @@ def test_slack_search_keeps_long_message_text_for_relevant_evidence(monkeypatch)
 
 
 def test_slack_search_uses_message_text_when_channel_label_is_an_id(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     monkeypatch.setattr(
         external_sources,
@@ -983,7 +983,7 @@ def test_connected_chat_stream_keeps_local_excerpt_mode_without_model(client, mo
 def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_match(
     client, monkeypatch
 ):
-    from app import external_sources
+    from app.connectors import external_sources
     from app.db import ExternalConnection, Session
     from app.routes import chat as chat_api
 
@@ -1022,7 +1022,8 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
 
 
 def test_connected_chat_preserves_full_slack_message_through_retrieval(client, monkeypatch):
-    from app import connected_synthesis, external_sources
+    from app import connected_synthesis
+    from app.connectors import external_sources
     from app.routes import chat as chat_api
 
     w = workspaceId(client)
@@ -1082,7 +1083,8 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sources):
     import json
 
-    from app import batch_connectors, connected_synthesis, drive, external_sources, gmail
+    from app import connected_synthesis
+    from app.connectors import batch_connectors, drive, external_sources, gmail
     from app.db import ExternalConnection
     from app.routes import chat as chat_api
 
@@ -1226,7 +1228,7 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
 ):
     import base64
 
-    from app import gmail
+    from app.connectors import gmail
     from app.db import Session, User
     from app.routes import chat as chat_api
 
@@ -1287,7 +1289,7 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
 
 
 def test_github_pull_request_search_honors_requested_count(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1305,7 +1307,7 @@ def test_github_pull_request_search_honors_requested_count(monkeypatch):
 
 
 def test_github_own_pull_requests_are_scoped_to_authenticated_login(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     requests = []
 
@@ -1337,7 +1339,7 @@ def test_github_own_pull_requests_are_scoped_to_authenticated_login(monkeypatch)
 def test_github_own_pull_requests_fail_closed_without_identity(monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources
+    from app.connectors import external_sources
 
     def fake_http(url, token, provider, params=None, method='GET'):
         return {} if url.endswith('/user') else {'items': []}
@@ -1348,7 +1350,7 @@ def test_github_own_pull_requests_fail_closed_without_identity(monkeypatch):
 
 
 def test_github_pull_requests_from_my_github_are_scoped_to_the_connected_author(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1364,7 +1366,7 @@ def test_github_pull_requests_from_my_github_are_scoped_to_the_connected_author(
 
 
 def test_source_health_check_distinguishes_unconnected_from_healthy(client, monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
     from app.db import ExternalConnection, Session
 
     w = workspaceId(client)
@@ -1396,12 +1398,12 @@ def test_source_health_check_distinguishes_unconnected_from_healthy(client, monk
 
 
 def test_github_search_query_preserves_filters_and_simplifies_questions():
+    from app.connectors.external_sources import slack_search_query
     from app.connectors.github.queries import (
         github_pull_request_query,
         github_repository_query,
         github_search_query,
     )
-    from app.external_sources import slack_search_query
     from app.research_queries import requested_result_limit
 
     assert (
@@ -1455,7 +1457,7 @@ def test_relative_data_dir_is_anchored_to_project_root(tmp_path):
 def test_drive_search_scope_and_connect_requires_login(client):
     from pydantic import ValidationError
 
-    from app.drive import SCOPE, DriveSearch
+    from app.connectors.drive import SCOPE, DriveSearch
 
     assert SCOPE == 'https://www.googleapis.com/auth/drive.readonly'
     assert client.get('/api/drive/connect?workspaceId=missing').status_code in (404, 503)
@@ -1464,7 +1466,7 @@ def test_drive_search_scope_and_connect_requires_login(client):
 
 
 def test_drive_search_builds_safe_query(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     captured = {}
 
@@ -1479,7 +1481,7 @@ def test_drive_search_builds_safe_query(monkeypatch):
 
 
 def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     monkeypatch.setattr(
         drive,
@@ -1584,7 +1586,7 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
 
 
 def test_unqualified_github_search_is_scoped_to_connected_users_repositories(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1600,7 +1602,7 @@ def test_unqualified_github_search_is_scoped_to_connected_users_repositories(mon
 
 
 def test_unqualified_github_pr_search_is_scoped_to_connected_users_repositories(monkeypatch):
-    from app import external_sources
+    from app.connectors import external_sources
 
     captured = {}
 
@@ -1732,7 +1734,7 @@ def test_selected_document_retrieval_scopes_before_limit(client):
 def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources
+    from app.connectors import external_sources
     from app.db import User, Workspace
     from app.routes import chat as chat_api
 
@@ -1841,7 +1843,7 @@ def test_profile_display_name_can_be_saved_and_cleared(client):
 
 
 def test_drive_evidence_skips_folders_before_applying_fetch_limit(monkeypatch):
-    from app import drive
+    from app.connectors import drive
 
     calls = []
 

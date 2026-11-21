@@ -158,7 +158,7 @@ def workspace_permission(minimum='viewer', *, provider=None, manage_connection=F
         raise ValueError('Unknown workspace role')
 
     def authorize(request: Request):
-        from .gmail import actor
+        from .connectors.gmail import actor
 
         workspace_id = request.path_params.get('workspaceId') or request.query_params.get(
             'workspaceId'
@@ -185,7 +185,7 @@ def workspace_permission(minimum='viewer', *, provider=None, manage_connection=F
 
 def organisation_permission(manage=False):
     def authorize(request: Request):
-        from .gmail import actor
+        from .connectors.gmail import actor
 
         with Session() as db:
             require_organisation(

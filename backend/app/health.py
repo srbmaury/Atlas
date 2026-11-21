@@ -7,8 +7,8 @@ from alembic.script import ScriptDirectory
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import text
 
+from .connectors.gmail import actor, allowed_workspace
 from .db import Document, ExternalConnection, GmailConnection, Session, SourceHealthCheck, engine
-from .gmail import actor, allowed_workspace
 from .rbac import connection_diagnostics_visible, workspace_permission
 
 router = APIRouter(prefix='/api')

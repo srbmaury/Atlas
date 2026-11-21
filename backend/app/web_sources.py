@@ -361,7 +361,7 @@ def save_webpage(workspaceId: str, url: str, db) -> dict:
 )
 def add_web_page(workspaceId: str, body: UrlRequest, request: Request):
     # Import inside handler to avoid circular import with app.main.
-    from .gmail import actor, allowed_workspace
+    from .connectors.gmail import actor, allowed_workspace
 
     with Session() as db:
         owner = actor(request, db)

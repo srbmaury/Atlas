@@ -1,12 +1,12 @@
-import { chatLoadSequence } from '../lib/chatLoadSequence';
+import { chatLoadSequence } from '../../lib/chatLoadSequence';
 import type { Dispatch, SetStateAction, RefObject } from 'react';
-import { api } from '../lib/api';
-import { conversationPlan } from '../lib/conversation';
-import { normalizeResearchScope } from '../lib/query-routing';
-import { requestResearchAnswer, persistConversation } from '../lib/researchRequests';
-import { isResearchProvider } from '../lib/providers';
-import { evidenceIntent, inspectPreviousEvidence, previousEvidence } from './evidenceFollowups';
-import type { User, Source, Message, ChatSummary, SavedChat, ResearchProvider } from '../lib/types';
+import { api } from '../../lib/api';
+import { conversationPlan } from '../../lib/conversation';
+import { normalizeResearchScope } from '../../lib/query-routing';
+import { requestResearchAnswer, persistConversation } from '../../lib/researchRequests';
+import { isResearchProvider } from '../../lib/providers';
+import { evidenceIntent, inspectPreviousEvidence, previousEvidence } from '../../utils/evidenceFollowups';
+import type { User, Source, Message, ChatSummary, SavedChat, ResearchProvider } from '../../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 

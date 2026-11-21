@@ -151,7 +151,7 @@ def test_gmail_listing_uses_every_distinct_message():
 def test_connected_search_keeps_available_messages_after_a_deleted_hit(monkeypatch):
     import httpx
 
-    from app import gmail
+    from app.connectors import gmail
 
     def fake_get(url, **kwargs):
         request = httpx.Request('GET', url)

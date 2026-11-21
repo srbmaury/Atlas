@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, type MutableRefObject } from 'react';
-import { api } from '../lib/api';
+import { api } from '../../lib/api';
 import type {
     ConnectedSourceSearchResponse,
     ConnectedSourceStatus,
@@ -15,9 +15,9 @@ import type {
     OAuthAuthorizationResponse,
     SourceHealthCheckResponse,
     SourceHealthListResponse,
-} from '../lib/types';
+} from '../../lib/types';
 import { useSourceConnections } from './useSourceConnections';
-import { useGmailWorkspace } from './useGmailWorkspace';
+import { useGmailWorkspace } from './gmail/useGmailWorkspace';
 
 type Sources = ReturnType<typeof useSourceConnections>;
 type Gmail = ReturnType<typeof useGmailWorkspace>;

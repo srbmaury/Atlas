@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 import httpx
 from fastapi import HTTPException
 
-from .research_queries import CALENDAR_QUERY_STOPWORDS, provider_query_terms
+from ..research_queries import CALENDAR_QUERY_STOPWORDS, provider_query_terms
 
 NEW_PROVIDERS = ('calendar', 'linear', 'jira', 'onedrive', 'outlook', 'sharepoint')
 

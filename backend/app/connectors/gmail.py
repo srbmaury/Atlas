@@ -25,11 +25,11 @@ from openai import (
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session as DatabaseSession
 
-from . import config
-from .access_audit import record, reset_grants
-from .ai import client, ollama_chat
-from .db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User
-from .rbac import connection_for_change, workspace_permission
+from .. import config
+from ..access_audit import record, reset_grants
+from ..ai import client, ollama_chat
+from ..db import GmailConnection, GmailOAuthState, Login, Session, SourceHealthCheck, User
+from ..rbac import connection_for_change, workspace_permission
 
 router = APIRouter(prefix='/api')
 log = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def actor(request: Request, db: DatabaseSession):
 
 
 def allowed_workspace(db, user, workspaceId):
-    from .rbac import require_workspace
+    from ..rbac import require_workspace
 
     return require_workspace(db, user, workspaceId)
 
@@ -77,7 +77,7 @@ def connection(db, user, workspaceId):
     entry = db.query(GmailConnection).filter_by(workspace_id=workspaceId).first()
     if entry is None:
         raise HTTPException(409, 'Connect Gmail to this workspace first.')
-    from .rbac import require_connection
+    from ..rbac import require_connection
 
     require_connection(db, user, entry)
     return entry
@@ -267,7 +267,7 @@ class SummaryRequest(BaseModel):
 
 @router.get('/gmail/status', dependencies=[Depends(workspace_permission('viewer'))])
 def status(workspaceId: str, request: Request):
-    from .rbac import connection_visible
+    from ..rbac import connection_visible
 
     with Session() as db:
         user = actor(request, db)
@@ -329,7 +329,7 @@ def callback(request: Request, state: str = '', code: str = ''):
         if not oauth or oauth.expires < time.time():
             raise HTTPException(400, 'Gmail authorization expired. Start again.')
         user = db.get(User, oauth.user_id)
-        from .rbac import require_connection, require_workspace
+        from ..rbac import require_connection, require_workspace
 
         if user is None:
             raise HTTPException(400, 'The connected workspace is no longer available.')

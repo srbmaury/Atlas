@@ -1,6 +1,6 @@
 """GitHub source-code search behavior and scope regressions."""
 
-from app import external_sources
+from app.connectors import external_sources
 from app.connectors.github import queries
 from app.connectors.github.code_flow import github_flow_layer
 

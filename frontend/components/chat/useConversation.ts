@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState, useCallback } from 'react';
-import type { Message } from '../lib/types';
+import type { Message } from '../../lib/types';
 
 /** Keep synchronous request state and rendered conversation state in lockstep. */
 export function useConversation() {

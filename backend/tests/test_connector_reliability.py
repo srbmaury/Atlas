@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from app import batch_connectors
+from app.connectors import batch_connectors
 
 
 def test_connector_retries_rate_limit(monkeypatch):
