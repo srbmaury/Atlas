@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field
 from ..ai import enabled as ai_enabled
 from ..ai import generate
 from ..api_dependencies import database, user
+from ..connectors.github.repository_files import github_repository_file_search
 from ..external_sources import http_json, read_connection
-from ..github_search import github_repository_file_search
 from ..rbac import revalidate_access, workspace_permission
 
 router = APIRouter(prefix='/api')

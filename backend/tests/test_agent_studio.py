@@ -1,4 +1,5 @@
-from app.agent_studio import MAX_STEPS, CreateAgent, ResearchRequest
+from app.agents.execution import MAX_STEPS
+from app.agents.models import CreateAgent, ResearchRequest
 
 
 def test_agent_runtime_has_bounded_steps():

@@ -1,4 +1,4 @@
-from app.agent_evidence import evidence_graph, plan
+from app.agents.evidence import evidence_graph, plan
 
 
 def test_plan_splits_bounded_independent_questions():

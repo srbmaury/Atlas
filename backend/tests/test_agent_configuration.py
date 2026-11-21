@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from app.agent_studio import CreateAgent
+from app.agents.models import CreateAgent
 from app.ai import generate_agent
 
 

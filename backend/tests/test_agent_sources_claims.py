@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from app.agent_claims import assess_claims, verify_claims
-from app.agent_studio import CreateAgent, validate_sources
+from app.agents.claims import assess_claims, verify_claims
+from app.agents.models import CreateAgent
+from app.agents.sources import validate_sources
 
 
 def test_claims_without_citations_are_not_verified():
@@ -35,7 +36,7 @@ def test_source_selection_rejects_unknown_provider():
 
 def test_document_selection_is_workspace_scoped():
     body = CreateAgent(name='A', document_ids=['other-workspace-doc'])
-    with patch('app.agent_studio.Document') as document:
+    with patch('app.agents.sources.Document') as document:
         db = MagicMock()
         db.query.return_value.filter.return_value.count.return_value = 0
         with pytest.raises(HTTPException) as exc:
@@ -62,16 +63,23 @@ def test_model_assesses_cited_claim_without_claiming_independent_verification():
 
 
 def test_agent_source_config_excludes_unavailable_provider():
-    from app.agent_studio import authorized_source_config
+    from app.agents.sources import authorized_source_config
 
     actor = MagicMock()
     db = MagicMock()
-    with patch('app.rbac.require_connection', side_effect=HTTPException(403, 'Forbidden')):
+    with patch(
+        'app.agents.sources.require_connection', side_effect=HTTPException(403, 'Forbidden')
+    ):
         result = authorized_source_config(
             db,
             'workspace',
             actor,
-            {'include_documents': True, 'include_gmail': True, 'providers': ['github']},
+            {
+                'include_documents': True,
+                'include_gmail': True,
+                'providers': ['github'],
+                'scope_fingerprints': {},
+            },
         )
     assert result['include_documents'] is True
     assert result['providers'] == []
@@ -88,11 +96,19 @@ def test_revoked_agent_evidence_hidden_from_saved_conversation():
         {
             'role': 'assistant',
             'content': 'Secret source excerpt',
-            'agent': {'id': 'a', 'name': 'Researcher', 'providers': ['github']},
+            'agent': {
+                'id': 'a',
+                'name': 'Researcher',
+                'providers': ['github'],
+                'scope_fingerprints': {},
+            },
             'result': {'sources': [{'text': 'Secret source excerpt'}]},
         },
     ]
-    with patch('app.rbac.revalidate_access', side_effect=HTTPException(403, 'Forbidden')):
+    with patch(
+        'app.routes.conversations.require_saved_evidence_access',
+        side_effect=HTTPException(403, 'Forbidden'),
+    ):
         result = visible_messages(conversation, MagicMock())
     assert result[0]['content'] == 'Question'
     assert 'Secret source excerpt' not in str(result[1])

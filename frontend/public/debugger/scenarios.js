@@ -326,7 +326,7 @@ const linearScenarios = [
             ),
             step(
                 'start-the-answer-stream',
-                api + 'main.py',
+                api + 'routes/chat.py',
                 'def connected_chat_stream(',
                 'Start the answer stream',
                 'The API reports retrieval progress and orchestrates evidence collection, access checks, and answer generation.',
@@ -751,7 +751,7 @@ const linearScenarios = [
             ),
             step(
                 'read-matching-source-files',
-                api + 'github_search.py',
+                api + 'connectors/github/repository_files.py',
                 'def github_repository_file_search(',
                 'Read matching source files',
                 'Repository search inspects likely files and returns snippets linked to the repository.',

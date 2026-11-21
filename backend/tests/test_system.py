@@ -600,7 +600,7 @@ def test_connected_chat_requires_sign_in():
 def test_connected_chat_rejects_invalid_gmail_scope(client):
     import pytest
 
-    from app.main import ConnectedQuestion
+    from app.schemas import ConnectedQuestion
 
     with pytest.raises(ValueError):
         ConnectedQuestion(question='What changed?', include_gmail=True, gmail_query='x' * 401)
@@ -983,8 +983,9 @@ def test_connected_chat_stream_keeps_local_excerpt_mode_without_model(client, mo
 def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_match(
     client, monkeypatch
 ):
-    from app import external_sources, main
+    from app import external_sources
     from app.db import ExternalConnection, Session
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     with Session() as db:
@@ -993,7 +994,7 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
         )
         db.commit()
     monkeypatch.setattr(
-        main,
+        chat_api,
         'retrieve',
         lambda *args, **kwargs: (_ for _ in ()).throw(
             AssertionError('documents should be excluded')
@@ -1021,7 +1022,8 @@ def test_connected_chat_can_exclude_documents_and_reports_source_specific_no_mat
 
 
 def test_connected_chat_preserves_full_slack_message_through_retrieval(client, monkeypatch):
-    from app import connected_synthesis, external_sources, main
+    from app import connected_synthesis, external_sources
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     from app.db import ExternalConnection
@@ -1039,7 +1041,7 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
             'timber logging, mining activities, and forest fires.'
         )
     )
-    monkeypatch.setattr(main, 'retrieve', lambda *args, **kwargs: [])
+    monkeypatch.setattr(chat_api, 'retrieve', lambda *args, **kwargs: [])
     monkeypatch.setattr(external_sources, 'read_connection', lambda *args: (None, 'token'))
     monkeypatch.setattr(
         external_sources,
@@ -1080,8 +1082,9 @@ def test_connected_chat_preserves_full_slack_message_through_retrieval(client, m
 def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sources):
     import json
 
-    from app import batch_connectors, connected_synthesis, drive, external_sources, gmail, main
+    from app import batch_connectors, connected_synthesis, drive, external_sources, gmail
     from app.db import ExternalConnection
+    from app.routes import chat as chat_api
 
     question = 'Write an essay on  deforestation'
     slack_url = 'https://slack.test/archives/environment/p1'
@@ -1137,7 +1140,7 @@ def test_connected_chat_stream_searches_essay_topic(client, monkeypatch, all_sou
             'mode': 'connected',
         }
 
-    monkeypatch.setattr(main, 'retrieve', retrieve_documents)
+    monkeypatch.setattr(chat_api, 'retrieve', retrieve_documents)
     monkeypatch.setattr(gmail, 'connection', lambda *_: None)
     monkeypatch.setattr(gmail, 'access_token', lambda *_: 'token')
     monkeypatch.setattr(gmail, 'gmail_get', gmail_get)
@@ -1223,8 +1226,9 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
 ):
     import base64
 
-    from app import gmail, main
+    from app import gmail
     from app.db import Session, User
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     actor_id = client.get('/api/me').json()['id']
@@ -1268,10 +1272,12 @@ def test_credit_card_offer_retrieval_drops_unrelated_results_and_reads_full_emai
             else messages[url.rsplit('/', 1)[-1]]
         ),
     )
-    body = main.ConnectedQuestion(question=question, include_documents=False, include_gmail=True)
+    body = chat_api.ConnectedQuestion(
+        question=question, include_documents=False, include_gmail=True
+    )
     with Session() as db:
         actor = db.get(User, actor_id)
-        evidence, _ = main.collect_connected_evidence(w, body, actor, db)
+        evidence, _ = chat_api.collect_connected_evidence(w, body, actor, db)
 
     assert len(evidence) == 1
     assert evidence[0].provider == 'gmail'
@@ -1390,12 +1396,12 @@ def test_source_health_check_distinguishes_unconnected_from_healthy(client, monk
 
 
 def test_github_search_query_preserves_filters_and_simplifies_questions():
-    from app.external_sources import slack_search_query
-    from app.github_search import (
+    from app.connectors.github.queries import (
         github_pull_request_query,
         github_repository_query,
         github_search_query,
     )
+    from app.external_sources import slack_search_query
     from app.research_queries import requested_result_limit
 
     assert (
@@ -1498,7 +1504,8 @@ def test_drive_evidence_keeps_title_when_file_has_no_extractable_text(monkeypatc
 
 
 def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch):
-    from app import connected_synthesis, main
+    from app import connected_synthesis
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
 
@@ -1519,7 +1526,7 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
             {**evidence[0].as_prompt(1), 'origin_id': evidence[0].source_id}
         ]
 
-    monkeypatch.setattr(main, 'retrieve', fake_retrieve)
+    monkeypatch.setattr(chat_api, 'retrieve', fake_retrieve)
     monkeypatch.setattr(connected_synthesis, 'synthesize_connected', fake_synthesize)
     response = client.post(
         f'/api/workspaces/{w}/connected-chat', json={'question': 'What milestone was agreed?'}
@@ -1534,7 +1541,7 @@ def test_connected_chat_uses_standard_chat_citation_contract(client, monkeypatch
 
 
 def test_github_pull_request_listing_uses_connected_records_without_model(client, monkeypatch):
-    from app import main
+    from app.routes import chat as chat_api
     from app.sources import Evidence
 
     w = workspaceId(client)
@@ -1561,7 +1568,7 @@ def test_github_pull_request_listing_uses_connected_records_without_model(client
             'https://github.com/me/repo/pull/2',
         ),
     ]
-    monkeypatch.setattr(main, 'collect_connected_evidence', lambda *args: (records, {}))
+    monkeypatch.setattr(chat_api, 'collect_connected_evidence', lambda *args: (records, {}))
     response = client.post(
         f'/api/workspaces/{w}/connected-chat',
         json={'question': 'my pull requests', 'include_documents': False, 'providers': ['github']},
@@ -1725,8 +1732,9 @@ def test_selected_document_retrieval_scopes_before_limit(client):
 def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     from fastapi import HTTPException
 
-    from app import external_sources, main
+    from app import external_sources
     from app.db import User, Workspace
+    from app.routes import chat as chat_api
 
     w = workspaceId(client)
     seen = []
@@ -1749,7 +1757,7 @@ def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
 
     monkeypatch.setattr(external_sources, 'read_connection', credentials)
     monkeypatch.setattr(external_sources, 'source_search', search)
-    body = main.ConnectedQuestion(
+    body = chat_api.ConnectedQuestion(
         question='Who approved that?',
         include_documents=False,
         providers=['notion', 'slack'],
@@ -1758,7 +1766,7 @@ def test_expired_connector_does_not_block_healthy_source(client, monkeypatch):
     stats = {}
     with Session() as db:
         owner = db.get(User, db.get(Workspace, w).owner_id)
-        evidence, _ = main.collect_connected_evidence(w, body, owner, db, stats)
+        evidence, _ = chat_api.collect_connected_evidence(w, body, owner, db, stats)
     assert evidence
     assert stats['failed'] == ['notion']
     assert stats['found']['slack'] == 1

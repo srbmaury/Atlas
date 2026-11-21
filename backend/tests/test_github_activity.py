@@ -1,7 +1,5 @@
-from app.main import (
-    ConnectedQuestion,
-    direct_connected_result,
-)
+from app.connected_research import direct_connected_result
+from app.schemas import ConnectedQuestion
 from app.sources import Evidence
 
 

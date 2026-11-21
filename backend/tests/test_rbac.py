@@ -349,7 +349,8 @@ def test_upgrade_preserves_legacy_ownership_and_privacy(tmp_path):
 def test_unsharing_during_stream_does_not_release_answer(accounts, monkeypatch):
     import json
 
-    from app import connected_synthesis, main
+    from app import connected_synthesis
+    from app.routes import chat as chat_api
     from app.source_contract import Evidence
 
     owner, member, _, workspace = accounts
@@ -368,7 +369,7 @@ def test_unsharing_during_stream_does_not_release_answer(accounts, monkeypatch):
         )
         db.commit()
     monkeypatch.setattr(
-        main,
+        chat_api,
         'collect_connected_evidence',
         lambda *args: (
             [Evidence('slack', 'message', 'Budget', 'Secret budget is 20.', 'https://example.com')],
@@ -397,13 +398,13 @@ def test_unsharing_during_stream_does_not_release_answer(accounts, monkeypatch):
 
 
 def test_revocation_during_document_generation_blocks_response(accounts, monkeypatch):
-    from app import main
     from app.db import WorkspaceMember
+    from app.routes import chat as chat_api
 
     owner, member, _, workspace = accounts
     grant(owner, member, workspace, 'viewer')
     monkeypatch.setattr(
-        main,
+        chat_api,
         'retrieve',
         lambda *args: [
             {
@@ -424,7 +425,7 @@ def test_revocation_during_document_generation_blocks_response(accounts, monkeyp
             db.commit()
         return {'answer': 'Secret budget is 20.', 'sources': []}
 
-    monkeypatch.setattr(main, 'generate', delayed)
+    monkeypatch.setattr(chat_api, 'generate', delayed)
     result = member.post(f'/api/workspaces/{workspace}/chat', json={'question': 'budget'})
     assert result.status_code == 404
     assert 'Secret budget' not in result.text
@@ -532,9 +533,9 @@ def test_organisation_transfer_allows_offboarding_without_deleting_workspaces(ac
 def test_source_member_grants_restrict_status_search_and_chat(accounts, monkeypatch):
     from fastapi import HTTPException
 
-    from app import main
     from app.db import SourceGrant, User
     from app.rbac import revalidate_access
+    from app.routes import chat as chat_api
     from app.schemas import ConnectedQuestion
 
     owner, allowed, denied, workspace = accounts
@@ -596,12 +597,12 @@ def test_source_member_grants_restrict_status_search_and_chat(accounts, monkeypa
     )['connected']
     body = ConnectedQuestion(question='budget', include_documents=False, providers=['github'])
     with Session() as db:
-        evidence, _ = main.collect_connected_evidence(
+        evidence, _ = chat_api.collect_connected_evidence(
             workspace, body, db.get(User, allowed.identity['id']), db
         )
         assert evidence
         with pytest.raises(HTTPException) as exc:
-            main.collect_connected_evidence(
+            chat_api.collect_connected_evidence(
                 workspace, body, db.get(User, denied.identity['id']), db
             )
         assert exc.value.status_code == 403

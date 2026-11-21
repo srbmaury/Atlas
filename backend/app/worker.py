@@ -113,7 +113,7 @@ def loop(stop):
     while not stop.is_set():
         try:
             busy = run_one()
-            from .agent_studio import execute_one_research_run
+            from .agents.execution import execute_one_research_run
 
             busy = execute_one_research_run() or busy
         except Exception:

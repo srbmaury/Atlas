@@ -11,8 +11,9 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from . import batch_connectors, github_search
+from . import batch_connectors
 from .access_audit import record, reset_grants
+from .connectors.github.search import search as search_github
 from .db import ExternalConnection, Session, SourceHealthCheck
 from .gmail import actor, allowed_workspace, crypt
 from .rbac import (
@@ -258,7 +259,7 @@ def source_search(provider, token, query, *, resource_ids=None):
     if provider in batch_connectors.NEW_PROVIDERS:
         return batch_connectors.search(provider, token, query)
     if provider == 'github':
-        return github_search.search(token, query, http_json=http_json)
+        return search_github(token, query, http_json=http_json)
     if provider == 'notion':
         # Notion search is a title search. Keep useful nouns/identifiers rather
         # than sending the complete conversational question to its API.

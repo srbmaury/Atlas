@@ -1,18 +1,18 @@
 """GitHub source-code search behavior and scope regressions."""
 
-from app import external_sources, github_search
+from app import external_sources
+from app.connectors.github import queries
+from app.connectors.github.code_flow import github_flow_layer
 
 
 def test_code_search_is_recognized_without_misclassifying_issue_search():
-    assert github_search.github_wants_code('Find the function that validates uploads')
-    assert github_search.github_wants_code('Where is the OAuth callback implemented?')
-    assert not github_search.github_wants_code('Show my open pull requests')
+    assert queries.github_wants_code('Find the function that validates uploads')
+    assert queries.github_wants_code('Where is the OAuth callback implemented?')
+    assert not queries.github_wants_code('Show my open pull requests')
 
 
 def test_code_search_query_is_scoped_to_connected_account():
-    query = github_search.github_code_search_query(
-        'Find the token refresh implementation', 'atlas-user'
-    )
+    query = queries.github_code_search_query('Find the token refresh implementation', 'atlas-user')
     assert 'token' in query
     assert 'refresh' in query
     assert 'user:atlas-user' in query
@@ -20,7 +20,7 @@ def test_code_search_query_is_scoped_to_connected_account():
 
 
 def test_code_search_query_preserves_explicit_repository_scope():
-    query = github_search.github_code_search_query(
+    query = queries.github_code_search_query(
         'Find the retry function repo:owner/project', 'atlas-user'
     )
     assert 'repo:owner/project' in query
@@ -29,10 +29,10 @@ def test_code_search_query_preserves_explicit_repository_scope():
 
 def test_explicit_github_url_is_parsed_and_forces_repository_scope():
     question = 'Analyse my repo https://github.com/srbmaury/Atlas'
-    assert github_search.github_repository_from_query(question) == 'srbmaury/Atlas'
-    assert github_search.github_wants_code(question)
-    assert github_search.github_wants_flow(question)
-    query = github_search.github_code_search_query(question, 'connected-user')
+    assert queries.github_repository_from_query(question) == 'srbmaury/Atlas'
+    assert queries.github_wants_code(question)
+    assert queries.github_wants_flow(question)
+    query = queries.github_code_search_query(question, 'connected-user')
     assert 'repo:srbmaury/Atlas' in query
     assert 'user:connected-user' not in query
 
@@ -112,12 +112,12 @@ def test_github_code_search_returns_file_snippets_and_links(monkeypatch):
 
 
 def test_flow_trace_intent_and_layer_labels():
-    assert github_search.github_wants_flow('Trace the code flow for document upload')
-    assert github_search.github_wants_flow('Show the request flow end-to-end')
-    assert not github_search.github_wants_flow('Find the upload function')
-    assert github_search.github_flow_layer('frontend/hooks/useConversation.ts') == 'Frontend / UI'
-    assert github_search.github_flow_layer('backend/app/routes/documents.py') == 'API / routing'
-    assert github_search.github_flow_layer('backend/app/db.py') == 'Database / persistence'
+    assert queries.github_wants_flow('Trace the code flow for document upload')
+    assert queries.github_wants_flow('Show the request flow end-to-end')
+    assert not queries.github_wants_flow('Find the upload function')
+    assert github_flow_layer('frontend/hooks/useConversation.ts') == 'Frontend / UI'
+    assert github_flow_layer('backend/app/routes/documents.py') == 'API / routing'
+    assert github_flow_layer('backend/app/db.py') == 'Database / persistence'
 
 
 def test_flow_search_follows_symbols_and_deduplicates_files(monkeypatch):
@@ -232,8 +232,8 @@ def test_explicit_repository_code_search_falls_back_to_tree_and_contents(monkeyp
 
 
 def test_repository_rating_intent_lists_owned_repositories():
-    assert github_search.github_wants_repositories('Rate my GitHub')
-    assert github_search.github_wants_repositories('Review my GitHub projects')
+    assert queries.github_wants_repositories('Rate my GitHub')
+    assert queries.github_wants_repositories('Review my GitHub projects')
 
 
 def test_explicit_repository_flow_falls_back_when_code_search_is_unindexed(monkeypatch):

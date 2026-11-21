@@ -5,9 +5,9 @@ import time
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from ..agents.sources import require_saved_evidence_access
 from ..api_dependencies import database, user, workspace
 from ..db import Conversation
-from ..db import Session as database_session
 from ..rbac import workspace_permission
 from ..schemas import ConversationPayload, ConversationRename
 
@@ -27,8 +27,6 @@ def owned_conversation(workspace_id, conversation_id, actor, db):
 
 
 def visible_messages(item, actor=None):
-    from ..rbac import revalidate_access
-
     visible = []
     for message in item.messages or []:
         if not isinstance(message, dict) or message.get('_atlas_metadata'):
@@ -54,30 +52,9 @@ def visible_messages(item, actor=None):
             providers.discard('documents')
             if providers:
                 try:
-                    revalidate_access(item.workspace_id, actor, providers)
-                    fingerprints = agent.get('scope_fingerprints') or {}
-                    if fingerprints:
-                        from ..agent_studio import source_scope_fingerprints
-                        from ..db import ExternalConnection
-                        from ..rbac import source_scope
-
-                        with database_session() as check_db:
-                            current = {
-                                provider: source_scope(
-                                    check_db,
-                                    actor,
-                                    check_db.get(ExternalConnection, (item.workspace_id, provider)),
-                                )
-                                for provider in fingerprints
-                                if provider != 'gmail'
-                            }
-                        hashed = source_scope_fingerprints(current)
-                        if any(
-                            hashed.get(provider) != fingerprint
-                            for provider, fingerprint in fingerprints.items()
-                            if provider != 'gmail'
-                        ):
-                            raise HTTPException(403, 'Source resource permissions changed.')
+                    require_saved_evidence_access(
+                        item.workspace_id, actor, providers, agent.get('scope_fingerprints')
+                    )
                 except HTTPException:
                     entry = {
                         'role': entry.get('role', 'assistant'),

@@ -4,7 +4,7 @@ import json
 import logging
 import re
 
-from .retrieval import tokens
+from ..retrieval import tokens
 
 
 def verify_claims(answer, sources):
@@ -59,7 +59,7 @@ def assess_claims(answer, sources):
     screening = verify_claims(answer, sources)
     if not screening['claims'] or not sources:
         return screening
-    from . import ai
+    from .. import ai
 
     if not ai.enabled():
         return screening

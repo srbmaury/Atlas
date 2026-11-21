@@ -111,7 +111,7 @@ def test_calendar_tomorrow_bounds_cover_one_kolkata_day():
 def test_calendar_list_result_respects_requested_count_and_orders_citations():
     from types import SimpleNamespace
 
-    from app.main import connected_source_listing_result
+    from app.connected_research import connected_source_listing_result
     from app.sources import Evidence
 
     question = 'list next 10 events from my calendar'
@@ -151,7 +151,7 @@ def test_calendar_list_result_respects_requested_count_and_orders_citations():
 def test_calendar_matching_event_search_does_not_claim_every_event_is_upcoming():
     from types import SimpleNamespace
 
-    from app.main import connected_source_listing_result
+    from app.connected_research import connected_source_listing_result
     from app.sources import Evidence
 
     body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
@@ -175,7 +175,7 @@ def test_calendar_matching_event_search_does_not_claim_every_event_is_upcoming()
 def test_calendar_singular_next_event_returns_one_future_event():
     from types import SimpleNamespace
 
-    from app.main import connected_source_listing_result
+    from app.connected_research import connected_source_listing_result
     from app.sources import Evidence
 
     body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['calendar'])
@@ -219,7 +219,7 @@ def test_calendar_singular_next_event_returns_one_future_event():
 def test_connected_source_listing_cites_drive_and_gmail_titles():
     from types import SimpleNamespace
 
-    from app.main import connected_source_listing_result
+    from app.connected_research import connected_source_listing_result
     from app.sources import Evidence
 
     body = SimpleNamespace(include_documents=False, include_gmail=True, providers=['drive'])
@@ -251,7 +251,7 @@ def test_connected_source_listing_cites_drive_and_gmail_titles():
 def test_retrieval_trace_uses_narrowed_result_scope_for_source_listings():
     from types import SimpleNamespace
 
-    from app.main import attach_retrieval_trace
+    from app.connected_research import attach_retrieval_trace
     from app.sources import Evidence
 
     body = SimpleNamespace(include_documents=True, include_gmail=False, providers=['slack'])
@@ -283,7 +283,7 @@ def test_retrieval_trace_uses_narrowed_result_scope_for_source_listings():
 def test_deforestation_questions_are_not_reduced_to_source_title_listings():
     from types import SimpleNamespace
 
-    from app.main import connected_source_listing_result
+    from app.connected_research import connected_source_listing_result
     from app.sources import Evidence
 
     body = SimpleNamespace(include_documents=False, include_gmail=False, providers=['slack'])

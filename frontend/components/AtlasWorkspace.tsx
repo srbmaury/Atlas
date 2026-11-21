@@ -14,6 +14,8 @@ import { FolderOpen, Layers3, Plus, Search, Upload, X, LoaderCircle, Moon, Sun, 
 import type { User, Workspace, Doc, Source, Answer, ChatSummary, DocumentPreview } from '../lib/types';
 
 import { useConversation } from '../hooks/useConversation';
+import { useConversationDraft } from '../hooks/useConversationDraft';
+import { useConversationNavigation, type ConversationSearchTarget } from '../hooks/useConversationNavigation';
 import { useAgentResearch } from '../hooks/useAgentResearch';
 import { useAtlasTheme } from '../hooks/useAtlasTheme';
 import { useSourceConnections } from '../hooks/useSourceConnections';
@@ -129,8 +131,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const [scopeOpen, setScopeOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [globalQuery, setGlobalQuery] = useState('');
-    const [searchTarget, setSearchTarget] = useState<{ chatId: string; index: number; phrase: string; token: number } | null>(null);
-    const searchToken = useRef(0);
+    const [searchTarget, setSearchTarget] = useState<ConversationSearchTarget | null>(null);
     const [copied, setCopied] = useState(false);
     const input = useRef<HTMLInputElement>(null);
     const chatEnd = useRef<HTMLDivElement>(null);
@@ -186,15 +187,13 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
     }, [messages.length, busy, tab]);
 
+    const { saveDraft, restoreDraft } = useConversationDraft(workspaceId, chatId, query, setQuery);
+
     function newChat(preserveSourceSelection = false) {
         if (busy || agentBusy) return;
         setSearchTarget(null);
         chatLoadSequence.invalidate();
-        try {
-            if (query) sessionStorage.setItem(`atlas:draft:${workspaceId}:${chatId || 'new'}`, query);
-        } catch {
-            /* Storage unavailable. */
-        }
+        saveDraft();
         activeChat.current = null;
         setChatId(null);
         chatTitle.current = 'New chat';
@@ -402,43 +401,14 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview);
     }
 
-    // Drafts are scoped to workspace and conversation, including the unsaved new chat.
-    const draftKey = (id: string | null) => `atlas:draft:${workspaceId}:${id || 'new'}`;
-    useEffect(() => {
-        if (!workspaceId) return;
-        const key = draftKey(chatId);
-        const timer = window.setTimeout(() => {
-            try {
-                if (query) sessionStorage.setItem(key, query);
-                else sessionStorage.removeItem(key);
-            } catch {
-                /* Private browsing can disable session storage. */
-            }
-        }, 250);
-        return () => window.clearTimeout(timer);
-    }, [workspaceId, chatId, query]);
-
-    function restoreDraft(id: string | null) {
-        try {
-            setQuery(sessionStorage.getItem(draftKey(id)) || '');
-        } catch {
-            setQuery('');
-        }
-    }
-
-    async function switchChat(id: string, target?: { index: number; phrase: string }) {
-        if (busy || agentBusy) return false;
-        setSearchTarget(target ? { chatId: id, index: target.index, phrase: target.phrase, token: ++searchToken.current } : null);
-        try {
-            sessionStorage.setItem(draftKey(chatId), query);
-        } catch {
-            /* Storage unavailable. */
-        }
-        await loadChat(id);
-        if (activeChat.current !== id) return false;
-        restoreDraft(id);
-        return true;
-    }
+    const { switchChat } = useConversationNavigation({
+        busy: busy || agentBusy,
+        activeChat,
+        loadChat,
+        saveDraft,
+        restoreDraft,
+        setSearchTarget,
+    });
 
     const uploadButton = (
         <button className="btn primary" disabled={uploading || !workspaceId || !canEdit} onClick={() => input.current?.click()}>
