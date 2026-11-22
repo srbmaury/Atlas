@@ -85,11 +85,11 @@ export function WorkspaceSidebar({
             <nav className="nav" aria-label="Main navigation">
                 {(
                     [
-                        { id: 'overview', label: 'Overview', icon: HomeIcon },
-                        { id: 'chat', label: 'Ask Atlas', icon: MessageSquare },
-                        { id: 'documents', label: 'Documents', icon: FileText },
-                        { id: 'sources', label: 'Connected sources', icon: FolderOpen },
-                        { id: 'agents', label: 'Agents', icon: Sparkles },
+                        { id: 'overview', label: 'Home', icon: HomeIcon },
+                        { id: 'chat', label: 'Research', icon: MessageSquare },
+                        { id: 'documents', label: 'Library', icon: FileText },
+                        { id: 'sources', label: 'Connectors', icon: FolderOpen },
+                        { id: 'agents', label: 'Agent Studio', icon: Sparkles },
                     ] as const
                 ).map((item) => (
                     <button key={item.id} className={tab === item.id ? 'active' : ''} title={item.label} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
