@@ -1,6 +1,6 @@
 'use client';
 import { type ReactNode, useRef } from 'react';
-import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff, Globe2, GitCompareArrows, NotebookPen } from 'lucide-react';
+import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff, Globe2, GitCompareArrows, NotebookPen, ShieldCheck, Clock3, FolderOpen } from 'lucide-react';
 import type { Doc, ChatSummary } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { FileBadge } from '../ui/WorkspacePrimitives';
@@ -66,6 +66,11 @@ export function HomeView({
     const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     const selectedAgent = mentionAgents.find((agent) => query.toLowerCase().includes(agent.handle + ' '));
 
+    const readyDocuments = docs.filter((doc) => doc.status === 'ready').length;
+    const recentChats = [...chats].sort((a, b) => b.updated - a.updated);
+    const recentDocs = [...docs].slice(0, 4);
+    const sourceCount = sourceLabels.length;
+
     function addTranscript(transcript: string) {
         onQueryChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
     }
@@ -78,6 +83,10 @@ export function HomeView({
                     <p>Ask across your documents, the web, and connected sources. Explore answers with evidence you can inspect.</p>
                 </div>
             </div>
+            <div className="atlas-overview-meta" aria-label="Workspace overview">
+                <span><ShieldCheck size={14} aria-hidden="true" /> Evidence-first research</span>
+                <span><Clock3 size={14} aria-hidden="true" /> Pick up where you left off</span>
+            </div>
             <div className="home-prompt-panel">
                 <div className="home-prompt-top">
                     <Sparkles size={17} />
@@ -87,14 +96,14 @@ export function HomeView({
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        onAsk();
+                        if (!busy && query.trim() && hasAskSources) onAsk();
                     }}
                 >
                     {matchingAgents.length > 0 && (
                         <div className="home-agent-mention-menu" role="listbox" aria-label="Mention an agent">
                             <span className="agent-mention-title">AGENT SUGGESTIONS</span>
                             {matchingAgents.map((agent) => (
-                                <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
+                                <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => { onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' ')); questionInputRef.current?.focus(); }}>
                                     <span className="home-agent-suggestion-icon">
                                         <Sparkles size={16} />
                                     </span>
@@ -116,7 +125,7 @@ export function HomeView({
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                                 e.preventDefault();
-                                if (hasAskSources) onAsk();
+                                if (!busy && query.trim() && hasAskSources) onAsk();
                             }
                         }}
                     />
@@ -158,6 +167,23 @@ export function HomeView({
                     <p className="home-source-routing-note">Matching questions can also use a connected Calendar or GitHub automatically.</p>
                 </form>
             </div>
+            <section className="atlas-workspace-pulse" aria-label="Workspace at a glance">
+                <div className="atlas-pulse-item">
+                    <span className="atlas-pulse-icon"><MessageSquare size={18} aria-hidden="true" /></span>
+                    <span><strong>{chats.length}</strong><small>Research conversations</small></span>
+                    <button type="button" onClick={onOpenConversations} aria-label="View research conversations"><ArrowUpRight size={16} /></button>
+                </div>
+                <div className="atlas-pulse-item">
+                    <span className="atlas-pulse-icon"><FileText size={18} aria-hidden="true" /></span>
+                    <span><strong>{readyDocuments}<em> / {docs.length}</em></strong><small>Documents ready</small></span>
+                    <button type="button" onClick={onOpenDocuments} aria-label="View document library"><ArrowUpRight size={16} /></button>
+                </div>
+                <div className="atlas-pulse-item">
+                    <span className="atlas-pulse-icon"><FolderOpen size={18} aria-hidden="true" /></span>
+                    <span><strong>{sourceCount}</strong><small>Search scopes selected</small></span>
+                    <button type="button" onClick={onChooseSources} aria-label="Choose search sources"><ArrowUpRight size={16} /></button>
+                </div>
+            </section>
             <section className="atlas-research-shortcuts" aria-labelledby="research-shortcuts-heading">
                 <div className="atlas-shortcuts-heading">
                     <h2 id="research-shortcuts-heading">Start with a research task</h2>
@@ -184,7 +210,7 @@ export function HomeView({
             </section>
             <div className="home-section-header">
                 <div>
-                    <h2>Your workspace</h2>
+                    <h2>Continue where you left off</h2>
                 </div>
                 <button className="text-action" onClick={onOpenSources}>
                     Connected sources <ArrowUpRight size={15} />
@@ -203,13 +229,13 @@ export function HomeView({
                             <ArrowUpRight size={18} />
                         </button>
                     </div>
-                    {chats.length ? (
+                    {recentChats.length ? (
                         <div className="home-activity-list">
-                            {chats.slice(0, 4).map((item) => (
+                            {recentChats.slice(0, 4).map((item) => (
                                 <button key={item.id} onClick={() => onOpenConversation(item.id)}>
                                     <span>
                                         <strong>{item.title}</strong>
-                                        <small>{new Date(item.updated * 1000).toLocaleDateString()}</small>
+                                        <small>{new Date(item.updated < 1e12 ? item.updated * 1000 : item.updated).toLocaleDateString()}</small>
                                     </span>
                                     <ChevronRight size={16} />
                                 </button>
@@ -236,9 +262,9 @@ export function HomeView({
                             <ArrowUpRight size={18} />
                         </button>
                     </div>
-                    {docs.length ? (
+                    {recentDocs.length ? (
                         <div className="home-activity-list">
-                            {docs.slice(0, 4).map((d) => (
+                            {recentDocs.map((d) => (
                                 <button key={d.id} onClick={() => onInspectDocument(d)}>
                                     <FileBadge name={d.name} />
                                     <span>
@@ -270,7 +296,7 @@ export function HomeView({
                     onDrop={(e) => {
                         e.preventDefault();
                         onDragging(false);
-                        onDrop(e.dataTransfer.files);
+                        if (!uploading && e.dataTransfer.files.length) onDrop(e.dataTransfer.files);
                     }}
                 >
                     <span className="home-drop-icon">
