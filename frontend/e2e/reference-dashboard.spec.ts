@@ -74,7 +74,12 @@ test('reference research dashboard renders three columns and remains usable on a
     const switcher = page.getByRole('button', { name: 'Switch workspace' });
     await expect(switcher).toContainText('Global Economy');
     await expect(switcher).toContainText('1 workspace');
-    await expect(page.locator('.atlas-ref-composer .atlas-question-box')).toBeVisible();
+    const homeComposer = page.locator('form.atlas-ref-composer.atlas-question-box');
+    await expect(homeComposer).toBeVisible();
+    const homeComposerStyle = await homeComposer.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { background: style.backgroundColor, borderColor: style.borderColor, borderRadius: style.borderRadius, padding: style.padding, shadow: style.boxShadow };
+    });
     const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
     await homeField.focus();
     expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
@@ -150,7 +155,15 @@ test('reference research dashboard renders three columns and remains usable on a
     await workspaceDialog.getByRole('button', { name: 'Close dialog' }).click();
 
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Ask Atlas' }).click();
-    await expect(page.locator('.chat-workspace .atlas-question-box')).toBeVisible();
+    const chatComposer = page.locator('.chat-workspace form.atlas-ref-composer.atlas-question-box');
+    await expect(chatComposer).toBeVisible();
+    const chatComposerStyle = await chatComposer.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { background: style.backgroundColor, borderColor: style.borderColor, borderRadius: style.borderRadius, padding: style.padding, shadow: style.boxShadow };
+    });
+    expect(chatComposerStyle).toEqual(homeComposerStyle);
+    await expect(chatComposer.getByText('Your Docs')).toBeVisible();
+    await expect(chatComposer.getByRole('button', { name: 'Send question' })).toBeVisible();
     await expect(page.locator('.chat-workspace .atlas-question-box .atlas-ref-composer-source').getByRole('button', { name: 'Connected Sources' })).toBeVisible();
     const researchInput = page.getByRole('textbox', { name: 'Your question' });
     await researchInput.focus();
