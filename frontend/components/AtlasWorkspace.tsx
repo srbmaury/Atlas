@@ -693,6 +693,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                     )}
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
+                            sourceLabels={homeSourceLabels}
                             workspaceId={workspaceId}
                             openingChat={!!openingChatId}
                             searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
