@@ -188,6 +188,7 @@
 .atlas-reference-sidebar .atlas-ref-close-mobile {
     display: none;
 }
+.atlas-reference-root[data-atlas-screen='overview'] .topbar { display: none; }
 .atlas-reference-root[data-atlas-screen='overview'] .content {
     max-width: none;
     width: 100%;
