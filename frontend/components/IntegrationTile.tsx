@@ -31,7 +31,7 @@ export function IntegrationTile({ name, description, connected, account, icon, o
                 '&:hover': { borderColor: 'primary.main', boxShadow: '0 12px 30px rgba(31,41,96,.08)' },
             }}
         >
-            <CardActionArea disabled={disabled} onClick={onClick} aria-label={`${connected ? 'Manage' : 'Connect'} ${name}`} sx={{ height: '100%', p: 2.5, display: 'flex', alignItems: 'stretch' }}>
+            <CardActionArea disabled={disabled} onClick={onClick} aria-label={`${name} · ${connected ? 'Manage' : 'Connect'}`} sx={{ height: '100%', p: 2.5, display: 'flex', alignItems: 'stretch' }}>
                 <div className="flex w-full flex-col items-start gap-3 text-left">
                     <div className="flex w-full items-start justify-between">
                         <Box sx={{ display: 'grid', placeItems: 'center', p: 1.4, borderRadius: 2.5, bgcolor: 'action.hover', color: 'primary.main' }}>{icon}</Box>

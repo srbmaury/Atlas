@@ -1,5 +1,6 @@
 'use client';
 import { Button, Chip, Typography } from '@mui/material';
+import { useState } from 'react';
 import { Mail, HardDrive, Github, NotebookPen, Hash, CalendarDays, ListTodo, Ticket, Cloud, Inbox, Building2 } from 'lucide-react';
 import { IntegrationTile } from '../IntegrationTile';
 import type { ConnectedSourceStatus, IntegrationProvider, SourceHealth } from '../../lib/types';
@@ -13,6 +14,7 @@ interface IntegrationsGalleryProps {
 }
 
 export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, sourceChecks, onOpen }: IntegrationsGalleryProps) {
+    const [catalogOpen, setCatalogOpen] = useState(false);
     const providers = [
         ['gmail', 'Gmail', 'Search conversations and summarize email.', Mail, gmailStatus?.connected, gmailStatus?.email],
         ['drive', 'Google Drive', 'Explore documents and cloud files.', HardDrive, driveStatus?.connected, driveStatus?.account],
@@ -69,7 +71,7 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                 </Typography>
             )}
             {availableProviders.length > 0 && (
-                <section className="mt-8" id="atlas-provider-list" aria-label="Available integrations">
+                <section className={`mt-8 ${catalogOpen ? 'block' : 'hidden md:block'}`} id="atlas-provider-list" aria-label="Available integrations">
                     <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
                         Explore integrations
                     </Typography>

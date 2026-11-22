@@ -494,7 +494,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onSignOut={() => void signOut()}
             />
             <main className="main">
-                <header className="topbar border-b border-slate-200/60 bg-white/90 backdrop-blur-xl">
+                <header className="topbar border-b border-slate-200/60 backdrop-blur-xl">
                     <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
                         <Menu />
                     </button>

@@ -90,6 +90,7 @@ export function WorkspaceSidebar({
                 </IconButton>
             </div>
             <Button
+                className="workspace-btn"
                 fullWidth
                 color="inherit"
                 variant="outlined"

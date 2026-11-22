@@ -279,10 +279,10 @@ export function AccountSettings() {
                                         if (nextTheme && nextTheme !== theme) toggleTheme();
                                     }}
                                 >
-                                    <ToggleButton value="light" aria-label="Light theme">
+                                    <ToggleButton value="light" aria-label="Light">
                                         <Sun size={15} className="mr-2" /> Light
                                     </ToggleButton>
-                                    <ToggleButton value="dark" aria-label="Dark theme">
+                                    <ToggleButton value="dark" aria-label="Dark">
                                         <Moon size={15} className="mr-2" /> Dark
                                     </ToggleButton>
                                 </ToggleButtonGroup>
