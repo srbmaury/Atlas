@@ -160,7 +160,6 @@ export function ResearchComposer({
                         minWidth: 0,
                         flex: 1,
                         py: 0,
-                        alignSelf: 'center',
                         '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
                     }}
                     onKeyDown={(event) => {
@@ -183,7 +182,7 @@ export function ResearchComposer({
                         </IconButton>
                     </span>
                 </Tooltip>
-                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 40, height: 40, px: 1, flexShrink: 0, borderRadius: 2.5 }}>
+                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" className="research-composer-send">
                     {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
                 </Button>
             </div>
