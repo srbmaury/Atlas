@@ -426,7 +426,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             messages={props.messages}
                             busy={props.busy}
                             readyCount={props.readyCount}
-                            sourceLabels={props.sourceLabels}
                             uploadButton={props.uploadButton}
                             prompts={prompts}
                             onPrompt={props.onAsk}
@@ -491,6 +490,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             includeDocuments={props.includeDocuments}
                             onIncludeDocumentsChange={props.setIncludeDocuments}
                             readyCount={props.readyCount}
+                            sourceLabels={props.sourceLabels}
                             mentionAgents={props.mentionAgents}
                             query={props.query}
                             onChange={props.setQuery}
