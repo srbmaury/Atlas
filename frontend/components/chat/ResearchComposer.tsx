@@ -155,7 +155,7 @@ export function ResearchComposer({
                     onChange={(event) => onChange(event.target.value)}
                     fullWidth
                     disabled={busy}
-                    inputProps={{ maxLength: 4000, 'aria-label': 'Your question', 'aria-describedby': 'research-composer-help' }}
+                    inputProps={{ maxLength: 4000, 'aria-label': 'Your question' }}
                     sx={{
                         minWidth: 0,
                         flex: 1,
