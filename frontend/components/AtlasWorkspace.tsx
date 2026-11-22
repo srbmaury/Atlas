@@ -108,6 +108,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         setQuery('');
         setFilter('');
         setGlobalQuery('');
+        setOpeningChatId(null);
     }, [workspaceId]);
 
     const { gmailStatus, setGmailStatus, setGmailMessages, setGmailSelected, setGmailSummary, setGmailSummaryIds, setGmailMobileView, setGmailPreview } = gmailState;
@@ -115,6 +116,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
     const [chats, setChats] = useState<ChatSummary[]>([]);
     const [busy, setBusy] = useState(false);
     const [answerProgress, setAnswerProgress] = useState('');
+    const [openingChatId, setOpeningChatId] = useState<string | null>(null);
     const askController = useRef<AbortController | null>(null);
     const [uploading, setUploading] = useState(false);
     const [webUrl, setWebUrl] = useState('');
@@ -410,6 +412,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         setError,
         setNotice,
         setBusy,
+        setOpeningChatId,
         setAnswerProgress,
         setCopied,
         navigate,
@@ -664,9 +667,9 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                                 if (canEdit) input.current?.click();
                             }}
                             formatSize={prettyBytes}
-                            latestAnswer={latestAnswer}
+                            latestAnswer={openingChatId ? undefined : latestAnswer}
                             latestQuestion={latestQuestion}
-                            answerProgress={busy || agentBusy ? answerProgress : ''}
+                            answerProgress={openingChatId ? 'Opening conversation…' : busy || agentBusy ? answerProgress : ''}
                             onOpenSource={openAnswerSource}
                             onOpenMobileMenu={() => setSidebarOpen(true)}
                         />
@@ -674,6 +677,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
                             workspaceId={workspaceId}
+                            openingChat={!!openingChatId}
                             searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
                             onOpenSource={openAnswerSource}
                             title={title}

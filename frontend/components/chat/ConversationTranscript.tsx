@@ -7,6 +7,7 @@ import { AtlasMark } from '../ui/WorkspacePrimitives';
 
 interface ChatMessagesProps {
     messages: Message[];
+    openingChat?: boolean;
     searchPhrase?: string;
     focusedIndex?: number | null;
     busy: boolean;
@@ -25,6 +26,7 @@ interface ChatMessagesProps {
 
 export function ConversationTranscript({
     messages,
+    openingChat = false,
     searchPhrase = '',
     focusedIndex = null,
     busy,
@@ -63,7 +65,14 @@ export function ConversationTranscript({
     };
     return (
         <div className="thread" ref={threadRef}>
-            {!messages.length && (
+            {openingChat && (
+                <div className="research-welcome" role="status" aria-live="polite" aria-label="Opening conversation">
+                    <LoaderCircle className="spin" size={24} />
+                    <h2>Opening conversation…</h2>
+                    <p>Retrieving messages and cited evidence.</p>
+                </div>
+            )}
+            {!openingChat && !messages.length && (
                 <div className="research-welcome">
                     <span className="welcome-mark">
                         <AtlasMark />

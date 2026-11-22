@@ -39,6 +39,7 @@ type Options = {
     setError: Setter<string>;
     setNotice: Setter<string>;
     setBusy: Setter<boolean>;
+    setOpeningChatId: Setter<string | null>;
     setAnswerProgress: Setter<string>;
     setCopied: Setter<boolean>;
     navigate: (tab: 'chat') => void;
@@ -74,6 +75,7 @@ export function createConversationActions({
     setError,
     setNotice,
     setBusy,
+    setOpeningChatId,
     setAnswerProgress,
     setCopied,
     navigate,
@@ -82,6 +84,17 @@ export function createConversationActions({
     async function loadChat(id: string, stayOnOverview = false) {
         if (busy) return;
         const sequence = chatLoadSequence.next();
+        const previous = { id: activeChat.current, messages: chatMessages.current, title: chatTitle.current };
+        setOpeningChatId(id);
+        if (!stayOnOverview) {
+            // Render the destination before the HTTP round-trip; the transcript
+            // shows an explicit loading state until the selected messages arrive.
+            setChatId(id);
+            chatTitle.current = 'Opening conversation…';
+            setMessages([]);
+            setSource(null);
+            navigate('chat');
+        }
         try {
             const item = await api<SavedChat>(`/workspaces/${workspaceId}/conversations/${id}`);
             if (scope.current !== workspaceId || !chatLoadSequence.isCurrent(sequence)) return;
@@ -102,9 +115,17 @@ export function createConversationActions({
             chatMessages.current = item.messages;
             setMessages(item.messages);
             setSource(null);
-            if (!stayOnOverview) navigate('chat');
         } catch (e) {
-            if (chatLoadSequence.isCurrent(sequence)) setError((e as Error).message);
+            if (scope.current === workspaceId && chatLoadSequence.isCurrent(sequence)) {
+                if (!stayOnOverview) {
+                    setChatId(previous.id);
+                    chatTitle.current = previous.title;
+                    setMessages(previous.messages);
+                }
+                setError((e as Error).message);
+            }
+        } finally {
+            if (chatLoadSequence.isCurrent(sequence)) setOpeningChatId(null);
         }
     }
 
