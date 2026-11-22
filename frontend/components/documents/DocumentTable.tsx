@@ -87,7 +87,7 @@ export function DocumentTable({ canEdit = true, items, filter, onClearFilter, up
                                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatSize(doc.size)}</TableCell>
                                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{doc.chunk_count || '—'}</TableCell>
                                 <TableCell>
-                                    <Chip size="small" color={statusColor(doc.status)} label={doc.status === 'ready' ? 'Ready' : doc.status} variant="outlined" />
+                                    <Chip size="small" color={statusColor(doc.status)} label={doc.status === 'ready' ? 'Ready' : doc.status === 'processing' ? 'Processing' : doc.status === 'queued' ? 'Queued' : doc.status === 'failed' ? 'Failed' : doc.status} variant="outlined" />
                                 </TableCell>
                                 <TableCell align="right">
                                     <Tooltip title={`Inspect ${doc.name}`}>

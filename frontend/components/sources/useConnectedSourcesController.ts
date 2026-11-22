@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, type MutableRefObject } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { api } from '../../lib/api';
 import type {
     ConnectedSourceSearchResponse,
@@ -80,8 +80,15 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         }
     }
     const [sourceFailure, setSourceFailure] = useState<{ workspaceId: string; failed: boolean }>();
+    const lastAutomaticRefresh = useRef<{ workspaceId: string; at: number } | null>(null);
     useEffect(() => {
-        if ((tab === 'sources' || tab === 'chat' || tab === 'overview') && workspaceId) void refreshConnections();
+        if (!workspaceId || !['sources', 'chat', 'overview'].includes(tab)) return;
+        // Avoid four redundant requests each time users switch between workspace tabs.
+        // Explicit connection and manual refresh actions are not throttled.
+        const last = lastAutomaticRefresh.current;
+        if (last?.workspaceId === workspaceId && Date.now() - last.at < 30000) return;
+        lastAutomaticRefresh.current = { workspaceId, at: Date.now() };
+        void refreshConnections();
     }, [tab, workspaceId]);
 
     async function refreshDrive() {

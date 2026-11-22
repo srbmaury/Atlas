@@ -193,7 +193,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 timer = setTimeout(poll, indexing ? 3000 : 15000);
             }
         };
-        timer = setTimeout(poll, 15000);
+        timer = setTimeout(poll, docsRef.current.some((doc) => doc.status === 'queued' || doc.status === 'processing') ? 3000 : 15000);
         return () => {
             stopped = true;
             clearTimeout(timer);

@@ -171,7 +171,10 @@ export function WorkspaceSidebar({
                                 {group.items.map((item) => (
                                     <div className="group flex items-center" key={item.id}>
                                         <ListItemButton
-                                            onClick={() => onOpenChat(item.id)}
+                                            onClick={() => {
+                                                onOpenChat(item.id);
+                                                onClose();
+                                            }}
                                             selected={activeChatId === item.id}
                                             aria-current={activeChatId === item.id ? 'true' : undefined}
                                             title={item.title}

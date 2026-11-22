@@ -62,6 +62,11 @@ export function DocumentsView({
                 <MetricCard icon={<FileClock size={20} />} label="Indexing" value={indexingDocuments} caption="Processing your files" />
                 <MetricCard icon={<FileWarning size={20} />} label="Needs attention" value={failedDocuments} caption="Files with an indexing error" />
             </div>
+            {!canEdit && (
+                <Typography role="status" variant="body2" color="text.secondary">
+                    You have viewer access. Ask an editor or manager to add documents.
+                </Typography>
+            )}
             {canEdit && (
                 <Collapse in={addOpen} id="library-import-actions">
                     <Paper variant="outlined" className="flex flex-col gap-4 rounded-2xl p-5 sm:p-6">

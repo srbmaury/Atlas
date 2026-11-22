@@ -58,8 +58,14 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                 </Typography>
                 <Chip size="small" color="success" label={`${connectedProviders.length} connected`} variant="outlined" />
                 {availableProviders.length > 0 && (
-                    <Button component="a" href="#atlas-provider-list" variant="outlined" size="small">
-                        Browse integrations
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        aria-expanded={catalogOpen}
+                        aria-controls="atlas-provider-list"
+                        onClick={() => setCatalogOpen((open) => !open)}
+                    >
+                        {catalogOpen ? 'Hide catalog' : 'Add a source'}
                     </Button>
                 )}
             </div>
