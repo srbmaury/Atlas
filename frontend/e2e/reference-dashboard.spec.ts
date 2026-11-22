@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test('reference research dashboard renders three columns and remains usable on a phone', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 1672, height: 942 });
     let releaseSavedConversation: (() => void) | undefined;
-    const savedConversationGate = new Promise<void>((resolve) => { releaseSavedConversation = resolve; });
+    const savedConversationGate = new Promise<void>((resolve) => {
+        releaseSavedConversation = resolve;
+    });
     await page.route('**/api/**', async (route) => {
         const url = new URL(route.request().url());
         const path = url.pathname.replace(/^\/api/, '');
