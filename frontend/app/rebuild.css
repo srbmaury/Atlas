@@ -2,6 +2,5 @@
 @import './styles/workspace-layout.css' layer(legacy);
 @import './styles/workspace-theme.css' layer(legacy);
 @import './styles/workspace-refinements.css' layer(legacy);
-@import './styles/research-composer.css' layer(legacy);
 @import './styles/research-source-refinements.css' layer(legacy);
 @import './styles/research-diagrams.css' layer(legacy);
