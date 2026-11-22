@@ -651,7 +651,7 @@ test('phone workspace pages expose compact source and document actions', async (
     await navigate('Documents');
     await expect(page.getByRole('searchbox', { name: 'Search documents' })).toBeVisible();
     await page.getByRole('button', { name: 'Actions for notes.md' }).click();
-    await expect(page.getByRole('menuitem', { name: 'Download original' })).toHaveAttribute('href', /documents\\/d1\\/original/);
+    await expect(page.getByRole('menuitem', { name: 'Download original' })).toHaveAttribute('href', '/api/workspaces/w1/documents/d1/original');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Upload files' })).toBeHidden();
     await page.getByRole('button', { name: 'Add knowledge', exact: true }).click();
