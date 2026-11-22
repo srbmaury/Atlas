@@ -135,6 +135,31 @@ test('reference research dashboard renders three columns and remains usable on a
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Your AI Research Workspace' })).toBeVisible();
 
+    // Progress must be visible while the server is pending, regardless of the
+    // selected inspector view. Hold the POST deliberately to make this deterministic.
+    let releaseResearch: (() => void) | undefined;
+    const researchGate = new Promise<void>((resolve) => {
+        releaseResearch = resolve;
+    });
+    await page.route('**/api/workspaces/w1/conversations', async (route) => {
+        if (route.request().method() !== 'POST') return route.fallback();
+        await researchGate;
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ id: 'new-research', title: 'Energy policy', updated: Date.now() / 1000, messages: [] }),
+        });
+    });
+    await page.getByRole('textbox', { name: 'Ask a research question' }).fill('Research European energy policy');
+    await page.locator('.atlas-ref-composer').getByRole('button', { name: 'Research', exact: true }).click();
+    await expect(page.locator('.atlas-ref-progress-inline')).toContainText('Searching your sources');
+    await page.getByRole('tab', { name: /Sources/ }).click();
+    await expect(page.locator('.atlas-ref-progress-panel')).toContainText('Searching your sources');
+    await page.getByRole('button', { name: 'More research tools' }).click();
+    await page.getByRole('menuitem', { name: 'Quick notes' }).click();
+    await expect(page.locator('.atlas-ref-progress-panel')).toContainText('Searching your sources');
+    releaseResearch?.();
+
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('heading', { name: 'Your AI Research Workspace' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
