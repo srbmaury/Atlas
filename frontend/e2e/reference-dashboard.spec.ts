@@ -47,6 +47,17 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('tab', { name: 'Answer' })).toBeVisible();
     await expect(page.getByRole('tab', { name: /Sources/ })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Notes' })).toHaveCount(0);
+    // Source scope is in the composer header, adjacent to the question rather than the action row.
+    const sourceScope = page.locator('.atlas-ref-composer-source');
+    await expect(sourceScope.getByRole('button', { name: 'Connected Sources' })).toBeVisible();
+    const composerToolbar = await page.locator('.atlas-ref-composer-toolbar').boundingBox();
+    const sourceScopeRect = await sourceScope.boundingBox();
+    expect(composerToolbar && sourceScopeRect).toBeTruthy();
+    expect(sourceScopeRect!.y).toBeGreaterThanOrEqual(composerToolbar!.y);
+    expect(sourceScopeRect!.y).toBeLessThan(composerToolbar!.y + composerToolbar!.height);
+
+    // The overview owns an accessible theme toggle (previously only other tabs had it).
+    await expect(page.locator('.atlas-ref-hero-theme').getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeVisible();
     const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
     await homeField.focus();
     expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
