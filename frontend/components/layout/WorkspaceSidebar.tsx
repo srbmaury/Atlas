@@ -130,14 +130,19 @@ export function WorkspaceSidebar({
                         type="button"
                         aria-current={workspace?.id === item.id ? 'true' : undefined}
                         aria-label={`Switch to ${item.name}`}
-                        title={item.name}
+                        title={workspaces.filter((candidate) => candidate.name === item.name).length > 1 ? `${item.name} · ${item.id}` : item.name}
                         onClick={() => {
                             onSelectWorkspace?.(item.id);
                             onClose();
                         }}
                     >
                         <FolderClosed size={18} color={workspace?.id === item.id ? '#a174fb' : '#97a6c5'} />
-                        <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                            {item.name}
+                            {workspaces.filter((candidate) => candidate.name === item.name).length > 1 && (
+                                <small className="atlas-ref-workspace-id"> · {item.id.slice(0, 5)}</small>
+                            )}
+                        </span>
                     </button>
                 ))}
                 <button className="atlas-ref-workspace" type="button" onClick={onWorkspaceSettings} title="Manage workspaces">
