@@ -91,7 +91,9 @@ export function WorkspaceSidebar({
                     <span className="atlas-ref-workspace-avatar">{workspace?.name?.charAt(0).toUpperCase() || 'A'}</span>
                     <span className="atlas-ref-workspace-details">
                         <strong>{workspace?.name || 'Choose workspace'}</strong>
-                        <small>{workspaceCount} workspace{workspaceCount === 1 ? '' : 's'}</small>
+                        <small>
+                            {workspaceCount} workspace{workspaceCount === 1 ? '' : 's'}
+                        </small>
                     </span>
                     <ChevronDown size={17} aria-hidden="true" />
                 </button>
