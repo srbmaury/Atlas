@@ -70,6 +70,7 @@ export function HomeView({
     const recentChats = [...chats].sort((a, b) => b.updated - a.updated);
     const recentDocs = [...docs].slice(0, 4);
     const sourceCount = sourceLabels.length;
+    const canSubmit = !busy && Boolean(query.trim()) && hasAskSources;
 
     function addTranscript(transcript: string) {
         onQueryChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
@@ -96,7 +97,7 @@ export function HomeView({
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (!busy && query.trim() && hasAskSources) onAsk();
+                        if (canSubmit) onAsk();
                     }}
                 >
                     {matchingAgents.length > 0 && (
@@ -154,7 +155,7 @@ export function HomeView({
                             >
                                 {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
                             </button>
-                            <button className="home-send" aria-label="Ask Atlas" disabled={busy || !query.trim() || !hasAskSources}>
+                            <button className="home-send" aria-label="Ask Atlas" disabled={!canSubmit}>
                                 {busy ? <LoaderCircle size={18} className="spin" /> : <ArrowUp size={18} />}
                             </button>
                         </div>
@@ -196,7 +197,7 @@ export function HomeView({
                         { title: 'Explore a topic', description: 'Investigate a question in depth', icon: Globe2, prompt: 'Research the main developments and evidence about ' },
                         { title: 'Draft a research brief', description: 'Build a structured, cited overview', icon: NotebookPen, prompt: 'Create a structured research brief with citations about ' },
                     ] as const).map((task) => (
-                        <button type="button" className="atlas-shortcut" key={task.title} disabled={busy} onClick={() => {
+                        <button type="button" className="atlas-shortcut" key={task.title} disabled={busy} aria-label={`${task.title}: ${task.description}`} onClick={() => {
                             onQueryChange(task.prompt);
                             questionInputRef.current?.focus();
                         }}>
@@ -306,7 +307,7 @@ export function HomeView({
                         <strong>Upload documents</strong>
                         <p>Drop PDF, DOCX, TXT, Markdown, CSV, JSON or HTML files. Up to {maxSizeMB} MB each.</p>
                     </div>
-                    <button className="btn" disabled={uploading} onClick={onBrowse}>
+                    <button type="button" className="btn" disabled={uploading} onClick={onBrowse}>
                         Choose files
                     </button>
                 </div>
