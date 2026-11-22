@@ -761,8 +761,8 @@
 .atlas-reference-root.collapsed .atlas-ref-brand > span,
 .atlas-reference-root.collapsed .atlas-ref-nav-item span,
 .atlas-reference-root.collapsed .atlas-ref-sidebar-label,
-.atlas-reference-root.collapsed .atlas-ref-workspace span,
-.atlas-reference-root.collapsed .atlas-ref-workspace > svg:last-child,
+.atlas-reference-root.collapsed .atlas-ref-workspace-details,
+.atlas-reference-root.collapsed .atlas-ref-workspace-switcher > svg,
 .atlas-reference-root.collapsed .atlas-ref-recent,
 .atlas-reference-root.collapsed .atlas-ref-usage,
 .atlas-reference-root.collapsed .atlas-ref-sidebar-link span,
@@ -778,13 +778,21 @@
     margin-left: 0;
 }
 .atlas-reference-root.collapsed .atlas-ref-nav-item,
-.atlas-reference-root.collapsed .atlas-ref-workspace,
+.atlas-reference-root.collapsed .atlas-ref-workspace-switcher,
 .atlas-reference-root.collapsed .atlas-ref-sidebar-link {
     justify-content: center;
     padding-inline: 8px;
 }
 .atlas-reference-root.collapsed .atlas-ref-profile {
     justify-content: center;
+}
+.atlas-reference-root.collapsed .atlas-ref-workspace-switcher {
+    gap: 0;
+}
+@media (max-width: 790px) {
+    .atlas-reference-root.collapsed .atlas-ref-workspace-switcher {
+        gap: 11px;
+    }
 }
 @media (max-width: 790px) {
     .atlas-reference-root.collapsed .main {
@@ -800,8 +808,8 @@
     .atlas-reference-root.collapsed .atlas-ref-brand > span,
     .atlas-reference-root.collapsed .atlas-ref-nav-item span,
     .atlas-reference-root.collapsed .atlas-ref-sidebar-label,
-    .atlas-reference-root.collapsed .atlas-ref-workspace span,
-    .atlas-reference-root.collapsed .atlas-ref-workspace > svg:last-child,
+    .atlas-reference-root.collapsed .atlas-ref-workspace-details,
+    .atlas-reference-root.collapsed .atlas-ref-workspace-switcher > svg,
     .atlas-reference-root.collapsed .atlas-ref-recent,
     .atlas-reference-root.collapsed .atlas-ref-usage,
     .atlas-reference-root.collapsed .atlas-ref-sidebar-link span,
@@ -809,7 +817,7 @@
         display: initial;
     }
     .atlas-reference-root.collapsed .atlas-ref-nav-item,
-    .atlas-reference-root.collapsed .atlas-ref-workspace,
+    .atlas-reference-root.collapsed .atlas-ref-workspace-switcher,
     .atlas-reference-root.collapsed .atlas-ref-sidebar-link {
         justify-content: flex-start;
     }
