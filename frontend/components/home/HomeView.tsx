@@ -193,9 +193,7 @@ export function HomeView({
                         )}
                         <div className="atlas-ref-composer-toolbar">
                             <span className="atlas-ref-composer-label">Research question</span>
-                            <div className="atlas-ref-composer-source">
-                                {sourcePicker}
-                            </div>
+                            <div className="atlas-ref-composer-source">{sourcePicker}</div>
                         </div>
                         <TextField
                             inputRef={prompt}
