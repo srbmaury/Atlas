@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { IconButton, Tooltip } from '@mui/material';
-import { BookOpenText, ChevronDown, CircleHelp, FileText, FolderClosed, FolderPlus, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, Settings2, Sparkles, X } from 'lucide-react';
-import type { Workspace } from '../../lib/types';
+import { BookOpenText, ChevronDown, CircleHelp, FileText, FolderClosed, FolderPlus, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
+import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
 type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
@@ -19,6 +19,11 @@ interface WorkspaceSidebarProps {
     workspaces?: Workspace[];
     onSelectWorkspace?: (id: string) => void;
     workspaceCount: number;
+    chats: ChatSummary[];
+    chatsLoading: boolean;
+    chatsFailed: boolean;
+    onRefreshChats: () => void;
+    onOpenChat: (id: string) => void;
     tab: Tab;
     onNavigate: (tab: Tab) => void;
     readyCount: number;
@@ -49,6 +54,11 @@ export function WorkspaceSidebar({
     workspaces = [],
     onSelectWorkspace,
     workspaceCount,
+    chats,
+    chatsLoading,
+    chatsFailed,
+    onRefreshChats,
+    onOpenChat,
     tab,
     onNavigate,
     readyCount,
@@ -136,6 +146,22 @@ export function WorkspaceSidebar({
                     <ChevronDown size={15} />
                 </button>
 
+                <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
+                    Recent chats
+                    <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}><RefreshCw size={14}/></button>
+                </div>
+                <div className="atlas-ref-recent" aria-label="Recent chats">
+                    {chatsLoading && !chats.length ? <p role="status">Loading chats…</p> :
+                     chatsFailed ? <p role="alert">Could not load chats. <button type="button" onClick={onRefreshChats}>Retry</button></p> :
+                     chats.filter((chat) => !chat.archived).length
+                        ? chats.filter((chat) => !chat.archived).slice(0, 8).map((chat) => (
+                            <button type="button" key={chat.id} title={chat.title} onClick={() => { onOpenChat(chat.id); onClose(); }}>
+                                <MessageSquare size={15} aria-hidden="true" />
+                                <span>{chat.title}</span>
+                            </button>
+                        ))
+                        : <p>No chats in this workspace</p>}
+                </div>
                 <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <div className="flex items-center justify-between text-xs font-bold">
                         <span className="rounded-full bg-[#5948c4] px-2 py-0.5 text-white">Workspace</span>

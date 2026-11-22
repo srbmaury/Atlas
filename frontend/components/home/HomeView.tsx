@@ -40,6 +40,10 @@ interface HomeViewProps {
     onIncludeDocumentsChange: (enabled: boolean) => void;
     busy: boolean;
     chats: ChatSummary[];
+    chatsLoading: boolean;
+    chatsFailed: boolean;
+    workspaceName: string;
+    onRefreshChats: () => void;
     docs: Doc[];
     onChooseSources: () => void;
     sourcePicker?: ReactNode;
@@ -83,6 +87,10 @@ export function HomeView({
     onIncludeDocumentsChange,
     busy,
     chats,
+    chatsLoading,
+    chatsFailed,
+    workspaceName,
+    onRefreshChats,
     docs,
     onChooseSources,
     sourcePicker,
@@ -290,13 +298,19 @@ export function HomeView({
 
                 <section aria-labelledby="atlas-ref-recent-heading">
                     <div className="atlas-ref-section-heading">
-                        <strong id="atlas-ref-recent-heading">Recent research</strong>
+                        <strong id="atlas-ref-recent-heading">Recent research <small className="atlas-ref-workspace-caption">· {workspaceName}</small></strong>
                         <Button onClick={onOpenConversations} size="small" endIcon={<ArrowRight size={15} />}>
                             View all
                         </Button>
                     </div>
                     <div className="atlas-ref-research-list">
-                        {recent.length ? (
+                        {chatsLoading && !chats.length ? (
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="status">Loading saved conversations…</div>
+                        ) : chatsFailed ? (
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="alert">
+                                Couldn’t load conversations. <Button size="small" onClick={onRefreshChats}>Retry</Button>
+                            </div>
+                        ) : recent.length ? (
                             recent.map((chat) => (
                                 <button key={chat.id} className="atlas-ref-research-row" type="button" onClick={() => onOpenConversation(chat.id)}>
                                     <MessageSquareText size={17} color="#8d91b0" />
@@ -307,7 +321,7 @@ export function HomeView({
                             ))
                         ) : (
                             <div className="px-5 py-7 text-sm text-[var(--sub)]">
-                                No research conversations yet.{' '}
+                                No research conversations in {workspaceName} yet.{' '}
                                 <Button size="small" onClick={onStartChat}>
                                     Start a conversation
                                 </Button>

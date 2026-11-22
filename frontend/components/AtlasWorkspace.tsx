@@ -119,6 +119,8 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
     const { gmailStatus, setGmailStatus, setGmailMessages, setGmailSelected, setGmailSummary, setGmailSummaryIds, setGmailMobileView, setGmailPreview } = gmailState;
 
     const [chats, setChats] = useState<ChatSummary[]>([]);
+    const [chatsLoading, setChatsLoading] = useState(false);
+    const [chatsFailed, setChatsFailed] = useState(false);
     const [busy, setBusy] = useState(false);
     const [answerProgress, setAnswerProgress] = useState('');
     const [openingChatId, setOpeningChatId] = useState<string | null>(null);
@@ -170,11 +172,16 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         setWorkspaceId(initialWorkspaceId);
     }, [initialWorkspaceId, workspaces]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
+    const refreshWorkspaceLists = useCallback(
+        () => refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setChatsLoading, setChatsFailed, setError }),
+        [workspaceId],
+    );
     useEffect(() => {
         chatLoadSequence.invalidate();
         setDocs([]);
         conversation.reset();
         setChats([]);
+        setChatsFailed(false);
         setSelected([]);
         setPreview(null);
         setSource(null);
@@ -188,7 +195,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         setGmailStatus(null);
         setGmailMobileView('emails');
         setGmailPreview(null);
-        void refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setError });
+        void refreshWorkspaceLists();
         void refresh().catch((e) => setError(e.message));
         // Indexing needs prompt updates, but a settled library does not need a
         // full workspace refresh every three seconds (especially in hidden tabs).
@@ -206,7 +213,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
             stopped = true;
             clearTimeout(timer);
         };
-    }, [refresh]);
+    }, [refresh, refreshWorkspaceLists]);
     useEffect(() => {
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
     }, [messages.length, busy, tab]);
@@ -502,6 +509,11 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 workspaces={workspaces}
                 onSelectWorkspace={setWorkspaceId}
                 workspaceCount={workspaces.length}
+                chats={chats}
+                chatsLoading={chatsLoading}
+                chatsFailed={chatsFailed}
+                onRefreshChats={() => void refreshWorkspaceLists()}
+                onOpenChat={(id) => void switchChat(id)}
                 tab={tab}
                 onNavigate={navigate}
                 readyCount={ready.length}
@@ -614,6 +626,10 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             onIncludeDocumentsChange={setIncludeDocuments}
                             busy={busy || agentBusy}
                             chats={chats}
+                            chatsLoading={chatsLoading}
+                            chatsFailed={chatsFailed}
+                            workspaceName={workspace?.name || 'Current workspace'}
+                            onRefreshChats={() => void refreshWorkspaceLists()}
                             docs={docs}
                             onChooseSources={() => setScopeOpen(true)}
                             sourcePicker={
@@ -762,6 +778,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                         <AgentStudioPanel
                             key={workspaceId}
                             workspaceId={workspaceId}
+                            workspaceName={workspace?.name || 'Current workspace'}
                             canEdit={canEdit}
                             onUse={
                                 canEdit && !busy && !agentBusy
