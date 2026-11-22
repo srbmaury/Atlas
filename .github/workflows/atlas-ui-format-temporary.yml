@@ -1,0 +1,37 @@
+name: Atlas UI format migration
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+permissions:
+  contents: write
+concurrency:
+  group: atlas-ui-format-migration
+  cancel-in-progress: true
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: frontend
+      - name: Format
+        run: npm run format
+        working-directory: frontend
+      - name: Commit formatting
+        shell: bash
+        run: |
+          git add frontend
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(frontend): format UI interaction fixes"
+          git pull --rebase origin design/mui-tailwind-frontend
+          git push origin HEAD:design/mui-tailwind-frontend
