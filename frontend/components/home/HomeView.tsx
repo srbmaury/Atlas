@@ -1,5 +1,5 @@
 'use client';
-import { type ReactNode } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff, Globe2, GitCompareArrows, NotebookPen } from 'lucide-react';
 import type { Doc, ChatSummary } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
@@ -61,6 +61,7 @@ export function HomeView({
     formatSize,
 }: HomeViewProps) {
     const voice = useVoiceInput();
+    const questionInputRef = useRef<HTMLTextAreaElement>(null);
     const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
     const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     const selectedAgent = mentionAgents.find((agent) => query.toLowerCase().includes(agent.handle + ' '));
@@ -106,6 +107,7 @@ export function HomeView({
                         </div>
                     )}
                     <textarea
+                        ref={questionInputRef}
                         aria-label="Ask Atlas"
                         placeholder="Ask a question about your workspace…"
                         value={query}
@@ -168,9 +170,9 @@ export function HomeView({
                         { title: 'Explore a topic', description: 'Investigate a question in depth', icon: Globe2, prompt: 'Research the main developments and evidence about ' },
                         { title: 'Draft a research brief', description: 'Build a structured, cited overview', icon: NotebookPen, prompt: 'Create a structured research brief with citations about ' },
                     ] as const).map((task) => (
-                        <button type="button" className="atlas-shortcut" key={task.title} onClick={() => {
+                        <button type="button" className="atlas-shortcut" key={task.title} disabled={busy} onClick={() => {
                             onQueryChange(task.prompt);
-                            document.querySelector<HTMLTextAreaElement>('.home-prompt-panel textarea')?.focus();
+                            questionInputRef.current?.focus();
                         }}>
                             <span className="atlas-shortcut-icon"><task.icon size={19} /></span>
                             <strong>{task.title}</strong>
