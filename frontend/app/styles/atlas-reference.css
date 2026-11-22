@@ -5,7 +5,7 @@
     --atlas-ref-sidebar: #11182c;
     --atlas-ref-ink: #161c33;
     --atlas-ref-line: #e7e8f1;
-    --atlas-ref-background: var(--atlas-ref-background);
+    --atlas-ref-background: #fafbfc;
     --atlas-ref-surface: #ffffff;
     --atlas-ref-subtle: #f4f5fd;
     --atlas-ref-muted: #66718c;
@@ -892,19 +892,19 @@
 
 /* Research workspace uses the same theme selection as Atlas/MUI. */
 :root[data-theme='dark'] .atlas-reference-root {
-    --atlas-ref-background: #161b27;
-    --atlas-ref-surface: #232b3a;
-    --atlas-ref-subtle: #2b3548;
-    --atlas-ref-hover: #323d52;
-    --atlas-ref-ink: #eef0f9;
-    --atlas-ref-muted: #abb8d0;
-    --atlas-ref-line: #3b465b;
+    --atlas-ref-background: #111113;
+    --atlas-ref-surface: #1b1c1f;
+    --atlas-ref-subtle: #272a2d;
+    --atlas-ref-hover: #303338;
+    --atlas-ref-ink: #edeef0;
+    --atlas-ref-muted: #b0b4ba;
+    --atlas-ref-line: #363a3f;
     --atlas-ref-accent: #a99cff;
-    --atlas-ref-accent-soft: #363252;
+    --atlas-ref-accent-soft: #302c42;
 }
 :root[data-theme='dark'] .atlas-ref-hero {
     background:
-        linear-gradient(180deg, rgba(22, 27, 39, 0.72), rgba(22, 27, 39, 0.78)),
+        linear-gradient(180deg, rgba(17, 17, 19, 0.78), rgba(17, 17, 19, 0.84)),
         url('/atlas-mountain-scene.svg') center bottom/cover no-repeat;
 }
 :root[data-theme='dark'] .atlas-ref-hero h1,
@@ -1021,4 +1021,36 @@
     color: var(--atlas-ref-muted);
     font-weight: 500;
     white-space: normal;
+}
+
+/* Research composer controls: source scope belongs beside the question. */
+.atlas-ref-composer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 9px;
+}
+.atlas-ref-composer-label { font-size: 12px; font-weight: 700; color: var(--atlas-ref-muted); }
+.atlas-ref-composer-source { display: flex; align-items: center; min-width: 0; }
+.atlas-ref-composer-source .atlas-ref-source-trigger { min-height: 32px; }
+.atlas-ref-hero-theme {
+    position: absolute; right: 64px; top: 18px; z-index: 2;
+    border: 1px solid var(--atlas-ref-line); background: var(--atlas-ref-surface);
+    border-radius: 10px; color: var(--atlas-ref-ink);
+}
+.atlas-ref-hero-theme .MuiIconButton-root { color: inherit; }
+.atlas-reference-root .sidebar.atlas-reference-sidebar { background: var(--atlas-ref-sidebar); }
+:root[data-theme='dark'] .atlas-reference-root { --atlas-ref-sidebar: #18191b; }
+:root[data-theme='dark'] .atlas-ref-insight,
+:root[data-theme='dark'] .atlas-ref-composer,
+:root[data-theme='dark'] .atlas-ref-task,
+:root[data-theme='dark'] .atlas-ref-source-preview { box-shadow: none; }
+:root[data-theme='dark'] .atlas-ref-insight-tabs,
+:root[data-theme='dark'] .atlas-ref-source-row,
+:root[data-theme='dark'] .atlas-ref-research-row + .atlas-ref-research-row { border-color: var(--atlas-ref-line); }
+:root[data-theme='dark'] .atlas-ref-composer-source .atlas-ref-source-trigger:hover,
+:root[data-theme='dark'] .atlas-ref-composer-source .atlas-ref-source-trigger[aria-expanded='true'] {
+    background: var(--atlas-ref-hover); border-color: #5a6169;
 }
