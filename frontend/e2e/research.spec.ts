@@ -638,7 +638,7 @@ test('phone workspace pages expose compact source and document actions', async (
         await page.getByRole('button', { name: 'Open menu', exact: true }).click();
         await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click();
     };
-    await navigate('Connected sources');
+    await navigate('Connectors');
     const addSource = page.getByRole('button', { name: 'Add a source', exact: true });
     const slack = page.getByRole('button', { name: /^Slack/ });
     await expect(slack).toBeHidden();
@@ -648,7 +648,7 @@ test('phone workspace pages expose compact source and document actions', async (
     await expect(page.getByRole('dialog', { name: 'Manage source connection' })).toBeVisible();
     await page.keyboard.press('Escape');
 
-    await navigate('Documents');
+    await navigate('Library');
     await expect(page.getByRole('searchbox', { name: 'Search documents' })).toBeVisible();
     await page.getByRole('button', { name: 'Actions for notes.md' }).click();
     await expect(page.getByRole('menuitem', { name: 'Download original' })).toHaveAttribute('href', '/api/workspaces/w1/documents/d1/original');
@@ -664,8 +664,8 @@ test('Home keeps the primary research entry accessible on mobile', async ({ page
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
     await page.getByRole('button', { name: 'Research', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Ideas are better with evidence.' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Ask Atlas' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your AI Research Workspace' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Ask a research question' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
 
@@ -732,7 +732,7 @@ test('audit screen captures', async ({ page }, testInfo) => {
         await page.setViewportSize({ width, height: 900 });
         for (const theme of ['light', 'dark']) {
             await page.evaluate((theme) => (document.documentElement.dataset.theme = theme), theme);
-            for (const screen of ['Overview', 'Documents', 'Connected sources', 'Ask Atlas']) {
+            for (const screen of ['Research', 'Library', 'Connectors', 'Ask Atlas']) {
                 if (await page.getByRole('button', { name: 'Open menu', exact: true }).isVisible()) await page.getByRole('button', { name: 'Open menu', exact: true }).click();
                 await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: screen, exact: true }).click();
                 await page.screenshot({ path: testInfo.outputPath(`${process.env.AUDIT_PHASE || 'after'}-${screen}-${width}-${theme}.png`), fullPage: true, animations: 'disabled' });
@@ -806,7 +806,7 @@ test('workspace creation, settings deletion and sign out preserve the selected w
         created = false;
         return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
-    await page.getByRole('button', { name: 'Switch workspace', exact: true }).click();
+    await page.getByRole('button', { name: 'New or manage workspaces', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Your workspaces' });
     await dialog.getByLabel('New workspace', { exact: true }).fill('Research review');
     await dialog.getByRole('button', { name: 'Create workspace', exact: true }).click();
