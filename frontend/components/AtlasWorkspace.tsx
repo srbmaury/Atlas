@@ -56,6 +56,11 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
     const [password, setPassword] = useState('');
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [workspaceId, setWorkspaceId] = useState('');
+    useEffect(() => {
+        if (user?.id && workspaceId && workspaces.some((item) => item.id === workspaceId)) {
+            localStorage.setItem(`atlas-last-workspace:${user.id}`, workspaceId);
+        }
+    }, [user?.id, workspaceId, workspaces]);
     const [docs, setDocs] = useState<Doc[]>([]);
     const docsRef = useRef<Doc[]>([]);
     docsRef.current = docs;

@@ -42,7 +42,11 @@ export async function bootWorkspace({
         setUser(actor);
         setWorkspaces(list);
         const requested = new URLSearchParams(window.location.search).get('workspaceId');
-        setWorkspaceId(list.some((item) => item.id === requested) ? requested! : list[0]?.id || '');
+        const saved = localStorage.getItem(`atlas-last-workspace:${actor.id}`);
+        // Explicit deep links win; otherwise restore the last workspace that
+        // still belongs to this account instead of silently selecting the first.
+        const selected = [requested, saved].find((id) => id && list.some((item) => item.id === id));
+        setWorkspaceId(selected || list[0]?.id || '');
     } catch {
         setUser(null);
     } finally {
