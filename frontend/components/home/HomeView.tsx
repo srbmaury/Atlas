@@ -33,6 +33,8 @@ interface HomeViewProps {
     onAsk: () => void;
     hasAskSources: boolean;
     sourceLabels: string[];
+    includeDocuments: boolean;
+    onIncludeDocumentsChange: (enabled: boolean) => void;
     busy: boolean;
     chats: ChatSummary[];
     docs: Doc[];
@@ -73,6 +75,8 @@ export function HomeView({
     onAsk,
     hasAskSources,
     sourceLabels,
+    includeDocuments,
+    onIncludeDocumentsChange,
     busy,
     chats,
     docs,
@@ -185,13 +189,13 @@ export function HomeView({
                                 <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
                                     <Paperclip size={16} />
                                 </button>
-                                <button className="atlas-ref-pill" type="button" onClick={onOpenSources} title="Connect a web or external research source">
+                                <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not yet available in Atlas">
                                     <Globe2 size={16} /> Web
-                                </button>
-                                <button className="atlas-ref-pill" type="button" onClick={onOpenDocuments}>
+                                </span>
+                                <button className="atlas-ref-pill" type="button" aria-pressed={includeDocuments} title={`${readyCount} searchable documents`} onClick={() => onIncludeDocumentsChange(!includeDocuments)}>
                                     <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
                                 </button>
-                                <button className="atlas-ref-pill" type="button" onClick={onChooseSources}>
+                                <button className="atlas-ref-pill" type="button" onClick={onOpenSources}>
                                     <SlidersHorizontal size={16} /> Connected Sources <ChevronDown size={13} />
                                 </button>
                             </div>

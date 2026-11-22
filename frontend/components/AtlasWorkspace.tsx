@@ -489,6 +489,8 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 }}
                 onWorkspaceSettings={() => setNewWorkspace(true)}
                 workspace={workspace}
+                workspaces={workspaces}
+                onSelectWorkspace={setWorkspaceId}
                 workspaceCount={workspaces.length}
                 tab={tab}
                 onNavigate={navigate}
@@ -608,10 +610,12 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             }}
                             hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}
+                            includeDocuments={includeDocuments}
+                            onIncludeDocumentsChange={setIncludeDocuments}
                             busy={busy || agentBusy}
                             chats={chats}
                             docs={docs}
-                            onChooseSources={() => newChat(true)}
+                            onChooseSources={() => setScopeOpen(true)}
                             onOpenSources={() => navigate('sources')}
                             onOpenConversations={() => {
                                 navigate('chat');
