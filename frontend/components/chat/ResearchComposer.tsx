@@ -138,7 +138,7 @@ export function ResearchComposer({
                 </Menu>
             <div className="research-composer-input-row">
                 <div className="research-composer-question">
-    <InputBase
+                    <InputBase
                         multiline
                         minRows={2}
                         maxRows={8}
