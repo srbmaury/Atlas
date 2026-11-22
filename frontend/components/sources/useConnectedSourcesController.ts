@@ -83,11 +83,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
     const lastAutomaticRefresh = useRef<{ workspaceId: string; at: number } | null>(null);
     useEffect(() => {
         if (!workspaceId || !['sources', 'chat', 'overview'].includes(tab)) return;
-        // Avoid four redundant requests each time users switch between workspace tabs.
-        // Explicit connection and manual refresh actions are not throttled.
         const last = lastAutomaticRefresh.current;
-        // The Sources page always requests the latest connection status.
-        // Never cache a failed/partial read for 30 seconds.
         if (tab !== 'sources' && !sourceFailure?.failed && last?.workspaceId === workspaceId && Date.now() - last.at < 30000) return;
         const target = workspaceId;
         void refreshConnections().then((complete) => {
