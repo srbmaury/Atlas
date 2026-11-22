@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Card, Chip, InputAdornment, TextField, Typography } from '@mui/material';
+import { Alert, Button, Card, Chip, InputBase, Typography } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -318,23 +318,18 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                 </Alert>
             )}
             <div className={styles.libraryTools}>
-                <TextField
-                    className="w-full max-w-lg"
-                    size="small"
-                    label="Search agents"
-                    placeholder="Search agents by name or purpose..."
-                    value={agentSearch}
-                    onChange={(event) => setAgentSearch(event.target.value)}
-                    slotProps={{
-                        input: {
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <Search size={17} />
-                                </InputAdornment>
-                            ),
-                        },
-                    }}
-                />
+                <div className={styles.librarySearch} role="search">
+                    <Search size={17} aria-hidden="true" />
+                    <InputBase
+                        fullWidth
+                        type="search"
+                        placeholder="Search agents by name or purpose..."
+                        inputProps={{ 'aria-label': 'Search agents' }}
+                        value={agentSearch}
+                        onChange={(event) => setAgentSearch(event.target.value)}
+                        sx={{ fontSize: 14, '& input': { outline: 'none !important', boxShadow: 'none !important' } }}
+                    />
+                </div>
                 <Chip variant="outlined" label={`${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`} />
             </div>
             {filteredAgents.length ? (

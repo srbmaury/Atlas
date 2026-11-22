@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { ArrowUp, FileText, FolderOpen, Mic, MicOff, Plus } from 'lucide-react';
-import { Alert, Box, Button, Chip, CircularProgress, IconButton, Menu, MenuItem, Paper, TextField, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface ResearchComposerProps {
@@ -145,20 +145,24 @@ export function ResearchComposer({
                         Choose from library
                     </MenuItem>
                 </Menu>
-                <TextField
+                <InputBase
                     multiline
-                    minRows={1}
+                    minRows={2}
                     maxRows={8}
                     inputRef={textareaRef}
-                    variant="standard"
-                    label="Your question"
                     placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
                     value={query}
                     onChange={(event) => onChange(event.target.value)}
                     fullWidth
                     disabled={busy}
-                    slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000, 'aria-describedby': 'research-composer-help' } }}
-                    sx={{ minWidth: 0, flex: 1, pb: 1, '& .MuiInputBase-root': { minHeight: 37 }, '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none' } }}
+                    inputProps={{ maxLength: 4000, 'aria-label': 'Your question', 'aria-describedby': 'research-composer-help' }}
+                    sx={{
+                        minWidth: 0,
+                        flex: 1,
+                        py: 1,
+                        alignSelf: 'stretch',
+                        '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
+                    }}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
                             event.preventDefault();

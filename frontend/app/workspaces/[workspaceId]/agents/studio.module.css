@@ -801,17 +801,20 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    flex: 1 1 320px;
+    min-width: 0;
     max-width: 520px;
+    min-height: 46px;
     border: 1px solid var(--line);
     border-radius: 11px;
-    padding: 0 12px;
+    padding: 0 14px;
     color: var(--sub);
     background: var(--panel);
 }
 .librarySearch:focus-within {
-    border-color: var(--brand);
-    outline: 2px solid var(--active);
+    border-color: color-mix(in srgb, var(--brand) 38%, var(--line));
+    outline: none;
+    box-shadow: none;
 }
 .libraryTools .librarySearch input {
     max-width: none;
