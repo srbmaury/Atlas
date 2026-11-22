@@ -808,8 +808,12 @@
     .atlas-reference-root.collapsed .atlas-ref-brand > span,
     .atlas-reference-root.collapsed .atlas-ref-nav-item span,
     .atlas-reference-root.collapsed .atlas-ref-sidebar-label,
-    .atlas-reference-root.collapsed .atlas-ref-workspace-details,
-    .atlas-reference-root.collapsed .atlas-ref-workspace-switcher > svg,
+    .atlas-reference-root.collapsed .atlas-ref-workspace-details {
+        display: grid;
+    }
+    .atlas-reference-root.collapsed .atlas-ref-workspace-switcher > svg {
+        display: block;
+    }
     .atlas-reference-root.collapsed .atlas-ref-recent,
     .atlas-reference-root.collapsed .atlas-ref-usage,
     .atlas-reference-root.collapsed .atlas-ref-sidebar-link span,
@@ -1089,10 +1093,6 @@
 .atlas-ref-insight-toggle.MuiIconButton-root {
     width: 36px;
     height: 36px;
-}
-.atlas-reference-sidebar .atlas-ref-workspace-id {
-    font-size: 10px;
-    font-weight: 500;
 }
 :root[data-theme='dark'] .atlas-ref-insight,
 :root[data-theme='dark'] .atlas-ref-composer,
