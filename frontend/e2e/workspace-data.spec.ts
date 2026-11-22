@@ -34,7 +34,9 @@ test('restores a previous workspace and distinguishes saved data from API failur
     });
 
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Switch to Workspace Two' })).toHaveAttribute('aria-current', 'true');
+    const switcher = page.getByRole('button', { name: 'Switch workspace' });
+    await expect(switcher).toContainText('Workspace Two');
+    await expect(switcher).toContainText('2 workspaces');
     await expect(page.getByRole('region', { name: 'Recent chats' }).getByRole('button', { name: /Existing workspace research/ })).toBeVisible();
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Agent Studio' }).click();
     await expect(page.getByText('Workspace: Workspace Two')).toBeVisible();
@@ -46,7 +48,9 @@ test('restores a previous workspace and distinguishes saved data from API failur
     expect(await agentInput.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe('none');
     expect(await agentInput.evaluate((node) => getComputedStyle(node).boxShadow)).toBe('none');
 
-    await page.getByRole('button', { name: 'Switch to Workspace One' }).click();
+    await switcher.click();
+    await page.getByRole('dialog', { name: 'Your workspaces' }).getByRole('button', { name: /Workspace One/ }).click();
+    await expect(switcher).toContainText('Workspace One');
     await expect(page.getByRole('heading', { name: 'Couldn’t load research agents' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Build your first research agent' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Recent chats' }).getByText('Could not load chats.')).toBeVisible();
