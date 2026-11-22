@@ -194,16 +194,6 @@ export function WorkspaceSidebar({
                         <CircleHelp size={17} />
                         <span>Help & Docs</span>
                     </a>
-                    <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
-                        <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="atlas-ref-workspace-badge rounded-full px-2 py-0.5">Workspace</span>
-                            <span>{readyCount} ready</span>
-                        </div>
-                        <div className="atlas-ref-storage-row mt-3 flex justify-between text-xs">
-                            <span>Document storage</span>
-                            <span>{storageLabel}</span>
-                        </div>
-                    </div>
                     <div className="atlas-ref-profile">
                         <span className="atlas-ref-profile-avatar">{initials}</span>
                         <Link href={settingsUrl} className="min-w-0 flex-1 text-inherit no-underline" aria-label="Account settings">
