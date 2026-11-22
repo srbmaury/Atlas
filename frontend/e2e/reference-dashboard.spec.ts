@@ -61,6 +61,7 @@ test('reference research dashboard renders three columns and remains usable on a
     const switcher = page.getByRole('button', { name: 'Switch workspace' });
     await expect(switcher).toContainText('Global Economy');
     await expect(switcher).toContainText('1 workspace');
+    await expect(page.locator('.atlas-ref-composer .atlas-question-box')).toBeVisible();
     const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
     await homeField.focus();
     expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
@@ -132,6 +133,8 @@ test('reference research dashboard renders three columns and remains usable on a
     await workspaceDialog.getByRole('button', { name: 'Close dialog' }).click();
 
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Ask Atlas' }).click();
+    await expect(page.locator('.chat-workspace .atlas-question-box')).toBeVisible();
+    await expect(page.locator('.chat-workspace .atlas-question-box .atlas-ref-composer-source').getByRole('button', { name: 'Connected Sources' })).toBeVisible();
     const researchInput = page.getByRole('textbox', { name: 'Your question' });
     await researchInput.focus();
     expect(await researchInput.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none');
