@@ -152,9 +152,19 @@ export function WorkspaceSidebar({
 
                 <div className="atlas-ref-sidebar-label">Workspaces</div>
                 {(workspaces.length ? workspaces : workspace ? [workspace] : []).map((item) => (
-                    <button className="atlas-ref-workspace" key={item.id} data-selected={workspace?.id === item.id} type="button"
-                        aria-current={workspace?.id === item.id ? 'true' : undefined} aria-label={`Switch to ${item.name}`} title={item.name}
-                        onClick={() => { onSelectWorkspace?.(item.id); onClose(); }}>
+                    <button
+                        className="atlas-ref-workspace"
+                        key={item.id}
+                        data-selected={workspace?.id === item.id}
+                        type="button"
+                        aria-current={workspace?.id === item.id ? 'true' : undefined}
+                        aria-label={`Switch to ${item.name}`}
+                        title={item.name}
+                        onClick={() => {
+                            onSelectWorkspace?.(item.id);
+                            onClose();
+                        }}
+                    >
                         <FolderClosed size={18} color={workspace?.id === item.id ? '#a174fb' : '#97a6c5'} />
                         <span className="min-w-0 flex-1 truncate">{item.name}</span>
                     </button>

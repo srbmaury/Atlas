@@ -192,7 +192,13 @@ export function HomeView({
                                 <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not yet available in Atlas">
                                     <Globe2 size={16} /> Web
                                 </span>
-                                <button className="atlas-ref-pill" type="button" aria-pressed={includeDocuments} title={`${readyCount} searchable documents`} onClick={() => onIncludeDocumentsChange(!includeDocuments)}>
+                                <button
+                                    className="atlas-ref-pill"
+                                    type="button"
+                                    aria-pressed={includeDocuments}
+                                    title={`${readyCount} searchable documents`}
+                                    onClick={() => onIncludeDocumentsChange(!includeDocuments)}
+                                >
                                     <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
                                 </button>
                                 <button className="atlas-ref-pill" type="button" onClick={onOpenSources}>
