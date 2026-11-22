@@ -28,14 +28,14 @@ export function AtlasMuiProvider({ children }: { children: ReactNode }) {
                     primary: { main: mode === 'dark' ? '#a99cff' : '#6551f5' },
                     secondary: { main: mode === 'dark' ? '#9eb3f3' : '#6b7b9a' },
                     background: {
-                        default: mode === 'dark' ? '#171b29' : '#fbfbff',
-                        paper: mode === 'dark' ? '#252b3c' : '#ffffff',
+                        default: mode === 'dark' ? '#111113' : '#fbfbff',
+                        paper: mode === 'dark' ? '#212225' : '#ffffff',
                     },
                     text: {
-                        primary: mode === 'dark' ? '#eff2ff' : '#161d33',
-                        secondary: mode === 'dark' ? '#b6c0d4' : '#66718c',
+                        primary: mode === 'dark' ? '#edeef0' : '#161d33',
+                        secondary: mode === 'dark' ? '#b0b4ba' : '#66718c',
                     },
-                    divider: mode === 'dark' ? '#41465c' : '#e8eaf2',
+                    divider: mode === 'dark' ? '#363a3f' : '#e8eaf2',
                 },
                 shape: { borderRadius: 12 },
                 typography: {
