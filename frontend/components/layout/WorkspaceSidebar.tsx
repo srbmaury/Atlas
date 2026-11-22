@@ -35,9 +35,9 @@ interface WorkspaceSidebarProps {
 const navigation = [
     { id: 'overview', label: 'Overview', icon: HomeIcon },
     { id: 'chat', label: 'Research', icon: MessageSquare },
-    { id: 'documents', label: 'Library', icon: FileText },
-    { id: 'sources', label: 'Integrations', icon: FolderOpen },
-    { id: 'agents', label: 'Agent studio', icon: Sparkles },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'sources', label: 'Connected sources', icon: FolderOpen },
+    { id: 'agents', label: 'Agents', icon: Sparkles },
 ] as const;
 
 export function WorkspaceSidebar({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Alert, Button, Card, Chip, InputAdornment, TextField, Typography } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -285,12 +286,13 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
         <div className={styles.studio}>
             <div className={styles.pageHead}>
                 <div>
-                    <h1>Agents</h1>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>Agents</Typography>
                     <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
                 </div>
                 {canEdit && (
-                    <button
-                        className={`${styles.button} ${styles.primary}`}
+                    <Button
+                        variant="contained"
+                        startIcon={<Plus size={17} />}
                         onClick={() => {
                             setEditing(false);
                             setName('');
@@ -304,29 +306,26 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                             setShowCreate(true);
                         }}
                     >
-                        <Plus size={17} /> Create agent
-                    </button>
+                        Create agent
+                    </Button>
                 )}
             </div>
             {error && (
-                <div role="alert" className={styles.error}>
+                <Alert severity="error" role="alert" className={styles.error}>
                     {error}
-                </div>
+                </Alert>
             )}
             <div className={styles.libraryTools}>
-                <label className={styles.librarySearch}>
-                    <Search size={17} aria-hidden="true" />
-                    <input
-                        aria-label="Search agents"
-                        className={styles.input}
-                        placeholder="Search agents by name or purpose..."
-                        value={agentSearch}
-                        onChange={(event) => setAgentSearch(event.target.value)}
-                    />
-                </label>
-                <span className={styles.libraryCount}>
-                    {filteredAgents.length} {filteredAgents.length === 1 ? 'agent' : 'agents'}
-                </span>
+                <TextField
+                    className="w-full max-w-lg"
+                    size="small"
+                    label="Search agents"
+                    placeholder="Search agents by name or purpose..."
+                    value={agentSearch}
+                    onChange={(event) => setAgentSearch(event.target.value)}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search size={17} /></InputAdornment> } }}
+                />
+                <Chip variant="outlined" label={`${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`} />
             </div>
             {filteredAgents.length ? (
                 <div className={styles.libraryGrid}>
@@ -341,7 +340,7 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                                 .replace(/[^a-z0-9]+/g, '-')
                                 .replace(/^-|-$/g, '');
                         return (
-                            <article className={styles.libraryCard} key={agent.id}>
+                            <Card component="article" variant="outlined" className={styles.libraryCard} key={agent.id} sx={{ borderColor: 'divider', borderRadius: 3 }}>
                                 <div className={styles.libraryCardAccent} aria-hidden="true" />
                                 <div className={styles.libraryCardTitle}>
                                     <span className={styles.agentIcon}>
@@ -428,7 +427,7 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                                         </div>
                                     )}
                                 </div>
-                            </article>
+                            </Card>
                         );
                     })}
                 </div>

@@ -168,7 +168,7 @@ export function HomeView({
                     )}
                     <TextField
                         inputRef={composerRef}
-                        label="Research question"
+                        label="Ask Atlas"
                         placeholder="What would you like to understand?"
                         value={query}
                         multiline
@@ -207,7 +207,7 @@ export function HomeView({
                             >
                                 {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
                             </IconButton>
-                            <Button type="submit" variant="contained" endIcon={<ArrowUp size={18} />} disabled={!canSubmit}>
+                            <Button type="submit" aria-label="Ask Atlas" variant="contained" endIcon={<ArrowUp size={18} />} disabled={!canSubmit}>
                                 Research
                             </Button>
                         </div>
