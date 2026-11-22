@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { ArrowUp, FileText, FolderOpen, Mic, MicOff, Plus } from 'lucide-react';
-import { Alert, Box, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Alert, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface ResearchComposerProps {
@@ -57,7 +57,7 @@ export function ResearchComposer({
 
     return (
         <form
-            className="composer research-composer-v2 flex w-full flex-col gap-3 rounded-2xl p-3"
+            className="composer research-composer-v2"
             onSubmit={(event) => {
                 event.preventDefault();
                 if (canSubmit) onSubmit();
@@ -112,14 +112,14 @@ export function ResearchComposer({
                     ))}
                 </Paper>
             )}
-            <div className="flex w-full min-w-0 items-end gap-2">
+            <div className="research-composer-input-row">
                 <Tooltip title="Add documents">
                     <IconButton
                         aria-label="Add context"
                         aria-haspopup="menu"
                         aria-expanded={!!menuAnchor}
                         onClick={(event) => setMenuAnchor(event.currentTarget)}
-                        sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: 0.5 }}
+                        sx={{ flexShrink: 0 }}
                     >
                         <Plus size={19} />
                     </IconButton>
@@ -147,7 +147,7 @@ export function ResearchComposer({
                 </Menu>
                 <InputBase
                     multiline
-                    minRows={2}
+                    minRows={1}
                     maxRows={8}
                     inputRef={textareaRef}
                     placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
@@ -159,8 +159,8 @@ export function ResearchComposer({
                     sx={{
                         minWidth: 0,
                         flex: 1,
-                        py: 1,
-                        alignSelf: 'stretch',
+                        py: 0,
+                        alignSelf: 'center',
                         '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
                     }}
                     onKeyDown={(event) => {
@@ -177,13 +177,13 @@ export function ResearchComposer({
                             aria-pressed={voice.listening}
                             disabled={busy || (!voice.supported && !voice.listening)}
                             onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
-                            sx={{ mb: 0.5 }}
+                            sx={{ flexShrink: 0 }}
                         >
                             {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
                         </IconButton>
                     </span>
                 </Tooltip>
-                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 42, height: 42, px: 1, mb: 0.5 }}>
+                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 40, height: 40, px: 1, flexShrink: 0, borderRadius: 2.5 }}>
                     {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
                 </Button>
             </div>
