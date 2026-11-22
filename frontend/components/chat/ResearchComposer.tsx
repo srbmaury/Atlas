@@ -66,7 +66,7 @@ export function ResearchComposer({
 
     return (
         <ResearchQuestionBox
-            className="atlas-ref-composer research-composer-v2"
+            className="composer atlas-ref-composer research-composer-v2"
             onSubmit={(event) => {
                 event.preventDefault();
                 if (canSubmit) onSubmit();
