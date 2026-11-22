@@ -130,7 +130,11 @@ export function WorkspaceSidebar({
                         type="button"
                         aria-current={workspace?.id === item.id ? 'true' : undefined}
                         aria-label={`Switch to ${item.name}`}
-                        title={workspaces.filter((candidate) => candidate.name === item.name).length > 1 ? `${item.name} · ${item.id}` : item.name}
+                        title={
+                            workspaces.filter((candidate) => candidate.name === item.name).length > 1
+                                ? `${item.name} · ${item.id}`
+                                : item.name
+                        }
                         onClick={() => {
                             onSelectWorkspace?.(item.id);
                             onClose();
