@@ -25,17 +25,17 @@ export function AtlasMuiProvider({ children }: { children: ReactNode }) {
             createTheme({
                 palette: {
                     mode,
-                    primary: { main: mode === 'dark' ? '#91b9a3' : '#245441' },
-                    secondary: { main: mode === 'dark' ? '#a0aaa5' : '#68756e' },
+                    primary: { main: mode === 'dark' ? '#a99cff' : '#6551f5' },
+                    secondary: { main: mode === 'dark' ? '#9eb3f3' : '#6b7b9a' },
                     background: {
-                        default: mode === 'dark' ? '#171c19' : '#f7f8f6',
-                        paper: mode === 'dark' ? '#212824' : '#ffffff',
+                        default: mode === 'dark' ? '#171b29' : '#fbfbff',
+                        paper: mode === 'dark' ? '#252b3c' : '#ffffff',
                     },
                     text: {
-                        primary: mode === 'dark' ? '#eef2ee' : '#202b24',
-                        secondary: mode === 'dark' ? '#aebbb2' : '#68766d',
+                        primary: mode === 'dark' ? '#eff2ff' : '#161d33',
+                        secondary: mode === 'dark' ? '#b6c0d4' : '#66718c',
                     },
-                    divider: mode === 'dark' ? '#39453e' : '#e3e9e4',
+                    divider: mode === 'dark' ? '#41465c' : '#e8eaf2',
                 },
                 shape: { borderRadius: 12 },
                 typography: {
