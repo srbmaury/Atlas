@@ -118,10 +118,8 @@
     box-shadow: 0 3px 18px rgba(19, 36, 27, 0.055);
 }
 .atlas-v3 .research-composer-v2:focus-within {
-    border-color: var(--brand);
-    box-shadow:
-        0 0 0 3px color-mix(in srgb, var(--brand) 11%, transparent),
-        0 4px 20px rgba(19, 36, 27, 0.06);
+    border-color: color-mix(in srgb, var(--brand) 55%, var(--outline));
+    box-shadow: 0 3px 18px rgba(19, 36, 27, 0.055);
 }
 .atlas-v3 .research-composer-v2 textarea {
     line-height: 1.6;

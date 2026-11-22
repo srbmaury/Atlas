@@ -31,6 +31,14 @@ select:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
     border-color: #70a78c;
 }
+/* MUI already exposes field focus via its form control. The generic legacy
+   input focus box must never draw a rectangle around the composer textarea. */
+.atlas-v3 .research-composer-v2 .MuiInputBase-input:focus,
+.atlas-v3 .research-composer-v2 .MuiInputBase-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
 input[type='checkbox'] {
     accent-color: var(--brand);
 }

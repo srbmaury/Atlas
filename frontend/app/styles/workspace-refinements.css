@@ -461,6 +461,10 @@
     outline: 2px solid var(--brand);
     outline-offset: 3px;
 }
+.atlas-v3 .research-composer-v2 .MuiInputBase-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
 .atlas-v3 :is(.modal-search, .library-search-row) input:focus-visible {
     outline: none;
     outline-offset: 0;

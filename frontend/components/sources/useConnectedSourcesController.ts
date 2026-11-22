@@ -86,9 +86,13 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         // Avoid four redundant requests each time users switch between workspace tabs.
         // Explicit connection and manual refresh actions are not throttled.
         const last = lastAutomaticRefresh.current;
-        if (last?.workspaceId === workspaceId && Date.now() - last.at < 30000) return;
-        lastAutomaticRefresh.current = { workspaceId, at: Date.now() };
-        void refreshConnections();
+        // The Sources page always requests the latest connection status.
+        // Never cache a failed/partial read for 30 seconds.
+        if (tab !== 'sources' && !sourceFailure?.failed && last?.workspaceId === workspaceId && Date.now() - last.at < 30000) return;
+        const target = workspaceId;
+        void refreshConnections().then((complete) => {
+            if (complete && scope.current === target) lastAutomaticRefresh.current = { workspaceId: target, at: Date.now() };
+        });
     }, [tab, workspaceId]);
 
     async function refreshDrive() {
@@ -149,7 +153,9 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
                 if (scope.current === target) setGmailStatus(status);
             }),
         ]);
-        if (scope.current === target) setSourceFailure({ workspaceId: target, failed: outcomes.some((outcome) => outcome.status === 'rejected') });
+        const complete = outcomes.every((outcome) => outcome.status === 'fulfilled');
+        if (scope.current === target) setSourceFailure({ workspaceId: target, failed: !complete });
+        return complete;
     }
     async function verifySourceConnections() {
         if (!workspaceId || sourceChecksBusy) return;
