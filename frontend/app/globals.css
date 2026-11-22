@@ -1,11 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
-/* Keep this import order: later sections intentionally refine earlier rules. */
-@import './styles/base-shell.css';
-@import './styles/base-content.css';
-@import './styles/research-controls.css';
-@import './styles/document-controls.css';
-@import './styles/dialogs-auth.css';
-@import './styles/editorial.css';
-@import './styles/connectors.css';
-@import './styles/research-overrides.css';
-@import './styles/visual-refinement.css';
+/* MUI uses the mui layer, with Tailwind utilities taking precedence. */
+@layer theme, base, legacy, mui, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import './styles/base-shell.css' layer(legacy);
+@import './styles/base-content.css' layer(legacy);
+@import './styles/research-controls.css' layer(legacy);
+@import './styles/document-controls.css' layer(legacy);
+@import './styles/dialogs-auth.css' layer(legacy);
+@import './styles/editorial.css' layer(legacy);
+@import './styles/connectors.css' layer(legacy);
+@import './styles/research-overrides.css' layer(legacy);
+@import './styles/visual-refinement.css' layer(legacy);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+    --color-atlas-50: #f3f3ff;
+    --color-atlas-100: #e9e8ff;
+    --color-atlas-500: #5a54e8;
+    --color-atlas-600: #4944c8;
+    --color-atlas-navy: #161e34;
+}

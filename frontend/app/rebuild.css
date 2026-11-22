@@ -1,10 +1,10 @@
 /* Keep this import order: later sections intentionally refine earlier rules. */
-@import './styles/workspace-layout.css';
-@import './styles/workspace-theme.css';
-@import './styles/workspace-refinements.css';
-@import './styles/research-composer.css';
-@import './styles/research-source-refinements.css';
-@import './styles/research-diagrams.css';
+@import './styles/workspace-layout.css' layer(legacy);
+@import './styles/workspace-theme.css' layer(legacy);
+@import './styles/workspace-refinements.css' layer(legacy);
+@import './styles/research-composer.css' layer(legacy);
+@import './styles/research-source-refinements.css' layer(legacy);
+@import './styles/research-diagrams.css' layer(legacy);
 
 /* Workspace agent mentions share the native Atlas composer surface. */
 .research-composer-v2 {
