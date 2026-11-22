@@ -275,7 +275,8 @@
 }
 .atlas-ref-composer {
     position: relative;
-    z-index: 1;
+    z-index: 5;
+    min-width: 0;
     margin-top: -34px;
     margin-bottom: 37px;
     padding: 13px 15px 12px;
@@ -298,6 +299,7 @@
 }
 .atlas-ref-composer .atlas-ref-composer-bottom {
     display: flex;
+    min-width: 0;
     align-items: center;
     flex-wrap: wrap;
     gap: 9px;
@@ -306,6 +308,7 @@
 }
 .atlas-ref-composer .atlas-ref-pills {
     display: flex;
+    min-width: 0;
     flex-wrap: wrap;
     align-items: center;
     gap: 7px;
@@ -327,6 +330,8 @@
     background: #f2f0ff;
 }
 .atlas-ref-composer .atlas-ref-primary-button {
+    flex-shrink: 0;
+    min-width: 96px;
     background: var(--atlas-ref-accent);
     color: white;
     border-radius: 11px;
@@ -813,7 +818,11 @@
 }
 .atlas-ref-composer .research-source-popover {
     z-index: 60;
-    width: min(360px, calc(100vw - 42px));
+    right: 0;
+    left: auto;
+    width: min(360px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
 }
 
 .atlas-ref-composer .MuiInputBase-input:focus,
@@ -1018,7 +1027,7 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px 12px;
-    margin-bottom: 9px;
+    margin-bottom: 7px;
 }
 .atlas-ref-composer-label {
     font-size: 12px;
@@ -1029,6 +1038,7 @@
     display: flex;
     align-items: center;
     min-width: 0;
+    max-width: 100%;
 }
 .atlas-ref-composer-source .atlas-ref-source-trigger {
     min-height: 32px;
