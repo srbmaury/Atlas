@@ -56,7 +56,7 @@ export function AtlasMuiProvider({ children }: { children: ReactNode }) {
                     MuiCard: { styleOverrides: { root: { borderRadius: 12, boxShadow: 'none' } } },
                     MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 12 } } },
                     MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
-                    MuiDialog: { styleOverrides: { paper: { borderRadius: 14 } } } },
+                    MuiDialog: { styleOverrides: { paper: { borderRadius: 14 } } },
                 },
             }),
         [mode],

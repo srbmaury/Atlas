@@ -185,7 +185,7 @@ export function WorkspaceSidebar({
                                                 px: 1,
                                                 py: 0.5,
                                                 color: 'var(--sub)',
-                                                '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'var(--active)', color: 'white' },
+                                                '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'var(--active)', color: 'var(--brand)' },
                                                 '&:hover': { bgcolor: 'var(--hover)' },
                                             }}
                                         >
