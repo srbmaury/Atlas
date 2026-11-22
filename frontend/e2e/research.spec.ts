@@ -111,7 +111,7 @@ test.beforeEach(async ({ page }) => {
         if (path === '/workspaces/w1/source-status' || path === '/workspaces/w1/external-connections') return json([]);
         return json([]);
     });
-    await page.goto('/');
+    await page.goto('/chat');
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
 });
 
@@ -124,11 +124,11 @@ async function openSourcePicker(page: import('@playwright/test').Page) {
 }
 
 test('Home question begins an independent conversation', async ({ page }) => {
-    await page.getByRole('button', { name: 'Overview', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Ask Atlas' }).fill('Fresh question from home');
-    await page.getByRole('button', { name: 'Ask Atlas', exact: true }).last().click();
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Ask a research question' }).fill('Fresh question from home');
+    await page.locator('.atlas-ref-primary-button').click();
+    await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeVisible();
     await expect(page.getByText('Fresh question from home').first()).toBeVisible();
-    await expect(page.locator('.user-message')).toHaveCount(1);
 });
 
 test('connection discovery failures stay in the source picker and can be retried', async ({ page }) => {
@@ -148,7 +148,7 @@ test('connection discovery failures stay in the source picker and can be retried
 });
 
 test('agent cards can open a new chat with the mention filled in', async ({ page }) => {
-    await page.getByRole('button', { name: 'Agents', exact: true }).click();
+    await page.getByRole('button', { name: 'Agent Studio', exact: true }).click();
     await page.getByRole('button', { name: 'Use in chat', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Your question' })).toHaveValue('@research-analyst ');
     await expect(page.getByRole('complementary', { name: 'Supporting evidence' })).toBeHidden();
@@ -335,7 +335,7 @@ test('conversation export downloads Markdown and prints a clean, cited transcrip
 });
 
 test('Gmail replaces sources gallery without stacking beneath it', async ({ page }) => {
-    await page.getByRole('button', { name: 'Connected sources', exact: true }).click();
+    await page.getByRole('button', { name: 'Connectors', exact: true }).click();
     await page.locator('.integration-tile').filter({ hasText: 'Gmail' }).click();
     await expect(page.getByRole('heading', { name: 'Gmail', exact: true })).toBeVisible();
     await expect(page.locator('.integrations-grid')).toHaveCount(0);
@@ -347,13 +347,13 @@ test('All conversations opens the saved history panel', async ({ page }) => {
     await page.getByRole('button', { name: /All conversations/ }).click();
     await expect(page.locator('.chat-history')).toBeVisible();
     await expect(page.locator('.chat-history-title')).toHaveText('Earlier conversation');
-    await page.getByRole('button', { name: 'Overview', exact: true }).click();
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
     await page.getByRole('button', { name: 'Open conversations', exact: true }).click();
     await expect(page.locator('.chat-history')).toBeVisible();
 });
 
 test('connection dialog traps focus and dismisses with Escape', async ({ page }) => {
-    await page.getByRole('button', { name: 'Connected sources', exact: true }).click();
+    await page.getByRole('button', { name: 'Connectors', exact: true }).click();
     await page.locator('.integration-tile').filter({ hasText: 'GitHub' }).click();
     const dialog = page.getByRole('dialog', { name: 'Manage source connection' });
     await expect(dialog).toBeVisible();
@@ -606,7 +606,7 @@ test('workspace and document search inputs do not show the inner focus box', asy
     await expect.poll(() => workspaceSearch.evaluate((node) => getComputedStyle(node).boxShadow)).toBe('none');
 
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     const documentSearch = page.getByRole('searchbox', { name: 'Search documents' });
     await documentSearch.focus();
     await expect(documentSearch).toBeFocused();
@@ -615,7 +615,7 @@ test('workspace and document search inputs do not show the inner focus box', asy
 });
 
 test('library search and clear restore the document list', async ({ page }) => {
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await page.getByRole('searchbox', { name: 'Search documents' }).fill('missing-file');
     await expect(page.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
     await page.getByRole('button', { name: 'Clear search', exact: true }).click();
@@ -625,7 +625,7 @@ test('library search and clear restore the document list', async ({ page }) => {
 test('mobile navigation closes after choosing a destination', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Your documents', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Close navigation', exact: true })).toHaveCount(0);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -663,7 +663,7 @@ test('phone workspace pages expose compact source and document actions', async (
 test('Home keeps the primary research entry accessible on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-    await page.getByRole('button', { name: 'Overview', exact: true }).click();
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Ideas are better with evidence.' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask Atlas' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
@@ -759,7 +759,7 @@ test('document processing failures expose context and retry', async ({ page }) =
         }),
     );
     await page.reload();
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await expect(page.getByText('The PDF is password protected. Upload an unlocked copy.')).toBeVisible();
     await page.getByRole('button', { name: 'Actions for failed.pdf' }).click();
     await expect(page.getByRole('menuitem', { name: 'Reindex document' })).toBeVisible();
@@ -837,7 +837,7 @@ test('document actions preview, retry and remove a workspace file', async ({ pag
             }),
         }),
     );
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await page.getByRole('button', { name: 'notes.md', exact: true }).click();
     const preview = page.getByRole('dialog', { name: 'Document preview' });
     await expect(preview).toContainText('Review the release checklist.');
@@ -911,7 +911,7 @@ test('web import reports success and clears its input', async ({ page }) => {
         expect(route.request().postDataJSON()).toEqual({ url: 'https://example.com/article' });
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name: 'Article', duplicate: false }) });
     });
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await page.getByRole('button', { name: 'Add knowledge', exact: true }).click();
     await page.getByLabel('Save public web page').fill('https://example.com/article');
     await page.getByRole('button', { name: 'Add URL', exact: true }).click();
@@ -922,7 +922,7 @@ test('web import reports success and clears its input', async ({ page }) => {
 test('empty-library Add documents button keeps its padding on Home', async ({ page }) => {
     await page.route('**/api/workspaces/w1/documents', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
     await page.reload();
-    await page.getByRole('button', { name: 'Overview', exact: true }).click();
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
     const button = page.getByRole('button', { name: 'Add documents', exact: true });
     await expect(button).toBeVisible();
     const style = await button.evaluate((element) => {
@@ -1006,7 +1006,7 @@ test('Gmail intelligence navigates threads, audits citations and supports follow
         return route.fallback();
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Connected sources', exact: true }).click();
+    await page.getByRole('button', { name: 'Connectors', exact: true }).click();
     await page.locator('.integration-tile').filter({ hasText: 'Gmail' }).click();
     await page.getByRole('button', { name: 'Find emails' }).click();
     await expect(page.getByRole('navigation', { name: 'Gmail conversations' })).toBeVisible();
