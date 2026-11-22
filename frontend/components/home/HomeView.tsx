@@ -20,7 +20,7 @@ import {
     PanelRightOpen,
     PanelRightClose,
 } from 'lucide-react';
-import { Button, IconButton, Paper, TextField, Typography } from '@mui/material';
+import { Button, IconButton, Paper, Typography } from '@mui/material';
 import type { Answer, ChatSummary, Doc, Source } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { AtlasBrand } from '../ui/AtlasBrand';
@@ -167,10 +167,15 @@ export function HomeView({
 
                 <Paper component="section" elevation={0} className="atlas-ref-composer" aria-label="Ask a research question">
                     <ResearchQuestionBox
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            if (canSubmit) onAsk();
-                        }}
+                        query={query}
+                        onQueryChange={onQueryChange}
+                        onRequestSubmit={onAsk}
+                        canSubmit={canSubmit}
+                        busy={busy}
+                        inputRef={prompt}
+                        inputLabel="Ask a research question"
+                        placeholder="Ask a research question..."
+                        maxRows={7}
                         sourceSelector={sourcePicker}
                         context={
                             matchingAgents.length > 0 ? (
@@ -193,29 +198,6 @@ export function HomeView({
                                     ))}
                                 </Paper>
                             ) : null
-                        }
-                        input={
-                            <TextField
-                                inputRef={prompt}
-                                variant="standard"
-                                aria-label="Ask a research question"
-                                placeholder="Ask a research question..."
-                                value={query}
-                                onChange={(event) => onQueryChange(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                                        event.preventDefault();
-                                        if (canSubmit) onAsk();
-                                    }
-                                }}
-                                multiline
-                                minRows={1}
-                                maxRows={7}
-                                fullWidth
-                                disabled={busy}
-                                slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000 } }}
-                                sx={{ minWidth: 0, '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
-                            />
                         }
                         leadingActions={
                             <>
