@@ -1032,25 +1032,51 @@
     gap: 8px 12px;
     margin-bottom: 9px;
 }
-.atlas-ref-composer-label { font-size: 12px; font-weight: 700; color: var(--atlas-ref-muted); }
-.atlas-ref-composer-source { display: flex; align-items: center; min-width: 0; }
-.atlas-ref-composer-source .atlas-ref-source-trigger { min-height: 32px; }
-.atlas-ref-hero-theme {
-    position: absolute; right: 64px; top: 18px; z-index: 2;
-    border: 1px solid var(--atlas-ref-line); background: var(--atlas-ref-surface);
-    border-radius: 10px; color: var(--atlas-ref-ink);
+.atlas-ref-composer-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--atlas-ref-muted);
 }
-.atlas-ref-hero-theme .MuiIconButton-root { color: inherit; }
-.atlas-reference-root .sidebar.atlas-reference-sidebar { background: var(--atlas-ref-sidebar); }
-:root[data-theme='dark'] .atlas-reference-root { --atlas-ref-sidebar: #18191b; }
+.atlas-ref-composer-source {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+.atlas-ref-composer-source .atlas-ref-source-trigger {
+    min-height: 32px;
+}
+.atlas-ref-hero-theme {
+    position: absolute;
+    right: 64px;
+    top: 18px;
+    z-index: 2;
+    border: 1px solid var(--atlas-ref-line);
+    background: var(--atlas-ref-surface);
+    border-radius: 10px;
+    color: var(--atlas-ref-ink);
+}
+.atlas-ref-hero-theme .MuiIconButton-root {
+    color: inherit;
+}
+.atlas-reference-root .sidebar.atlas-reference-sidebar {
+    background: var(--atlas-ref-sidebar);
+}
+:root[data-theme='dark'] .atlas-reference-root {
+    --atlas-ref-sidebar: #18191b;
+}
 :root[data-theme='dark'] .atlas-ref-insight,
 :root[data-theme='dark'] .atlas-ref-composer,
 :root[data-theme='dark'] .atlas-ref-task,
-:root[data-theme='dark'] .atlas-ref-source-preview { box-shadow: none; }
+:root[data-theme='dark'] .atlas-ref-source-preview {
+    box-shadow: none;
+}
 :root[data-theme='dark'] .atlas-ref-insight-tabs,
 :root[data-theme='dark'] .atlas-ref-source-row,
-:root[data-theme='dark'] .atlas-ref-research-row + .atlas-ref-research-row { border-color: var(--atlas-ref-line); }
+:root[data-theme='dark'] .atlas-ref-research-row + .atlas-ref-research-row {
+    border-color: var(--atlas-ref-line);
+}
 :root[data-theme='dark'] .atlas-ref-composer-source .atlas-ref-source-trigger:hover,
 :root[data-theme='dark'] .atlas-ref-composer-source .atlas-ref-source-trigger[aria-expanded='true'] {
-    background: var(--atlas-ref-hover); border-color: #5a6169;
+    background: var(--atlas-ref-hover);
+    border-color: #5a6169;
 }
