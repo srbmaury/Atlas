@@ -782,20 +782,28 @@
     }
 }
 
-.atlas-ref-composer .research-source-picker { position:relative; }
+.atlas-ref-composer .research-source-picker {
+    position: relative;
+}
 .atlas-ref-composer .atlas-ref-source-trigger {
-    border:1px solid #e7e9f4;
-    background:#fafbff;
-    color:#29334c;
-    border-radius:22px;
-    min-height:34px;
-    padding:6px 12px;
-    display:inline-flex;
-    gap:7px;
-    align-items:center;
-    font-size:12px;
-    font-weight:500;
+    border: 1px solid #e7e9f4;
+    background: #fafbff;
+    color: #29334c;
+    border-radius: 22px;
+    min-height: 34px;
+    padding: 6px 12px;
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 500;
 }
 .atlas-ref-composer .atlas-ref-source-trigger:hover,
-.atlas-ref-composer .atlas-ref-source-trigger[aria-expanded='true'] { background:#f2f0ff; border-color:#a5a0fc; }
-.atlas-ref-composer .research-source-popover { z-index:60; width:min(360px,calc(100vw - 42px)); }
+.atlas-ref-composer .atlas-ref-source-trigger[aria-expanded='true'] {
+    background: #f2f0ff;
+    border-color: #a5a0fc;
+}
+.atlas-ref-composer .research-source-popover {
+    z-index: 60;
+    width: min(360px, calc(100vw - 42px));
+}

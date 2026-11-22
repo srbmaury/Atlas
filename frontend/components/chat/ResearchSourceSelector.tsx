@@ -65,7 +65,13 @@ export function ResearchSourceSelector({
     const summary = count === 0 ? 'No sources selected' : count === 1 && includeDocuments ? 'Documents' : `${count} sources active`;
     return (
         <div className="research-source-picker" ref={menuRef}>
-            <button type="button" className={`research-source-trigger ${compact ? 'atlas-ref-source-trigger' : ''}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}>
+            <button
+                type="button"
+                className={`research-source-trigger ${compact ? 'atlas-ref-source-trigger' : ''}`}
+                aria-expanded={open}
+                aria-haspopup="dialog"
+                onClick={() => setOpen((value) => !value)}
+            >
                 <SlidersHorizontal size={15} />
                 <span>{compact ? 'Connected Sources' : `Sources: ${summary}`}</span>
                 <ChevronDown size={14} />

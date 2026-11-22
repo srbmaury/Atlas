@@ -628,11 +628,19 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                                     driveStatus={driveStatus}
                                     sourceStatuses={sourceStatuses}
                                     connectedProviders={connectedProviders}
-                                    onToggleProvider={(provider, enabled) => setConnectedProviders((current) => enabled ? [...new Set([...current, provider])] : current.filter((item) => item !== provider))}
+                                    onToggleProvider={(provider, enabled) =>
+                                        setConnectedProviders((current) => (enabled ? [...new Set([...current, provider])] : current.filter((item) => item !== provider)))
+                                    }
                                     onSelectAll={(select) => {
                                         setIncludeDocuments(select);
                                         setConnectedGmail(select && !!gmailStatus?.connected);
-                                        setConnectedProviders(select ? RESEARCH_PROVIDERS.filter((provider) => provider === 'drive' ? !!driveStatus?.connected : sourceStatuses.some((item) => item.provider === provider && item.connected)) : []);
+                                        setConnectedProviders(
+                                            select
+                                                ? RESEARCH_PROVIDERS.filter((provider) =>
+                                                      provider === 'drive' ? !!driveStatus?.connected : sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                                  )
+                                                : [],
+                                        );
                                     }}
                                     onManage={() => navigate('sources')}
                                     onBrowseDocuments={() => setScopeOpen(true)}
