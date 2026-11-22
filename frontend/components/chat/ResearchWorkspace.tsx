@@ -501,9 +501,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             hasAskSources={props.hasAskSources}
                             hasMessages={!!props.messages.length}
                         />
-                        <p id="research-composer-help" className="caption composer-caption">
-                            {props.messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
-                        </p>
                     </div>
                     <aside id="atlas-evidence-panel" className="research-evidence-rail" aria-label="Supporting evidence" hidden={!evidenceOpen}>
                         <div className="evidence-width-controls" aria-label="Evidence panel width">
