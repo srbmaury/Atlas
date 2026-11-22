@@ -34,7 +34,7 @@ interface WorkspaceSidebarProps {
 
 const navigation = [
     { id: 'overview', label: 'Overview', icon: HomeIcon },
-    { id: 'chat', label: 'Research', icon: MessageSquare },
+    { id: 'chat', label: 'Ask Atlas', icon: MessageSquare },
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'sources', label: 'Connected sources', icon: FolderOpen },
     { id: 'agents', label: 'Agents', icon: Sparkles },

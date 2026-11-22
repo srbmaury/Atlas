@@ -22,6 +22,7 @@ export function IntegrationTile({ name, description, connected, account, icon, o
     const statusColor = !connected ? 'default' : needsAttention ? 'warning' : 'success';
     return (
         <Card
+            className="integration-tile"
             variant="outlined"
             sx={{
                 height: '100%',
