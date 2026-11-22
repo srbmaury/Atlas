@@ -45,7 +45,7 @@ import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitiv
 import { prettyBytes } from '../utils/utils';
 import { PROVIDER_LABELS } from '../lib/providers';
 
-export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { initialTab?: 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
+export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: { initialTab?: 'overview' | 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
     const { theme, toggleTheme } = useAtlasTheme();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -297,6 +297,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     // Preserve original retrieval indices so [3] always opens source 3.
 
     const title = messages.find((m) => m.role === 'user')?.content || 'New research';
+    const latestAnswer = [...messages].reverse().find((message) => message.role === 'assistant' && message.result)?.result;
+    const latestQuestion = [...messages].reverse().find((message) => message.role === 'user')?.content;
     const initials = (user?.display_name || user?.email)?.slice(0, 2).toUpperCase() || 'A';
     const uploadedDocs = uploadSummary ? docs.filter((d) => uploadSummary.ids.includes(d.id)) : [];
     const uploadStatus = uploadSummary
@@ -463,7 +465,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         );
 
     return (
-        <div className={`app atlas-v3 atlas-mui-workspace ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`app atlas-v3 atlas-mui-workspace atlas-reference-root ${sidebarCollapsed ? 'collapsed' : ''}`} data-atlas-design="reference" data-atlas-screen={tab}>
             <input
                 ref={input}
                 type="file"
@@ -507,6 +509,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onSignOut={() => void signOut()}
             />
             <main className="main">
+                {tab !== 'overview' && (
                 <header className="topbar border-b border-[var(--line)] bg-[var(--panel)]">
                     <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
                         <Menu />
@@ -540,7 +543,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                         </Link>
                     </div>
                 </header>
-                <div className={`content ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
+                )}
+                <div className={`content ${tab === 'overview' ? 'content-overview' : ''} ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
                     {error && (
                         <div className="feedback error" role="alert">
                             <AlertCircle />
@@ -614,7 +618,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                                 setHistoryOpen(true);
                                 void refreshChats();
                             }}
-                            onOpenConversation={(id) => void loadChat(id)}
+                            onOpenConversation={(id) => { navigate('chat'); void loadChat(id); }}
                             onStartChat={() => {
                                 newChat();
                                 navigate('chat');
@@ -633,6 +637,10 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                                 if (canEdit) input.current?.click();
                             }}
                             formatSize={prettyBytes}
+                            latestAnswer={latestAnswer}
+                            latestQuestion={latestQuestion}
+                            onOpenSource={openAnswerSource}
+                            onOpenMobileMenu={() => setSidebarOpen(true)}
                         />
                     )}
                     {workspaceId && tab === 'chat' && (
