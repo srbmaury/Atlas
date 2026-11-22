@@ -212,6 +212,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         if (busy || agentBusy) return;
         setSearchTarget(null);
         chatLoadSequence.invalidate();
+        setOpeningChatId(null);
         saveDraft();
         activeChat.current = null;
         setChatId(null);
