@@ -1,5 +1,5 @@
 'use client';
-import { Button, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, Typography } from '@mui/material';
 import { useState } from 'react';
 import { Mail, HardDrive, Github, NotebookPen, Hash, CalendarDays, ListTodo, Ticket, Cloud, Inbox, Building2 } from 'lucide-react';
 import { IntegrationTile } from '../IntegrationTile';
@@ -37,6 +37,11 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
     ] as const;
     const connectedProviders = providers.filter((provider) => provider[4]);
     const availableProviders = providers.filter((provider) => !provider[4]);
+    const gridColumns = {
+        display: 'grid',
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' },
+        gap: 2,
+    } as const;
     const tiles = (items: (typeof providers)[number][]) =>
         items.map(([id, name, description, Icon, connected, account]) => (
             <IntegrationTile
@@ -64,7 +69,7 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                 )}
             </div>
             {connectedProviders.length ? (
-                <div className="integrations-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{tiles(connectedProviders)}</div>
+                <Box className="integrations-grid" sx={gridColumns}>{tiles(connectedProviders)}</Box>
             ) : (
                 <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>
                     No external sources are connected yet. Choose one below to get started.
@@ -75,7 +80,7 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                     <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
                         Explore integrations
                     </Typography>
-                    <div className="integrations-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{tiles(availableProviders)}</div>
+                    <Box className="integrations-grid" sx={gridColumns}>{tiles(availableProviders)}</Box>
                 </section>
             )}
         </>
