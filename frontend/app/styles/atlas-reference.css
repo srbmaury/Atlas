@@ -162,18 +162,6 @@
     background: var(--atlas-sidebar-card);
     color: var(--atlas-sidebar-fg);
 }
-.atlas-reference-sidebar .atlas-ref-usage-track {
-    height: 5px;
-    background: #424c6c;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-top: 10px;
-}
-.atlas-reference-sidebar .atlas-ref-usage-progress {
-    height: 100%;
-    background: linear-gradient(90deg, #6551f5, #ad83ff);
-    border-radius: 8px;
-}
 .atlas-reference-sidebar .atlas-ref-sidebar-bottom {
     margin-top: auto;
     border-top: 1px solid var(--atlas-sidebar-border);
