@@ -143,7 +143,7 @@ export function WorkspaceSidebar({
                             <ListItemIcon sx={{ minWidth: 35, color: tab === id ? '#aaa8ff' : '#8ea1c7' }}>
                                 <Icon size={19} />
                             </ListItemIcon>
-                            <ListItemText primary={label} slotProps={{ primary: { fontWeight: tab === id ? 800 : 600, fontSize: 13 } }} />
+                            <ListItemText primary={label} slotProps={{ primary: { sx: { fontWeight: tab === id ? 800 : 600, fontSize: 13 } } }} />
                         </ListItemButton>
                     ))}
                 </List>
@@ -186,7 +186,7 @@ export function WorkspaceSidebar({
                                             }}
                                         >
                                             <ListItemIcon sx={{ minWidth: 28, color: '#94a6c9' }}>{item.pinned ? <Pin size={15} /> : <MessageSquare size={15} />}</ListItemIcon>
-                                            <ListItemText primary={item.title} slotProps={{ primary: { noWrap: true, fontSize: 12 } }} />
+                                            <ListItemText primary={item.title} slotProps={{ primary: { noWrap: true, sx: { fontSize: 12 } } }} />
                                         </ListItemButton>
                                         <Tooltip title="Rename conversation">
                                             <IconButton size="small" aria-label={`Rename ${item.title}`} onClick={() => onRenameChat(item)} sx={{ color: '#9aa9c6' }}>

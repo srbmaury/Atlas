@@ -108,7 +108,7 @@ export function HomeView({
                     <Typography color="text.secondary" sx={{ maxWidth: 580, mt: 2, fontSize: { xs: 14, sm: 16 }, lineHeight: 1.8 }}>
                         Ask across your documents and connected sources. Explore every answer with citations you can inspect.
                     </Typography>
-                    <Stack direction="row" gap={1.5} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
+                    <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
                         <Button variant="contained" startIcon={<Plus size={17} />} onClick={onStartChat}>
                             New research
                         </Button>
