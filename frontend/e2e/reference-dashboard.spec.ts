@@ -44,6 +44,14 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('.atlas-ref-task')).toHaveCount(4);
+    await expect(page.getByRole('tab', { name: 'Answer' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Sources/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Notes' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'More research tools' }).click();
+    await page.getByRole('menuitem', { name: 'Quick notes' }).click();
+    await expect(page.getByRole('textbox', { name: 'Quick notes' })).toBeVisible();
+    await page.getByRole('tab', { name: /Sources/ }).click();
+    await page.getByRole('tab', { name: 'Answer' }).click();
     await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'Documents' })).toBeChecked();
@@ -79,6 +87,9 @@ test('reference research dashboard renders three columns and remains usable on a
     await workspaceDialog.getByRole('button', { name: 'Close dialog' }).click();
 
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Ask Atlas' }).click();
+    const researchInput = page.getByRole('textbox', { name: 'Your question' });
+    await researchInput.focus();
+    expect(await researchInput.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none');
     await page.getByRole('button', { name: /Search documents or ask a question/ }).click();
     const searchDialog = page.getByRole('dialog', { name: 'Search & commands' });
     await expect(searchDialog).toBeVisible();
