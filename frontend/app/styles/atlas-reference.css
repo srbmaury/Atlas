@@ -435,7 +435,20 @@
     flex-direction: column;
 }
 .atlas-ref-insight-tabs {
+    display: flex;
+    align-items: center;
     border-bottom: 1px solid #e8eaf4;
+    padding-right: 8px;
+}
+.atlas-ref-insight-tabs .MuiTabs-root {
+    min-width: 0;
+    flex: 1;
+}
+.atlas-ref-insight-tabs > .MuiButton-root {
+    flex: 0 0 auto;
+    min-width: 78px;
+    padding-inline: 8px;
+    font-size: 11px;
 }
 .atlas-ref-insight-tabs .MuiTabs-indicator {
     height: 3px;

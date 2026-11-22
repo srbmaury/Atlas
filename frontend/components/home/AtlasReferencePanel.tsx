@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, IconButton, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
-import { ArrowUpRight, BookOpenText, Check, Copy, Download, FileText, Layers, StickyNote, Sparkles } from 'lucide-react';
+import { Button, IconButton, Menu, MenuItem, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
+import { ArrowUpRight, BookOpenText, Check, Copy, Download, FileText, Layers, MoreHorizontal, StickyNote, Sparkles } from 'lucide-react';
 import type { Answer, Source } from '../../lib/types';
 import { sourceDisplayName, sourceLocation, visibleEvidence } from '../../lib/evidence';
 import { ResearchAnswer } from '../chat/ResearchAnswer';
@@ -25,6 +25,7 @@ export function AtlasReferencePanel({
     onManageSources: () => void;
 }) {
     const [tab, setTab] = useState<PanelTab>('answer');
+    const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null);
     const [notes, setNotes] = useState('');
     const [copied, setCopied] = useState(false);
     const sources = visibleEvidence(answer);
@@ -50,12 +51,34 @@ export function AtlasReferencePanel({
     return (
         <aside className="atlas-ref-insight" aria-label="Research insights">
             <div className="atlas-ref-insight-tabs">
-                <Tabs value={tab} onChange={(_event, value: PanelTab) => setTab(value)} variant="scrollable" scrollButtons="auto" aria-label="Research insights tabs">
+                <Tabs
+                    value={tab === 'answer' || tab === 'sources' ? tab : false}
+                    onChange={(_event, value: PanelTab) => setTab(value)}
+                    aria-label="Primary research views"
+                >
                     <Tab value="answer" icon={<Sparkles size={16} />} iconPosition="start" label="Answer" />
                     <Tab value="sources" icon={<BookOpenText size={16} />} iconPosition="start" label={`Sources ${sources.length}`} />
-                    <Tab value="notes" icon={<StickyNote size={16} />} iconPosition="start" label="Notes" />
-                    <Tab value="artifacts" icon={<Layers size={16} />} iconPosition="start" label="Artifacts" />
                 </Tabs>
+                <Button
+                    size="small"
+                    color="inherit"
+                    variant={tab === 'notes' || tab === 'artifacts' ? 'outlined' : 'text'}
+                    startIcon={<MoreHorizontal size={16} />}
+                    aria-label="More research tools"
+                    aria-haspopup="menu"
+                    aria-expanded={Boolean(toolsAnchor)}
+                    onClick={(event) => setToolsAnchor(event.currentTarget)}
+                >
+                    {tab === 'notes' ? 'Notes' : tab === 'artifacts' ? 'Export' : 'More'}
+                </Button>
+                <Menu anchorEl={toolsAnchor} open={Boolean(toolsAnchor)} onClose={() => setToolsAnchor(null)} slotProps={{ list: { 'aria-label': 'Research tools' } }}>
+                    <MenuItem selected={tab === 'notes'} onClick={() => { setTab('notes'); setToolsAnchor(null); }}>
+                        <StickyNote size={17} className="mr-2" /> Quick notes
+                    </MenuItem>
+                    <MenuItem selected={tab === 'artifacts'} onClick={() => { setTab('artifacts'); setToolsAnchor(null); }}>
+                        <Layers size={17} className="mr-2" /> Exports & artifacts
+                    </MenuItem>
+                </Menu>
             </div>
 
             <div className="atlas-ref-insight-body">
