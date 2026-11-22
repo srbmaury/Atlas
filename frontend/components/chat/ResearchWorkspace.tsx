@@ -248,8 +248,10 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     <Menu />
                 </button>
                 <div className="focus-chat-title">
-                    <Typography component="h1" variant="subtitle1" sx={{ fontWeight: 800 }} title={props.title}>{props.title}</Typography>
-                    <Chip label="Research" variant="outlined" color="primary" size="small"/>
+                    <Typography component="h1" variant="subtitle1" sx={{ fontWeight: 800 }} title={props.title}>
+                        {props.title}
+                    </Typography>
+                    <Chip label="Research" variant="outlined" color="primary" size="small" />
                 </div>
                 <details
                     ref={mobileActions}
@@ -289,17 +291,27 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <Typography component="h1" variant="h5" title={props.title} sx={{ fontWeight: 800, lineHeight: 1.3 }}>{props.title}</Typography>
-                    <Typography color="text.secondary" variant="body2">Answers grounded in your knowledge, with citations you can verify.</Typography>
+                    <Typography component="h1" variant="h5" title={props.title} sx={{ fontWeight: 800, lineHeight: 1.3 }}>
+                        {props.title}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                        Answers grounded in your knowledge, with citations you can verify.
+                    </Typography>
                 </div>
                 <div className="actions">
-                    <Button size="small" variant="outlined" startIcon={<MessageSquare size={15}/>} onClick={props.onToggleHistory}>{props.historyOpen ? 'Hide history' : 'History'}</Button>
-                    <Button size="small" variant="outlined" className="hide-small" startIcon={props.copied ? <Check size={16}/> : <Copy size={16}/>} disabled={!props.canCopy} onClick={props.onCopy}>{props.copied ? 'Copied' : 'Copy chat'}</Button>
+                    <Button size="small" variant="outlined" startIcon={<MessageSquare size={15} />} onClick={props.onToggleHistory}>
+                        {props.historyOpen ? 'Hide history' : 'History'}
+                    </Button>
+                    <Button size="small" variant="outlined" className="hide-small" startIcon={props.copied ? <Check size={16} /> : <Copy size={16} />} disabled={!props.canCopy} onClick={props.onCopy}>
+                        {props.copied ? 'Copied' : 'Copy chat'}
+                    </Button>
                     <details ref={desktopExport} className="conversation-export">
                         <summary className="btn">Export</summary>
                         <div className="focus-chat-menu">{exportActions}</div>
                     </details>
-                    <Button size="small" variant="contained" startIcon={<Plus size={17}/>} aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>New chat</Button>
+                    <Button size="small" variant="contained" startIcon={<Plus size={17} />} aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
+                        New chat
+                    </Button>
                 </div>
             </div>
             {props.userMode !== 'ai' && (

@@ -51,16 +51,28 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
     return (
         <>
             <div className="mb-5 flex flex-wrap items-center gap-3">
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>Your connections</Typography>
-                <Chip size="small" color="success" label={`${connectedProviders.length} connected`} variant="outlined"/>
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
+                    Your connections
+                </Typography>
+                <Chip size="small" color="success" label={`${connectedProviders.length} connected`} variant="outlined" />
                 {availableProviders.length > 0 && (
-                    <Button component="a" href="#atlas-provider-list" variant="outlined" size="small">Browse integrations</Button>
+                    <Button component="a" href="#atlas-provider-list" variant="outlined" size="small">
+                        Browse integrations
+                    </Button>
                 )}
             </div>
-            {connectedProviders.length ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{tiles(connectedProviders)}</div> : <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>No external sources are connected yet. Choose one below to get started.</Typography>}
+            {connectedProviders.length ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{tiles(connectedProviders)}</div>
+            ) : (
+                <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>
+                    No external sources are connected yet. Choose one below to get started.
+                </Typography>
+            )}
             {availableProviders.length > 0 && (
                 <section className="mt-8" id="atlas-provider-list" aria-label="Available integrations">
-                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>Explore integrations</Typography>
+                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+                        Explore integrations
+                    </Typography>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{tiles(availableProviders)}</div>
                 </section>
             )}

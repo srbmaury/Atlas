@@ -505,9 +505,18 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                         variant="outlined"
                         color="inherit"
                         onClick={() => setSearchOpen(true)}
-                        startIcon={<Search size={17}/>}
+                        startIcon={<Search size={17} />}
                         endIcon={<kbd className="key">⌘ K</kbd>}
-                        sx={{ flex: '1 1 360px', maxWidth: 560, minWidth: 120, justifyContent: 'space-between', color: 'text.secondary', borderColor: 'divider', bgcolor: 'action.hover', '&:hover': { borderColor: 'primary.main' } }}
+                        sx={{
+                            flex: '1 1 360px',
+                            maxWidth: 560,
+                            minWidth: 120,
+                            justifyContent: 'space-between',
+                            color: 'text.secondary',
+                            borderColor: 'divider',
+                            bgcolor: 'action.hover',
+                            '&:hover': { borderColor: 'primary.main' },
+                        }}
                     >
                         <span className="truncate">Search documents or ask a question…</span>
                     </Button>

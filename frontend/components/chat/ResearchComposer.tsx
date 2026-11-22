@@ -26,9 +26,23 @@ interface ResearchComposerProps {
 }
 
 export function ResearchComposer({
-    query, mentionAgents = [], onChange, onSubmit, onUpload, onBrowseLibrary,
-    canUpload, uploading, busy, hasAskSources, hasMessages, selectedDocuments,
-    pendingDocuments, onRemoveDocument, uploadProgress, uploadResult, onDismissUploadResult,
+    query,
+    mentionAgents = [],
+    onChange,
+    onSubmit,
+    onUpload,
+    onBrowseLibrary,
+    canUpload,
+    uploading,
+    busy,
+    hasAskSources,
+    hasMessages,
+    selectedDocuments,
+    pendingDocuments,
+    onRemoveDocument,
+    uploadProgress,
+    uploadResult,
+    onDismissUploadResult,
 }: ResearchComposerProps) {
     const voice = useVoiceInput();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -44,37 +58,92 @@ export function ResearchComposer({
     return (
         <form
             className="composer research-composer-v2 flex w-full flex-col gap-3 rounded-2xl p-3"
-            onSubmit={(event) => { event.preventDefault(); if (canSubmit) onSubmit(); }}
+            onSubmit={(event) => {
+                event.preventDefault();
+                if (canSubmit) onSubmit();
+            }}
         >
             {(selectedDocuments.length > 0 || pendingDocuments.length > 0) && (
                 <div className="flex flex-wrap gap-1.5" aria-label="Question context">
                     {selectedDocuments.map((doc) => (
-                        <Chip key={doc.id} size="small" icon={<FileText size={14}/>} label={doc.name} title={doc.name}
-                            onDelete={() => onRemoveDocument(doc.id)} sx={{ maxWidth: 230 }}/>
+                        <Chip key={doc.id} size="small" icon={<FileText size={14} />} label={doc.name} title={doc.name} onDelete={() => onRemoveDocument(doc.id)} sx={{ maxWidth: 230 }} />
                     ))}
                     {pendingDocuments.map((doc) => (
-                        <Chip key={doc.id} size="small" variant="outlined" color={doc.status === 'failed' ? 'error' : 'warning'}
-                            icon={<FileText size={14}/>} label={`${doc.name} · ${doc.status === 'failed' ? 'Indexing failed' : doc.status === 'processing' ? 'Indexing…' : 'Queued'}`}
-                            title={doc.name} sx={{ maxWidth: 250 }}/>
+                        <Chip
+                            key={doc.id}
+                            size="small"
+                            variant="outlined"
+                            color={doc.status === 'failed' ? 'error' : 'warning'}
+                            icon={<FileText size={14} />}
+                            label={`${doc.name} · ${doc.status === 'failed' ? 'Indexing failed' : doc.status === 'processing' ? 'Indexing…' : 'Queued'}`}
+                            title={doc.name}
+                            sx={{ maxWidth: 250 }}
+                        />
                     ))}
                 </div>
             )}
-            {uploadProgress && <Alert severity="info" icon={<CircularProgress size={16}/>} sx={{ py: 0 }}>{uploadProgress}</Alert>}
-            {!uploadProgress && uploadResult && <Alert severity="success" onClose={onDismissUploadResult} sx={{ py: 0 }}>{uploadResult}</Alert>}
-            {matchingAgents.length > 0 && <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, borderRadius: 2 }}>
-                {matchingAgents.map((agent) => <Button key={agent.id} size="small" fullWidth role="option" aria-selected={false}
-                    onClick={() => { onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' ')); textareaRef.current?.focus(); }}
-                    sx={{ display: 'flex', justifyContent: 'flex-start' }}>{agent.name} · {agent.handle}</Button>)}
-            </Paper>}
+            {uploadProgress && (
+                <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ py: 0 }}>
+                    {uploadProgress}
+                </Alert>
+            )}
+            {!uploadProgress && uploadResult && (
+                <Alert severity="success" onClose={onDismissUploadResult} sx={{ py: 0 }}>
+                    {uploadResult}
+                </Alert>
+            )}
+            {matchingAgents.length > 0 && (
+                <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, borderRadius: 2 }}>
+                    {matchingAgents.map((agent) => (
+                        <Button
+                            key={agent.id}
+                            size="small"
+                            fullWidth
+                            role="option"
+                            aria-selected={false}
+                            onClick={() => {
+                                onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                                textareaRef.current?.focus();
+                            }}
+                            sx={{ display: 'flex', justifyContent: 'flex-start' }}
+                        >
+                            {agent.name} · {agent.handle}
+                        </Button>
+                    ))}
+                </Paper>
+            )}
             <div className="flex w-full min-w-0 items-end gap-2">
                 <Tooltip title="Add documents">
-                    <IconButton aria-label="Add context" aria-haspopup="menu" aria-expanded={!!menuAnchor} onClick={(event) => setMenuAnchor(event.currentTarget)}
-                        sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: .5 }}><Plus size={19}/></IconButton>
+                    <IconButton
+                        aria-label="Add context"
+                        aria-haspopup="menu"
+                        aria-expanded={!!menuAnchor}
+                        onClick={(event) => setMenuAnchor(event.currentTarget)}
+                        sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: 0.5 }}
+                    >
+                        <Plus size={19} />
+                    </IconButton>
                 </Tooltip>
-                <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}
-                    slotProps={{ list: { 'aria-label': 'Add context' } }}>
-                    <MenuItem disabled={!canUpload || uploading} onClick={() => { setMenuAnchor(null); onUpload(); }}><FileText size={17} className="mr-3"/>Upload a document</MenuItem>
-                    <MenuItem onClick={() => { setMenuAnchor(null); onBrowseLibrary(); }}><FolderOpen size={17} className="mr-3"/>Choose from library</MenuItem>
+                <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
+                    <MenuItem
+                        disabled={!canUpload || uploading}
+                        onClick={() => {
+                            setMenuAnchor(null);
+                            onUpload();
+                        }}
+                    >
+                        <FileText size={17} className="mr-3" />
+                        Upload a document
+                    </MenuItem>
+                    <MenuItem
+                        onClick={() => {
+                            setMenuAnchor(null);
+                            onBrowseLibrary();
+                        }}
+                    >
+                        <FolderOpen size={17} className="mr-3" />
+                        Choose from library
+                    </MenuItem>
                 </Menu>
                 <TextField
                     multiline
@@ -99,19 +168,26 @@ export function ResearchComposer({
                 />
                 <Tooltip title={voice.supported ? 'Voice input' : 'Voice input is unavailable'}>
                     <span>
-                        <IconButton aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'} aria-pressed={voice.listening}
+                        <IconButton
+                            aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
+                            aria-pressed={voice.listening}
                             disabled={busy || (!voice.supported && !voice.listening)}
-                            onClick={() => voice.listening ? voice.stopListening() : voice.startListening(addTranscript)} sx={{ mb: .5 }}>
-                            {voice.listening ? <MicOff size={19}/> : <Mic size={19}/>}
+                            onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                            sx={{ mb: 0.5 }}
+                        >
+                            {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
                         </IconButton>
                     </span>
                 </Tooltip>
-                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained"
-                    sx={{ minWidth: 42, height: 42, px: 1, mb: .5 }}>
-                    {busy ? <CircularProgress size={19} color="inherit"/> : <ArrowUp size={19}/>}
+                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 42, height: 42, px: 1, mb: 0.5 }}>
+                    {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
                 </Button>
             </div>
-            {(voice.listening || voice.error) && <Typography variant="caption" role={voice.error ? 'alert' : 'status'} color={voice.error ? 'error' : 'text.secondary'}>{voice.error || 'Listening…'}</Typography>}
+            {(voice.listening || voice.error) && (
+                <Typography variant="caption" role={voice.error ? 'alert' : 'status'} color={voice.error ? 'error' : 'text.secondary'}>
+                    {voice.error || 'Listening…'}
+                </Typography>
+            )}
         </form>
     );
 }
