@@ -62,7 +62,7 @@ export function HomeView({
 }: HomeViewProps) {
     const voice = useVoiceInput();
     const questionInputRef = useRef<HTMLTextAreaElement>(null);
-    const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
+    const mention = /(?:^|\s)@([a-z0-9-]*)$/i.exec(query);
     const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     const selectedAgent = mentionAgents.find((agent) => query.toLowerCase().includes(agent.handle + ' '));
 
