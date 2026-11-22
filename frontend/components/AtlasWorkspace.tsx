@@ -1,7 +1,7 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
-import { Avatar, Button, IconButton, Tooltip } from '@mui/material';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from './auth/sessionActions';
 import { refreshDocuments, createDocumentActions } from './documents/documentActions';
 import { createConversationActions } from './chat/conversationActions';
