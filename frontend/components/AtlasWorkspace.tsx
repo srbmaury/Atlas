@@ -27,6 +27,7 @@ import '../app/rebuild.css';
 import { ResearchAnswer } from './chat/ResearchAnswer';
 import { EvidenceInspector } from './chat/EvidenceInspector';
 import { ResearchWorkspace } from './chat/ResearchWorkspace';
+import { ResearchSourceSelector } from './chat/ResearchSourceSelector';
 
 import { WorkspaceSearchDialog } from './layout/WorkspaceSearchDialog';
 import { WorkspaceManagerDialog } from './layout/WorkspaceManagerDialog';
@@ -43,7 +44,7 @@ import { AuthView } from './auth/AuthView';
 import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitives';
 
 import { prettyBytes } from '../utils/utils';
-import { PROVIDER_LABELS } from '../lib/providers';
+import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../lib/providers';
 
 export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: { initialTab?: 'overview' | 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
     const { theme, toggleTheme } = useAtlasTheme();
@@ -616,6 +617,30 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             chats={chats}
                             docs={docs}
                             onChooseSources={() => setScopeOpen(true)}
+                            sourcePicker={
+                                <ResearchSourceSelector
+                                    compact
+                                    includeDocuments={includeDocuments}
+                                    onIncludeDocuments={setIncludeDocuments}
+                                    gmailStatus={gmailStatus}
+                                    connectedGmail={connectedGmail}
+                                    onIncludeGmail={setConnectedGmail}
+                                    driveStatus={driveStatus}
+                                    sourceStatuses={sourceStatuses}
+                                    connectedProviders={connectedProviders}
+                                    onToggleProvider={(provider, enabled) => setConnectedProviders((current) => enabled ? [...new Set([...current, provider])] : current.filter((item) => item !== provider))}
+                                    onSelectAll={(select) => {
+                                        setIncludeDocuments(select);
+                                        setConnectedGmail(select && !!gmailStatus?.connected);
+                                        setConnectedProviders(select ? RESEARCH_PROVIDERS.filter((provider) => provider === 'drive' ? !!driveStatus?.connected : sourceStatuses.some((item) => item.provider === provider && item.connected)) : []);
+                                    }}
+                                    onManage={() => navigate('sources')}
+                                    onBrowseDocuments={() => setScopeOpen(true)}
+                                    selectedCount={selected.length}
+                                    sourceLoadFailed={sourceLoadFailed}
+                                    onRetrySources={() => void refreshConnections()}
+                                />
+                            }
                             onOpenSources={() => navigate('sources')}
                             onOpenConversations={() => {
                                 navigate('chat');

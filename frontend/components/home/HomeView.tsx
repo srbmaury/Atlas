@@ -39,6 +39,7 @@ interface HomeViewProps {
     chats: ChatSummary[];
     docs: Doc[];
     onChooseSources: () => void;
+    sourcePicker?: ReactNode;
     onOpenSources: () => void;
     onOpenConversations: () => void;
     onOpenConversation: (id: string) => void;
@@ -81,6 +82,7 @@ export function HomeView({
     chats,
     docs,
     onChooseSources,
+    sourcePicker,
     onOpenSources,
     onOpenConversations,
     onOpenConversation,
@@ -201,9 +203,11 @@ export function HomeView({
                                 >
                                     <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
                                 </button>
-                                <button className="atlas-ref-pill" type="button" onClick={onOpenSources}>
-                                    <SlidersHorizontal size={16} /> Connected Sources <ChevronDown size={13} />
-                                </button>
+                                {sourcePicker || (
+                                    <button className="atlas-ref-pill" type="button" onClick={onChooseSources}>
+                                        <SlidersHorizontal size={16} /> Connected Sources <ChevronDown size={13} />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-slate-500" title="Atlas uses your chosen sources">

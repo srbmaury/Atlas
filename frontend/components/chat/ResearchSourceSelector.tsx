@@ -6,6 +6,7 @@ import type { ConnectedSourceStatus, ResearchProvider } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
 
 interface ResearchSourceSelectorProps {
+    compact?: boolean;
     includeDocuments: boolean;
     onIncludeDocuments: (value: boolean) => void;
     gmailStatus: GmailStatus | null;
@@ -24,6 +25,7 @@ interface ResearchSourceSelectorProps {
 }
 
 export function ResearchSourceSelector({
+    compact = false,
     includeDocuments,
     onIncludeDocuments,
     gmailStatus,
@@ -63,9 +65,9 @@ export function ResearchSourceSelector({
     const summary = count === 0 ? 'No sources selected' : count === 1 && includeDocuments ? 'Documents' : `${count} sources active`;
     return (
         <div className="research-source-picker" ref={menuRef}>
-            <button type="button" className="research-source-trigger" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}>
+            <button type="button" className={`research-source-trigger ${compact ? 'atlas-ref-source-trigger' : ''}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}>
                 <SlidersHorizontal size={15} />
-                <span>Sources: {summary}</span>
+                <span>{compact ? 'Connected Sources' : `Sources: ${summary}`}</span>
                 <ChevronDown size={14} />
             </button>
             {open && (
