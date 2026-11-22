@@ -28,66 +28,8 @@
     background: var(--active);
     border-color: var(--brand);
 }
-.document-search {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    border: 1px solid var(--line2);
-    border-radius: 8px;
-    padding: 0 12px;
-    background: var(--panel);
-}
-.document-search svg {
-    width: 16px;
-    height: 16px;
-    color: var(--sub);
-}
-.library-bar .document-search input {
-    border: 0;
-    background: none;
-    padding: 10px 0;
-    min-width: 220px;
-    font-size: 12px;
-}
 .library-bar {
     align-items: center;
-}
-.document-name {
-    border: 0;
-    background: none;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-align: left;
-    max-width: 430px;
-    padding: 0;
-}
-.document-name > span:last-child {
-    min-width: 0;
-}
-.document-name strong {
-    display: block;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 330px;
-}
-.document-name .document-error {
-    display: block;
-    font-size: 10px;
-    color: #be6859;
-    margin-top: 5px;
-    max-width: 300px;
-    overflow-wrap: anywhere;
-}
-.document-table td {
-    white-space: nowrap;
-}
-.document-table td:first-child {
-    min-width: 260px;
 }
 .status {
     display: inline-flex;
