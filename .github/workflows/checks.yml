@@ -37,15 +37,17 @@ jobs:
             - name: Install frontend
               working-directory: frontend
               run: npm ci
+            # Check unresolved imports before the formatting gate so a style
+            # failure cannot mask a runtime-breaking TypeScript error.
+            - name: Typecheck
+              working-directory: frontend
+              run: npm run typecheck
             - name: Check frontend formatting
               working-directory: frontend
               run: npm run format:check
             - name: Conversation unit tests
               working-directory: frontend
               run: node --experimental-strip-types --test tests/*.test.mjs
-            - name: Typecheck
-              working-directory: frontend
-              run: npm run typecheck
             - name: Build
               working-directory: frontend
               run: npm run build
