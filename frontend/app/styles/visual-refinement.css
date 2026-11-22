@@ -1068,10 +1068,9 @@
     }
 }
 
-/* Keep the source picker visually attached to the Ask Atlas question box. */
 .atlas-v3 .content-research .chat-workspace .research-source-toolbar {
     margin-top: 0;
-    margin-bottom: -6px;
+    margin-bottom: 6px;
 }
 .atlas-v3 .content-research .chat-workspace .research-composer-v2 {
     margin-top: 0;
