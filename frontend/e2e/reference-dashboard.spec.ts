@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test('reference research dashboard renders three columns and remains usable on a phone', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 1672, height: 942 });
+    let releaseSavedConversation: (() => void) | undefined;
+    const savedConversationGate = new Promise<void>((resolve) => { releaseSavedConversation = resolve; });
     await page.route('**/api/**', async (route) => {
         const url = new URL(route.request().url());
         const path = url.pathname.replace(/^\/api/, '');
@@ -17,7 +19,7 @@ test('reference research dashboard renders three columns and remains usable on a
         if (path === '/workspaces/w1/agents') return reply([]);
         if (path === '/workspaces/w1/conversations') return reply([{ id: 'saved', title: 'Renewable energy growth in Europe', updated: Math.floor(Date.now() / 1000) }]);
         if (path === '/workspaces/w1/conversations/saved') {
-            await new Promise((resolve) => setTimeout(resolve, 350));
+            await savedConversationGate;
             return reply({
             id: 'saved',
             title: 'Renewable energy growth in Europe',
@@ -48,6 +50,7 @@ test('reference research dashboard renders three columns and remains usable on a
 
     await page.locator('.atlas-ref-research-row').filter({ hasText: 'Renewable energy growth in Europe' }).click();
     await expect(page.getByText('Opening conversation…')).toBeVisible();
+    releaseSavedConversation?.();
     await expect(page.getByRole('heading', { name: 'Research answer' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Open source 1/ }).first()).toBeVisible();
 
