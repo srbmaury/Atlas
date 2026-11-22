@@ -924,12 +924,22 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    min-height: 200px;
-    padding: 30px 20px;
+    min-height: 230px;
+    padding: 34px 24px;
     text-align: center;
     border: 1px dashed var(--line);
     border-radius: 16px;
+    background: var(--panel);
     color: var(--sub);
+}
+.libraryEmptyIcon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--active);
+    color: var(--brand);
 }
 .libraryEmpty h2 {
     margin: 0;
@@ -937,9 +947,13 @@
     font-size: 19px;
 }
 .libraryEmpty p {
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     max-width: 380px;
     line-height: 1.55;
+}
+.libraryEmpty .MuiButton-root {
+    min-width: 154px;
+    margin-top: 5px;
 }
 .studio button:focus-visible,
 .studio input:not(.MuiInputBase-input):focus-visible,

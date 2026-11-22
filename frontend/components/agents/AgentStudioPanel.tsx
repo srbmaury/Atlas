@@ -92,6 +92,7 @@ function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }
 export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId: string; canEdit: boolean; onUse?: (handle: string) => void }) {
     const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents`;
     const [agents, setAgents] = useState<Agent[]>([]);
+    const [agentsLoadState, setAgentsLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
     const [selected, setSelected] = useState('');
     const [selectedRun, setSelectedRun] = useState('');
     const [name, setName] = useState('');
@@ -114,11 +115,20 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
     const [detailTab, setDetailTab] = useState<'answer' | 'evidence' | 'graph'>('answer');
 
     const loadAgents = useCallback(async () => {
-        const response = await fetch(base, { credentials: 'same-origin' });
-        if (!response.ok) throw new Error('Unable to load agents.');
-        const items: Agent[] = await response.json();
-        setAgents(items);
-        setSelected((current) => current || items[0]?.id || '');
+        setAgentsLoadState('loading');
+        try {
+            const response = await fetch(base, { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) throw new Error(`Unable to load agents (HTTP ${response.status}).`);
+            const items: unknown = await response.json();
+            if (!Array.isArray(items)) throw new Error('The agents response was not a list.');
+            const loaded = items as Agent[];
+            setAgents(loaded);
+            setSelected((current) => (loaded.some((agent) => agent.id === current) ? current : loaded[0]?.id || ''));
+            setAgentsLoadState('ready');
+        } catch (error) {
+            setAgentsLoadState('error');
+            throw error;
+        }
     }, [base]);
 
     const loadRuns = useCallback(
@@ -330,9 +340,26 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                         sx={{ fontSize: 14, '& input': { outline: 'none !important', boxShadow: 'none !important' } }}
                     />
                 </div>
-                <Chip variant="outlined" label={`${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`} />
+                <Chip
+                    variant="outlined"
+                    label={agentsLoadState === 'loading' ? 'Loading agents…' : agentsLoadState === 'error' ? 'Agents unavailable' : `${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`}
+                />
+                <Button size="small" variant="text" onClick={() => void loadAgents().catch((err) => setError(err.message))} disabled={agentsLoadState === 'loading'}>Refresh</Button>
             </div>
-            {filteredAgents.length ? (
+            {agentsLoadState === 'loading' && agents.length === 0 ? (
+                <div className={styles.libraryEmpty} role="status">
+                    <Bot size={26} aria-hidden="true" />
+                    <h2>Loading your research agents…</h2>
+                    <p>Checking the selected workspace for saved agents.</p>
+                </div>
+            ) : agentsLoadState === 'error' && agents.length === 0 ? (
+                <div className={styles.libraryEmpty} role="alert">
+                    <Bot size={26} aria-hidden="true" />
+                    <h2>Couldn’t load research agents</h2>
+                    <p>The agent list could not be retrieved. Your existing agents may still be available.</p>
+                    <Button variant="outlined" onClick={() => void loadAgents().catch((err) => setError(err.message))}>Retry loading agents</Button>
+                </div>
+            ) : filteredAgents.length ? (
                 <div className={styles.libraryGrid}>
                     {filteredAgents.map((agent) => {
                         const scope = agent.source_config || {};
@@ -438,8 +465,8 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                 </div>
             ) : (
                 <div className={styles.libraryEmpty} role="status">
-                    <Bot size={28} aria-hidden="true" />
-                    <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents yet'}</h2>
+                    <span className={styles.libraryEmptyIcon}><Bot size={24} aria-hidden="true" /></span>
+                    <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents in this workspace'}</h2>
                     <p>
                         {agents.length
                             ? 'Try a different name or purpose to find an agent.'
@@ -452,9 +479,9 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                             Clear search
                         </button>
                     ) : canEdit ? (
-                        <button className={styles.primaryButton} onClick={() => setShowCreate(true)}>
-                            <Plus size={16} /> Create agent
-                        </button>
+                        <Button variant="contained" startIcon={<Plus size={17} />} onClick={() => setShowCreate(true)}>
+                            Create agent
+                        </Button>
                     ) : null}
                 </div>
             )}
