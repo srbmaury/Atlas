@@ -415,8 +415,8 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         newChat,
     });
 
-    function askWithAgent(question?: string, fromOverview = false) {
-        if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview);
+    function askWithAgent(question?: string, fromOverview = false, stayOnOverview = false) {
+        if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview, stayOnOverview);
     }
 
     const { switchChat } = useConversationNavigation({
@@ -482,8 +482,9 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 onClose={() => setSidebarOpen(false)}
                 onNewChat={() => newChat()}
                 busy={busy}
+                collapsed={sidebarCollapsed}
                 onCollapse={() => {
-                    setSidebarCollapsed(true);
+                    setSidebarCollapsed((collapsed) => !collapsed);
                     setSidebarOpen(false);
                 }}
                 onWorkspaceSettings={() => setNewWorkspace(true)}
@@ -603,8 +604,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             mentionAgents={mentionAgents}
                             onQueryChange={setQuery}
                             onAsk={() => {
-                                navigate('chat');
-                                void askWithAgent(query, true);
+                                void askWithAgent(query, true, true);
                             }}
                             hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}

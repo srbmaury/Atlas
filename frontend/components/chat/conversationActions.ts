@@ -153,7 +153,7 @@ export function createConversationActions({
         else if (deleted.length) setNotice(`Deleted ${deleted.length} conversation(s).`);
     }
 
-    async function ask(question = query, startNewConversation = false) {
+    async function ask(question = query, startNewConversation = false, stayOnOverview = false) {
         if (!workspaceId || !question.trim() || busy) return;
         if (!hasAskSources) return;
         const controller = new AbortController();
@@ -171,7 +171,7 @@ export function createConversationActions({
         const plan = conversationPlan(startNewConversation ? 'new' : 'followup', activeChat.current, chatMessages.current, question);
         const history = plan.history;
         setQuery('');
-        setTab('chat');
+        if (!stayOnOverview) setTab('chat');
         setError('');
         setBusy(true);
         setAnswerProgress('Searching your sources…');

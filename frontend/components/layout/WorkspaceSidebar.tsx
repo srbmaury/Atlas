@@ -9,6 +9,7 @@ import { AtlasBrand } from '../ui/AtlasBrand';
 type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
 interface WorkspaceSidebarProps {
     open: boolean;
+    collapsed: boolean;
     onCollapse: () => void;
     onClose: () => void;
     onNewChat: () => void;
@@ -41,7 +42,7 @@ const mainNavigation = [
 ] as const;
 
 export function WorkspaceSidebar({
-    open, onCollapse, onClose, onNewChat, busy, onWorkspaceSettings, workspace, workspaceCount,
+    open, collapsed, onCollapse, onClose, onNewChat, busy, onWorkspaceSettings, workspace, workspaceCount,
     tab, onNavigate, chats, activeChatId, onOpenChat, onAllChats, onRenameChat,
     onDeleteChat, readyCount, storageLabel, initials, email, displayName, onSignOut,
 }: WorkspaceSidebarProps) {
@@ -57,8 +58,8 @@ export function WorkspaceSidebar({
                     <AtlasBrand size={38}/>
                     <span>Atlas</span>
                     <div className="atlas-ref-brand-actions">
-                        <Tooltip title="Collapse sidebar">
-                            <IconButton className="sidebar-collapse" onClick={onCollapse} size="small" aria-label="Collapse sidebar" sx={{ color:'#aeb8d3' }}><PanelLeftClose size={18}/></IconButton>
+                        <Tooltip title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                            <IconButton className="sidebar-collapse" onClick={onCollapse} size="small" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} sx={{ color:'#aeb8d3' }}><PanelLeftClose size={18}/></IconButton>
                         </Tooltip>
                         <IconButton className="atlas-ref-close-mobile" onClick={onClose} size="small" aria-label="Close sidebar" sx={{ color:'#cbd4ed' }}><X size={19}/></IconButton>
                     </div>
@@ -114,7 +115,7 @@ export function WorkspaceSidebar({
                         <span className="rounded-full bg-[#5948c4] px-2 py-0.5 text-white">Workspace</span><span>{readyCount} ready</span>
                     </div>
                     <div className="mt-3 flex justify-between text-xs text-[#b8c3de]"><span>Document storage</span><span>{storageLabel}</span></div>
-                    <div className="atlas-ref-usage-track" aria-hidden="true"><div className="atlas-ref-usage-progress" style={{ width:readyCount ? '28%' : '0%' }}/></div>
+
                 </div>
                 <div className="atlas-ref-sidebar-bottom">
                     <Link className="atlas-ref-sidebar-link" href={settingsUrl}><Settings2 size={17}/><span>Settings</span></Link>

@@ -90,3 +90,42 @@
 @media (max-width:790px) { .atlas-reference-root .main { margin-left:0; } .atlas-reference-root .sidebar.atlas-reference-sidebar { transform:translateX(-100%); transition:transform .18s ease; } .atlas-reference-root .sidebar.atlas-reference-sidebar.open { transform:translateX(0); } .atlas-reference-sidebar .atlas-ref-close-mobile { display:inline-flex; } .atlas-ref-mobile-menu { display:inline-flex; position:absolute; z-index:3; left:19px; top:18px; } .atlas-ref-canvas { padding-inline:17px; } .atlas-ref-hero { margin-inline:-17px; min-height:320px; padding-inline:25px; } .atlas-ref-hero h1 { font-size:clamp(26px,6vw,36px); } .atlas-ref-composer { margin-top:-30px; } }
 @media (max-width:520px) { .atlas-ref-task-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .atlas-ref-task { min-height:145px; padding:14px 11px; } .atlas-ref-hero { min-height:305px; } .atlas-ref-insight-tabs .MuiTab-root { font-size:10px; padding:10px 6px; } .atlas-ref-composer-bottom { align-items:stretch; } .atlas-ref-composer .atlas-ref-pills { flex:1; } }
 @media (prefers-reduced-motion: reduce) { .atlas-ref-task,.atlas-reference-root .sidebar.atlas-reference-sidebar { transition:none; } }
+
+/* Collapsed navigation remains keyboard-accessible and can be expanded again. */
+.atlas-reference-root.collapsed .sidebar.atlas-reference-sidebar { width:76px; }
+.atlas-reference-root.collapsed .main { margin-left:76px; }
+.atlas-reference-root.collapsed .atlas-ref-sidebar-body { padding-inline:9px; }
+.atlas-reference-root.collapsed .atlas-ref-brand { padding-inline:8px; justify-content:center; }
+.atlas-reference-root.collapsed .atlas-ref-brand>span,
+.atlas-reference-root.collapsed .atlas-ref-nav-item span,
+.atlas-reference-root.collapsed .atlas-ref-sidebar-label,
+.atlas-reference-root.collapsed .atlas-ref-workspace span,
+.atlas-reference-root.collapsed .atlas-ref-workspace>svg:last-child,
+.atlas-reference-root.collapsed .atlas-ref-recent,
+.atlas-reference-root.collapsed .atlas-ref-usage,
+.atlas-reference-root.collapsed .atlas-ref-sidebar-link span,
+.atlas-reference-root.collapsed .atlas-ref-profile>a,
+.atlas-reference-root.collapsed .atlas-ref-profile>button { display:none; }
+.atlas-reference-root.collapsed .atlas-ref-brand { flex-direction:column; gap:3px; }
+.atlas-reference-root.collapsed .atlas-ref-brand-actions { margin-left:0; }
+.atlas-reference-root.collapsed .atlas-ref-nav-item,
+.atlas-reference-root.collapsed .atlas-ref-workspace,
+.atlas-reference-root.collapsed .atlas-ref-sidebar-link { justify-content:center; padding-inline:8px; }
+.atlas-reference-root.collapsed .atlas-ref-profile { justify-content:center; }
+@media (max-width:790px) {
+    .atlas-reference-root.collapsed .main { margin-left:0; }
+    .atlas-reference-root.collapsed .sidebar.atlas-reference-sidebar { width:252px; }
+    .atlas-reference-root.collapsed .atlas-ref-brand { flex-direction:row; justify-content:flex-start; }
+    .atlas-reference-root.collapsed .atlas-ref-brand>span,
+    .atlas-reference-root.collapsed .atlas-ref-nav-item span,
+    .atlas-reference-root.collapsed .atlas-ref-sidebar-label,
+    .atlas-reference-root.collapsed .atlas-ref-workspace span,
+    .atlas-reference-root.collapsed .atlas-ref-workspace>svg:last-child,
+    .atlas-reference-root.collapsed .atlas-ref-recent,
+    .atlas-reference-root.collapsed .atlas-ref-usage,
+    .atlas-reference-root.collapsed .atlas-ref-sidebar-link span,
+    .atlas-reference-root.collapsed .atlas-ref-profile>a { display:initial; }
+    .atlas-reference-root.collapsed .atlas-ref-nav-item,
+    .atlas-reference-root.collapsed .atlas-ref-workspace,
+    .atlas-reference-root.collapsed .atlas-ref-sidebar-link { justify-content:flex-start; }
+}
