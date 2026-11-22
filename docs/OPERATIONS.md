@@ -46,6 +46,25 @@ These are separate from the database URL and private Storage key. Configure all
 three before deploying with `COOKIE_SECURE=true`. With no auth variables, local
 development with `COOKIE_SECURE=false` can still use local sign-in.
 
+For local development with the Atlas frontend on `http://localhost:3000`,
+use these URLs in the repository-root `.env` (the auth origin is only needed
+when Supabase Auth is configured):
+
+```dotenv
+ATLAS_AUTH_ORIGIN=http://localhost:3000
+ATLAS_CONNECTED_OAUTH_REDIRECT_BASE=http://localhost:3000/api/connected-oauth
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/gmail/callback
+GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/drive/callback
+```
+
+The connected OAuth base expands into provider-specific callback URLs such as
+`http://localhost:3000/api/connected-oauth/calendar/callback` and
+`http://localhost:3000/api/connected-oauth/onedrive/callback`. Register
+each required callback with its Google or Microsoft OAuth client. Supabase
+Google sign-in uses a **different** Google Cloud authorized redirect:
+`https://<supabase-project>.supabase.co/auth/v1/callback` (use the
+exact callback shown in the Supabase dashboard).
+
 In the Supabase dashboard:
 
 1. Under **Authentication**, enable email signup and **Confirm email**. Keep
