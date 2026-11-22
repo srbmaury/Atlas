@@ -149,61 +149,7 @@
 .atlas-v3 .composer-all-documents span {
     color: var(--muted);
 }
-.atlas-v3 .sidebar-chat-group {
-    margin: 7px 0;
-}
-.atlas-v3 .sidebar-chat-date {
-    display: block;
-    padding: 7px 10px;
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 650;
-}
-.atlas-v3 .sidebar-chat-row {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    position: relative;
-}
-.atlas-v3 .sidebar-chat-row .workspace-stat {
-    flex: 1;
-    min-width: 0;
-}
-.atlas-v3 .sidebar-chat-actions {
-    position: absolute;
-    right: 5px;
-    display: flex;
-    gap: 2px;
-    opacity: 0;
-    pointer-events: none;
-    background: var(--sidebar);
-    border-radius: 6px;
-}
-.atlas-v3 .sidebar-chat-row:hover .sidebar-chat-actions,
-.atlas-v3 .sidebar-chat-row:focus-within .sidebar-chat-actions {
-    opacity: 1;
-    pointer-events: auto;
-}
-.atlas-v3 .sidebar-chat-actions button {
-    display: grid;
-    place-items: center;
-    width: 25px;
-    height: 27px;
-    border: 0;
-    border-radius: 5px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-}
-.atlas-v3 .sidebar-chat-actions button:hover {
-    background: var(--hover);
-    color: var(--ink);
-}
 @media (hover: none) {
-    .atlas-v3 .sidebar-chat-actions {
-        opacity: 1;
-        pointer-events: auto;
-    }
 }
 @media (max-width: 560px) {
     .atlas-v3 .research-source-toolbar {
