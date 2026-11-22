@@ -58,7 +58,6 @@ export function ResearchQuestionBox({
                 <TextField
                     inputRef={inputRef}
                     variant="standard"
-                    aria-label={inputLabel}
                     placeholder={placeholder}
                     value={query}
                     onChange={(event) => onQueryChange(event.target.value)}
@@ -73,7 +72,7 @@ export function ResearchQuestionBox({
                     maxRows={maxRows}
                     fullWidth
                     disabled={busy}
-                    slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000 } }}
+                    slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000, 'aria-label': inputLabel } }}
                     sx={{ minWidth: 0, '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
                 />
             </div>
