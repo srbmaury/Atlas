@@ -148,7 +148,14 @@ export function WorkspaceSidebar({
                         </ListItemButton>
                     ))}
                 </List>
-                <Button variant="contained" disabled={busy} startIcon={<Plus size={17} />} onClick={onNewChat} fullWidth sx={{ mt: 1.5, bgcolor: 'var(--brand)', '&:hover': { bgcolor: 'var(--brandhover)' } }}>
+                <Button
+                    variant="contained"
+                    disabled={busy}
+                    startIcon={<Plus size={17} />}
+                    onClick={onNewChat}
+                    fullWidth
+                    sx={{ mt: 1.5, bgcolor: 'var(--brand)', '&:hover': { bgcolor: 'var(--brandhover)' } }}
+                >
                     New chat
                 </Button>
             </Box>
