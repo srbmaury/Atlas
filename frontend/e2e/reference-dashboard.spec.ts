@@ -76,6 +76,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(switcher).toContainText('1 workspace');
     const homeComposer = page.locator('form.atlas-ref-composer.atlas-question-box');
     await expect(homeComposer).toBeVisible();
+    await homeComposer.screenshot({ path: testInfo.outputPath('composer-overview.png'), animations: 'disabled' });
     await expect(homeComposer.locator('.atlas-ref-composer-toolbar')).toBeVisible();
     const homeHeaderInset = await homeComposer.evaluate((element) => {
         const card = element.getBoundingClientRect();
@@ -163,6 +164,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Ask Atlas' }).click();
     const chatComposer = page.locator('.chat-workspace form.atlas-ref-composer.atlas-question-box');
     await expect(chatComposer).toBeVisible();
+    await chatComposer.screenshot({ path: testInfo.outputPath('composer-ask-atlas.png'), animations: 'disabled' });
     const chatComposerStyle = await chatComposer.evaluate((element) => {
         const style = getComputedStyle(element);
         return { background: style.backgroundColor, borderColor: style.borderColor, borderRadius: style.borderRadius, padding: style.padding, shadow: style.boxShadow };
