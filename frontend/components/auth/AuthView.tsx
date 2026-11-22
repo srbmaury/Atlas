@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { ArrowRight, LockKeyhole, Mail, Sparkles } from 'lucide-react';
-import { Button, CircularProgress, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Button, CircularProgress, InputAdornment, Paper, TextField, Typography } from '@mui/material';
 import { api } from '../../lib/api';
 import { PublicFooter } from '../public/PublicFooter';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
@@ -165,14 +165,14 @@ export function AuthView({ themeButton, register, email, password, error, notice
                                 Forgot password?
                             </Button>
                         )}
-                        <Stack direction="row" gap={0.75} justifyContent="center" alignItems="center" flexWrap="wrap">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
                             <Typography variant="body2" color="text.secondary">
                                 {forgot ? 'Remembered your password?' : register ? 'Already have an account?' : 'New to Atlas?'}
                             </Typography>
                             <Button size="small" onClick={forgot ? () => setForgot(false) : onToggleMode}>
                                 {forgot ? 'Back to sign in' : register ? 'Sign in' : 'Create an account'}
                             </Button>
-                        </Stack>
+                        </div>
                     </form>
                 </Paper>
             </main>

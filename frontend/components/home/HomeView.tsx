@@ -2,7 +2,7 @@
 
 import { useRef, type ReactNode } from 'react';
 import { ArrowRight, ArrowUp, BookOpenText, FileText, GitCompareArrows, Globe2, MessageSquareText, Mic, MicOff, NotebookPen, Plus, Sparkles } from 'lucide-react';
-import { Box, Button, Card, CardActionArea, CardContent, Chip, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardActionArea, CardContent, Chip, IconButton, Paper, TextField, Typography } from '@mui/material';
 import type { Doc, ChatSummary } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { FileBadge } from '../ui/WorkspacePrimitives';
@@ -108,14 +108,14 @@ export function HomeView({
                     <Typography color="text.secondary" sx={{ maxWidth: 580, mt: 2, fontSize: { xs: 14, sm: 16 }, lineHeight: 1.8 }}>
                         Ask across your documents and connected sources. Explore every answer with citations you can inspect.
                     </Typography>
-                    <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
+                    <div className="mt-3 flex flex-wrap gap-4">
                         <Button variant="contained" startIcon={<Plus size={17} />} onClick={onStartChat}>
                             New research
                         </Button>
                         <Button variant="text" endIcon={<ArrowRight size={16} />} onClick={onOpenDocuments}>
                             Open library
                         </Button>
-                    </Stack>
+                    </div>
                 </div>
                 <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full border-[40px] border-violet-400/10" />
             </Paper>
