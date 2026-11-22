@@ -47,6 +47,7 @@ interface HomeViewProps {
     docs: Doc[];
     onChooseSources: () => void;
     sourcePicker?: ReactNode;
+    themeButton?: ReactNode;
     onOpenSources: () => void;
     onOpenConversations: () => void;
     onOpenConversation: (id: string) => void;
@@ -94,6 +95,7 @@ export function HomeView({
     docs,
     onChooseSources,
     sourcePicker,
+    themeButton,
     onOpenSources,
     onOpenConversations,
     onOpenConversation,
@@ -151,6 +153,7 @@ export function HomeView({
                     >
                         {insightOpen ? <PanelRightClose size={19} /> : <PanelRightOpen size={19} />}
                     </IconButton>
+                    {themeButton && <div className="atlas-ref-hero-theme" aria-label="Appearance">{themeButton}</div>}
                     <IconButton className="atlas-ref-mobile-menu" aria-label="Open menu" onClick={onOpenMobileMenu}>
                         <Menu size={21} />
                     </IconButton>
@@ -188,6 +191,16 @@ export function HomeView({
                                 ))}
                             </Paper>
                         )}
+                        <div className="atlas-ref-composer-toolbar">
+                            <span className="atlas-ref-composer-label">Research question</span>
+                            <div className="atlas-ref-composer-source">
+                                {sourcePicker || (
+                                    <button className="atlas-ref-pill" type="button" onClick={onChooseSources}>
+                                        <SlidersHorizontal size={16} /> Choose sources <ChevronDown size={13} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                         <TextField
                             inputRef={prompt}
                             variant="standard"
@@ -226,11 +239,6 @@ export function HomeView({
                                 >
                                     <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
                                 </button>
-                                {sourcePicker || (
-                                    <button className="atlas-ref-pill" type="button" onClick={onChooseSources}>
-                                        <SlidersHorizontal size={16} /> Connected Sources <ChevronDown size={13} />
-                                    </button>
-                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
