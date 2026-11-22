@@ -172,10 +172,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
         setWorkspaceId(initialWorkspaceId);
     }, [initialWorkspaceId, workspaces]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
-    const refreshWorkspaceLists = useCallback(
-        () => refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setChatsLoading, setChatsFailed, setError }),
-        [workspaceId],
-    );
+    const refreshWorkspaceLists = useCallback(() => refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setChatsLoading, setChatsFailed, setError }), [workspaceId]);
     useEffect(() => {
         chatLoadSequence.invalidate();
         setDocs([]);

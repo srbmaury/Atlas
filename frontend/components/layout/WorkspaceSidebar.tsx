@@ -148,19 +148,41 @@ export function WorkspaceSidebar({
 
                 <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
                     Recent chats
-                    <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}><RefreshCw size={14}/></button>
+                    <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
+                        <RefreshCw size={14} />
+                    </button>
                 </div>
                 <div className="atlas-ref-recent" role="region" aria-label="Recent chats">
-                    {chatsLoading && !chats.length ? <p role="status">Loading chats…</p> :
-                     chatsFailed ? <p role="alert">Could not load chats. <button type="button" onClick={onRefreshChats}>Retry</button></p> :
-                     chats.filter((chat) => !chat.archived).length
-                        ? chats.filter((chat) => !chat.archived).slice(0, 8).map((chat) => (
-                            <button type="button" key={chat.id} title={chat.title} onClick={() => { onOpenChat(chat.id); onClose(); }}>
-                                <MessageSquare size={15} aria-hidden="true" />
-                                <span>{chat.title}</span>
+                    {chatsLoading && !chats.length ? (
+                        <p role="status">Loading chats…</p>
+                    ) : chatsFailed ? (
+                        <p role="alert">
+                            Could not load chats.{' '}
+                            <button type="button" onClick={onRefreshChats}>
+                                Retry
                             </button>
-                        ))
-                        : <p>No chats in this workspace</p>}
+                        </p>
+                    ) : chats.filter((chat) => !chat.archived).length ? (
+                        chats
+                            .filter((chat) => !chat.archived)
+                            .slice(0, 8)
+                            .map((chat) => (
+                                <button
+                                    type="button"
+                                    key={chat.id}
+                                    title={chat.title}
+                                    onClick={() => {
+                                        onOpenChat(chat.id);
+                                        onClose();
+                                    }}
+                                >
+                                    <MessageSquare size={15} aria-hidden="true" />
+                                    <span>{chat.title}</span>
+                                </button>
+                            ))
+                    ) : (
+                        <p>No chats in this workspace</p>
+                    )}
                 </div>
                 <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <div className="flex items-center justify-between text-xs font-bold">

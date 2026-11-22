@@ -298,17 +298,24 @@ export function HomeView({
 
                 <section aria-labelledby="atlas-ref-recent-heading">
                     <div className="atlas-ref-section-heading">
-                        <strong id="atlas-ref-recent-heading">Recent research <small className="atlas-ref-workspace-caption">· {workspaceName}</small></strong>
+                        <strong id="atlas-ref-recent-heading">
+                            Recent research <small className="atlas-ref-workspace-caption">· {workspaceName}</small>
+                        </strong>
                         <Button onClick={onOpenConversations} size="small" endIcon={<ArrowRight size={15} />}>
                             View all
                         </Button>
                     </div>
                     <div className="atlas-ref-research-list">
                         {chatsLoading && !chats.length ? (
-                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="status">Loading saved conversations…</div>
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="status">
+                                Loading saved conversations…
+                            </div>
                         ) : chatsFailed ? (
                             <div className="px-5 py-7 text-sm text-[var(--sub)]" role="alert">
-                                Couldn’t load conversations. <Button size="small" onClick={onRefreshChats}>Retry</Button>
+                                Couldn’t load conversations.{' '}
+                                <Button size="small" onClick={onRefreshChats}>
+                                    Retry
+                                </Button>
                             </div>
                         ) : recent.length ? (
                             recent.map((chat) => (

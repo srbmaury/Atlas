@@ -345,9 +345,17 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
                 </div>
                 <Chip
                     variant="outlined"
-                    label={agentsLoadState === 'loading' ? 'Loading agents…' : agentsLoadState === 'error' ? 'Agents unavailable' : `${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`}
+                    label={
+                        agentsLoadState === 'loading'
+                            ? 'Loading agents…'
+                            : agentsLoadState === 'error'
+                              ? 'Agents unavailable'
+                              : `${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`
+                    }
                 />
-                <Button size="small" variant="text" onClick={() => void loadAgents().catch((err) => setError(err.message))} disabled={agentsLoadState === 'loading'}>Refresh</Button>
+                <Button size="small" variant="text" onClick={() => void loadAgents().catch((err) => setError(err.message))} disabled={agentsLoadState === 'loading'}>
+                    Refresh
+                </Button>
             </div>
             {agentsLoadState === 'loading' && agents.length === 0 ? (
                 <div className={styles.libraryEmpty} role="status">
@@ -360,7 +368,9 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
                     <Bot size={26} aria-hidden="true" />
                     <h2>Couldn’t load research agents</h2>
                     <p>The agent list for {workspaceName} could not be retrieved. Your existing agents may still be available.</p>
-                    <Button variant="outlined" onClick={() => void loadAgents().catch((err) => setError(err.message))}>Retry loading agents</Button>
+                    <Button variant="outlined" onClick={() => void loadAgents().catch((err) => setError(err.message))}>
+                        Retry loading agents
+                    </Button>
                 </div>
             ) : filteredAgents.length ? (
                 <div className={styles.libraryGrid}>
@@ -468,7 +478,9 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
                 </div>
             ) : (
                 <div className={styles.libraryEmpty} role="status">
-                    <span className={styles.libraryEmptyIcon}><Bot size={24} aria-hidden="true" /></span>
+                    <span className={styles.libraryEmptyIcon}>
+                        <Bot size={24} aria-hidden="true" />
+                    </span>
                     <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents in this workspace'}</h2>
                     <p>
                         {agents.length
