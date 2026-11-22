@@ -4,10 +4,6 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-/**
- * The existing theme toggle writes data-theme on <html>. Keep it authoritative
- * during the incremental component migration so every screen stays in sync.
- */
 export function AtlasMuiProvider({ children }: { children: ReactNode }) {
     const [mode, setMode] = useState<'light' | 'dark'>('light');
 
@@ -57,8 +53,6 @@ export function AtlasMuiProvider({ children }: { children: ReactNode }) {
                     MuiInputBase: {
                         styleOverrides: {
                             input: {
-                                // The MUI container owns focus styling; native input focus
-                                // rings caused an extra rectangular border inside the field.
                                 '&:focus, &:focus-visible': { outline: 'none', boxShadow: 'none' },
                             },
                         },
