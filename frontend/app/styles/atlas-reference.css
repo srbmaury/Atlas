@@ -238,8 +238,16 @@
         url('/atlas-mountain-scene.svg') center bottom/cover no-repeat;
     overflow: hidden;
 }
-.atlas-ref-hero > svg { width: 53px; height: 53px; flex-shrink: 0; }
-.atlas-reference-sidebar .atlas-ref-brand > svg { width: 38px; height: 38px; flex-shrink: 0; }
+.atlas-ref-hero > svg {
+    width: 53px;
+    height: 53px;
+    flex-shrink: 0;
+}
+.atlas-reference-sidebar .atlas-ref-brand > svg {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+}
 .atlas-ref-hero h1 {
     font-family: Manrope, 'DM Sans', sans-serif;
     font-weight: 800;
