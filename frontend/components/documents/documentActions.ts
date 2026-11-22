@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction, RefObject, FormEvent } from 'react';
 import { api } from '../../lib/api';
 import { uploadDocument } from '../../lib/uploadDocuments';
+import { sameDocumentSnapshot } from '../../lib/documentSnapshot';
 import type { User, Doc, DocumentPreview, Source } from '../../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
@@ -31,24 +32,7 @@ export async function refreshDocuments({ workspaceId, scope, setDocs, setSelecte
     if (scope.current !== workspaceId) return;
     // Reuse the existing array when polling returns the same snapshot, so a
     // no-op network response does not rerender the entire research workspace.
-    setDocs((current) => {
-        const unchanged =
-            current.length === documents.length &&
-            current.every((doc, index) => {
-                const next = documents[index];
-                return (
-                    doc.id === next.id &&
-                    doc.name === next.name &&
-                    doc.size === next.size &&
-                    doc.status === next.status &&
-                    doc.error === next.error &&
-                    doc.pages === next.pages &&
-                    doc.chunk_count === next.chunk_count &&
-                    (doc.ocr_pages ?? []).join(',') === (next.ocr_pages ?? []).join(',')
-                );
-            });
-        return unchanged ? current : documents;
-    });
+    setDocs((current) => (sameDocumentSnapshot(current, documents) ? current : documents));
     setSelected((current) => {
         const remaining = current.filter((id) => documents.some((document) => document.id === id));
         return remaining.length === current.length ? current : remaining;
