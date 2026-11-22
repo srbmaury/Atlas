@@ -14,17 +14,7 @@ interface ResearchQuestionBoxProps {
     footer?: ReactNode;
 }
 
-export function ResearchQuestionBox({
-    ariaLabel,
-    className = '',
-    onSubmit,
-    sourceSelector,
-    context,
-    input,
-    leadingActions,
-    trailingActions,
-    footer,
-}: ResearchQuestionBoxProps) {
+export function ResearchQuestionBox({ ariaLabel, className = '', onSubmit, sourceSelector, context, input, leadingActions, trailingActions, footer }: ResearchQuestionBoxProps) {
     return (
         <form aria-label={ariaLabel} className={`atlas-question-box ${className}`.trim()} onSubmit={onSubmit}>
             {context}
