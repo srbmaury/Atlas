@@ -69,7 +69,9 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                 )}
             </div>
             {connectedProviders.length ? (
-                <Box className="integrations-grid" sx={gridColumns}>{tiles(connectedProviders)}</Box>
+                <Box className="integrations-grid" sx={gridColumns}>
+                    {tiles(connectedProviders)}
+                </Box>
             ) : (
                 <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>
                     No external sources are connected yet. Choose one below to get started.
@@ -80,7 +82,9 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                     <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
                         Explore integrations
                     </Typography>
-                    <Box className="integrations-grid" sx={gridColumns}>{tiles(availableProviders)}</Box>
+                    <Box className="integrations-grid" sx={gridColumns}>
+                        {tiles(availableProviders)}
+                    </Box>
                 </section>
             )}
         </>

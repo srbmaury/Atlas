@@ -52,11 +52,7 @@ export function AtlasReferencePanel({
     return (
         <aside className="atlas-ref-insight" aria-label="Research insights">
             <div className="atlas-ref-insight-tabs">
-                <Tabs
-                    value={tab === 'answer' || tab === 'sources' ? tab : false}
-                    onChange={(_event, value: PanelTab) => setTab(value)}
-                    aria-label="Primary research views"
-                >
+                <Tabs value={tab === 'answer' || tab === 'sources' ? tab : false} onChange={(_event, value: PanelTab) => setTab(value)} aria-label="Primary research views">
                     <Tab value="answer" icon={<Sparkles size={16} />} iconPosition="start" label="Answer" />
                     <Tab value="sources" icon={<BookOpenText size={16} />} iconPosition="start" label={`Sources ${sources.length}`} />
                 </Tabs>
@@ -73,10 +69,22 @@ export function AtlasReferencePanel({
                     {tab === 'notes' ? 'Notes' : tab === 'artifacts' ? 'Export' : 'More'}
                 </Button>
                 <Menu anchorEl={toolsAnchor} open={Boolean(toolsAnchor)} onClose={() => setToolsAnchor(null)} slotProps={{ list: { 'aria-label': 'Research tools' } }}>
-                    <MenuItem selected={tab === 'notes'} onClick={() => { setTab('notes'); setToolsAnchor(null); }}>
+                    <MenuItem
+                        selected={tab === 'notes'}
+                        onClick={() => {
+                            setTab('notes');
+                            setToolsAnchor(null);
+                        }}
+                    >
                         <StickyNote size={17} className="mr-2" /> Quick notes
                     </MenuItem>
-                    <MenuItem selected={tab === 'artifacts'} onClick={() => { setTab('artifacts'); setToolsAnchor(null); }}>
+                    <MenuItem
+                        selected={tab === 'artifacts'}
+                        onClick={() => {
+                            setTab('artifacts');
+                            setToolsAnchor(null);
+                        }}
+                    >
                         <Layers size={17} className="mr-2" /> Exports & artifacts
                     </MenuItem>
                 </Menu>
@@ -85,7 +93,8 @@ export function AtlasReferencePanel({
             <div className="atlas-ref-insight-body">
                 {(tab === 'answer' || tab === 'sources') && incompleteSources.length > 0 && (
                     <Alert severity="warning" role="status" sx={{ mb: 2 }}>
-                        Some connected sources returned incomplete results: {incompleteSources.map((source) => source.provider).join(', ')}. Review their connection status before relying on this answer.
+                        Some connected sources returned incomplete results: {incompleteSources.map((source) => source.provider).join(', ')}. Review their connection status before relying on this
+                        answer.
                     </Alert>
                 )}
                 {tab === 'answer' && (
