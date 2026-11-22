@@ -1134,6 +1134,8 @@
 .atlas-question-box {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     min-width: 0;
 }
 .atlas-question-box-input {
@@ -1146,6 +1148,8 @@
 }
 .atlas-question-box-input textarea {
     min-height: 38px;
+    max-height: none;
+    padding: 0;
     resize: none;
     color: var(--atlas-ref-ink);
     background: transparent;
