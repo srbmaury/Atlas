@@ -76,6 +76,12 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(switcher).toContainText('1 workspace');
     const homeComposer = page.locator('form.atlas-ref-composer.atlas-question-box');
     await expect(homeComposer).toBeVisible();
+    await expect(homeComposer.locator('.atlas-ref-composer-toolbar')).toBeVisible();
+    const homeHeaderInset = await homeComposer.evaluate((element) => {
+        const card = element.getBoundingClientRect();
+        const header = element.querySelector('.atlas-ref-composer-toolbar')!.getBoundingClientRect();
+        return { left: Math.round(header.left - card.left), right: Math.round(card.right - header.right) };
+    });
     const homeComposerStyle = await homeComposer.evaluate((element) => {
         const style = getComputedStyle(element);
         return { background: style.backgroundColor, borderColor: style.borderColor, borderRadius: style.borderRadius, padding: style.padding, shadow: style.boxShadow };
@@ -162,6 +168,12 @@ test('reference research dashboard renders three columns and remains usable on a
         return { background: style.backgroundColor, borderColor: style.borderColor, borderRadius: style.borderRadius, padding: style.padding, shadow: style.boxShadow };
     });
     expect(chatComposerStyle).toEqual(homeComposerStyle);
+    const chatHeaderInset = await chatComposer.evaluate((element) => {
+        const card = element.getBoundingClientRect();
+        const header = element.querySelector('.atlas-ref-composer-toolbar')!.getBoundingClientRect();
+        return { left: Math.round(header.left - card.left), right: Math.round(card.right - header.right) };
+    });
+    expect(chatHeaderInset).toEqual(homeHeaderInset);
     await expect(chatComposer.getByText('Your Docs')).toBeVisible();
     await expect(chatComposer.getByRole('button', { name: 'Send question' })).toBeVisible();
     await expect(page.locator('.chat-workspace .atlas-question-box .atlas-ref-composer-source').getByRole('button', { name: 'Connected Sources' })).toBeVisible();
