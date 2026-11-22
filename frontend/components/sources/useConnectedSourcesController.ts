@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useEffect, useState, type MutableRefObject } from 'react';
 import { api } from '../../lib/api';
 import type {
     ConnectedSourceSearchResponse,
@@ -80,15 +80,8 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
         }
     }
     const [sourceFailure, setSourceFailure] = useState<{ workspaceId: string; failed: boolean }>();
-    const lastAutomaticRefresh = useRef<{ workspaceId: string; at: number } | null>(null);
     useEffect(() => {
-        if (!workspaceId || !['sources', 'chat', 'overview'].includes(tab)) return;
-        const last = lastAutomaticRefresh.current;
-        if (tab !== 'sources' && !sourceFailure?.failed && last?.workspaceId === workspaceId && Date.now() - last.at < 30000) return;
-        const target = workspaceId;
-        void refreshConnections().then((complete) => {
-            if (complete && scope.current === target) lastAutomaticRefresh.current = { workspaceId: target, at: Date.now() };
-        });
+        if ((tab === 'sources' || tab === 'chat' || tab === 'overview') && workspaceId) void refreshConnections();
     }, [tab, workspaceId]);
 
     async function refreshDrive() {
@@ -149,9 +142,7 @@ export function useConnectedSourcesController({ workspaceId, tab, scope, sourceS
                 if (scope.current === target) setGmailStatus(status);
             }),
         ]);
-        const complete = outcomes.every((outcome) => outcome.status === 'fulfilled');
-        if (scope.current === target) setSourceFailure({ workspaceId: target, failed: !complete });
-        return complete;
+        if (scope.current === target) setSourceFailure({ workspaceId: target, failed: outcomes.some((outcome) => outcome.status === 'rejected') });
     }
     async function verifySourceConnections() {
         if (!workspaceId || sourceChecksBusy) return;
