@@ -165,8 +165,9 @@ export function HomeView({
                     </p>
                 </section>
 
-                <Paper component="section" elevation={0} className="atlas-ref-composer" aria-label="Ask a research question">
-                    <ResearchQuestionBox
+                <ResearchQuestionBox
+                    ariaLabel="Ask a research question"
+                    className="atlas-ref-composer"
                         query={query}
                         onQueryChange={onQueryChange}
                         onRequestSubmit={onAsk}
@@ -258,8 +259,7 @@ export function HomeView({
                                 )}
                             </>
                         }
-                    />
-                </Paper>
+                />
                 {answerProgress && (
                     <div className="atlas-ref-progress-inline" role="status" aria-live="polite">
                         <LoaderCircle size={16} className="spin" aria-hidden="true" />
