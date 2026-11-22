@@ -198,7 +198,7 @@ export function WorkspaceSidebar({
                             <span className="rounded-full bg-[#5948c4] px-2 py-0.5 text-white">Workspace</span>
                             <span>{readyCount} ready</span>
                         </div>
-                        <div className="mt-3 flex justify-between text-xs text-[#b8c3de]">
+                        <div className="atlas-ref-storage-row mt-3 flex justify-between text-xs">
                             <span>Document storage</span>
                             <span>{storageLabel}</span>
                         </div>
