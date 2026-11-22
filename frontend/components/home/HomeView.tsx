@@ -25,6 +25,7 @@ import type { Answer, ChatSummary, Doc, Source } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { AtlasBrand } from '../ui/AtlasBrand';
 import { AtlasReferencePanel } from './AtlasReferencePanel';
+import { ResearchQuestionBox } from '../chat/ResearchQuestionBox';
 
 interface HomeViewProps {
     canEdit?: boolean;
@@ -165,59 +166,59 @@ export function HomeView({
                 </section>
 
                 <Paper component="section" elevation={0} className="atlas-ref-composer" aria-label="Ask a research question">
-                    <form
+                    <ResearchQuestionBox
                         onSubmit={(event) => {
                             event.preventDefault();
                             if (canSubmit) onAsk();
                         }}
-                    >
-                        {matchingAgents.length > 0 && (
-                            <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
-                                {matchingAgents.map((agent) => (
-                                    <Button
-                                        key={agent.id}
-                                        fullWidth
-                                        size="small"
-                                        role="option"
-                                        aria-selected={false}
-                                        sx={{ justifyContent: 'flex-start' }}
-                                        onClick={() => {
-                                            onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
-                                            prompt.current?.focus();
-                                        }}
-                                    >
-                                        {agent.name} · {agent.handle}
-                                    </Button>
-                                ))}
-                            </Paper>
-                        )}
-                        <div className="atlas-ref-composer-toolbar">
-                            <span className="atlas-ref-composer-label">Research question</span>
-                            <div className="atlas-ref-composer-source">{sourcePicker}</div>
-                        </div>
-                        <TextField
-                            inputRef={prompt}
-                            variant="standard"
-                            aria-label="Ask a research question"
-                            placeholder="Ask a research question..."
-                            value={query}
-                            onChange={(event) => onQueryChange(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                                    event.preventDefault();
-                                    if (canSubmit) onAsk();
-                                }
-                            }}
-                            multiline
-                            minRows={1}
-                            maxRows={7}
-                            fullWidth
-                            disabled={busy}
-                            slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000 } }}
-                            sx={{ minWidth: 0, '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
-                        />
-                        <div className="atlas-ref-composer-bottom">
-                            <div className="atlas-ref-pills">
+                        sourceSelector={sourcePicker}
+                        context={
+                            matchingAgents.length > 0 ? (
+                                <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
+                                    {matchingAgents.map((agent) => (
+                                        <Button
+                                            key={agent.id}
+                                            fullWidth
+                                            size="small"
+                                            role="option"
+                                            aria-selected={false}
+                                            sx={{ justifyContent: 'flex-start' }}
+                                            onClick={() => {
+                                                onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                                                prompt.current?.focus();
+                                            }}
+                                        >
+                                            {agent.name} · {agent.handle}
+                                        </Button>
+                                    ))}
+                                </Paper>
+                            ) : null
+                        }
+                        input={
+                            <TextField
+                                inputRef={prompt}
+                                variant="standard"
+                                aria-label="Ask a research question"
+                                placeholder="Ask a research question..."
+                                value={query}
+                                onChange={(event) => onQueryChange(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                                        event.preventDefault();
+                                        if (canSubmit) onAsk();
+                                    }
+                                }}
+                                multiline
+                                minRows={1}
+                                maxRows={7}
+                                fullWidth
+                                disabled={busy}
+                                slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000 } }}
+                                sx={{ minWidth: 0, '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
+                            />
+                        }
+                        leadingActions={
+                            <>
                                 <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
                                     <Paperclip size={16} />
                                 </button>
@@ -233,8 +234,10 @@ export function HomeView({
                                 >
                                     <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
                                 </button>
-                            </div>
-                            <div className="flex items-center gap-2">
+                            </>
+                        }
+                        trailingActions={
+                            <>
                                 <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
                                     Auto
                                 </span>
@@ -252,24 +255,28 @@ export function HomeView({
                                         <Sparkles size={16} /> Research
                                     </span>
                                 </button>
-                            </div>
-                        </div>
-                        {voice.listening || voice.error ? (
-                            <Typography role={voice.error ? 'alert' : 'status'} variant="caption" color={voice.error ? 'error' : 'text.secondary'}>
-                                {voice.error || 'Listening…'}
-                            </Typography>
-                        ) : null}
-                        {!hasAskSources && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                Select a source or add a document to enable research.
-                            </Typography>
-                        )}
-                        {!!sourceLabels.length && (
-                            <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
-                                {sourceLabels.join(' · ')}
-                            </div>
-                        )}
-                    </form>
+                            </>
+                        }
+                        footer={
+                            <>
+                                {(voice.listening || voice.error) && (
+                                    <Typography role={voice.error ? 'alert' : 'status'} variant="caption" color={voice.error ? 'error' : 'text.secondary'}>
+                                        {voice.error || 'Listening…'}
+                                    </Typography>
+                                )}
+                                {!hasAskSources && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                        Select a source or add a document to enable research.
+                                    </Typography>
+                                )}
+                                {!!sourceLabels.length && (
+                                    <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
+                                        {sourceLabels.join(' · ')}
+                                    </div>
+                                )}
+                            </>
+                        }
+                    />
                 </Paper>
                 {answerProgress && (
                     <div className="atlas-ref-progress-inline" role="status" aria-live="polite">
