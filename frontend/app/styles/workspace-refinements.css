@@ -457,7 +457,8 @@
     padding-bottom: 12px;
     border-bottom: 1px solid var(--outline);
 }
-.atlas-v3 :is(button, a, input, textarea, select):focus-visible {
+.atlas-v3 :is(button, a, select):focus-visible,
+.atlas-v3 :is(input, textarea):not(.MuiInputBase-input):focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 3px;
 }

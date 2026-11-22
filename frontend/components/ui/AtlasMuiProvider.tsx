@@ -54,7 +54,23 @@ export function AtlasMuiProvider({ children }: { children: ReactNode }) {
                     MuiIconButton: { styleOverrides: { root: { borderRadius: 11 } } },
                     MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
                     MuiCard: { styleOverrides: { root: { borderRadius: 12, boxShadow: 'none' } } },
-                    MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 12 } } },
+                    MuiInputBase: {
+                        styleOverrides: {
+                            input: {
+                                // The MUI container owns focus styling; native input focus
+                                // rings caused an extra rectangular border inside the field.
+                                '&:focus, &:focus-visible': { outline: 'none', boxShadow: 'none' },
+                            },
+                        },
+                    },
+                    MuiOutlinedInput: {
+                        styleOverrides: {
+                            root: {
+                                borderRadius: 12,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 1.5 },
+                            },
+                        },
+                    },
                     MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
                     MuiDialog: { styleOverrides: { paper: { borderRadius: 14 } } },
                 },

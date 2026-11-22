@@ -225,7 +225,7 @@ export function HomeView({
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500" title="Atlas uses your chosen sources">
+                                <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
                                     Auto
                                 </span>
                                 <IconButton
@@ -255,7 +255,7 @@ export function HomeView({
                             </Typography>
                         )}
                         {!!sourceLabels.length && (
-                            <div className="mt-2 text-[11px] text-slate-500" aria-label="Active sources">
+                            <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
                                 {sourceLabels.join(' · ')}
                             </div>
                         )}
@@ -304,7 +304,7 @@ export function HomeView({
                                 </button>
                             ))
                         ) : (
-                            <div className="px-5 py-7 text-sm text-slate-500">
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]">
                                 No research conversations yet.{' '}
                                 <Button size="small" onClick={onStartChat}>
                                     Start a conversation
@@ -331,14 +331,14 @@ export function HomeView({
                                 </button>
                             ))
                         ) : (
-                            <div className="px-5 py-6 text-sm text-slate-500">Upload a file to start your knowledge library. {canEdit && uploadButton}</div>
+                            <div className="px-5 py-6 text-sm text-[var(--sub)]">Upload a file to start your knowledge library. {canEdit && uploadButton}</div>
                         )}
                     </div>
                 </section>
 
                 {canEdit && (
                     <section
-                        className="mt-6 rounded-xl border border-dashed border-[#d9dcf0] bg-white p-4"
+                        className="mt-6 rounded-xl border border-dashed border-[var(--line)] bg-[var(--panel)] p-4"
                         aria-label="Drop documents to upload"
                         onDragOver={(event) => {
                             event.preventDefault();
@@ -352,10 +352,10 @@ export function HomeView({
                             onDragging(false);
                             if (!uploading && event.dataTransfer.files.length) onDrop(event.dataTransfer.files);
                         }}
-                        style={{ borderColor: dragging ? '#6551f5' : undefined }}
+                        style={{ borderColor: dragging ? 'var(--atlas-ref-accent)' : undefined }}
                     >
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <span className="text-xs text-slate-500">Drop research documents here · up to {maxSizeMB} MB per file</span>
+                            <span className="text-xs text-[var(--sub)]">Drop research documents here · up to {maxSizeMB} MB per file</span>
                             <Button variant="outlined" size="small" disabled={uploading} startIcon={<Paperclip size={15} />} onClick={onBrowse}>
                                 {uploading ? 'Uploading…' : 'Add files'}
                             </Button>

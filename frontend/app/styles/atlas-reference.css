@@ -5,11 +5,16 @@
     --atlas-ref-sidebar: #11182c;
     --atlas-ref-ink: #161c33;
     --atlas-ref-line: #e7e8f1;
-    background: #fbfbff;
+    --atlas-ref-background: var(--atlas-ref-background);
+    --atlas-ref-surface: #ffffff;
+    --atlas-ref-subtle: #f4f5fd;
+    --atlas-ref-muted: #66718c;
+    --atlas-ref-hover: #f7f7ff;
+    background: var(--atlas-ref-background);
 }
 .atlas-reference-root .main {
     margin-left: 252px;
-    background: #fbfbff;
+    background: var(--atlas-ref-background);
     min-width: 0;
 }
 .atlas-reference-root .sidebar.atlas-reference-sidebar {
@@ -220,7 +225,7 @@
 }
 .atlas-ref-canvas {
     min-width: 0;
-    background: #fdfdff;
+    background: var(--atlas-ref-background);
     padding: 0 32px 38px;
 }
 .atlas-ref-hero {
@@ -258,7 +263,7 @@
     margin: 10px 0 9px;
 }
 .atlas-ref-hero p {
-    color: #51607a;
+    color: var(--atlas-ref-muted);
     font-size: 14px;
     line-height: 1.55;
     max-width: 525px;
@@ -274,7 +279,7 @@
     padding: 13px 15px 12px;
     border: 1.5px solid #9387fd;
     border-radius: 17px;
-    background: #fff;
+    background: var(--atlas-ref-surface);
     box-shadow: 0 10px 24px rgba(67, 59, 150, 0.09);
 }
 .atlas-ref-composer:focus-within {
@@ -286,7 +291,7 @@
 .atlas-ref-composer textarea {
     width: 100%;
     resize: vertical;
-    color: #1e2841;
+    color: var(--atlas-ref-ink);
     font-size: 15px;
     line-height: 1.6;
     background: transparent;
@@ -306,12 +311,12 @@
     gap: 7px;
 }
 .atlas-ref-composer .atlas-ref-pill {
-    border: 1px solid #e7e9f4;
+    border: 1px solid var(--atlas-ref-line);
     border-radius: 22px;
     padding: 8px 12px;
     font-size: 12px;
-    background: #fafbff;
-    color: #29334c;
+    background: var(--atlas-ref-subtle);
+    color: var(--atlas-ref-ink);
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -358,11 +363,11 @@
 }
 .atlas-ref-task {
     min-height: 141px;
-    border: 1px solid #e4e8f2;
+    border: 1px solid var(--atlas-ref-line);
     border-radius: 13px;
     padding: 17px 13px;
     text-align: left;
-    background: #fff;
+    background: var(--atlas-ref-surface);
     display: flex;
     flex-direction: column;
     gap: 9px;
@@ -381,16 +386,16 @@
     font-size: 12px;
     line-height: 1.3;
     font-weight: 800;
-    color: #192239;
+    color: var(--atlas-ref-ink);
 }
 .atlas-ref-task small {
-    color: #6c7692;
+    color: var(--atlas-ref-muted);
     font-size: 11px;
     line-height: 1.45;
 }
 .atlas-ref-research-list {
-    background: #fff;
-    border: 1px solid #e8eaf2;
+    background: var(--atlas-ref-surface);
+    border: 1px solid var(--atlas-ref-line);
     border-radius: 13px;
     overflow: hidden;
 }
@@ -402,15 +407,15 @@
     padding: 13px 16px;
     text-align: left;
     border: 0;
-    background: #fff;
-    color: #27314a;
+    background: var(--atlas-ref-surface);
+    color: var(--atlas-ref-ink);
     cursor: pointer;
 }
 .atlas-ref-research-row + .atlas-ref-research-row {
     border-top: 1px solid #eff0f5;
 }
 .atlas-ref-research-row:hover {
-    background: #f7f7ff;
+    background: var(--atlas-ref-hover);
 }
 .atlas-ref-research-row span {
     min-width: 0;
@@ -421,12 +426,12 @@
     font-size: 12px;
 }
 .atlas-ref-research-row small {
-    color: #8791ad;
+    color: var(--atlas-ref-muted);
     flex-shrink: 0;
 }
 .atlas-ref-insight {
     min-width: 0;
-    background: #fff;
+    background: var(--atlas-ref-surface);
     border-left: 1px solid var(--atlas-ref-line);
     height: 100vh;
     position: sticky;
@@ -462,7 +467,7 @@
     text-transform: none;
     font-weight: 700;
     padding: 14px 9px;
-    color: #596580;
+    color: var(--atlas-ref-muted);
 }
 .atlas-ref-insight-tabs .MuiTab-root.Mui-selected {
     color: var(--atlas-ref-accent);
@@ -482,7 +487,7 @@
     max-width: 95%;
     padding: 12px 15px;
     border-radius: 14px 14px 5px 14px;
-    background: #f4f5fd;
+    background: var(--atlas-ref-subtle);
     border: 1px solid #ebedfa;
     color: #29304a;
     font-size: 13px;
@@ -510,7 +515,7 @@
     color: #6e52ef;
 }
 .atlas-ref-answer .markdown {
-    color: #2a324c;
+    color: var(--atlas-ref-ink);
     line-height: 1.75;
     font-size: 13px;
 }
@@ -541,7 +546,7 @@
     margin-left: auto;
 }
 .atlas-ref-source-preview {
-    border: 1px solid #e9eaf3;
+    border: 1px solid var(--atlas-ref-line);
     border-radius: 12px;
     padding: 16px 13px;
     margin-top: 24px;
@@ -551,8 +556,8 @@
     width: 100%;
     align-items: center;
     text-align: left;
-    border: 1px solid #eaecf3;
-    background: #fff;
+    border: 1px solid var(--atlas-ref-line);
+    background: var(--atlas-ref-surface);
     gap: 10px;
     padding: 11px 12px;
     border-radius: 9px;
@@ -596,7 +601,7 @@
     width: 100%;
     border-radius: 12px;
     border: 1px solid #cdd2e4;
-    background: #fff;
+    background: var(--atlas-ref-surface);
     color: #27314c;
     padding: 16px;
     resize: vertical;
@@ -609,7 +614,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    border: 1px solid #e5e8f3;
+    border: 1px solid var(--atlas-ref-line);
     padding: 22px;
     border-radius: 12px;
     color: #36405d;
@@ -799,9 +804,9 @@
     position: relative;
 }
 .atlas-ref-composer .atlas-ref-source-trigger {
-    border: 1px solid #e7e9f4;
-    background: #fafbff;
-    color: #29334c;
+    border: 1px solid var(--atlas-ref-line);
+    background: var(--atlas-ref-subtle);
+    color: var(--atlas-ref-ink);
     border-radius: 22px;
     min-height: 34px;
     padding: 6px 12px;
@@ -819,4 +824,146 @@
 .atlas-ref-composer .research-source-popover {
     z-index: 60;
     width: min(360px, calc(100vw - 42px));
+}
+
+
+/* Single, border-led focus treatment for MUI research fields. */
+.atlas-ref-composer .MuiInputBase-input:focus,
+.atlas-ref-composer .MuiInputBase-input:focus-visible,
+.atlas-v3 .MuiInputBase-input:focus,
+.atlas-v3 .MuiInputBase-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+.atlas-ref-grid.atlas-ref-insight-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+}
+.atlas-ref-insight[hidden] {
+    display: none;
+}
+.atlas-ref-insight-toggle {
+    position: absolute;
+    right: 23px;
+    top: 18px;
+    z-index: 2;
+    color: var(--atlas-ref-ink);
+    background: var(--atlas-ref-surface);
+    border: 1px solid var(--atlas-ref-line);
+}
+.atlas-ref-progress-inline,
+.atlas-ref-progress-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--atlas-ref-ink);
+    background: var(--atlas-ref-subtle);
+    border: 1px solid var(--atlas-ref-line);
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.atlas-ref-progress-inline {
+    margin: -24px 0 22px;
+}
+.atlas-ref-progress-inline span {
+    flex: 1;
+}
+.atlas-ref-progress-inline button {
+    color: var(--atlas-ref-accent);
+    font-weight: 700;
+}
+.atlas-ref-progress-panel {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 12px;
+}
+.atlas-ref-progress-panel .MuiLinearProgress-root {
+    height: 3px;
+    border-radius: 5px;
+}
+.atlas-ref-insight-tabs > .MuiIconButton-root {
+    flex-shrink: 0;
+    margin-left: 1px;
+    color: var(--atlas-ref-muted);
+}
+@media (max-width: 1120px) {
+    .atlas-ref-grid.atlas-ref-insight-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+/* Research workspace uses the same theme selection as Atlas/MUI. */
+:root[data-theme='dark'] .atlas-reference-root {
+    --atlas-ref-background: #161b27;
+    --atlas-ref-surface: #232b3a;
+    --atlas-ref-subtle: #2b3548;
+    --atlas-ref-hover: #323d52;
+    --atlas-ref-ink: #eef0f9;
+    --atlas-ref-muted: #abb8d0;
+    --atlas-ref-line: #3b465b;
+    --atlas-ref-accent: #a99cff;
+    --atlas-ref-accent-soft: #363252;
+}
+:root[data-theme='dark'] .atlas-ref-hero {
+    background: linear-gradient(180deg, rgba(22, 27, 39, 0.72), rgba(22, 27, 39, 0.78)),
+        url('/atlas-mountain-scene.svg') center bottom/cover no-repeat;
+}
+:root[data-theme='dark'] .atlas-ref-hero h1,
+:root[data-theme='dark'] .atlas-ref-task strong,
+:root[data-theme='dark'] .atlas-ref-section-heading,
+:root[data-theme='dark'] .atlas-ref-answer-intro h2,
+:root[data-theme='dark'] .atlas-ref-empty h2 {
+    color: var(--atlas-ref-ink);
+}
+:root[data-theme='dark'] .atlas-ref-composer,
+:root[data-theme='dark'] .atlas-ref-task,
+:root[data-theme='dark'] .atlas-ref-research-list,
+:root[data-theme='dark'] .atlas-ref-research-row,
+:root[data-theme='dark'] .atlas-ref-insight,
+:root[data-theme='dark'] .atlas-ref-source-row,
+:root[data-theme='dark'] .atlas-ref-source-preview,
+:root[data-theme='dark'] .atlas-ref-notes,
+:root[data-theme='dark'] .atlas-ref-artifact-card {
+    background: var(--atlas-ref-surface);
+    border-color: var(--atlas-ref-line);
+    color: var(--atlas-ref-ink);
+}
+:root[data-theme='dark'] .atlas-ref-composer textarea,
+:root[data-theme='dark'] .atlas-ref-question span,
+:root[data-theme='dark'] .atlas-ref-answer .markdown,
+:root[data-theme='dark'] .atlas-ref-research-row,
+:root[data-theme='dark'] .atlas-ref-source-row,
+:root[data-theme='dark'] .atlas-ref-artifact-card,
+:root[data-theme='dark'] .atlas-ref-notes {
+    color: var(--atlas-ref-ink);
+}
+:root[data-theme='dark'] .atlas-ref-question span,
+:root[data-theme='dark'] .atlas-ref-spark,
+:root[data-theme='dark'] .atlas-ref-section-heading span,
+:root[data-theme='dark'] .atlas-ref-source-trigger,
+:root[data-theme='dark'] .atlas-ref-composer .atlas-ref-pill {
+    background: var(--atlas-ref-subtle);
+    border-color: var(--atlas-ref-line);
+    color: var(--atlas-ref-ink);
+}
+:root[data-theme='dark'] .atlas-ref-composer .atlas-ref-pill:hover,
+:root[data-theme='dark'] .atlas-ref-research-row:hover,
+:root[data-theme='dark'] .atlas-ref-source-row:hover,
+:root[data-theme='dark'] .atlas-ref-source-trigger:hover {
+    background: var(--atlas-ref-hover);
+}
+:root[data-theme='dark'] .atlas-ref-hero p,
+:root[data-theme='dark'] .atlas-ref-task small,
+:root[data-theme='dark'] .atlas-ref-research-row small,
+:root[data-theme='dark'] .atlas-ref-source-row small,
+:root[data-theme='dark'] .atlas-ref-empty,
+:root[data-theme='dark'] .atlas-ref-artifact-card p {
+    color: var(--atlas-ref-muted);
+}
+:root[data-theme='dark'] .atlas-ref-insight-tabs,
+:root[data-theme='dark'] .atlas-ref-research-row + .atlas-ref-research-row,
+:root[data-theme='dark'] .atlas-ref-question span {
+    border-color: var(--atlas-ref-line);
 }
