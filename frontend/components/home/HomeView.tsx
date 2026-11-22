@@ -204,7 +204,7 @@ export function HomeView({
                         <TextField
                             inputRef={prompt}
                             variant="standard"
-                            label="Ask a research question"
+                            aria-label="Ask a research question"
                             placeholder="Ask a research question..."
                             value={query}
                             onChange={(event) => onQueryChange(event.target.value)}
