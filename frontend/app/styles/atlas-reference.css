@@ -1112,10 +1112,6 @@
 }
 
 /* Storage metadata must remain readable against both sidebar card surfaces. */
-.atlas-reference-sidebar .atlas-ref-workspace-badge {
-    background: var(--atlas-sidebar-hover);
-    color: var(--atlas-sidebar-fg);
-}
 .atlas-reference-sidebar .atlas-ref-storage-row {
     color: #525866;
     font-weight: 500;
