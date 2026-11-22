@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, IconButton, Menu, MenuItem, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
+import { Alert, Button, IconButton, Menu, MenuItem, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
 import { ArrowUpRight, BookOpenText, Check, Copy, Download, FileText, Layers, MoreHorizontal, StickyNote, Sparkles } from 'lucide-react';
 import type { Answer, Source } from '../../lib/types';
 import { sourceDisplayName, sourceLocation, visibleEvidence } from '../../lib/evidence';
@@ -29,6 +29,7 @@ export function AtlasReferencePanel({
     const [notes, setNotes] = useState('');
     const [copied, setCopied] = useState(false);
     const sources = visibleEvidence(answer);
+    const incompleteSources = answer?.retrieval?.sources.filter((source) => source.status === 'partial' || source.status === 'failed') ?? [];
 
     function copyAnswer() {
         if (!answer) return;
@@ -82,6 +83,11 @@ export function AtlasReferencePanel({
             </div>
 
             <div className="atlas-ref-insight-body">
+                {(tab === 'answer' || tab === 'sources') && incompleteSources.length > 0 && (
+                    <Alert severity="warning" role="status" sx={{ mb: 2 }}>
+                        Some connected sources returned incomplete results: {incompleteSources.map((source) => source.provider).join(', ')}. Review their connection status before relying on this answer.
+                    </Alert>
+                )}
                 {tab === 'answer' && (
                     <section aria-label="Answer preview">
                         {answer ? (
