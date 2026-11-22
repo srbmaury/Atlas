@@ -77,6 +77,7 @@ export function ResearchComposer({
             inputRef={textareaRef}
             inputLabel="Your question"
             placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
+            maxRows={7}
             sourceSelector={sourceSelector}
             context={
                 <>
@@ -110,7 +111,7 @@ export function ResearchComposer({
                         </Alert>
                     )}
                     {matchingAgents.length > 0 && (
-                        <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, borderRadius: 2 }}>
+                        <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
                             {matchingAgents.map((agent) => (
                                 <Button
                                     key={agent.id}
@@ -194,7 +195,7 @@ export function ResearchComposer({
                                 onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
                                 size="small"
                             >
-                                {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
+                                {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
                             </IconButton>
                         </span>
                     </Tooltip>
