@@ -1155,3 +1155,12 @@
 .atlas-reference-sidebar .atlas-ref-profile .MuiIconButton-root {
     color: var(--atlas-sidebar-muted);
 }
+
+/* Storage metadata must remain readable against both sidebar card surfaces. */
+.atlas-reference-sidebar .atlas-ref-storage-row {
+    color: #525866;
+    font-weight: 500;
+}
+:root[data-theme='dark'] .atlas-reference-sidebar .atlas-ref-storage-row {
+    color: #c2c6d0;
+}
