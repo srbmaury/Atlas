@@ -266,7 +266,9 @@ export function HomeView({
                         <LoaderCircle size={16} className="spin" aria-hidden="true" />
                         <span>{answerProgress}</span>
                         {!insightOpen && (
-                            <button type="button" onClick={() => setInsightOpen(true)}>Show details</button>
+                            <button type="button" onClick={() => setInsightOpen(true)}>
+                                Show details
+                            </button>
                         )}
                     </div>
                 )}

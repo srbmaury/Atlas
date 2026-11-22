@@ -826,7 +826,6 @@
     width: min(360px, calc(100vw - 42px));
 }
 
-
 /* Single, border-led focus treatment for MUI research fields. */
 .atlas-ref-composer .MuiInputBase-input:focus,
 .atlas-ref-composer .MuiInputBase-input:focus-visible,
@@ -893,7 +892,6 @@
     }
 }
 
-
 /* Research workspace uses the same theme selection as Atlas/MUI. */
 :root[data-theme='dark'] .atlas-reference-root {
     --atlas-ref-background: #161b27;
@@ -907,7 +905,8 @@
     --atlas-ref-accent-soft: #363252;
 }
 :root[data-theme='dark'] .atlas-ref-hero {
-    background: linear-gradient(180deg, rgba(22, 27, 39, 0.72), rgba(22, 27, 39, 0.78)),
+    background:
+        linear-gradient(180deg, rgba(22, 27, 39, 0.72), rgba(22, 27, 39, 0.78)),
         url('/atlas-mountain-scene.svg') center bottom/cover no-repeat;
 }
 :root[data-theme='dark'] .atlas-ref-hero h1,
