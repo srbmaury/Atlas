@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { ArrowUp, FileText, FolderOpen, Mic, MicOff, Plus } from 'lucide-react';
-import { Alert, Box, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Alert, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface ResearchComposerProps {
@@ -115,27 +115,27 @@ export function ResearchComposer({
                     ))}
                 </Paper>
             )}
-                <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
-                    <MenuItem
-                        disabled={!canUpload || uploading}
-                        onClick={() => {
-                            setMenuAnchor(null);
-                            onUpload();
-                        }}
-                    >
-                        <FileText size={17} className="mr-3" />
-                        Upload a document
-                    </MenuItem>
-                    <MenuItem
-                        onClick={() => {
-                            setMenuAnchor(null);
-                            onBrowseLibrary();
-                        }}
-                    >
-                        <FolderOpen size={17} className="mr-3" />
-                        Choose from library
-                    </MenuItem>
-                </Menu>
+            <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
+                <MenuItem
+                    disabled={!canUpload || uploading}
+                    onClick={() => {
+                        setMenuAnchor(null);
+                        onUpload();
+                    }}
+                >
+                    <FileText size={17} className="mr-3" />
+                    Upload a document
+                </MenuItem>
+                <MenuItem
+                    onClick={() => {
+                        setMenuAnchor(null);
+                        onBrowseLibrary();
+                    }}
+                >
+                    <FolderOpen size={17} className="mr-3" />
+                    Choose from library
+                </MenuItem>
+            </Menu>
             <div className="research-composer-input-row">
                 <div className="research-composer-question">
                     <InputBase
@@ -148,7 +148,7 @@ export function ResearchComposer({
                         onChange={(event) => onChange(event.target.value)}
                         fullWidth
                         disabled={busy}
-                        inputProps={{ maxLength: 4000, 'aria-label': 'Your question', 'aria-describedby': 'research-composer-help' }}
+                        inputProps={{ maxLength: 4000, 'aria-label': 'Your question' }}
                         sx={{
                             minWidth: 0,
                             flex: 1,
@@ -171,7 +171,7 @@ export function ResearchComposer({
                             aria-haspopup="menu"
                             aria-expanded={!!menuAnchor}
                             onClick={(event) => setMenuAnchor(event.currentTarget)}
-                            sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: 0.5 }}
+                            sx={{ flexShrink: 0 }}
                         >
                             <Plus size={19} />
                         </IconButton>
@@ -183,13 +183,13 @@ export function ResearchComposer({
                                 aria-pressed={voice.listening}
                                 disabled={busy || (!voice.supported && !voice.listening)}
                                 onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
-                                sx={{ mb: 0.5 }}
+                                sx={{}}
                             >
                                 {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
                             </IconButton>
                         </span>
                     </Tooltip>
-                    <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 42, height: 42, px: 1, mb: 0.5 }}>
+                    <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 38, height: 38, px: 1, borderRadius: 2.5 }}>
                         {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
                     </Button>
                 </div>
