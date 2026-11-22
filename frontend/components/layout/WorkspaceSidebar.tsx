@@ -87,7 +87,7 @@ export function WorkspaceSidebar({
                     </div>
                 </div>
 
-                <button className="atlas-ref-workspace-switcher" type="button" onClick={onWorkspaceSettings} aria-label="Switch workspace" title="Switch or manage workspaces">
+                <button className="atlas-ref-workspace-switcher" type="button" onClick={onWorkspaceSettings} aria-label="Switch workspace">
                     <span className="atlas-ref-workspace-avatar">{workspace?.name?.charAt(0).toUpperCase() || 'A'}</span>
                     <span className="atlas-ref-workspace-details">
                         <strong>{workspace?.name || 'Choose workspace'}</strong>
