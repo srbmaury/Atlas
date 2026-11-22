@@ -34,6 +34,8 @@ interface WorkspaceSidebarProps {
     busy: boolean;
     onWorkspaceSettings: () => void;
     workspace?: Workspace;
+    workspaces?: Workspace[];
+    onSelectWorkspace?: (id: string) => void;
     workspaceCount: number;
     tab: Tab;
     onNavigate: (tab: Tab) => void;
@@ -68,6 +70,8 @@ export function WorkspaceSidebar({
     busy,
     onWorkspaceSettings,
     workspace,
+    workspaces = [],
+    onSelectWorkspace,
     workspaceCount,
     tab,
     onNavigate,
@@ -147,14 +151,18 @@ export function WorkspaceSidebar({
                 </nav>
 
                 <div className="atlas-ref-sidebar-label">Workspaces</div>
-                <button className="atlas-ref-workspace" data-selected="true" type="button" onClick={onWorkspaceSettings} aria-label="Switch workspace" title={workspace?.name || 'Choose workspace'}>
-                    <FolderClosed size={18} color="#a174fb" />
-                    <span className="min-w-0 flex-1 truncate">{workspace?.name || 'My workspace'}</span>
-                    <ChevronDown size={15} />
-                </button>
+                {(workspaces.length ? workspaces : workspace ? [workspace] : []).map((item) => (
+                    <button className="atlas-ref-workspace" key={item.id} data-selected={workspace?.id === item.id} type="button"
+                        aria-current={workspace?.id === item.id ? 'true' : undefined} aria-label={`Switch to ${item.name}`} title={item.name}
+                        onClick={() => { onSelectWorkspace?.(item.id); onClose(); }}>
+                        <FolderClosed size={18} color={workspace?.id === item.id ? '#a174fb' : '#97a6c5'} />
+                        <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    </button>
+                ))}
                 <button className="atlas-ref-workspace" type="button" onClick={onWorkspaceSettings} title="Manage workspaces">
                     <FolderPlus size={17} color="#97a6c5" />
-                    <span>Manage {workspaceCount > 1 ? `${workspaceCount} workspaces` : 'workspaces'}</span>
+                    <span>New or manage workspaces</span>
+                    <ChevronDown size={15} />
                 </button>
 
                 <div className="atlas-ref-sidebar-label">Recent research</div>
