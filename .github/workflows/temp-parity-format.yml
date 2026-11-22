@@ -1,0 +1,26 @@
+name: Temporary composer visual parity formatting
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+    paths: [.github/workflows/temp-parity-format.yml]
+jobs:
+  formatter:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+        working-directory: frontend
+      - name: Format changed composer files and print
+        working-directory: frontend
+        shell: bash
+        run: |
+          npx prettier --write components/home/HomeView.tsx components/chat/ResearchComposer.tsx components/chat/ResearchWorkspace.tsx components/AtlasWorkspace.tsx e2e/reference-dashboard.spec.ts
+          echo -n 'PARITY_HOME='; base64 -w0 components/home/HomeView.tsx; echo
+          echo -n 'PARITY_CHAT='; base64 -w0 components/chat/ResearchComposer.tsx; echo
+          echo -n 'PARITY_WORKSPACE='; base64 -w0 components/chat/ResearchWorkspace.tsx; echo
+          echo -n 'PARITY_MAIN='; base64 -w0 components/AtlasWorkspace.tsx; echo
+          echo -n 'PARITY_TEST='; base64 -w0 e2e/reference-dashboard.spec.ts; echo
+          npm run typecheck
