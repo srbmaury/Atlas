@@ -22,6 +22,7 @@ interface ResearchComposerProps {
     includeDocuments: boolean;
     onIncludeDocumentsChange: (enabled: boolean) => void;
     readyCount: number;
+    sourceLabels: string[];
     selectedDocuments: { id: string; name: string }[];
     pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
@@ -46,6 +47,7 @@ export function ResearchComposer({
     includeDocuments,
     onIncludeDocumentsChange,
     readyCount,
+    sourceLabels,
     selectedDocuments,
     pendingDocuments,
     onRemoveDocument,
@@ -198,11 +200,23 @@ export function ResearchComposer({
                 </>
             }
             footer={
-                (voice.listening || voice.error) && (
-                    <Typography variant="caption" role={voice.error ? 'alert' : 'status'} color={voice.error ? 'error' : 'text.secondary'}>
-                        {voice.error || 'Listening…'}
-                    </Typography>
-                )
+                <>
+                    {(voice.listening || voice.error) && (
+                        <Typography variant="caption" role={voice.error ? 'alert' : 'status'} color={voice.error ? 'error' : 'text.secondary'}>
+                            {voice.error || 'Listening…'}
+                        </Typography>
+                    )}
+                    {!hasAskSources && (
+                        <Typography variant="caption" color="text.secondary">
+                            Select a source or add a document to enable research.
+                        </Typography>
+                    )}
+                    {!!sourceLabels.length && (
+                        <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
+                            {sourceLabels.join(' · ')}
+                        </div>
+                    )}
+                </>
             }
         />
     );
