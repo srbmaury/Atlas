@@ -10,6 +10,7 @@ import {
     FolderClosed,
     FolderPlus,
     LogOut,
+    MessageSquare,
     PanelLeftClose,
     Plug,
     Plus,
