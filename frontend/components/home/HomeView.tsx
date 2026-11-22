@@ -1,6 +1,6 @@
 'use client';
 import { type ReactNode } from 'react';
-import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff } from 'lucide-react';
+import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff, Globe2, GitCompareArrows, NotebookPen } from 'lucide-react';
 import type { Doc, ChatSummary } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { FileBadge } from '../ui/WorkspacePrimitives';
@@ -75,83 +75,6 @@ export function HomeView({
                 <div className="home-hero-copy">
                     <h1>Research you can trace.</h1>
                     <p>Ask across your documents, the web, and connected sources. Explore answers with evidence you can inspect.</p>
-                </div>
-            </div>
-            <div className="home-section-header">
-                <div>
-                    <h2>Your workspace</h2>
-                </div>
-                <button className="text-action" onClick={onOpenSources}>
-                    Connected sources <ArrowUpRight size={15} />
-                </button>
-            </div>
-            <div className="home-activity-grid">
-                <div className="home-activity-card">
-                    <div className="home-card-head">
-                        <div>
-                            <span className="home-card-icon">
-                                <MessageSquare size={18} />
-                            </span>
-                            <h3>Recent conversations</h3>
-                        </div>
-                        <button aria-label="Open conversations" onClick={onOpenConversations}>
-                            <ArrowUpRight size={18} />
-                        </button>
-                    </div>
-                    {chats.length ? (
-                        <div className="home-activity-list">
-                            {chats.slice(0, 4).map((item) => (
-                                <button key={item.id} onClick={() => onOpenConversation(item.id)}>
-                                    <span>
-                                        <strong>{item.title}</strong>
-                                        <small>{new Date(item.updated * 1000).toLocaleDateString()}</small>
-                                    </span>
-                                    <ChevronRight size={16} />
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="home-card-empty">
-                            <p>Every good question starts a conversation.</p>
-                            <button onClick={onStartChat}>
-                                Start researching <ArrowUpRight size={14} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-                <div className="home-activity-card">
-                    <div className="home-card-head">
-                        <div>
-                            <span className="home-card-icon">
-                                <FileText size={18} />
-                            </span>
-                            <h3>Recent documents</h3>
-                        </div>
-                        <button aria-label="Open document library" onClick={onOpenDocuments}>
-                            <ArrowUpRight size={18} />
-                        </button>
-                    </div>
-                    {docs.length ? (
-                        <div className="home-activity-list">
-                            {docs.slice(0, 4).map((d) => (
-                                <button key={d.id} onClick={() => onInspectDocument(d)}>
-                                    <FileBadge name={d.name} />
-                                    <span>
-                                        <strong>{d.name}</strong>
-                                        <small>
-                                            {formatSize(d.size)} · {d.status === 'ready' ? 'Ready to explore' : d.status}
-                                        </small>
-                                    </span>
-                                    <ChevronRight size={16} />
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="home-card-empty">
-                            <p>Add a document to start building your knowledge.</p>
-                            {uploadButton}
-                        </div>
-                    )}
                 </div>
             </div>
             <div className="home-prompt-panel">
@@ -232,6 +155,107 @@ export function HomeView({
                     )}
                     <p className="home-source-routing-note">Matching questions can also use a connected Calendar or GitHub automatically.</p>
                 </form>
+            </div>
+            <section className="atlas-research-shortcuts" aria-labelledby="research-shortcuts-heading">
+                <div className="atlas-shortcuts-heading">
+                    <h2 id="research-shortcuts-heading">Start with a research task</h2>
+                    <p>Choose a starting point, then refine your question before sending.</p>
+                </div>
+                <div className="atlas-shortcuts-grid">
+                    {([
+                        { title: 'Compare perspectives', description: 'Find agreements and disagreements', icon: GitCompareArrows, prompt: 'Compare the key perspectives on ' },
+                        { title: 'Summarize documents', description: 'Extract findings with citations', icon: FileText, prompt: 'Summarize the key findings from my documents about ' },
+                        { title: 'Explore a topic', description: 'Investigate a question in depth', icon: Globe2, prompt: 'Research the main developments and evidence about ' },
+                        { title: 'Draft a research brief', description: 'Build a structured, cited overview', icon: NotebookPen, prompt: 'Create a structured research brief with citations about ' },
+                    ] as const).map((task) => (
+                        <button type="button" className="atlas-shortcut" key={task.title} onClick={() => {
+                            onQueryChange(task.prompt);
+                            document.querySelector<HTMLTextAreaElement>('.home-prompt-panel textarea')?.focus();
+                        }}>
+                            <span className="atlas-shortcut-icon"><task.icon size={19} /></span>
+                            <strong>{task.title}</strong>
+                            <small>{task.description}</small>
+                            <ArrowUpRight className="atlas-shortcut-arrow" size={16} aria-hidden="true" />
+                        </button>
+                    ))}
+                </div>
+            </section>
+            <div className="home-section-header">
+                <div>
+                    <h2>Your workspace</h2>
+                </div>
+                <button className="text-action" onClick={onOpenSources}>
+                    Connected sources <ArrowUpRight size={15} />
+                </button>
+            </div>
+            <div className="home-activity-grid">
+                <div className="home-activity-card">
+                    <div className="home-card-head">
+                        <div>
+                            <span className="home-card-icon">
+                                <MessageSquare size={18} />
+                            </span>
+                            <h3>Recent conversations</h3>
+                        </div>
+                        <button aria-label="Open conversations" onClick={onOpenConversations}>
+                            <ArrowUpRight size={18} />
+                        </button>
+                    </div>
+                    {chats.length ? (
+                        <div className="home-activity-list">
+                            {chats.slice(0, 4).map((item) => (
+                                <button key={item.id} onClick={() => onOpenConversation(item.id)}>
+                                    <span>
+                                        <strong>{item.title}</strong>
+                                        <small>{new Date(item.updated * 1000).toLocaleDateString()}</small>
+                                    </span>
+                                    <ChevronRight size={16} />
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="home-card-empty">
+                            <p>Every good question starts a conversation.</p>
+                            <button onClick={onStartChat}>
+                                Start researching <ArrowUpRight size={14} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <div className="home-activity-card">
+                    <div className="home-card-head">
+                        <div>
+                            <span className="home-card-icon">
+                                <FileText size={18} />
+                            </span>
+                            <h3>Recent documents</h3>
+                        </div>
+                        <button aria-label="Open document library" onClick={onOpenDocuments}>
+                            <ArrowUpRight size={18} />
+                        </button>
+                    </div>
+                    {docs.length ? (
+                        <div className="home-activity-list">
+                            {docs.slice(0, 4).map((d) => (
+                                <button key={d.id} onClick={() => onInspectDocument(d)}>
+                                    <FileBadge name={d.name} />
+                                    <span>
+                                        <strong>{d.name}</strong>
+                                        <small>
+                                            {formatSize(d.size)} · {d.status === 'ready' ? 'Ready to explore' : d.status}
+                                        </small>
+                                    </span>
+                                    <ChevronRight size={16} />
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="home-card-empty">
+                            <p>Add a document to start building your knowledge.</p>
+                            {uploadButton}
+                        </div>
+                    )}
+                </div>
             </div>
             {canEdit && (
                 <div
