@@ -445,35 +445,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 ))}
                             </div>
                         )}
-                        <div className="research-source-toolbar">
-                            <ResearchSourceSelector
-                                includeDocuments={props.includeDocuments}
-                                onIncludeDocuments={props.setIncludeDocuments}
-                                gmailStatus={props.gmailStatus}
-                                connectedGmail={props.connectedGmail}
-                                onIncludeGmail={props.setConnectedGmail}
-                                driveStatus={props.driveStatus}
-                                sourceStatuses={props.sourceStatuses}
-                                connectedProviders={props.connectedProviders}
-                                onSelectAll={(select) => {
-                                    props.setIncludeDocuments(select);
-                                    props.setConnectedGmail(select && !!props.gmailStatus?.connected);
-                                    props.setConnectedProviders(
-                                        select
-                                            ? RESEARCH_PROVIDERS.filter((provider) =>
-                                                  provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
-                                              )
-                                            : [],
-                                    );
-                                }}
-                                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
-                                onManage={props.onManageSources}
-                                onBrowseDocuments={props.onBrowseLibrary}
-                                selectedCount={props.selectedCount}
-                                sourceLoadFailed={props.sourceLoadFailed}
-                                onRetrySources={props.onRetrySources}
-                            />
-                        </div>
                         {props.connectedGmail && (
                             <div className="unified-gmail-scope">
                                 <label>
@@ -483,6 +454,38 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         )}
                         <ResearchComposer
+                            sourceSelector={
+                                <ResearchSourceSelector
+                                includeDocuments={props.includeDocuments}
+                                onIncludeDocuments={props.setIncludeDocuments}
+                                gmailStatus={props.gmailStatus}
+                                connectedGmail={props.connectedGmail}
+                                onIncludeGmail={props.setConnectedGmail}
+                                driveStatus={props.driveStatus}
+                                sourceStatuses={props.sourceStatuses}
+                                connectedProviders={props.connectedProviders}
+                                onSelectAll={(select) => {
+                                props.setIncludeDocuments(select);
+                                props.setConnectedGmail(select && !!props.gmailStatus?.connected);
+                                props.setConnectedProviders(
+                                select
+                                ? RESEARCH_PROVIDERS.filter((provider) =>
+                                provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                )
+                                : [],
+                                );
+                                }}
+                                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
+                                onManage={props.onManageSources}
+                                onBrowseDocuments={props.onBrowseLibrary}
+                                selectedCount={props.selectedCount}
+                                sourceLoadFailed={props.sourceLoadFailed}
+                                onRetrySources={props.onRetrySources}
+                                />
+                            }
+                            includeDocuments={props.includeDocuments}
+                            onIncludeDocumentsChange={props.setIncludeDocuments}
+                            readyCount={props.readyCount}
                             mentionAgents={props.mentionAgents}
                             query={props.query}
                             onChange={props.setQuery}
