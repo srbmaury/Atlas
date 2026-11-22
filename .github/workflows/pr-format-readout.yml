@@ -1,0 +1,29 @@
+name: Temporary PR formatter readout
+on:
+  push:
+    branches:
+      - design/mui-tailwind-frontend
+    paths:
+      - .github/workflows/pr-format-readout.yml
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Format and print target files
+        working-directory: frontend
+        run: |
+          npx prettier --write components/chat/ResearchComposer.tsx components/layout/WorkspaceSidebar.tsx
+          printf "FORMATTED_COMPOSER="
+          base64 -w0 components/chat/ResearchComposer.tsx
+          printf "\nFORMATTED_SIDEBAR="
+          base64 -w0 components/layout/WorkspaceSidebar.tsx
+          printf "\n"
