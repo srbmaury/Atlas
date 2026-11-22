@@ -209,12 +209,12 @@ export function HomeView({
                                 }
                             }}
                             multiline
-                            minRows={2}
+                            minRows={1}
                             maxRows={7}
                             fullWidth
                             disabled={busy}
                             slotProps={{ input: { disableUnderline: true }, htmlInput: { maxLength: 4000 } }}
-                            sx={{ '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
+                            sx={{ minWidth: 0, '& .MuiInputBase-root': { alignItems: 'flex-start' }, '& textarea': { fontSize: 15, lineHeight: 1.65 } }}
                         />
                         <div className="atlas-ref-composer-bottom">
                             <div className="atlas-ref-pills">
