@@ -286,7 +286,9 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
         <div className={styles.studio}>
             <div className={styles.pageHead}>
                 <div>
-                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>Agents</Typography>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>
+                        Agents
+                    </Typography>
                     <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
                 </div>
                 {canEdit && (
@@ -323,7 +325,15 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                     placeholder="Search agents by name or purpose..."
                     value={agentSearch}
                     onChange={(event) => setAgentSearch(event.target.value)}
-                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search size={17} /></InputAdornment> } }}
+                    slotProps={{
+                        input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search size={17} />
+                                </InputAdornment>
+                            ),
+                        },
+                    }}
                 />
                 <Chip variant="outlined" label={`${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`} />
             </div>
