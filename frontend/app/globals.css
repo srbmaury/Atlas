@@ -13,4 +13,5 @@
 @import './styles/research-overrides.css' layer(legacy);
 @import './styles/visual-refinement.css' layer(legacy);
 @import './styles/atlas-reference.css' layer(components);
+@import './styles/atlas-dashboard.css' layer(components);
 @import 'tailwindcss/utilities.css' layer(utilities);
