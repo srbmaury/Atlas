@@ -61,10 +61,10 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeVisible();
 
     // The design's light-only surfaces should actually switch to dark colors.
-    const canvas = page.locator('.atlas-ref-canvas');
-    const lightSurface = await canvas.evaluate((element) => getComputedStyle(element).backgroundColor);
+    const canvasLocator = page.locator('.atlas-ref-canvas');
+    const lightSurface = await canvasLocator.evaluate((element) => getComputedStyle(element).backgroundColor);
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
-    await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSurface);
+    await expect.poll(() => canvasLocator.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSurface);
     const darkPanelSurface = await page.locator('.atlas-ref-insight').evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(darkPanelSurface).not.toBe('rgb(255, 255, 255)');
     await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
