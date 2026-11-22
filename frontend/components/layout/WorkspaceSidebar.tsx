@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { IconButton, Tooltip } from '@mui/material';
-import { BookOpenText, ChevronDown, CircleHelp, FileText, FolderClosed, FolderPlus, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
+import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
@@ -16,8 +16,6 @@ interface WorkspaceSidebarProps {
     busy: boolean;
     onWorkspaceSettings: () => void;
     workspace?: Workspace;
-    workspaces?: Workspace[];
-    onSelectWorkspace?: (id: string) => void;
     workspaceCount: number;
     chats: ChatSummary[];
     chatsLoading: boolean;
@@ -51,8 +49,6 @@ export function WorkspaceSidebar({
     busy,
     onWorkspaceSettings,
     workspace,
-    workspaces = [],
-    onSelectWorkspace,
     workspaceCount,
     chats,
     chatsLoading,
@@ -69,7 +65,6 @@ export function WorkspaceSidebar({
     onSignOut,
 }: WorkspaceSidebarProps) {
     const settingsUrl = `/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`;
-    const duplicateNames = new Set(workspaces.map((item) => item.name).filter((name, index, names) => names.indexOf(name) !== index));
     const handleNavigate = (next: Tab) => {
         onNavigate(next);
         onClose();
@@ -91,6 +86,15 @@ export function WorkspaceSidebar({
                         </IconButton>
                     </div>
                 </div>
+
+                <button className="atlas-ref-workspace-switcher" type="button" onClick={onWorkspaceSettings} aria-label="Switch workspace" title="Switch or manage workspaces">
+                    <span className="atlas-ref-workspace-avatar">{workspace?.name?.charAt(0).toUpperCase() || 'A'}</span>
+                    <span className="atlas-ref-workspace-details">
+                        <strong>{workspace?.name || 'Choose workspace'}</strong>
+                        <small>{workspaceCount} workspace{workspaceCount === 1 ? '' : 's'}</small>
+                    </span>
+                    <ChevronDown size={17} aria-hidden="true" />
+                </button>
 
                 <nav className="atlas-ref-nav" aria-label="Main navigation">
                     {mainNavigation.map(({ id, label, icon: Icon }) => (
@@ -121,31 +125,6 @@ export function WorkspaceSidebar({
                         <span>New chat</span>
                     </button>
                 </nav>
-
-                <div className="atlas-ref-sidebar-label">Workspaces</div>
-                {(workspaces.length ? workspaces : workspace ? [workspace] : []).map((item) => (
-                    <button
-                        className="atlas-ref-workspace"
-                        key={item.id}
-                        data-selected={workspace?.id === item.id}
-                        type="button"
-                        aria-current={workspace?.id === item.id ? 'true' : undefined}
-                        aria-label={`Switch to ${item.name}`}
-                        title={item.name}
-                        onClick={() => {
-                            onSelectWorkspace?.(item.id);
-                            onClose();
-                        }}
-                    >
-                        <FolderClosed size={18} color={workspace?.id === item.id ? '#a174fb' : '#97a6c5'} />
-                        <span className="min-w-0 flex-1 truncate">{item.name}{duplicateNames.has(item.name) ? ` · ${item.id.slice(0, 5)}` : ''}</span>
-                    </button>
-                ))}
-                <button className="atlas-ref-workspace" type="button" onClick={onWorkspaceSettings} title="Manage workspaces">
-                    <FolderPlus size={17} color="#97a6c5" />
-                    <span>New or manage workspaces</span>
-                    <ChevronDown size={15} />
-                </button>
 
                 <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
                     Recent chats
