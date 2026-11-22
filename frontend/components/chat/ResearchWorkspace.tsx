@@ -456,6 +456,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                         <ResearchComposer
                             sourceSelector={
                                 <ResearchSourceSelector
+                                    compact
                                 includeDocuments={props.includeDocuments}
                                 onIncludeDocuments={props.setIncludeDocuments}
                                 gmailStatus={props.gmailStatus}
