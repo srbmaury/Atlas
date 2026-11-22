@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { Button, Chip, IconButton, TextField, Typography } from '@mui/material';
 import { createPortal, flushSync } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -242,13 +243,13 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </article>,
                     document.body,
                 )}
-            <header className="focus-chat-header">
+            <header className="focus-chat-header border-b border-slate-200/60 bg-white/90">
                 <button type="button" className="icon-button" aria-label="Open menu" onClick={props.onOpenNavigation}>
                     <Menu />
                 </button>
                 <div className="focus-chat-title">
-                    <h1>{props.title}</h1>
-                    <span>Ask Atlas</span>
+                    <Typography component="h1" variant="subtitle1" sx={{ fontWeight: 800 }} title={props.title}>{props.title}</Typography>
+                    <Chip label="Research" variant="outlined" color="primary" size="small"/>
                 </div>
                 <details
                     ref={mobileActions}
@@ -288,26 +289,17 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <h1 title={props.title}>{props.title}</h1>
-                    <p className="subtitle">Answers grounded in your knowledge, with citations you can verify.</p>
+                    <Typography component="h1" variant="h5" title={props.title} sx={{ fontWeight: 800, lineHeight: 1.3 }}>{props.title}</Typography>
+                    <Typography color="text.secondary" variant="body2">Answers grounded in your knowledge, with citations you can verify.</Typography>
                 </div>
                 <div className="actions">
-                    <button className="btn" onClick={props.onToggleHistory}>
-                        <MessageSquare size={15} />
-                        {props.historyOpen ? 'Hide history' : 'History'}
-                    </button>
-                    <button className="btn hide-small" disabled={!props.canCopy} onClick={props.onCopy}>
-                        {props.copied ? <Check /> : <Copy />}
-                        {props.copied ? 'Copied' : 'Copy chat'}
-                    </button>
+                    <Button size="small" variant="outlined" startIcon={<MessageSquare size={15}/>} onClick={props.onToggleHistory}>{props.historyOpen ? 'Hide history' : 'History'}</Button>
+                    <Button size="small" variant="outlined" className="hide-small" startIcon={props.copied ? <Check size={16}/> : <Copy size={16}/>} disabled={!props.canCopy} onClick={props.onCopy}>{props.copied ? 'Copied' : 'Copy chat'}</Button>
                     <details ref={desktopExport} className="conversation-export">
                         <summary className="btn">Export</summary>
                         <div className="focus-chat-menu">{exportActions}</div>
                     </details>
-                    <button className="btn primary" aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
-                        <Plus />
-                        <span>New chat</span>
-                    </button>
+                    <Button size="small" variant="contained" startIcon={<Plus size={17}/>} aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>New chat</Button>
                 </div>
             </div>
             {props.userMode !== 'ai' && (
