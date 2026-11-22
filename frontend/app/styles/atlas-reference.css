@@ -964,3 +964,61 @@
 :root[data-theme='dark'] .atlas-ref-question span {
     border-color: var(--atlas-ref-line);
 }
+
+/* Recent chats are always scoped to the active workspace. */
+.atlas-reference-sidebar .atlas-ref-recent-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.atlas-reference-sidebar .atlas-ref-recent-title button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+}
+.atlas-reference-sidebar .atlas-ref-recent-title button:hover {
+    background: #303956;
+}
+.atlas-reference-sidebar .atlas-ref-recent {
+    max-height: 230px;
+    min-height: 40px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+.atlas-reference-sidebar .atlas-ref-recent > button {
+    max-width: 100%;
+    font-size: 12px;
+}
+.atlas-reference-sidebar .atlas-ref-recent > button > svg {
+    flex: 0 0 auto;
+}
+.atlas-reference-sidebar .atlas-ref-recent > button > span {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.atlas-reference-sidebar .atlas-ref-recent > p {
+    font-size: 11px;
+    color: #9baaca;
+    padding: 7px 12px;
+    margin: 0;
+    line-height: 1.5;
+}
+.atlas-reference-sidebar .atlas-ref-recent > p button {
+    color: #d4cafa;
+    width: auto;
+    padding: 2px;
+    display: inline;
+}
+.atlas-ref-workspace-caption {
+    font-size: 11px;
+    color: var(--atlas-ref-muted);
+    font-weight: 500;
+    white-space: normal;
+}

@@ -89,7 +89,7 @@ function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }
     }
 }
 
-export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId: string; canEdit: boolean; onUse?: (handle: string) => void }) {
+export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }: { workspaceId: string; workspaceName: string; canEdit: boolean; onUse?: (handle: string) => void }) {
     const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents`;
     const [agents, setAgents] = useState<Agent[]>([]);
     const [agentsLoadState, setAgentsLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -300,6 +300,9 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                         Agents
                     </Typography>
                     <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                        Workspace: {workspaceName}
+                    </Typography>
                 </div>
                 {canEdit && (
                     <Button
@@ -350,13 +353,13 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                 <div className={styles.libraryEmpty} role="status">
                     <Bot size={26} aria-hidden="true" />
                     <h2>Loading your research agents…</h2>
-                    <p>Checking the selected workspace for saved agents.</p>
+                    <p>Checking {workspaceName} for saved agents.</p>
                 </div>
             ) : agentsLoadState === 'error' && agents.length === 0 ? (
                 <div className={styles.libraryEmpty} role="alert">
                     <Bot size={26} aria-hidden="true" />
                     <h2>Couldn’t load research agents</h2>
-                    <p>The agent list could not be retrieved. Your existing agents may still be available.</p>
+                    <p>The agent list for {workspaceName} could not be retrieved. Your existing agents may still be available.</p>
                     <Button variant="outlined" onClick={() => void loadAgents().catch((err) => setError(err.message))}>Retry loading agents</Button>
                 </div>
             ) : filteredAgents.length ? (
@@ -471,7 +474,7 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                         {agents.length
                             ? 'Try a different name or purpose to find an agent.'
                             : canEdit
-                              ? 'Choose trusted knowledge sources, define instructions, and use the agent directly in Chat.'
+                              ? `No agents were returned for ${workspaceName}. Connect trusted knowledge sources, define instructions, and use an agent in Chat.`
                               : 'An editor or manager can create one.'}
                     </p>
                     {agents.length ? (
