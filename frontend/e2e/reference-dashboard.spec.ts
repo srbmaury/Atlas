@@ -23,18 +23,31 @@ test('reference research dashboard renders three columns and remains usable on a
         if (path === '/workspaces/w1/conversations/saved') {
             await savedConversationGate;
             return reply({
-            id: 'saved',
-            title: 'Renewable energy growth in Europe',
-            updated: Math.floor(Date.now() / 1000),
-            messages: [
-                { role: 'user', content: 'What drives renewable energy growth in Europe?' },
-                { role: 'assistant', content: 'Supportive policy and falling costs both matter. [1]', result: {
-                    mode: 'ai',
-                    answer: 'Europe’s renewable energy growth is shaped by **policy support**, declining generation costs and energy security. [1]',
-                    sources: [{ chunk_id: 'c1', document_id: 'd1', name: 'Europe energy brief.pdf', page: 2, location_type: 'page', text: 'Policy incentives and falling costs supported deployment.' }],
-                } },
-            ],
-        });
+                id: 'saved',
+                title: 'Renewable energy growth in Europe',
+                updated: Math.floor(Date.now() / 1000),
+                messages: [
+                    { role: 'user', content: 'What drives renewable energy growth in Europe?' },
+                    {
+                        role: 'assistant',
+                        content: 'Supportive policy and falling costs both matter. [1]',
+                        result: {
+                            mode: 'ai',
+                            answer: 'Europe’s renewable energy growth is shaped by **policy support**, declining generation costs and energy security. [1]',
+                            sources: [
+                                {
+                                    chunk_id: 'c1',
+                                    document_id: 'd1',
+                                    name: 'Europe energy brief.pdf',
+                                    page: 2,
+                                    location_type: 'page',
+                                    text: 'Policy incentives and falling costs supported deployment.',
+                                },
+                            ],
+                        },
+                    },
+                ],
+            });
         }
         return reply([]);
     });
@@ -78,11 +91,15 @@ test('reference research dashboard renders three columns and remains usable on a
     // The design's light-only surfaces should actually switch to dark colors.
     const canvasLocator = page.locator('.atlas-ref-canvas');
     const lightSurface = await canvasLocator.evaluate((element) => getComputedStyle(element).backgroundColor);
-    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+    await page.evaluate(() => {
+        document.documentElement.dataset.theme = 'dark';
+    });
     await expect.poll(() => canvasLocator.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSurface);
     const darkPanelSurface = await page.locator('.atlas-ref-insight').evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(darkPanelSurface).not.toBe('rgb(255, 255, 255)');
-    await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+    await page.evaluate(() => {
+        document.documentElement.dataset.theme = 'light';
+    });
     await page.getByRole('button', { name: 'More research tools' }).click();
     await page.getByRole('menuitem', { name: 'Quick notes' }).click();
     await expect(page.getByRole('textbox', { name: 'Quick notes' })).toBeVisible();
