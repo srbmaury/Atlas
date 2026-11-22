@@ -511,39 +511,39 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
             />
             <main className="main">
                 {tab !== 'overview' && (
-                <header className="topbar border-b border-[var(--line)] bg-[var(--panel)]">
-                    <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
-                        <Menu />
-                    </button>
-                    <button className="icon-button expand-sidebar" aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)}>
-                        <PanelLeftOpen />
-                    </button>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={() => setSearchOpen(true)}
-                        startIcon={<Search size={17} />}
-                        endIcon={<kbd className="key">⌘ K</kbd>}
-                        sx={{
-                            flex: '1 1 360px',
-                            maxWidth: 560,
-                            minWidth: 120,
-                            justifyContent: 'space-between',
-                            color: 'text.secondary',
-                            borderColor: 'divider',
-                            bgcolor: 'action.hover',
-                            '&:hover': { borderColor: 'primary.main' },
-                        }}
-                    >
-                        <span className="truncate">Search documents or ask a question…</span>
-                    </Button>
-                    <div className="top-actions">
-                        {themeButton}
-                        <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
-                            {initials}
-                        </Link>
-                    </div>
-                </header>
+                    <header className="topbar border-b border-[var(--line)] bg-[var(--panel)]">
+                        <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+                            <Menu />
+                        </button>
+                        <button className="icon-button expand-sidebar" aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)}>
+                            <PanelLeftOpen />
+                        </button>
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            onClick={() => setSearchOpen(true)}
+                            startIcon={<Search size={17} />}
+                            endIcon={<kbd className="key">⌘ K</kbd>}
+                            sx={{
+                                flex: '1 1 360px',
+                                maxWidth: 560,
+                                minWidth: 120,
+                                justifyContent: 'space-between',
+                                color: 'text.secondary',
+                                borderColor: 'divider',
+                                bgcolor: 'action.hover',
+                                '&:hover': { borderColor: 'primary.main' },
+                            }}
+                        >
+                            <span className="truncate">Search documents or ask a question…</span>
+                        </Button>
+                        <div className="top-actions">
+                            {themeButton}
+                            <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
+                                {initials}
+                            </Link>
+                        </div>
+                    </header>
                 )}
                 <div className={`content ${tab === 'overview' ? 'content-overview' : ''} ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
                     {error && (

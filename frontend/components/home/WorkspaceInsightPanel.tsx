@@ -29,9 +29,7 @@ const panelTabs: { id: PanelTab; label: string; icon: typeof Sparkles }[] = [
     { id: 'artifacts', label: 'Artifacts', icon: FileText },
 ];
 
-export function WorkspaceInsightPanel({
-    workspaceId, chatId, messages, documents, onOpenSource, onInspectDocument, onOpenDocuments, onOpenResearch, onStartChat,
-}: WorkspaceInsightPanelProps) {
+export function WorkspaceInsightPanel({ workspaceId, chatId, messages, documents, onOpenSource, onInspectDocument, onOpenDocuments, onOpenResearch, onStartChat }: WorkspaceInsightPanelProps) {
     const [tab, setTab] = useState<PanelTab>('answer');
     const [notes, setNotes] = useState('');
     const noteKey = `atlas:research-notes:${workspaceId}:${chatId || 'workspace'}`;
@@ -47,7 +45,11 @@ export function WorkspaceInsightPanel({
         const answerIndex = messages.findLastIndex((message) => message.role === 'assistant' && !!message.result);
         if (answerIndex < 0) return null;
         const message = messages[answerIndex];
-        const question = messages.slice(0, answerIndex).reverse().find((item) => item.role === 'user')?.content || '';
+        const question =
+            messages
+                .slice(0, answerIndex)
+                .reverse()
+                .find((item) => item.role === 'user')?.content || '';
         return { answer: message.result!, question };
     }, [messages]);
     const evidence = useMemo(() => visibleEvidence(selected?.answer), [selected]);
@@ -55,14 +57,7 @@ export function WorkspaceInsightPanel({
 
     return (
         <aside className="atlas-insight-panel" aria-label="Research insight panel">
-            <Tabs
-                value={tab}
-                onChange={(_event, value: PanelTab) => setTab(value)}
-                variant="scrollable"
-                scrollButtons="auto"
-                aria-label="Research insight tabs"
-                className="atlas-insight-tabs"
-            >
+            <Tabs value={tab} onChange={(_event, value: PanelTab) => setTab(value)} variant="scrollable" scrollButtons="auto" aria-label="Research insight tabs" className="atlas-insight-tabs">
                 {panelTabs.map(({ id, label, icon: Icon }) => (
                     <Tab key={id} value={id} icon={<Icon size={16} />} iconPosition="start" label={id === 'sources' && evidence.length ? `${label} ${evidence.length}` : label} />
                 ))}
@@ -80,29 +75,47 @@ export function WorkspaceInsightPanel({
                                 )}
                                 <div className="atlas-insight-response">
                                     <div className="atlas-insight-response-heading">
-                                        <span className="atlas-insight-sparkle"><Sparkles size={19} /></span>
-                                        <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 800 }}>Research answer</Typography>
+                                        <span className="atlas-insight-sparkle">
+                                            <Sparkles size={19} />
+                                        </span>
+                                        <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                            Research answer
+                                        </Typography>
                                     </div>
                                     <div className="atlas-insight-markdown">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{selected.answer.answer}</ReactMarkdown>
                                     </div>
                                     {selected.answer.citation_note && <p className="atlas-insight-note">{selected.answer.citation_note}</p>}
-                                    <Button variant="text" endIcon={<ArrowRight size={16} />} onClick={onOpenResearch}>Open conversation</Button>
+                                    <Button variant="text" endIcon={<ArrowRight size={16} />} onClick={onOpenResearch}>
+                                        Open conversation
+                                    </Button>
                                 </div>
                             </>
                         ) : (
                             <div className="atlas-insight-empty">
-                                <span className="atlas-insight-empty-icon"><Sparkles size={25} /></span>
-                                <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>Research, with evidence</Typography>
-                                <Typography color="text.secondary" variant="body2">Ask a question to see an answer, inspect its citations, and work with the findings here.</Typography>
-                                <Button variant="outlined" onClick={onStartChat}>Start new research</Button>
+                                <span className="atlas-insight-empty-icon">
+                                    <Sparkles size={25} />
+                                </span>
+                                <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                                    Research, with evidence
+                                </Typography>
+                                <Typography color="text.secondary" variant="body2">
+                                    Ask a question to see an answer, inspect its citations, and work with the findings here.
+                                </Typography>
+                                <Button variant="outlined" onClick={onStartChat}>
+                                    Start new research
+                                </Button>
                             </div>
                         )}
                         <section aria-labelledby="atlas-panel-sources" className="atlas-panel-source-preview">
                             <div className="atlas-insight-section-title">
-                                <Typography component="h3" variant="subtitle1" id="atlas-panel-sources" sx={{ fontWeight: 800 }}>Sources</Typography>
+                                <Typography component="h3" variant="subtitle1" id="atlas-panel-sources" sx={{ fontWeight: 800 }}>
+                                    Sources
+                                </Typography>
                                 <Chip label={evidence.length} size="small" variant="outlined" />
-                                <Button size="small" onClick={() => setTab('sources')} sx={{ ml: 'auto' }}>View all</Button>
+                                <Button size="small" onClick={() => setTab('sources')} sx={{ ml: 'auto' }}>
+                                    View all
+                                </Button>
                             </div>
                             {evidence.length ? (
                                 <div className="atlas-insight-source-list">
@@ -114,46 +127,74 @@ export function WorkspaceInsightPanel({
                                         </button>
                                     ))}
                                 </div>
-                            ) : <p className="atlas-insight-muted">Cited sources will appear here after a research answer.</p>}
+                            ) : (
+                                <p className="atlas-insight-muted">Cited sources will appear here after a research answer.</p>
+                            )}
                         </section>
                     </div>
                 )}
                 {tab === 'sources' && (
                     <div role="tabpanel" aria-label="Sources" className="atlas-insight-tabcontent">
-                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>Cited sources</Typography>
-                        <Typography variant="body2" color="text.secondary">Select a citation to inspect the original evidence.</Typography>
-                        {evidence.length ? evidence.map(({ source, number }) => (
-                            <button type="button" className="atlas-insight-source atlas-insight-source-detailed" key={`${number}:${source.chunk_id}`} onClick={() => onOpenSource(source)}>
-                                <span className="atlas-insight-source-number">[{number}]</span>
-                                <span className="atlas-insight-source-name">
-                                    <strong>{sourceDisplayName(source)}</strong>
-                                    <small>{sourceLocation(source, number)}</small>
-                                </span>
-                                <ExternalLink size={16} aria-hidden="true" />
-                            </button>
-                        )) : <p className="atlas-insight-muted">No cited sources in the current conversation yet.</p>}
+                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                            Cited sources
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Select a citation to inspect the original evidence.
+                        </Typography>
+                        {evidence.length ? (
+                            evidence.map(({ source, number }) => (
+                                <button type="button" className="atlas-insight-source atlas-insight-source-detailed" key={`${number}:${source.chunk_id}`} onClick={() => onOpenSource(source)}>
+                                    <span className="atlas-insight-source-number">[{number}]</span>
+                                    <span className="atlas-insight-source-name">
+                                        <strong>{sourceDisplayName(source)}</strong>
+                                        <small>{sourceLocation(source, number)}</small>
+                                    </span>
+                                    <ExternalLink size={16} aria-hidden="true" />
+                                </button>
+                            ))
+                        ) : (
+                            <p className="atlas-insight-muted">No cited sources in the current conversation yet.</p>
+                        )}
                     </div>
                 )}
                 {tab === 'notes' && (
                     <div role="tabpanel" aria-label="Notes" className="atlas-insight-tabcontent">
-                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>Research notes</Typography>
-                        <Typography color="text.secondary" variant="body2">Capture observations while you research.</Typography>
+                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                            Research notes
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                            Capture observations while you research.
+                        </Typography>
                         <TextField
-                            multiline minRows={10} fullWidth placeholder="Write notes, questions or ideas…"
-                            label="Research notes" value={notes}
+                            multiline
+                            minRows={10}
+                            fullWidth
+                            placeholder="Write notes, questions or ideas…"
+                            label="Research notes"
+                            value={notes}
                             onChange={(event) => {
                                 setNotes(event.target.value);
-                                try { window.localStorage.setItem(noteKey, event.target.value); } catch { /* Storage can be unavailable. */ }
+                                try {
+                                    window.localStorage.setItem(noteKey, event.target.value);
+                                } catch {
+                                    /* Storage can be unavailable. */
+                                }
                             }}
                             slotProps={{ htmlInput: { maxLength: 15000 } }}
                         />
-                        <Typography variant="caption" color="text.secondary">Saved in this browser only — not synced with your workspace.</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Saved in this browser only — not synced with your workspace.
+                        </Typography>
                     </div>
                 )}
                 {tab === 'artifacts' && (
                     <div role="tabpanel" aria-label="Artifacts" className="atlas-insight-tabcontent">
-                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>Your research material</Typography>
-                        <Typography variant="body2" color="text.secondary">Access documents behind your research. Generated artifacts aren't available in this view yet.</Typography>
+                        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                            Your research material
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Access documents behind your research. Generated artifacts aren't available in this view yet.
+                        </Typography>
                         {readyDocuments.slice(0, 8).map((doc) => (
                             <button className="atlas-insight-source atlas-insight-source-detailed" type="button" onClick={() => onInspectDocument(doc)} key={doc.id}>
                                 <BookOpen size={17} aria-hidden="true" />
@@ -162,7 +203,9 @@ export function WorkspaceInsightPanel({
                             </button>
                         ))}
                         {!readyDocuments.length && <p className="atlas-insight-muted">There are no indexed documents in this workspace.</p>}
-                        <Button variant="outlined" onClick={onOpenDocuments}>Open library</Button>
+                        <Button variant="outlined" onClick={onOpenDocuments}>
+                            Open library
+                        </Button>
                     </div>
                 )}
             </div>
