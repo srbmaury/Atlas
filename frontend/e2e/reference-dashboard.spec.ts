@@ -89,7 +89,13 @@ test('reference research dashboard renders three columns and remains usable on a
     await page.getByRole('tab', { name: /Sources/ }).click();
     await page.getByRole('tab', { name: 'Answer' }).click();
     await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeVisible();
+    const sourceMenu = page.getByRole('dialog', { name: 'Choose search sources' });
+    await expect(sourceMenu).toBeVisible();
+    const sourceMenuBounds = await sourceMenu.boundingBox();
+    expect(sourceMenuBounds).not.toBeNull();
+    expect(sourceMenuBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(sourceMenuBounds!.x + sourceMenuBounds!.width).toBeLessThanOrEqual(1672);
+    await expect(page.locator('.atlas-ref-composer').getByRole('button', { name: 'Research', exact: true })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'Documents' })).toBeChecked();
     await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeHidden();
