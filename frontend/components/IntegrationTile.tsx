@@ -32,7 +32,12 @@ export function IntegrationTile({ name, description, connected, account, icon, o
                 '&:hover, &:focus-within': { borderColor: 'primary.main', bgcolor: 'action.hover' },
             }}
         >
-            <CardActionArea disabled={disabled} onClick={onClick} aria-label={`${name} · ${connected ? 'Manage' : 'Connect'}`} sx={{ width: '100%', height: '100%', minHeight: 182, p: 2, display: 'flex', alignItems: 'stretch', cursor: 'pointer' }}>
+            <CardActionArea
+                disabled={disabled}
+                onClick={onClick}
+                aria-label={`${name} · ${connected ? 'Manage' : 'Connect'}`}
+                sx={{ width: '100%', height: '100%', minHeight: 182, p: 2, display: 'flex', alignItems: 'stretch', cursor: 'pointer' }}
+            >
                 <div className="flex w-full flex-col items-start gap-3 text-left">
                     <div className="flex w-full items-start justify-between">
                         <Box sx={{ display: 'grid', placeItems: 'center', p: 1.4, borderRadius: 2.5, bgcolor: 'action.hover', color: 'primary.main' }}>{icon}</Box>

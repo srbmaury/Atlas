@@ -2,22 +2,7 @@
 
 import Link from 'next/link';
 import { IconButton, Tooltip } from '@mui/material';
-import {
-    BookOpenText,
-    ChevronDown,
-    CircleHelp,
-    FileText,
-    FolderClosed,
-    FolderPlus,
-    LogOut,
-    MessageSquare,
-    PanelLeftClose,
-    Plug,
-    Plus,
-    Settings2,
-    Sparkles,
-    X,
-} from 'lucide-react';
+import { BookOpenText, ChevronDown, CircleHelp, FileText, FolderClosed, FolderPlus, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, Settings2, Sparkles, X } from 'lucide-react';
 import type { Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
