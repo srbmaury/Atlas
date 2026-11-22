@@ -1,7 +1,6 @@
 import type { Dispatch, SetStateAction, RefObject, FormEvent } from 'react';
 import { api } from '../../lib/api';
 import { uploadDocument } from '../../lib/uploadDocuments';
-import { sameDocumentSnapshot } from '../../lib/documentSnapshot';
 import type { User, Doc, DocumentPreview, Source } from '../../lib/types';
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
@@ -30,11 +29,8 @@ export async function refreshDocuments({ workspaceId, scope, setDocs, setSelecte
     if (!workspaceId) return;
     const documents = await api<Doc[]>(`/workspaces/${workspaceId}/documents`);
     if (scope.current !== workspaceId) return;
-    setDocs((current) => (sameDocumentSnapshot(current, documents) ? current : documents));
-    setSelected((current) => {
-        const remaining = current.filter((id) => documents.some((document) => document.id === id));
-        return remaining.length === current.length ? current : remaining;
-    });
+    setDocs(documents);
+    setSelected((old) => old.filter((id) => documents.some((document) => document.id === id)));
 }
 
 export function createDocumentActions({
