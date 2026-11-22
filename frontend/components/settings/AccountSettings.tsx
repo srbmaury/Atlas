@@ -189,7 +189,9 @@ export function AccountSettings() {
             <main className="settings-main">
                 <header className="settings-heading">
                     <span className="eyebrow">YOUR ATLAS</span>
-                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>{section === 'profile' ? 'Account' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}</Typography>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>
+                        {section === 'profile' ? 'Account' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}
+                    </Typography>
                     <p>
                         {section === 'profile'
                             ? 'Your profile, appearance, and session in one place.'
@@ -199,10 +201,14 @@ export function AccountSettings() {
                     </p>
                 </header>
                 {error && (
-                    <Alert severity="error" role="alert">{error}</Alert>
+                    <Alert severity="error" role="alert">
+                        {error}
+                    </Alert>
                 )}
                 {notice && (
-                    <Alert severity="success" role="status">{notice}</Alert>
+                    <Alert severity="success" role="status">
+                        {notice}
+                    </Alert>
                 )}
                 {section === 'profile' ? (
                     <>
@@ -273,8 +279,12 @@ export function AccountSettings() {
                                         if (nextTheme && nextTheme !== theme) toggleTheme();
                                     }}
                                 >
-                                    <ToggleButton value="light" aria-label="Light theme"><Sun size={15} className="mr-2" /> Light</ToggleButton>
-                                    <ToggleButton value="dark" aria-label="Dark theme"><Moon size={15} className="mr-2" /> Dark</ToggleButton>
+                                    <ToggleButton value="light" aria-label="Light theme">
+                                        <Sun size={15} className="mr-2" /> Light
+                                    </ToggleButton>
+                                    <ToggleButton value="dark" aria-label="Dark theme">
+                                        <Moon size={15} className="mr-2" /> Dark
+                                    </ToggleButton>
                                 </ToggleButtonGroup>
                             </div>
                             <div className="settings-setting-row">
