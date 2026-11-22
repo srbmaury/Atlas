@@ -445,8 +445,17 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 ))}
                             </div>
                         )}
-                        <div className="research-source-toolbar">
-                            <ResearchSourceSelector
+                        {props.connectedGmail && (
+                            <div className="unified-gmail-scope">
+                                <label>
+                                    Gmail search scope{' '}
+                                    <input aria-label="Gmail search scope" value={props.connectedGmailQuery} onChange={(event) => props.setConnectedGmailQuery(event.target.value)} />
+                                </label>
+                            </div>
+                        )}
+                        <ResearchComposer
+                            sourceSelector={
+                                <ResearchSourceSelector
                                 includeDocuments={props.includeDocuments}
                                 onIncludeDocuments={props.setIncludeDocuments}
                                 gmailStatus={props.gmailStatus}
@@ -473,16 +482,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 sourceLoadFailed={props.sourceLoadFailed}
                                 onRetrySources={props.onRetrySources}
                             />
-                        </div>
-                        {props.connectedGmail && (
-                            <div className="unified-gmail-scope">
-                                <label>
-                                    Gmail search scope{' '}
-                                    <input aria-label="Gmail search scope" value={props.connectedGmailQuery} onChange={(event) => props.setConnectedGmailQuery(event.target.value)} />
-                                </label>
-                            </div>
-                        )}
-                        <ResearchComposer
+                            }
                             mentionAgents={props.mentionAgents}
                             query={props.query}
                             onChange={props.setQuery}
