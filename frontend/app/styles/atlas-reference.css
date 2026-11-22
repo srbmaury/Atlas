@@ -1,8 +1,14 @@
-/* Atlas research dashboard layout: modeled on the original three-column mockup. */
 .atlas-reference-root {
     --atlas-ref-accent: #6551f5;
     --atlas-ref-accent-soft: #efedff;
-    --atlas-ref-sidebar: #11182c;
+    --atlas-ref-sidebar: #f2f3f5;
+    --atlas-sidebar-fg: #22252c;
+    --atlas-sidebar-muted: #646b78;
+    --atlas-sidebar-hover: #e8eaee;
+    --atlas-sidebar-selected: #e3e0fa;
+    --atlas-sidebar-selected-fg: #5141a6;
+    --atlas-sidebar-border: #dfe2e7;
+    --atlas-sidebar-card: #fff;
     --atlas-ref-ink: #161c33;
     --atlas-ref-line: #e7e8f1;
     --atlas-ref-background: #fafbfc;
@@ -21,8 +27,9 @@
     width: 252px;
     padding: 0;
     background: var(--atlas-ref-sidebar);
-    color: #edf0ff;
+    color: var(--atlas-sidebar-fg);
     border: 0;
+    border-right: 1px solid var(--atlas-sidebar-border);
     z-index: 20;
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-body {
@@ -37,7 +44,7 @@
     align-items: center;
     gap: 12px;
     padding: 0 14px 24px;
-    color: white;
+    color: var(--atlas-sidebar-fg);
     font-size: 23px;
     font-weight: 800;
     letter-spacing: -0.045em;
@@ -52,7 +59,7 @@
 .atlas-reference-sidebar .atlas-ref-nav-item {
     width: 100%;
     min-height: 45px;
-    color: #d7deef;
+    color: var(--atlas-sidebar-muted);
     border: 0;
     background: transparent;
     border-radius: 10px;
@@ -66,24 +73,24 @@
     cursor: pointer;
 }
 .atlas-reference-sidebar .atlas-ref-nav-item:hover {
-    background: #262c48;
-    color: #fff;
+    background: var(--atlas-sidebar-hover);
+    color: var(--atlas-sidebar-fg);
 }
 .atlas-reference-sidebar .atlas-ref-nav-item[data-active='true'] {
-    background: linear-gradient(90deg, #424093, #343875);
-    color: #fff;
-    box-shadow: inset 3px 0 0 #a19aff;
+    background: var(--atlas-sidebar-selected);
+    color: var(--atlas-sidebar-selected-fg);
+    box-shadow: inset 3px 0 0 #9180ef;
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-label {
     margin: 22px 14px 10px;
-    color: #909bb8;
+    color: var(--atlas-sidebar-muted);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.13em;
     text-transform: uppercase;
 }
 .atlas-reference-sidebar .atlas-ref-workspace {
-    color: #e1e6f7;
+    color: var(--atlas-sidebar-muted);
     display: flex;
     gap: 10px;
     align-items: center;
@@ -96,12 +103,16 @@
     font-size: 13px;
     cursor: pointer;
 }
-.atlas-reference-sidebar .atlas-ref-workspace:hover,
+.atlas-reference-sidebar .atlas-ref-workspace:hover {
+    background: var(--atlas-sidebar-hover);
+}
 .atlas-reference-sidebar .atlas-ref-workspace[data-selected='true'] {
-    background: #2a334e;
+    color: var(--atlas-sidebar-selected-fg);
+    background: var(--atlas-sidebar-selected);
+    box-shadow: inset 3px 0 0 #9180ef;
 }
 .atlas-reference-sidebar .atlas-ref-workspace small {
-    color: #8997b5;
+    color: var(--atlas-sidebar-muted);
     font-size: 11px;
 }
 .atlas-reference-sidebar .atlas-ref-recent {
@@ -116,7 +127,7 @@
     min-width: 0;
     gap: 9px;
     background: transparent;
-    color: #b8c3dd;
+    color: var(--atlas-sidebar-muted);
     border: 0;
     border-radius: 8px;
     padding: 8px 12px;
@@ -140,16 +151,16 @@
     flex-shrink: 0;
 }
 .atlas-reference-sidebar .atlas-ref-recent button:hover {
-    background: #262e47;
-    color: white;
+    background: var(--atlas-sidebar-hover);
+    color: var(--atlas-sidebar-fg);
 }
 .atlas-reference-sidebar .atlas-ref-usage {
     padding: 13px;
     margin: 9px 0;
-    border: 1px solid #35405e;
+    border: 1px solid var(--atlas-sidebar-border);
     border-radius: 13px;
-    background: linear-gradient(155deg, #222d48, #161f34);
-    color: #f0f2fd;
+    background: var(--atlas-sidebar-card);
+    color: var(--atlas-sidebar-fg);
 }
 .atlas-reference-sidebar .atlas-ref-usage-track {
     height: 5px;
@@ -165,13 +176,13 @@
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-bottom {
     margin-top: auto;
-    border-top: 1px solid #303951;
+    border-top: 1px solid var(--atlas-sidebar-border);
     padding-top: 7px;
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-link {
     width: 100%;
     display: flex;
-    color: #cdd6eb;
+    color: var(--atlas-sidebar-muted);
     padding: 10px 12px;
     gap: 12px;
     border: 0;
@@ -183,15 +194,15 @@
     font-size: 13px;
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-link:hover {
-    color: white;
-    background: #26314d;
+    color: var(--atlas-sidebar-fg);
+    background: var(--atlas-sidebar-hover);
 }
 .atlas-reference-sidebar .atlas-ref-profile {
     display: flex;
     gap: 9px;
     align-items: center;
     padding: 11px 7px 3px;
-    color: white;
+    color: var(--atlas-sidebar-fg);
     min-width: 0;
     font-size: 12px;
 }
@@ -201,7 +212,8 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: #7755ed;
+    background: #e3e0fa;
+    color: #5141a6;
     font-weight: 800;
     flex-shrink: 0;
 }
@@ -727,7 +739,6 @@
     }
 }
 
-/* Collapsed navigation remains keyboard-accessible and can be expanded again. */
 .atlas-reference-root.collapsed .sidebar.atlas-reference-sidebar {
     width: 76px;
 }
@@ -824,7 +835,6 @@
     width: min(360px, calc(100vw - 42px));
 }
 
-/* Single, border-led focus treatment for MUI research fields. */
 .atlas-ref-composer .MuiInputBase-input:focus,
 .atlas-ref-composer .MuiInputBase-input:focus-visible,
 .atlas-v3 .MuiInputBase-input:focus,
@@ -890,9 +900,16 @@
     }
 }
 
-/* Research workspace uses the same theme selection as Atlas/MUI. */
 :root[data-theme='dark'] .atlas-reference-root {
     --atlas-ref-background: #111113;
+    --atlas-ref-sidebar: #1c1d22;
+    --atlas-sidebar-fg: #e8e9ec;
+    --atlas-sidebar-muted: #aeb4c0;
+    --atlas-sidebar-hover: #292d35;
+    --atlas-sidebar-selected: #36313f;
+    --atlas-sidebar-selected-fg: #ded3ff;
+    --atlas-sidebar-border: #383c43;
+    --atlas-sidebar-card: #24282f;
     --atlas-ref-surface: #1b1c1f;
     --atlas-ref-subtle: #272a2d;
     --atlas-ref-hover: #303338;
@@ -965,7 +982,6 @@
     border-color: var(--atlas-ref-line);
 }
 
-/* Recent chats are always scoped to the active workspace. */
 .atlas-reference-sidebar .atlas-ref-recent-title {
     display: flex;
     align-items: center;
@@ -1081,81 +1097,6 @@
     border-color: #5a6169;
 }
 
-/* Balanced graphite/slate sidebar (dark), soft neutral grey (light). */
-.atlas-reference-root {
-    --atlas-ref-sidebar: #f2f3f5;
-    --atlas-sidebar-fg: #22252c;
-    --atlas-sidebar-muted: #646b78;
-    --atlas-sidebar-hover: #e8eaee;
-    --atlas-sidebar-selected: #e3e0fa;
-    --atlas-sidebar-selected-fg: #5141a6;
-    --atlas-sidebar-border: #dfe2e7;
-    --atlas-sidebar-card: #fff;
-}
-:root[data-theme='dark'] .atlas-reference-root {
-    --atlas-ref-sidebar: #1c1d22;
-    --atlas-sidebar-fg: #e8e9ec;
-    --atlas-sidebar-muted: #aeb4c0;
-    --atlas-sidebar-hover: #292d35;
-    --atlas-sidebar-selected: #36313f;
-    --atlas-sidebar-selected-fg: #ded3ff;
-    --atlas-sidebar-border: #383c43;
-    --atlas-sidebar-card: #24282f;
-}
-.atlas-reference-root .sidebar.atlas-reference-sidebar {
-    color: var(--atlas-sidebar-fg);
-    border-right: 1px solid var(--atlas-sidebar-border);
-}
-.atlas-reference-sidebar .atlas-ref-brand,
-.atlas-reference-sidebar .atlas-ref-profile {
-    color: var(--atlas-sidebar-fg);
-}
-.atlas-reference-sidebar .atlas-ref-nav-item,
-.atlas-reference-sidebar .atlas-ref-workspace,
-.atlas-reference-sidebar .atlas-ref-sidebar-link,
-.atlas-reference-sidebar .atlas-ref-recent button {
-    color: var(--atlas-sidebar-muted);
-}
-.atlas-reference-sidebar .atlas-ref-nav-item:hover,
-.atlas-reference-sidebar .atlas-ref-workspace:hover,
-.atlas-reference-sidebar .atlas-ref-sidebar-link:hover,
-.atlas-reference-sidebar .atlas-ref-recent button:hover,
-.atlas-reference-sidebar .atlas-ref-recent-title button:hover {
-    color: var(--atlas-sidebar-fg);
-    background: var(--atlas-sidebar-hover);
-}
-.atlas-reference-sidebar .atlas-ref-nav-item[data-active='true'],
-.atlas-reference-sidebar .atlas-ref-workspace[data-selected='true'] {
-    color: var(--atlas-sidebar-selected-fg);
-    background: var(--atlas-sidebar-selected);
-    box-shadow: inset 3px 0 0 #9180ef;
-}
-.atlas-reference-sidebar .atlas-ref-sidebar-label,
-.atlas-reference-sidebar .atlas-ref-workspace small,
-.atlas-reference-sidebar .atlas-ref-recent > p {
-    color: var(--atlas-sidebar-muted);
-}
-.atlas-reference-sidebar .atlas-ref-sidebar-bottom {
-    border-color: var(--atlas-sidebar-border);
-}
-.atlas-reference-sidebar .atlas-ref-usage {
-    color: var(--atlas-sidebar-fg);
-    border-color: var(--atlas-sidebar-border);
-    background: var(--atlas-sidebar-card);
-}
-.atlas-reference-sidebar .atlas-ref-profile-avatar {
-    background: #e3e0fa;
-    color: #5141a6;
-}
-:root[data-theme='dark'] .atlas-reference-sidebar .atlas-ref-profile-avatar {
-    background: #5142a5;
-    color: #fff;
-}
-.atlas-reference-sidebar .atlas-ref-brand-actions .MuiIconButton-root,
-.atlas-reference-sidebar .atlas-ref-profile .MuiIconButton-root {
-    color: var(--atlas-sidebar-muted);
-}
-
 /* Storage metadata must remain readable against both sidebar card surfaces. */
 .atlas-reference-sidebar .atlas-ref-storage-row {
     color: #525866;
@@ -1163,4 +1104,15 @@
 }
 :root[data-theme='dark'] .atlas-reference-sidebar .atlas-ref-storage-row {
     color: #c2c6d0;
+}
+:root[data-theme='dark'] .atlas-reference-sidebar .atlas-ref-profile-avatar {
+    background: #5142a5;
+    color: #fff;
+}
+.atlas-reference-sidebar .atlas-ref-recent-title button:hover {
+    background: var(--atlas-sidebar-hover);
+}
+.atlas-reference-sidebar .atlas-ref-brand-actions .MuiIconButton-root,
+.atlas-reference-sidebar .atlas-ref-profile .MuiIconButton-root {
+    color: var(--atlas-sidebar-muted);
 }
