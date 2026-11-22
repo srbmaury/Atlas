@@ -46,16 +46,36 @@ These are separate from the database URL and private Storage key. Configure all
 three before deploying with `COOKIE_SECURE=true`. With no auth variables, local
 development with `COOKIE_SECURE=false` can still use local sign-in.
 
-For local development with the Atlas frontend on `http://localhost:3000`,
-use these URLs in the repository-root `.env` (the auth origin is only needed
-when Supabase Auth is configured):
+For local development using Atlas's **built-in password sign-in**, keep
+`COOKIE_SECURE=false` and leave **all three** `ATLAS_AUTH_URL`,
+`ATLAS_AUTH_KEY`, and `ATLAS_AUTH_ORIGIN` unset. Do not set only
+`ATLAS_AUTH_ORIGIN`: the backend interprets any of these variables being set as
+an attempt to enable Supabase verified sign-in, and responds to login with
+`503 Verified sign-in is not configured.` if the set is incomplete. Restart the
+**backend** after editing the repository-root `.env`. Environment variables
+exported in the process shell or set in Docker Compose must also be cleared.
+
+The following **connector** OAuth settings are independent of Supabase Auth
+and can be set for local development:
 
 ```dotenv
-ATLAS_AUTH_ORIGIN=http://localhost:3000
 ATLAS_CONNECTED_OAUTH_REDIRECT_BASE=http://localhost:3000/api/connected-oauth
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/gmail/callback
 GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/drive/callback
 ```
+
+If you **want verified sign-in** with Supabase instead, configure the complete
+set (using your actual Supabase project URL and publishable key):
+
+```dotenv
+ATLAS_AUTH_URL=https://your-project.supabase.co
+ATLAS_AUTH_KEY=sb_publishable_...
+ATLAS_AUTH_ORIGIN=http://localhost:3000
+COOKIE_SECURE=false
+```
+
+Use the same local hostname for the browser and configured callback origins;
+`localhost` and `127.0.0.1` are not interchangeable for OAuth redirects.
 
 The connected OAuth base expands into provider-specific callback URLs such as
 `http://localhost:3000/api/connected-oauth/calendar/callback` and
