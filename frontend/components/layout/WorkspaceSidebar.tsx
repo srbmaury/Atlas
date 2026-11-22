@@ -165,6 +165,16 @@ export function WorkspaceSidebar({
                     )}
                 </div>
                 <div className="atlas-ref-sidebar-bottom">
+                    <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                            <span>Workspace storage</span>
+                            <span>{readyCount} ready</span>
+                        </div>
+                        <div className="atlas-ref-storage-row mt-2 flex justify-between text-xs">
+                            <span>Documents</span>
+                            <span>{storageLabel}</span>
+                        </div>
+                    </div>
                     <Link className="atlas-ref-sidebar-link" href={settingsUrl}>
                         <Settings2 size={17} />
                         <span>Settings</span>
