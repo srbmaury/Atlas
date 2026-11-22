@@ -153,7 +153,7 @@ test('reference research dashboard renders three columns and remains usable on a
 
     // The same native Dialog primitive powers workspace management and global search.
     // Both must be centered; Tailwind's preflight strips the UA dialog margins.
-    await page.getByRole('button', { name: 'New or manage workspaces' }).click();
+    await switcher.click();
     const workspaceDialog = page.getByRole('dialog', { name: 'Your workspaces' });
     await expect(workspaceDialog).toBeVisible();
     const workspaceRect = await workspaceDialog.boundingBox();
