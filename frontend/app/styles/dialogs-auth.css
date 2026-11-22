@@ -127,6 +127,11 @@
     border: 1px solid var(--line2);
     border-radius: 8px;
 }
+.modal-search:focus-within {
+    /* Single, subtle focus treatment on the field rather than a second input outline. */
+    border-color: var(--brand);
+    background: var(--hover);
+}
 .modal-search svg {
     color: var(--sub);
     width: 17px;
