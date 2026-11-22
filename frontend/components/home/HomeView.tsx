@@ -5,7 +5,6 @@ import {
     ArrowRight,
     ArrowUpRight,
     BookOpenText,
-    ChevronDown,
     Clock3,
     FileText,
     Globe2,
@@ -17,7 +16,6 @@ import {
     Sparkles,
     TrendingUp,
     Lightbulb,
-    SlidersHorizontal,
     LoaderCircle,
     PanelRightOpen,
     PanelRightClose,
@@ -45,8 +43,7 @@ interface HomeViewProps {
     workspaceName: string;
     onRefreshChats: () => void;
     docs: Doc[];
-    onChooseSources: () => void;
-    sourcePicker?: ReactNode;
+    sourcePicker: ReactNode;
     themeButton?: ReactNode;
     onOpenSources: () => void;
     onOpenConversations: () => void;
@@ -93,7 +90,6 @@ export function HomeView({
     workspaceName,
     onRefreshChats,
     docs,
-    onChooseSources,
     sourcePicker,
     themeButton,
     onOpenSources,
@@ -198,11 +194,7 @@ export function HomeView({
                         <div className="atlas-ref-composer-toolbar">
                             <span className="atlas-ref-composer-label">Research question</span>
                             <div className="atlas-ref-composer-source">
-                                {sourcePicker || (
-                                    <button className="atlas-ref-pill" type="button" onClick={onChooseSources}>
-                                        <SlidersHorizontal size={16} /> Choose sources <ChevronDown size={13} />
-                                    </button>
-                                )}
+                                {sourcePicker}
                             </div>
                         </div>
                         <TextField
