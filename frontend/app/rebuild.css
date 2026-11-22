@@ -5,6 +5,7 @@
 @import './styles/research-composer.css';
 @import './styles/research-source-refinements.css';
 @import './styles/research-diagrams.css';
+@import './styles/atlas-research-refresh.css';
 
 /* Workspace agent mentions share the native Atlas composer surface. */
 .research-composer-v2 {
