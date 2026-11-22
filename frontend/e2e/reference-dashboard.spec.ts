@@ -58,6 +58,9 @@ test('reference research dashboard renders three columns and remains usable on a
 
     // The overview owns an accessible theme toggle (previously only other tabs had it).
     await expect(page.locator('.atlas-ref-hero-theme').getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeVisible();
+    const switcher = page.getByRole('button', { name: 'Switch workspace' });
+    await expect(switcher).toContainText('Global Economy');
+    await expect(switcher).toContainText('1 workspace');
     const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
     await homeField.focus();
     expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
