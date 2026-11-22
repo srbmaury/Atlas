@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Alert, Button, IconButton, Menu, MenuItem, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
-import { ArrowUpRight, BookOpenText, Check, Copy, Download, FileText, Layers, MoreHorizontal, StickyNote, Sparkles } from 'lucide-react';
+import { Alert, Button, IconButton, LinearProgress, Menu, MenuItem, Tab, Tabs, TextareaAutosize, Tooltip, Typography } from '@mui/material';
+import { ArrowUpRight, BookOpenText, Check, Copy, Download, FileText, Layers, MoreHorizontal, PanelRightClose, StickyNote, Sparkles } from 'lucide-react';
 import type { Answer, Source } from '../../lib/types';
 import { sourceDisplayName, sourceLocation, visibleEvidence } from '../../lib/evidence';
 import { ResearchAnswer } from '../chat/ResearchAnswer';
@@ -16,6 +16,8 @@ export function AtlasReferencePanel({
     onOpenSource,
     onPrompt,
     onManageSources,
+    onCollapse,
+    hidden = false,
 }: {
     answer?: Answer;
     question?: string;
@@ -23,6 +25,8 @@ export function AtlasReferencePanel({
     onOpenSource: (source: Source) => void;
     onPrompt: (question: string) => void;
     onManageSources: () => void;
+    onCollapse: () => void;
+    hidden?: boolean;
 }) {
     const [tab, setTab] = useState<PanelTab>('answer');
     const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null);
@@ -50,7 +54,7 @@ export function AtlasReferencePanel({
     }
 
     return (
-        <aside className="atlas-ref-insight" aria-label="Research insights">
+        <aside id="atlas-reference-insights" className="atlas-ref-insight" aria-label="Research insights" hidden={hidden}>
             <div className="atlas-ref-insight-tabs">
                 <Tabs value={tab === 'answer' || tab === 'sources' ? tab : false} onChange={(_event, value: PanelTab) => setTab(value)} aria-label="Primary research views">
                     <Tab value="answer" icon={<Sparkles size={16} />} iconPosition="start" label="Answer" />
@@ -88,7 +92,18 @@ export function AtlasReferencePanel({
                         <Layers size={17} className="mr-2" /> Exports & artifacts
                     </MenuItem>
                 </Menu>
+                <Tooltip title="Collapse panel">
+                    <IconButton size="small" aria-label="Collapse research insights" onClick={onCollapse}>
+                        <PanelRightClose size={17} />
+                    </IconButton>
+                </Tooltip>
             </div>
+            {progress && (
+                <div className="atlas-ref-progress-panel" role="status" aria-live="polite">
+                    <span>{progress}</span>
+                    <LinearProgress aria-label="Research in progress" />
+                </div>
+            )}
 
             <div className="atlas-ref-insight-body">
                 {(tab === 'answer' || tab === 'sources') && incompleteSources.length > 0 && (

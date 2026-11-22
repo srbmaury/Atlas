@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
     ArrowRight,
     ArrowUpRight,
@@ -18,6 +18,9 @@ import {
     TrendingUp,
     Lightbulb,
     SlidersHorizontal,
+    LoaderCircle,
+    PanelRightOpen,
+    PanelRightClose,
 } from 'lucide-react';
 import { Button, IconButton, Paper, TextField, Typography } from '@mui/material';
 import type { Answer, ChatSummary, Doc, Source } from '../../lib/types';
@@ -114,6 +117,7 @@ export function HomeView({
         .slice(0, 4);
     const recentDocs = docs.slice(0, 3);
     const readyCount = docs.filter((doc) => doc.status === 'ready').length;
+    const [insightOpen, setInsightOpen] = useState(true);
 
     function applyTask(value: string) {
         onQueryChange(value);
@@ -125,9 +129,20 @@ export function HomeView({
     }
 
     return (
-        <div className="atlas-ref-grid">
+        <div className={`atlas-ref-grid ${insightOpen ? '' : 'atlas-ref-insight-collapsed'}`}>
             <div className="atlas-ref-canvas">
                 <section className="atlas-ref-hero" aria-labelledby="atlas-ref-hero-title">
+                    <IconButton
+                        className="atlas-ref-insight-toggle"
+                        aria-label={insightOpen ? 'Collapse research insights' : 'Expand research insights'}
+                        aria-expanded={insightOpen}
+                        aria-controls="atlas-reference-insights"
+                        onClick={() => setInsightOpen((open) => !open)}
+                        size="small"
+                        title={insightOpen ? 'Focus on research' : 'Show research insights'}
+                    >
+                        {insightOpen ? <PanelRightClose size={19} /> : <PanelRightOpen size={19} />}
+                    </IconButton>
                     <IconButton className="atlas-ref-mobile-menu" aria-label="Open menu" onClick={onOpenMobileMenu}>
                         <Menu size={21} />
                     </IconButton>
@@ -246,6 +261,15 @@ export function HomeView({
                         )}
                     </form>
                 </Paper>
+                {answerProgress && (
+                    <div className="atlas-ref-progress-inline" role="status" aria-live="polite">
+                        <LoaderCircle size={16} className="spin" aria-hidden="true" />
+                        <span>{answerProgress}</span>
+                        {!insightOpen && (
+                            <button type="button" onClick={() => setInsightOpen(true)}>Show details</button>
+                        )}
+                    </div>
+                )}
 
                 <section aria-labelledby="atlas-ref-tasks-heading">
                     <div className="atlas-ref-section-heading">
@@ -339,7 +363,16 @@ export function HomeView({
                     </section>
                 )}
             </div>
-            <AtlasReferencePanel answer={latestAnswer} question={latestQuestion} progress={answerProgress} onOpenSource={onOpenSource} onPrompt={applyTask} onManageSources={onOpenSources} />
+            <AtlasReferencePanel
+                answer={latestAnswer}
+                question={latestQuestion}
+                progress={answerProgress}
+                onOpenSource={onOpenSource}
+                onPrompt={applyTask}
+                onManageSources={onOpenSources}
+                onCollapse={() => setInsightOpen(false)}
+                hidden={!insightOpen}
+            />
         </div>
     );
 }
