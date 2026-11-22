@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { FileCheck2, FileClock2, FileWarning, Plus, Search } from 'lucide-react';
+import { FileCheck2, FileClock, FileWarning, Plus, Search } from 'lucide-react';
 import { Button, Collapse, InputAdornment, Paper, TextField, Typography } from '@mui/material';
 import { MetricCard, PageHeading, UploadDropTarget } from '../ui/AtlasKit';
 
@@ -37,7 +37,7 @@ export function DocumentsView({
             }/>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <MetricCard icon={<FileCheck2 size={20}/>} label="Ready to search" value={readyDocuments} caption={`${totalDocuments} total · ${storageLabel}`}/>
-                <MetricCard icon={<FileClock2 size={20}/>} label="Indexing" value={indexingDocuments} caption="Processing your files"/>
+                <MetricCard icon={<FileClock size={20}/>} label="Indexing" value={indexingDocuments} caption="Processing your files"/>
                 <MetricCard icon={<FileWarning size={20}/>} label="Needs attention" value={failedDocuments} caption="Files with an indexing error"/>
             </div>
             {canEdit && <Collapse in={addOpen} id="library-import-actions">

@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import { Button, Chip, Typography } from '@mui/material';
 import { Mail, HardDrive, Github, NotebookPen, Hash, CalendarDays, ListTodo, Ticket, Cloud, Inbox, Building2 } from 'lucide-react';
 import { IntegrationTile } from '../IntegrationTile';
@@ -14,7 +13,6 @@ interface IntegrationsGalleryProps {
 }
 
 export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, sourceChecks, onOpen }: IntegrationsGalleryProps) {
-    const [catalogOpen, setCatalogOpen] = useState(false);
     const providers = [
         ['gmail', 'Gmail', 'Search conversations and summarize email.', Mail, gmailStatus?.connected, gmailStatus?.email],
         ['drive', 'Google Drive', 'Explore documents and cloud files.', HardDrive, driveStatus?.connected, driveStatus?.account],
@@ -56,9 +54,7 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
                 <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>Your connections</Typography>
                 <Chip size="small" color="success" label={`${connectedProviders.length} connected`} variant="outlined"/>
                 {availableProviders.length > 0 && (
-                    <Button variant="outlined" size="small" aria-expanded={catalogOpen} aria-controls="atlas-provider-list" onClick={() => setCatalogOpen((open) => !open)}>
-                        {catalogOpen ? 'Hide catalog' : 'Add a source'}
-                    </button>
+                    <Button component="a" href="#atlas-provider-list" variant="outlined" size="small">Browse integrations</Button>
                 )}
             </div>
             {connectedProviders.length ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{tiles(connectedProviders)}</div> : <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>No external sources are connected yet. Choose one below to get started.</Typography>}
