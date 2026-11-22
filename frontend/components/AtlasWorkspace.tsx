@@ -495,16 +495,6 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 workspaceCount={workspaces.length}
                 tab={tab}
                 onNavigate={navigate}
-                chats={chats}
-                activeChatId={chatId}
-                onOpenChat={(id) => void switchChat(id)}
-                onRenameChat={(item) => void renameChat(item)}
-                onDeleteChat={(item) => void deleteChat(item)}
-                onAllChats={() => {
-                    navigate('chat');
-                    setHistoryOpen(true);
-                    void refreshChats();
-                }}
                 readyCount={ready.length}
                 storageLabel={storage ? prettyBytes(storage) : '0 KB'}
                 initials={initials}

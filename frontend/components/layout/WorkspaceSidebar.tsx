@@ -6,22 +6,18 @@ import {
     BookOpenText,
     ChevronDown,
     CircleHelp,
-    Clock3,
     FileText,
     FolderClosed,
     FolderPlus,
     LogOut,
-    MessageSquare,
     PanelLeftClose,
-    Pencil,
     Plug,
     Plus,
     Settings2,
     Sparkles,
-    Trash2,
     X,
 } from 'lucide-react';
-import type { ChatSummary, Workspace } from '../../lib/types';
+import type { Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
 type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
@@ -39,12 +35,6 @@ interface WorkspaceSidebarProps {
     workspaceCount: number;
     tab: Tab;
     onNavigate: (tab: Tab) => void;
-    chats: ChatSummary[];
-    activeChatId?: string | null;
-    onOpenChat: (id: string) => void;
-    onAllChats: () => void;
-    onRenameChat: (chat: ChatSummary) => void;
-    onDeleteChat: (chat: ChatSummary) => void;
     readyCount: number;
     storageLabel: string;
     initials: string;
@@ -75,12 +65,6 @@ export function WorkspaceSidebar({
     workspaceCount,
     tab,
     onNavigate,
-    chats,
-    activeChatId,
-    onOpenChat,
-    onAllChats,
-    onRenameChat,
-    onDeleteChat,
     readyCount,
     storageLabel,
     initials,
@@ -88,20 +72,11 @@ export function WorkspaceSidebar({
     displayName,
     onSignOut,
 }: WorkspaceSidebarProps) {
-    const recent = [...chats]
-        .filter((chat) => !chat.archived)
-        .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updated - a.updated)
-        .slice(0, 4);
     const settingsUrl = `/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`;
     const handleNavigate = (next: Tab) => {
         onNavigate(next);
         onClose();
     };
-    const handleOpenChat = (id: string) => {
-        onOpenChat(id);
-        onClose();
-    };
-
     return (
         <aside className={`sidebar atlas-reference-sidebar ${open ? 'open' : ''}`} aria-label="Workspace sidebar">
             <div className="atlas-ref-sidebar-body">
@@ -174,38 +149,6 @@ export function WorkspaceSidebar({
                     <span>New or manage workspaces</span>
                     <ChevronDown size={15} />
                 </button>
-
-                <div className="atlas-ref-sidebar-label">Recent research</div>
-                <div className="atlas-ref-recent">
-                    {recent.map((chat) => (
-                        <div key={chat.id} className="group flex min-w-0 items-center gap-1">
-                            <button type="button" onClick={() => handleOpenChat(chat.id)} aria-current={activeChatId === chat.id ? 'true' : undefined} title={chat.title}>
-                                <MessageSquare size={14} />
-                                <span className="min-w-0 flex-1 truncate">{chat.title}</span>
-                            </button>
-                            <Tooltip title="Rename conversation">
-                                <IconButton onClick={() => onRenameChat(chat)} aria-label={`Rename ${chat.title}`} size="small" sx={{ color: '#97a6c5', padding: '3px' }}>
-                                    <Pencil size={13} />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete conversation">
-                                <IconButton onClick={() => onDeleteChat(chat)} aria-label={`Delete ${chat.title}`} size="small" sx={{ color: '#97a6c5', padding: '3px' }}>
-                                    <Trash2 size={13} />
-                                </IconButton>
-                            </Tooltip>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            onAllChats();
-                            onClose();
-                        }}
-                    >
-                        <Clock3 size={15} />
-                        <span>View all conversations</span>
-                    </button>
-                </div>
 
                 <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <div className="flex items-center justify-between text-xs font-bold">
