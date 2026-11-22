@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { ArrowUp, FileText, FolderOpen, Globe2, Mic, MicOff, Plus, Sparkles } from 'lucide-react';
-import { Alert, Button, Chip, CircularProgress, IconButton, InputBase, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Alert, Button, Chip, CircularProgress, IconButton, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { ResearchQuestionBox } from './ResearchQuestionBox';
 
@@ -67,10 +67,14 @@ export function ResearchComposer({
     return (
         <ResearchQuestionBox
             className="composer atlas-ref-composer research-composer-v2"
-            onSubmit={(event) => {
-                event.preventDefault();
-                if (canSubmit) onSubmit();
-            }}
+            query={query}
+            onQueryChange={onChange}
+            onRequestSubmit={onSubmit}
+            canSubmit={canSubmit}
+            busy={busy}
+            inputRef={textareaRef}
+            inputLabel="Your question"
+            placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
             sourceSelector={sourceSelector}
             context={
                 <>
@@ -124,32 +128,6 @@ export function ResearchComposer({
                         </Paper>
                     )}
                 </>
-            }
-            input={
-                <InputBase
-                    multiline
-                    minRows={1}
-                    maxRows={8}
-                    inputRef={textareaRef}
-                    placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
-                    value={query}
-                    onChange={(event) => onChange(event.target.value)}
-                    fullWidth
-                    disabled={busy}
-                    inputProps={{ maxLength: 4000, 'aria-label': 'Your question' }}
-                    sx={{
-                        minWidth: 0,
-                        flex: 1,
-                        py: 0,
-                        '& textarea': { fontSize: 15, lineHeight: 1.65, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
-                    }}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                            event.preventDefault();
-                            if (canSubmit) onSubmit();
-                        }
-                    }}
-                />
             }
             leadingActions={
                 <>
