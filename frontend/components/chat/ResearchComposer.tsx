@@ -115,8 +115,6 @@ export function ResearchComposer({
                     ))}
                 </Paper>
             )}
-            <div className="research-composer-input-row">
-                <div className="research-composer-question">
                 <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
                     <MenuItem
                         disabled={!canUpload || uploading}
@@ -138,60 +136,62 @@ export function ResearchComposer({
                         Choose from library
                     </MenuItem>
                 </Menu>
-                <InputBase
-                    multiline
-                    minRows={2}
-                    maxRows={8}
-                    inputRef={textareaRef}
-                    placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
-                    value={query}
-                    onChange={(event) => onChange(event.target.value)}
-                    fullWidth
-                    disabled={busy}
-                    inputProps={{ maxLength: 4000, 'aria-label': 'Your question', 'aria-describedby': 'research-composer-help' }}
-                    sx={{
-                        minWidth: 0,
-                        flex: 1,
-                        py: 0,
-                        alignSelf: 'stretch',
-                        '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
-                    }}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                            event.preventDefault();
-                            if (canSubmit) onSubmit();
-                        }
-                    }}
-                />
+            <div className="research-composer-input-row">
+                <div className="research-composer-question">
+    <InputBase
+                        multiline
+                        minRows={2}
+                        maxRows={8}
+                        inputRef={textareaRef}
+                        placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
+                        value={query}
+                        onChange={(event) => onChange(event.target.value)}
+                        fullWidth
+                        disabled={busy}
+                        inputProps={{ maxLength: 4000, 'aria-label': 'Your question', 'aria-describedby': 'research-composer-help' }}
+                        sx={{
+                            minWidth: 0,
+                            flex: 1,
+                            py: 0,
+                            alignSelf: 'stretch',
+                            '& textarea': { fontSize: 14, lineHeight: 1.6, resize: 'none', outline: 'none !important', boxShadow: 'none !important' },
+                        }}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                                event.preventDefault();
+                                if (canSubmit) onSubmit();
+                            }
+                        }}
+                    />
                 </div>
                 <div className="research-composer-actions">
-                <Tooltip title="Add documents">
-                    <IconButton
-                        aria-label="Add context"
-                        aria-haspopup="menu"
-                        aria-expanded={!!menuAnchor}
-                        onClick={(event) => setMenuAnchor(event.currentTarget)}
-                        sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: 0.5 }}
-                    >
-                        <Plus size={19} />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title={voice.supported ? 'Voice input' : 'Voice input is unavailable'}>
-                    <span>
+                    <Tooltip title="Add documents">
                         <IconButton
-                            aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
-                            aria-pressed={voice.listening}
-                            disabled={busy || (!voice.supported && !voice.listening)}
-                            onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
-                            sx={{ mb: 0.5 }}
+                            aria-label="Add context"
+                            aria-haspopup="menu"
+                            aria-expanded={!!menuAnchor}
+                            onClick={(event) => setMenuAnchor(event.currentTarget)}
+                            sx={{ alignSelf: 'flex-end', flexShrink: 0, mb: 0.5 }}
                         >
-                            {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
+                            <Plus size={19} />
                         </IconButton>
-                    </span>
-                </Tooltip>
-                <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 42, height: 42, px: 1, mb: 0.5 }}>
-                    {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
-                </Button>
+                    </Tooltip>
+                    <Tooltip title={voice.supported ? 'Voice input' : 'Voice input is unavailable'}>
+                        <span>
+                            <IconButton
+                                aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
+                                aria-pressed={voice.listening}
+                                disabled={busy || (!voice.supported && !voice.listening)}
+                                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                                sx={{ mb: 0.5 }}
+                            >
+                                {voice.listening ? <MicOff size={19} /> : <Mic size={19} />}
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Button type="submit" aria-label="Send question" disabled={!canSubmit} variant="contained" sx={{ minWidth: 42, height: 42, px: 1, mb: 0.5 }}>
+                        {busy ? <CircularProgress size={19} color="inherit" /> : <ArrowUp size={19} />}
+                    </Button>
                 </div>
             </div>
             {(voice.listening || voice.error) && (
