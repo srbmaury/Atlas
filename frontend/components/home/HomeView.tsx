@@ -73,8 +73,8 @@ export function HomeView({
         <section className="atlas-home">
             <div className="home-hero home-hero-focused">
                 <div className="home-hero-copy">
-                    <h1>Resume your research</h1>
-                    <p>Open recent work or start a question across your workspace.</p>
+                    <h1>Research you can trace.</h1>
+                    <p>Ask across your documents, the web, and connected sources. Explore answers with evidence you can inspect.</p>
                 </div>
             </div>
             <div className="home-section-header">
