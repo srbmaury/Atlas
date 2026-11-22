@@ -34,3 +34,76 @@
         padding: 8px;
     }
 }
+
+/* A single compact composer card: scope, question and actions share one surface. */
+.atlas-v3 .chat-workspace .research-composer-v2 {
+    gap: 10px;
+    min-height: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--outline);
+    border-radius: 16px;
+    box-shadow: none;
+}
+.atlas-v3 .chat-workspace .research-composer-v2:focus-within {
+    border-color: color-mix(in srgb, var(--outline) 60%, var(--brand));
+    box-shadow: none;
+}
+.atlas-v3 .research-composer-source {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+}
+.atlas-v3 .research-composer-source .research-source-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 5px 9px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: var(--wash);
+    color: var(--ink);
+    border: 1px solid var(--outline);
+}
+.atlas-v3 .research-composer-source .research-source-popover {
+    top: auto;
+    bottom: calc(100% + 8px);
+    max-height: min(55dvh, 360px);
+    overflow-y: auto;
+}
+.atlas-v3 .research-composer-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.atlas-v3 .research-composer-question {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+}
+.atlas-v3 .research-composer-question .MuiInputBase-root {
+    min-width: 0;
+}
+.atlas-v3 .research-composer-question textarea {
+    min-height: 32px;
+}
+.atlas-v3 .research-composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.atlas-v3 .research-composer-actions .MuiButton-root {
+    margin-left: auto;
+}
+.atlas-v3 .research-composer-actions .MuiIconButton-root {
+    margin-bottom: 0;
+}
+.atlas-v3 .research-composer-actions .MuiButton-root {
+    margin-bottom: 0;
+}
+@media (max-width: 560px) {
+    .atlas-v3 .chat-workspace .research-composer-v2 {
+        padding: 10px;
+    }
+}
