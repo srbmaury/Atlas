@@ -1,6 +1,7 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
+import { Avatar, Button, IconButton, Tooltip } from '@mui/material';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from './auth/sessionActions';
 import { refreshDocuments, createDocumentActions } from './documents/documentActions';
 import { createConversationActions } from './chat/conversationActions';
@@ -141,9 +142,11 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const { agentBusy, mentionAgents, handleAgentMention, stopAgent } = useAgentResearch({ workspaceId, userId: user?.id, tab, busy, scope, conversation, setChats, setQuery, setError });
 
     const themeButton = (
-        <button type="button" className="icon-button" aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={toggleTheme}>
-            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-        </button>
+        <Tooltip title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}>
+            <IconButton aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={toggleTheme} color="inherit">
+                {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
+            </IconButton>
+        </Tooltip>
     );
 
     const boot = useCallback(() => bootWorkspace({ setUser, setWorkspaces, setWorkspaceId, setLoading }), []);
@@ -447,7 +450,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         );
 
     return (
-        <div className={`app atlas-v3 ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`app atlas-mui-workspace ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <input
                 ref={input}
                 type="file"
@@ -491,18 +494,23 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onSignOut={() => void signOut()}
             />
             <main className="main">
-                <header className="topbar">
+                <header className="topbar border-b border-slate-200/60 bg-white/90 backdrop-blur-xl">
                     <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
                         <Menu />
                     </button>
                     <button className="icon-button expand-sidebar" aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)}>
                         <PanelLeftOpen />
                     </button>
-                    <button className="global-search" onClick={() => setSearchOpen(true)}>
-                        <Search />
-                        <span>Search documents or ask a question…</span>
-                        <kbd className="key">⌘ K</kbd>
-                    </button>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => setSearchOpen(true)}
+                        startIcon={<Search size={17}/>}
+                        endIcon={<kbd className="key">⌘ K</kbd>}
+                        sx={{ flex: '1 1 360px', maxWidth: 560, minWidth: 120, justifyContent: 'space-between', color: 'text.secondary', borderColor: 'divider', bgcolor: 'action.hover', '&:hover': { borderColor: 'primary.main' } }}
+                    >
+                        <span className="truncate">Search documents or ask a question…</span>
+                    </Button>
                     <div className="top-actions">
                         {themeButton}
                         <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
