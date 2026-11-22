@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
-import { ArrowUp, FileText, FolderOpen, Globe2, Mic, MicOff, Plus, Sparkles } from 'lucide-react';
+import { FileText, FolderOpen, Globe2, Mic, MicOff, Paperclip, Sparkles } from 'lucide-react';
 import { Alert, Button, Chip, CircularProgress, IconButton, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { ResearchQuestionBox } from './ResearchQuestionBox';
@@ -132,8 +132,8 @@ export function ResearchComposer({
             leadingActions={
                 <>
                     <Tooltip title="Add documents">
-                        <IconButton aria-label="Add context" aria-haspopup="menu" aria-expanded={!!menuAnchor} onClick={(event) => setMenuAnchor(event.currentTarget)} size="small">
-                            <Plus size={19} />
+                        <IconButton className="atlas-ref-pill" aria-label="Add context" aria-haspopup="menu" aria-expanded={!!menuAnchor} onClick={(event) => setMenuAnchor(event.currentTarget)} size="small">
+                            <Paperclip size={16} />
                         </IconButton>
                     </Tooltip>
                     <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
