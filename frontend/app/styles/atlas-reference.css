@@ -1080,3 +1080,78 @@
     background: var(--atlas-ref-hover);
     border-color: #5a6169;
 }
+
+/* Balanced graphite/slate sidebar (dark), soft neutral grey (light). */
+.atlas-reference-root {
+    --atlas-ref-sidebar: #f2f3f5;
+    --atlas-sidebar-fg: #22252c;
+    --atlas-sidebar-muted: #646b78;
+    --atlas-sidebar-hover: #e8eaee;
+    --atlas-sidebar-selected: #e3e0fa;
+    --atlas-sidebar-selected-fg: #5141a6;
+    --atlas-sidebar-border: #dfe2e7;
+    --atlas-sidebar-card: #fff;
+}
+:root[data-theme='dark'] .atlas-reference-root {
+    --atlas-ref-sidebar: #1c1d22;
+    --atlas-sidebar-fg: #e8e9ec;
+    --atlas-sidebar-muted: #aeb4c0;
+    --atlas-sidebar-hover: #292d35;
+    --atlas-sidebar-selected: #36313f;
+    --atlas-sidebar-selected-fg: #ded3ff;
+    --atlas-sidebar-border: #383c43;
+    --atlas-sidebar-card: #24282f;
+}
+.atlas-reference-root .sidebar.atlas-reference-sidebar {
+    color: var(--atlas-sidebar-fg);
+    border-right: 1px solid var(--atlas-sidebar-border);
+}
+.atlas-reference-sidebar .atlas-ref-brand,
+.atlas-reference-sidebar .atlas-ref-profile {
+    color: var(--atlas-sidebar-fg);
+}
+.atlas-reference-sidebar .atlas-ref-nav-item,
+.atlas-reference-sidebar .atlas-ref-workspace,
+.atlas-reference-sidebar .atlas-ref-sidebar-link,
+.atlas-reference-sidebar .atlas-ref-recent button {
+    color: var(--atlas-sidebar-muted);
+}
+.atlas-reference-sidebar .atlas-ref-nav-item:hover,
+.atlas-reference-sidebar .atlas-ref-workspace:hover,
+.atlas-reference-sidebar .atlas-ref-sidebar-link:hover,
+.atlas-reference-sidebar .atlas-ref-recent button:hover,
+.atlas-reference-sidebar .atlas-ref-recent-title button:hover {
+    color: var(--atlas-sidebar-fg);
+    background: var(--atlas-sidebar-hover);
+}
+.atlas-reference-sidebar .atlas-ref-nav-item[data-active='true'],
+.atlas-reference-sidebar .atlas-ref-workspace[data-selected='true'] {
+    color: var(--atlas-sidebar-selected-fg);
+    background: var(--atlas-sidebar-selected);
+    box-shadow: inset 3px 0 0 #9180ef;
+}
+.atlas-reference-sidebar .atlas-ref-sidebar-label,
+.atlas-reference-sidebar .atlas-ref-workspace small,
+.atlas-reference-sidebar .atlas-ref-recent > p {
+    color: var(--atlas-sidebar-muted);
+}
+.atlas-reference-sidebar .atlas-ref-sidebar-bottom {
+    border-color: var(--atlas-sidebar-border);
+}
+.atlas-reference-sidebar .atlas-ref-usage {
+    color: var(--atlas-sidebar-fg);
+    border-color: var(--atlas-sidebar-border);
+    background: var(--atlas-sidebar-card);
+}
+.atlas-reference-sidebar .atlas-ref-profile-avatar {
+    background: #e3e0fa;
+    color: #5141a6;
+}
+:root[data-theme='dark'] .atlas-reference-sidebar .atlas-ref-profile-avatar {
+    background: #5142a5;
+    color: #fff;
+}
+.atlas-reference-sidebar .atlas-ref-brand-actions .MuiIconButton-root,
+.atlas-reference-sidebar .atlas-ref-profile .MuiIconButton-root {
+    color: var(--atlas-sidebar-muted);
+}
