@@ -147,7 +147,7 @@ export function AtlasReferencePanel({
                                     Research in progress
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {progress}
+                                    Your answer will appear here when research finishes. Progress stays visible above.
                                 </Typography>
                             </div>
                         ) : (

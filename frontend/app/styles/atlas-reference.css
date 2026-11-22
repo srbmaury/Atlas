@@ -277,16 +277,14 @@
     margin-top: -34px;
     margin-bottom: 37px;
     padding: 13px 15px 12px;
-    border: 1.5px solid #9387fd;
+    border: 1px solid var(--atlas-ref-line);
     border-radius: 17px;
     background: var(--atlas-ref-surface);
-    box-shadow: 0 10px 24px rgba(67, 59, 150, 0.09);
+    box-shadow: 0 7px 22px rgba(37, 43, 67, 0.06);
 }
 .atlas-ref-composer:focus-within {
-    border-color: var(--atlas-ref-accent);
-    box-shadow:
-        0 0 0 3px rgba(101, 81, 245, 0.1),
-        0 10px 28px rgba(67, 59, 150, 0.08);
+    border-color: color-mix(in srgb, var(--atlas-ref-accent) 48%, var(--atlas-ref-line));
+    box-shadow: 0 7px 22px rgba(37, 43, 67, 0.07);
 }
 .atlas-ref-composer textarea {
     width: 100%;
