@@ -93,16 +93,16 @@ export function HomeView({
             <Paper
                 component="section"
                 elevation={0}
-                className="relative overflow-hidden rounded-[28px] px-6 py-9 sm:px-10 sm:py-12 lg:px-14"
+                className="relative overflow-hidden rounded-xl px-6 py-8 sm:px-9 sm:py-10"
                 sx={{
                     border: '1px solid',
                     borderColor: 'divider',
-                    background: (theme) => (theme.palette.mode === 'dark' ? 'linear-gradient(125deg,#252447,#1b263f)' : 'linear-gradient(125deg,#f1f0ff,#fff 67%,#e9f3ff)'),
+                    bgcolor: 'background.paper',
                 }}
             >
                 <div className="relative z-10 max-w-[720px]">
                     <Chip label="YOUR RESEARCH WORKSPACE" size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, letterSpacing: '.06em', mb: 2.5 }} />
-                    <Typography component="h1" variant="h2" sx={{ fontSize: { xs: 34, sm: 45, lg: 54 }, lineHeight: 1.13, maxWidth: 650 }}>
+                    <Typography component="h1" variant="h2" sx={{ fontSize: { xs: 30, sm: 38, lg: 44 }, lineHeight: 1.13, maxWidth: 650 }}>
                         Ideas are better with evidence.
                     </Typography>
                     <Typography color="text.secondary" sx={{ maxWidth: 580, mt: 2, fontSize: { xs: 14, sm: 16 }, lineHeight: 1.8 }}>
@@ -117,7 +117,6 @@ export function HomeView({
                         </Button>
                     </div>
                 </div>
-                <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full border-[40px] border-violet-400/10" />
             </Paper>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -132,7 +131,7 @@ export function HomeView({
                 />
             </div>
 
-            <Paper component="section" variant="outlined" sx={{ borderRadius: 4, p: { xs: 2.5, sm: 3 }, boxShadow: '0 14px 40px rgba(24,38,83,.055)' }}>
+            <Paper component="section" variant="outlined" sx={{ borderRadius: 4, p: { xs: 2.5, sm: 3 }, boxShadow: 'none' }}>
                 <div className="mb-3 flex items-center gap-2">
                     <Sparkles size={18} aria-hidden="true" />
                     <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -227,7 +226,7 @@ export function HomeView({
                 <PageHeading eyebrow="GET STARTED" title="A starting point for every question" description="Choose a workflow to prefill the composer. You can edit it before sending." />
                 <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {startingPoints.map(({ title, description, icon: Icon, prompt }) => (
-                        <Card key={title} variant="outlined" sx={{ height: '100%', borderColor: 'divider', '&:hover': { borderColor: 'primary.main', boxShadow: '0 10px 25px rgba(43,55,125,.07)' } }}>
+                        <Card key={title} variant="outlined" sx={{ height: '100%', borderColor: 'divider', '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' } }}>
                             <CardActionArea disabled={busy} onClick={() => useStarter(prompt)} sx={{ height: '100%', p: 2.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
                                 <div className="flex w-full flex-col items-start gap-3">
                                     <Box sx={{ bgcolor: 'action.hover', borderRadius: 2.5, color: 'primary.main', p: 1.3 }}>

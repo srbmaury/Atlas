@@ -27,7 +27,7 @@ export function PageHeading({ eyebrow, title, description, actions }: { eyebrow?
 
 export function MetricCard({ icon, label, value, caption, onClick }: { icon: ReactNode; label: string; value: ReactNode; caption?: string; onClick?: () => void }) {
     return (
-        <Card variant="outlined" sx={{ height: '100%', borderColor: 'divider', boxShadow: '0 8px 25px rgba(19,30,63,.035)' }}>
+        <Card variant="outlined" sx={{ height: '100%', borderColor: 'divider', boxShadow: 'none' }}>
             <CardContent className="flex items-start gap-3" sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
                 <Box sx={{ display: 'grid', placeItems: 'center', flexShrink: 0, width: 42, height: 42, bgcolor: 'action.hover', borderRadius: 2.5, color: 'primary.main' }}>{icon}</Box>
                 <div className="min-w-0 flex-1">

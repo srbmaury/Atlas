@@ -28,7 +28,7 @@ export function IntegrationTile({ name, description, connected, account, icon, o
                 minHeight: 213,
                 borderColor: 'divider',
                 transition: 'border-color .15s, box-shadow .15s',
-                '&:hover': { borderColor: 'primary.main', boxShadow: '0 12px 30px rgba(31,41,96,.08)' },
+                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
             }}
         >
             <CardActionArea disabled={disabled} onClick={onClick} aria-label={`${name} · ${connected ? 'Manage' : 'Connect'}`} sx={{ height: '100%', p: 2.5, display: 'flex', alignItems: 'stretch' }}>

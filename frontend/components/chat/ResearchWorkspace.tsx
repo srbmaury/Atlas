@@ -243,7 +243,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </article>,
                     document.body,
                 )}
-            <header className="focus-chat-header border-b border-slate-200/60 bg-white/90">
+            <header className="focus-chat-header border-b border-[var(--line)] bg-[var(--panel)]">
                 <button type="button" className="icon-button" aria-label="Open menu" onClick={props.onOpenNavigation}>
                     <Menu />
                 </button>

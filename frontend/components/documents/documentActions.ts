@@ -29,8 +29,30 @@ export async function refreshDocuments({ workspaceId, scope, setDocs, setSelecte
     if (!workspaceId) return;
     const documents = await api<Doc[]>(`/workspaces/${workspaceId}/documents`);
     if (scope.current !== workspaceId) return;
-    setDocs(documents);
-    setSelected((old) => old.filter((id) => documents.some((document) => document.id === id)));
+    // Reuse the existing array when polling returns the same snapshot, so a
+    // no-op network response does not rerender the entire research workspace.
+    setDocs((current) => {
+        const unchanged =
+            current.length === documents.length &&
+            current.every((doc, index) => {
+                const next = documents[index];
+                return (
+                    doc.id === next.id &&
+                    doc.name === next.name &&
+                    doc.size === next.size &&
+                    doc.status === next.status &&
+                    doc.error === next.error &&
+                    doc.pages === next.pages &&
+                    doc.chunk_count === next.chunk_count &&
+                    (doc.ocr_pages ?? []).join(',') === (next.ocr_pages ?? []).join(',')
+                );
+            });
+        return unchanged ? current : documents;
+    });
+    setSelected((current) => {
+        const remaining = current.filter((id) => documents.some((document) => document.id === id));
+        return remaining.length === current.length ? current : remaining;
+    });
 }
 
 export function createDocumentActions({

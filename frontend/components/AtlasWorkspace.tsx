@@ -41,7 +41,6 @@ import { HomeView } from './home/HomeView';
 import { AuthView } from './auth/AuthView';
 
 import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitives';
-import { flushSync } from 'react-dom';
 
 import { prettyBytes } from '../utils/utils';
 import { PROVIDER_LABELS } from '../lib/providers';
@@ -57,6 +56,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [workspaceId, setWorkspaceId] = useState('');
     const [docs, setDocs] = useState<Doc[]>([]);
+    const docsRef = useRef<Doc[]>([]);
+    docsRef.current = docs;
     const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources' | 'agents'>(initialTab);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
@@ -181,10 +182,22 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setGmailPreview(null);
         void refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setError });
         void refresh().catch((e) => setError(e.message));
-        const timer = setInterval(() => {
-            void refresh().catch((e) => setError(e.message));
-        }, 3000);
-        return () => clearInterval(timer);
+        // Indexing needs prompt updates, but a settled library does not need a
+        // full workspace refresh every three seconds (especially in hidden tabs).
+        let timer: ReturnType<typeof setTimeout>;
+        let stopped = false;
+        const poll = async () => {
+            if (!document.hidden) await refresh().catch((error: Error) => setError(error.message));
+            if (!stopped) {
+                const indexing = docsRef.current.some((doc) => doc.status === 'queued' || doc.status === 'processing');
+                timer = setTimeout(poll, indexing ? 3000 : 15000);
+            }
+        };
+        timer = setTimeout(poll, 15000);
+        return () => {
+            stopped = true;
+            clearTimeout(timer);
+        };
     }, [refresh]);
     useEffect(() => {
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
@@ -213,10 +226,10 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     }
 
     function navigate(next: typeof tab) {
-        flushSync(() => {
-            setTab(next);
-            setSidebarOpen(false);
-        });
+        // React batches these updates; flushSync made every navigation render block the click.
+        setTab(next);
+        setSidebarOpen(false);
+        if (next === 'documents') void refresh().catch((error: Error) => setError(error.message));
     }
 
     const {
@@ -494,7 +507,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onSignOut={() => void signOut()}
             />
             <main className="main">
-                <header className="topbar border-b border-slate-200/60 backdrop-blur-xl">
+                <header className="topbar border-b border-[var(--line)] bg-[var(--panel)]">
                     <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
                         <Menu />
                     </button>

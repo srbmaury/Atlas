@@ -56,7 +56,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
     const authMessage = authError || (forgot ? recoveryMessage : notice);
 
     return (
-        <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_90%_20%,rgba(106,90,235,.13),transparent_40%),radial-gradient(ellipse_at_10%_95%,rgba(49,183,188,.12),transparent_45%)]">
+        <div className="flex min-h-screen flex-col bg-[var(--bg)]">
             <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
                 <div className="flex items-center gap-2 text-lg font-extrabold">
                     <AtlasMark />
@@ -79,7 +79,7 @@ export function AuthView({ themeButton, register, email, password, error, notice
                         <Sparkles size={19} /> Every answer has a path back to its evidence.
                     </div>
                 </div>
-                <Paper variant="outlined" sx={{ borderRadius: 4, p: { xs: 3, sm: 4 }, maxWidth: 500, width: '100%', mx: 'auto', boxShadow: '0 24px 60px rgba(25,38,78,.07)' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 4, p: { xs: 3, sm: 4 }, maxWidth: 500, width: '100%', mx: 'auto', boxShadow: 'none' }}>
                     <form
                         className="flex flex-col gap-5"
                         onSubmit={(event) => {

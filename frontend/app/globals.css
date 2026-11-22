@@ -13,11 +13,3 @@
 @import './styles/research-overrides.css' layer(legacy);
 @import './styles/visual-refinement.css' layer(legacy);
 @import 'tailwindcss/utilities.css' layer(utilities);
-
-@theme {
-    --color-atlas-50: #f3f3ff;
-    --color-atlas-100: #e9e8ff;
-    --color-atlas-500: #5a54e8;
-    --color-atlas-600: #4944c8;
-    --color-atlas-navy: #161e34;
-}
