@@ -47,9 +47,34 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('tab', { name: 'Answer' })).toBeVisible();
     await expect(page.getByRole('tab', { name: /Sources/ })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Notes' })).toHaveCount(0);
+    const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
+    await homeField.focus();
+    expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
+    expect(await homeField.evaluate((field) => getComputedStyle(field).boxShadow)).toBe('none');
+
+    // Toggle the insight rail without unmounting it or losing the user's notes.
+    const originalCanvasWidth = (await page.locator('.atlas-ref-canvas').boundingBox())!.width;
+    await page.getByRole('button', { name: 'Collapse research insights' }).first().click();
+    await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeHidden();
+    expect((await page.locator('.atlas-ref-canvas').boundingBox())!.width).toBeGreaterThan(originalCanvasWidth);
+    await page.getByRole('button', { name: 'Expand research insights' }).click();
+    await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeVisible();
+
+    // The design's light-only surfaces should actually switch to dark colors.
+    const canvas = page.locator('.atlas-ref-canvas');
+    const lightSurface = await canvas.evaluate((element) => getComputedStyle(element).backgroundColor);
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+    await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSurface);
+    const darkPanelSurface = await page.locator('.atlas-ref-insight').evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(darkPanelSurface).not.toBe('rgb(255, 255, 255)');
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
     await page.getByRole('button', { name: 'More research tools' }).click();
     await page.getByRole('menuitem', { name: 'Quick notes' }).click();
     await expect(page.getByRole('textbox', { name: 'Quick notes' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Quick notes' }).fill('Evidence to revisit');
+    await page.getByRole('button', { name: 'Collapse research insights' }).first().click();
+    await page.getByRole('button', { name: 'Expand research insights' }).click();
+    await expect(page.getByRole('textbox', { name: 'Quick notes' })).toHaveValue('Evidence to revisit');
     await page.getByRole('tab', { name: /Sources/ }).click();
     await page.getByRole('tab', { name: 'Answer' }).click();
     await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
@@ -101,7 +126,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Connectors' }).click();
     const availableGrid = page.getByRole('region', { name: 'Available integrations' }).locator('.integrations-grid');
     await expect(availableGrid).toBeVisible();
-    const columns = await availableGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.trim().split(/\\s+/).length);
+    const columns = await availableGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
     expect(columns).toBe(4);
     // Click the title—not the previous highlighted action region—to open configuration.
     await page.locator('.integration-tile').filter({ hasText: 'GitHub' }).getByRole('heading', { name: 'GitHub' }).click();
