@@ -1054,7 +1054,17 @@
     color: var(--atlas-ref-ink);
 }
 .atlas-ref-hero-theme .MuiIconButton-root {
+    width: 34px;
+    height: 34px;
     color: inherit;
+}
+.atlas-ref-insight-toggle.MuiIconButton-root {
+    width: 36px;
+    height: 36px;
+}
+.atlas-reference-sidebar .atlas-ref-workspace-id {
+    font-size: 10px;
+    font-weight: 500;
 }
 :root[data-theme='dark'] .atlas-ref-insight,
 :root[data-theme='dark'] .atlas-ref-composer,
