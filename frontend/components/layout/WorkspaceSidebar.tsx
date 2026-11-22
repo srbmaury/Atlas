@@ -149,7 +149,7 @@ export function WorkspaceSidebar({
                     ))}
                 </List>
                 <Button variant="contained" disabled={busy} startIcon={<Plus size={17} />} onClick={onNewChat} fullWidth sx={{ mt: 1.5, bgcolor: 'var(--brand)', '&:hover': { bgcolor: 'var(--brandhover)' } }}>
-                    New research
+                    New chat
                 </Button>
             </Box>
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3" aria-label="Recent conversations">
