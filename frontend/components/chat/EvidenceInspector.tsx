@@ -122,8 +122,12 @@ export function EvidenceInspector({
             <div className="drawer-header">
                 {source && <FileBadge name={sourceDisplayName(source)} />}
                 <div className="evidence-inspector-heading">
-                    <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, letterSpacing: '.12em' }}>{source ? 'Evidence excerpt' : 'Document preview'}</Typography>
-                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>{source ? sourceDisplayName(source) : preview?.document.name}</Typography>
+                    <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, letterSpacing: '.12em' }}>
+                        {source ? 'Evidence excerpt' : 'Document preview'}
+                    </Typography>
+                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>
+                        {source ? sourceDisplayName(source) : preview?.document.name}
+                    </Typography>
                     <div className="evidence-source-meta">
                         <span>
                             {sourcePdf && pageCount
@@ -136,12 +140,32 @@ export function EvidenceInspector({
                     </div>
                     {pageNavigation && (
                         <nav className="evidence-page-navigation" aria-label="PDF page navigation">
-                            <Button variant="outlined" size="small" type="button" startIcon={<ArrowLeft size={16} />} aria-label="Previous PDF page" disabled={pageBusy || activePage <= 1} onClick={() => void fetchPdfPage(activePage - 1)}>Previous page</Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                type="button"
+                                startIcon={<ArrowLeft size={16} />}
+                                aria-label="Previous PDF page"
+                                disabled={pageBusy || activePage <= 1}
+                                onClick={() => void fetchPdfPage(activePage - 1)}
+                            >
+                                Previous page
+                            </Button>
                             <span aria-live="polite" className="flex items-center gap-2">
                                 {pageBusy && <CircularProgress size={14} aria-label="Loading PDF page" />}
                                 Page {activePage} of {pageCount}
                             </span>
-                            <Button variant="outlined" size="small" type="button" endIcon={<ArrowRight size={16} />} aria-label="Next PDF page" disabled={pageBusy || activePage >= pageCount} onClick={() => void fetchPdfPage(activePage + 1)}>Next page</Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                type="button"
+                                endIcon={<ArrowRight size={16} />}
+                                aria-label="Next PDF page"
+                                disabled={pageBusy || activePage >= pageCount}
+                                onClick={() => void fetchPdfPage(activePage + 1)}
+                            >
+                                Next page
+                            </Button>
                         </nav>
                     )}
                 </div>
@@ -149,7 +173,9 @@ export function EvidenceInspector({
             <div className="drawer-body">
                 {source ? (
                     <div className="evidence-inspector-passage">
-                        <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>Retrieved passage · Check the original source for surrounding context.</Alert>
+                        <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+                            Retrieved passage · Check the original source for surrounding context.
+                        </Alert>
                         {passageWarning && (
                             <p className="extraction-warning" role="status">
                                 {passageWarning}
@@ -225,11 +251,17 @@ export function EvidenceInspector({
             </div>
             <div className="drawer-footer">
                 {source?.url && openLabel ? (
-                    <Button component="a" variant="outlined" href={source.url} target="_blank" rel="noopener noreferrer" startIcon={<ArrowUpRight size={16} />}>{openLabel}</Button>
+                    <Button component="a" variant="outlined" href={source.url} target="_blank" rel="noopener noreferrer" startIcon={<ArrowUpRight size={16} />}>
+                        {openLabel}
+                    </Button>
                 ) : originalUrl ? (
-                    <Button component="a" variant="outlined" href={originalUrl} startIcon={<Download size={16} />}>Download uploaded original</Button>
+                    <Button component="a" variant="outlined" href={originalUrl} startIcon={<Download size={16} />}>
+                        Download uploaded original
+                    </Button>
                 ) : null}
-                <Button type="button" variant="contained" onClick={onClose}>Close</Button>
+                <Button type="button" variant="contained" onClick={onClose}>
+                    Close
+                </Button>
             </div>
         </Dialog>
     );
