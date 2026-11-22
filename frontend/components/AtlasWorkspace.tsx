@@ -503,8 +503,6 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 }}
                 onWorkspaceSettings={() => setNewWorkspace(true)}
                 workspace={workspace}
-                workspaces={workspaces}
-                onSelectWorkspace={setWorkspaceId}
                 workspaceCount={workspaces.length}
                 chats={chats}
                 chatsLoading={chatsLoading}
