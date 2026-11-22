@@ -2,7 +2,9 @@ name: Temporary composer visual parity
 on:
   push:
     branches: [design/mui-tailwind-frontend]
-    paths: [.github/workflows/temp-composer-parity.yml]
+    paths:
+      - .github/workflows/temp-composer-parity.yml
+      - frontend/e2e/reference-dashboard.spec.ts
 jobs:
   compare:
     runs-on: ubuntu-24.04
