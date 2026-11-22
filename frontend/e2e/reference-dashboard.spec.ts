@@ -16,7 +16,9 @@ test('reference research dashboard renders three columns and remains usable on a
         if (path === '/workspaces/w1/agents/sources') return reply({ documents: [], providers: [] });
         if (path === '/workspaces/w1/agents') return reply([]);
         if (path === '/workspaces/w1/conversations') return reply([{ id: 'saved', title: 'Renewable energy growth in Europe', updated: Math.floor(Date.now() / 1000) }]);
-        if (path === '/workspaces/w1/conversations/saved') return reply({
+        if (path === '/workspaces/w1/conversations/saved') {
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            return reply({
             id: 'saved',
             title: 'Renewable energy growth in Europe',
             updated: Math.floor(Date.now() / 1000),
@@ -29,6 +31,7 @@ test('reference research dashboard renders three columns and remains usable on a
                 } },
             ],
         });
+        }
         return reply([]);
     });
     await page.goto('/');
@@ -44,6 +47,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeHidden();
 
     await page.locator('.atlas-ref-research-row').filter({ hasText: 'Renewable energy growth in Europe' }).click();
+    await expect(page.getByText('Opening conversation…')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Research answer' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Open source 1/ }).first()).toBeVisible();
 
@@ -58,6 +62,37 @@ test('reference research dashboard renders three columns and remains usable on a
 
     await page.getByRole('button', { name: /Analyze a topic/ }).click();
     await expect(page.getByRole('textbox', { name: 'Ask a research question' })).toHaveValue('Analyze the evidence, developments and implications of ');
+
+    // The same native Dialog primitive powers workspace management and global search.
+    // Both must be centered; Tailwind's preflight strips the UA dialog margins.
+    await page.getByRole('button', { name: 'New or manage workspaces' }).click();
+    const workspaceDialog = page.getByRole('dialog', { name: 'Your workspaces' });
+    await expect(workspaceDialog).toBeVisible();
+    const workspaceRect = await workspaceDialog.boundingBox();
+    expect(workspaceRect).not.toBeNull();
+    expect(Math.abs(workspaceRect!.x + workspaceRect!.width / 2 - 1672 / 2)).toBeLessThan(8);
+    await workspaceDialog.getByRole('button', { name: 'Close dialog' }).click();
+
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Ask Atlas' }).click();
+    await page.getByRole('button', { name: /Search documents or ask a question/ }).click();
+    const searchDialog = page.getByRole('dialog', { name: 'Search & commands' });
+    await expect(searchDialog).toBeVisible();
+    const searchRect = await searchDialog.boundingBox();
+    expect(searchRect).not.toBeNull();
+    expect(Math.abs(searchRect!.x + searchRect!.width / 2 - 1672 / 2)).toBeLessThan(8);
+    await searchDialog.getByRole('button', { name: 'Close dialog' }).click();
+
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Connectors' }).click();
+    const availableGrid = page.getByRole('region', { name: 'Available integrations' }).locator('.integrations-grid');
+    await expect(availableGrid).toBeVisible();
+    const columns = await availableGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.trim().split(/\\s+/).length);
+    expect(columns).toBe(4);
+    // Click the title—not the previous highlighted action region—to open configuration.
+    await page.locator('.integration-tile').filter({ hasText: 'GitHub' }).getByRole('heading', { name: 'GitHub' }).click();
+    await expect(page.getByRole('dialog', { name: 'Manage source connection' })).toBeVisible();
+    await page.getByRole('dialog', { name: 'Manage source connection' }).getByRole('button', { name: 'Close dialog' }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Your AI Research Workspace' })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('heading', { name: 'Your AI Research Workspace' })).toBeVisible();
