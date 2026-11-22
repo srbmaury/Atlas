@@ -450,7 +450,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         );
 
     return (
-        <div className={`app atlas-mui-workspace ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`app atlas-v3 atlas-mui-workspace ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <input
                 ref={input}
                 type="file"
