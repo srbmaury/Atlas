@@ -153,7 +153,11 @@ export function HomeView({
                     >
                         {insightOpen ? <PanelRightClose size={19} /> : <PanelRightOpen size={19} />}
                     </IconButton>
-                    {themeButton && <div className="atlas-ref-hero-theme" aria-label="Appearance">{themeButton}</div>}
+                    {themeButton && (
+                        <div className="atlas-ref-hero-theme" aria-label="Appearance">
+                            {themeButton}
+                        </div>
+                    )}
                     <IconButton className="atlas-ref-mobile-menu" aria-label="Open menu" onClick={onOpenMobileMenu}>
                         <Menu size={21} />
                     </IconButton>
