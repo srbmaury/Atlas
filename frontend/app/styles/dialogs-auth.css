@@ -1,4 +1,8 @@
 .dialog {
+    /* Tailwind preflight resets dialog's UA margin. Keep native modal centering. */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     padding: 25px;
     width: min(520px, calc(100vw - 30px));
     max-height: 85dvh;

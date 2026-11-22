@@ -831,72 +831,6 @@
         margin-bottom: 12px;
         color: var(--muted);
     }
-    .atlas-v3 .integrations-grid {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0;
-        overflow: hidden;
-        border: 1px solid var(--outline);
-        border-radius: 12px;
-        background: var(--panel);
-    }
-    .atlas-v3 .integrations-grid:has(> .integration-tile[data-connected='true']) {
-        margin-bottom: 12px;
-    }
-    .atlas-v3 .integrations-grid .integration-tile {
-        display: grid;
-        grid-template-columns: 34px minmax(0, 1fr) auto;
-        grid-template-areas: 'icon name action' 'icon status action';
-        align-items: center;
-        min-height: 62px;
-        gap: 2px 9px;
-        padding: 9px;
-        border: 0;
-        border-radius: 0;
-        box-shadow: none;
-    }
-    .atlas-v3 .integrations-grid[data-catalog-open='false'] .integration-tile[data-connected='false'] {
-        display: none;
-    }
-    .atlas-v3 .integrations-grid[data-catalog-open='false']:not(:has(> [data-connected='true'])) {
-        display: none;
-    }
-    .atlas-v3 .integrations-grid .integration-tile + .integration-tile {
-        border-top: 1px solid var(--outline);
-    }
-    .atlas-v3 .integrations-grid .integration-tile-top {
-        grid-area: icon;
-        margin: 0;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-icon {
-        width: 34px;
-        height: 34px;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-icon svg {
-        width: 17px;
-        height: 17px;
-    }
-    .atlas-v3 .integrations-grid :is(.integration-tile-arrow, .integration-tile-description) {
-        display: none;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-name {
-        grid-area: name;
-        font-size: 14px;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-status {
-        grid-area: status;
-        margin: 0;
-        overflow-wrap: anywhere;
-    }
-    .atlas-v3 .mobile-source-tile-action {
-        grid-area: action;
-        display: inline-block;
-        padding: 5px 7px;
-        border-radius: 6px;
-        background: var(--active);
-        color: var(--brand);
-        font-size: 11px;
-    }
-
     .atlas-v3 .document-library-v3 > :is(.crumb, .library-metrics, .home-dropzone),
     .atlas-v3 .library-intro :is(.section-kicker, p, .library-desktop-upload),
     .atlas-v3 .library-workspace-heading,
@@ -1085,15 +1019,6 @@
 .atlas-v3 .integration-catalog h2 {
     margin-bottom: 10px;
 }
-.atlas-v3 .integrations-grid .integration-tile {
-    min-height: 0;
-    padding: 12px;
-    gap: 5px;
-}
-.atlas-v3 .integrations-grid .mobile-source-tile-action {
-    display: inline-flex;
-    color: var(--brand);
-}
 .atlas-v3 .source-load-notice button {
     color: var(--brand);
     text-decoration: underline;
@@ -1104,34 +1029,6 @@
     }
 }
 
-@media (min-width: 601px) {
-    .atlas-v3 .integrations-grid .integration-tile {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        grid-template-areas: 'icon name action' 'icon description action' 'icon status action';
-        align-items: center;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-top {
-        grid-area: icon;
-        margin: 0 5px 0 0;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-arrow {
-        display: none;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-name {
-        grid-area: name;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-description {
-        grid-area: description;
-    }
-    .atlas-v3 .integrations-grid .integration-tile-status {
-        grid-area: status;
-        margin: 0;
-    }
-    .atlas-v3 .integrations-grid .mobile-source-tile-action {
-        grid-area: action;
-    }
-}
 @media (max-width: 600px) {
     .atlas-v3 dialog.citation-inspector {
         inset: auto 0 0;

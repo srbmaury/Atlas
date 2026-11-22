@@ -61,10 +61,16 @@ button {
     cursor: pointer;
 }
 button:focus-visible,
-input:not(.MuiInputBase-input):focus-visible,
-textarea:not(.MuiInputBase-input):focus-visible {
+a:focus-visible {
     outline: 2px solid #70a78c;
     outline-offset: 2px;
+}
+/* The border/focus-within state belongs to each input container. Avoid the
+   double outline on click that the global focus-visible rule created. */
+input:not(.MuiInputBase-input):focus-visible,
+textarea:not(.MuiInputBase-input):focus-visible {
+    outline: none;
+    border-color: var(--brand);
 }
 svg {
     width: 19px;
