@@ -114,13 +114,7 @@ export function ResearchComposer({
             )}
             <div className="research-composer-input-row">
                 <Tooltip title="Add documents">
-                    <IconButton
-                        aria-label="Add context"
-                        aria-haspopup="menu"
-                        aria-expanded={!!menuAnchor}
-                        onClick={(event) => setMenuAnchor(event.currentTarget)}
-                        sx={{ flexShrink: 0 }}
-                    >
+                    <IconButton aria-label="Add context" aria-haspopup="menu" aria-expanded={!!menuAnchor} onClick={(event) => setMenuAnchor(event.currentTarget)} sx={{ flexShrink: 0 }}>
                         <Plus size={19} />
                     </IconButton>
                 </Tooltip>
