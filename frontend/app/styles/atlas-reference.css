@@ -1144,6 +1144,22 @@
     min-width: 0;
     width: 100%;
 }
+.atlas-question-box-input textarea {
+    min-height: 38px;
+    resize: none;
+    color: var(--atlas-ref-ink);
+    background: transparent;
+}
+.atlas-question-box .atlas-ref-composer-bottom {
+    margin-top: 9px;
+}
+.atlas-question-box .atlas-ref-pills > .MuiIconButton-root.atlas-ref-pill {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--atlas-ref-ink);
+    background: var(--atlas-ref-subtle);
+    border: 1px solid var(--atlas-ref-line);
+}
 .atlas-question-box-trailing {
     display: flex;
     align-items: center;
@@ -1156,17 +1172,10 @@
     cursor: not-allowed;
 }
 .atlas-v3 .content-research .chat-workspace .research-composer-v2.atlas-ref-composer {
-    --atlas-ref-surface: var(--panel);
-    --atlas-ref-line: var(--outline);
-    --atlas-ref-subtle: var(--pill);
-    --atlas-ref-hover: var(--hover);
-    --atlas-ref-ink: var(--ink);
-    --atlas-ref-muted: var(--sub);
-    --atlas-ref-accent: var(--brand);
-    margin: 0 auto;
     width: 100%;
     max-width: 1080px;
     box-sizing: border-box;
+    margin: 0 auto;
 }
 .atlas-v3 .chat-workspace .research-composer-v2 .research-source-popover {
     right: 0;
