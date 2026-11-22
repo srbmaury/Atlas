@@ -30,8 +30,6 @@ export async function refreshDocuments({ workspaceId, scope, setDocs, setSelecte
     if (!workspaceId) return;
     const documents = await api<Doc[]>(`/workspaces/${workspaceId}/documents`);
     if (scope.current !== workspaceId) return;
-    // Reuse the existing array when polling returns the same snapshot, so a
-    // no-op network response does not rerender the entire research workspace.
     setDocs((current) => (sameDocumentSnapshot(current, documents) ? current : documents));
     setSelected((current) => {
         const remaining = current.filter((id) => documents.some((document) => document.id === id));
