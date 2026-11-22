@@ -39,6 +39,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     workspaceId: string;
+    sourceLabels: string[];
     openingChat?: boolean;
     mentionAgents?: { id: string; name: string; handle: string }[];
     searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
@@ -425,6 +426,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             messages={props.messages}
                             busy={props.busy}
                             readyCount={props.readyCount}
+                            sourceLabels={props.sourceLabels}
                             uploadButton={props.uploadButton}
                             prompts={prompts}
                             onPrompt={props.onAsk}
