@@ -84,7 +84,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeHidden();
 
     await page.locator('.atlas-ref-research-row').filter({ hasText: 'Renewable energy growth in Europe' }).click();
-    await expect(page.getByText('Opening conversation…')).toBeVisible();
+    await expect(page.locator('.atlas-ref-progress-panel')).toContainText('Opening conversation…');
     releaseSavedConversation?.();
     await expect(page.getByRole('heading', { name: 'Research answer' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Open source 1/ }).first()).toBeVisible();
