@@ -79,7 +79,7 @@ export function createConversationActions({
     navigate,
     newChat,
 }: Options) {
-    async function loadChat(id: string) {
+    async function loadChat(id: string, stayOnOverview = false) {
         if (busy) return;
         const sequence = chatLoadSequence.next();
         try {
@@ -102,7 +102,7 @@ export function createConversationActions({
             chatMessages.current = item.messages;
             setMessages(item.messages);
             setSource(null);
-            navigate('chat');
+            if (!stayOnOverview) navigate('chat');
         } catch (e) {
             if (chatLoadSequence.isCurrent(sequence)) setError((e as Error).message);
         }

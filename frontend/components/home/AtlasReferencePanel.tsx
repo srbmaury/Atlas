@@ -9,9 +9,10 @@ import { ResearchAnswer } from '../chat/ResearchAnswer';
 
 type PanelTab = 'answer' | 'sources' | 'notes' | 'artifacts';
 
-export function AtlasReferencePanel({ answer, question, onOpenSource, onPrompt, onManageSources }: {
+export function AtlasReferencePanel({ answer, question, progress, onOpenSource, onPrompt, onManageSources }: {
     answer?: Answer;
     question?: string;
+    progress?: string;
     onOpenSource: (source: Source) => void;
     onPrompt: (question: string) => void;
     onManageSources: () => void;
@@ -64,6 +65,8 @@ export function AtlasReferencePanel({ answer, question, onOpenSource, onPrompt, 
                                     <ResearchAnswer result={answer} onOpenSource={onOpenSource} onPrompt={onPrompt} />
                                 </div>
                             </>
+                        ) : progress ? (
+                            <div className="atlas-ref-empty" role="status" aria-live="polite"><span className="atlas-ref-spark"><Sparkles size={23}/></span><Typography component="h2" variant="h6">Research in progress</Typography><Typography variant="body2" color="text.secondary">{progress}</Typography></div>
                         ) : (
                             <div className="atlas-ref-empty">
                                 <span className="atlas-ref-spark"><Sparkles size={25} /></span>

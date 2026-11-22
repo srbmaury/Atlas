@@ -36,6 +36,7 @@ interface HomeViewProps {
     formatSize: (value: number) => string;
     latestAnswer?: Answer;
     latestQuestion?: string;
+    answerProgress?: string;
     onOpenSource: (source: Source) => void;
     onOpenMobileMenu: () => void;
 }
@@ -52,7 +53,7 @@ export function HomeView({
     sourceLabels, busy, chats, docs, onChooseSources, onOpenSources, onOpenConversations,
     onOpenConversation, onStartChat, onOpenDocuments, onInspectDocument, uploadButton,
     dragging, onDragging, onDrop, maxSizeMB, uploading, onBrowse, formatSize,
-    latestAnswer, latestQuestion, onOpenSource, onOpenMobileMenu,
+    latestAnswer, latestQuestion, answerProgress, onOpenSource, onOpenMobileMenu,
 }: HomeViewProps) {
     const voice = useVoiceInput();
     const prompt = useRef<HTMLTextAreaElement>(null);
@@ -196,7 +197,7 @@ export function HomeView({
                     </div>
                 </section>}
             </div>
-            <AtlasReferencePanel answer={latestAnswer} question={latestQuestion} onOpenSource={onOpenSource} onPrompt={applyTask} onManageSources={onOpenSources}/>
+            <AtlasReferencePanel answer={latestAnswer} question={latestQuestion} progress={answerProgress} onOpenSource={onOpenSource} onPrompt={applyTask} onManageSources={onOpenSources}/>
         </div>
     );
 }

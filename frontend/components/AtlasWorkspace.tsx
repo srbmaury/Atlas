@@ -618,7 +618,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                                 setHistoryOpen(true);
                                 void refreshChats();
                             }}
-                            onOpenConversation={(id) => { navigate('chat'); void loadChat(id); }}
+                            onOpenConversation={(id) => void loadChat(id, true)}
                             onStartChat={() => {
                                 newChat();
                                 navigate('chat');
@@ -639,6 +639,7 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             formatSize={prettyBytes}
                             latestAnswer={latestAnswer}
                             latestQuestion={latestQuestion}
+                            answerProgress={busy || agentBusy ? answerProgress : ''}
                             onOpenSource={openAnswerSource}
                             onOpenMobileMenu={() => setSidebarOpen(true)}
                         />
