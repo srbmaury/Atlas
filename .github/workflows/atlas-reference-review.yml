@@ -1,0 +1,31 @@
+name: Review Atlas reference dashboard (temporary)
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+permissions:
+  contents: read
+jobs:
+  reference-preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Verify reference layout and capture desktop/mobile
+        working-directory: frontend
+        run: npx playwright test e2e/reference-dashboard.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atlas-reference-preview
+          path: frontend/test-results
+          retention-days: 3
