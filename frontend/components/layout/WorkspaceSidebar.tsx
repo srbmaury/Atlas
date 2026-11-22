@@ -184,6 +184,15 @@ export function WorkspaceSidebar({
                         <p>No chats in this workspace</p>
                     )}
                 </div>
+                <div className="atlas-ref-sidebar-bottom">
+                    <Link className="atlas-ref-sidebar-link" href={settingsUrl}>
+                        <Settings2 size={17} />
+                        <span>Settings</span>
+                    </Link>
+                    <a className="atlas-ref-sidebar-link" href="https://github.com/srbmaury/Atlas#readme" target="_blank" rel="noopener noreferrer">
+                        <CircleHelp size={17} />
+                        <span>Help & Docs</span>
+                    </a>
                 <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                     <div className="flex items-center justify-between text-xs font-bold">
                         <span className="rounded-full bg-[#5948c4] px-2 py-0.5 text-white">Workspace</span>
@@ -194,15 +203,6 @@ export function WorkspaceSidebar({
                         <span>{storageLabel}</span>
                     </div>
                 </div>
-                <div className="atlas-ref-sidebar-bottom">
-                    <Link className="atlas-ref-sidebar-link" href={settingsUrl}>
-                        <Settings2 size={17} />
-                        <span>Settings</span>
-                    </Link>
-                    <a className="atlas-ref-sidebar-link" href="https://github.com/srbmaury/Atlas#readme" target="_blank" rel="noopener noreferrer">
-                        <CircleHelp size={17} />
-                        <span>Help & Docs</span>
-                    </a>
                     <div className="atlas-ref-profile">
                         <span className="atlas-ref-profile-avatar">{initials}</span>
                         <Link href={settingsUrl} className="min-w-0 flex-1 text-inherit no-underline" aria-label="Account settings">
