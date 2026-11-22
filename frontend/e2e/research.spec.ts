@@ -119,7 +119,7 @@ test.beforeEach(async ({ page }) => {
 // Keep test assertions scoped to the open popover rather than exposing every
 // integration in the main toolbar.
 async function openSourcePicker(page: import('@playwright/test').Page) {
-    const trigger = page.getByRole('button', { name: /Sources:/ });
+    const trigger = page.getByRole('button', { name: 'Connected Sources' });
     if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
 }
 
@@ -230,7 +230,7 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
 
 test('phone Focus chat tools and compact drawer stay usable', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
-    const sourceTrigger = page.getByRole('button', { name: /Sources:/ });
+    const sourceTrigger = page.getByRole('button', { name: 'Connected Sources' });
     await expect(sourceTrigger).toBeInViewport();
     await sourceTrigger.click();
     await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeVisible();
