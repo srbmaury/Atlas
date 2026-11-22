@@ -134,7 +134,14 @@ export function ResearchComposer({
             leadingActions={
                 <>
                     <Tooltip title="Add documents">
-                        <IconButton className="atlas-ref-pill" aria-label="Add context" aria-haspopup="menu" aria-expanded={!!menuAnchor} onClick={(event) => setMenuAnchor(event.currentTarget)} size="small">
+                        <IconButton
+                            className="atlas-ref-pill"
+                            aria-label="Add context"
+                            aria-haspopup="menu"
+                            aria-expanded={!!menuAnchor}
+                            onClick={(event) => setMenuAnchor(event.currentTarget)}
+                            size="small"
+                        >
                             <Paperclip size={16} />
                         </IconButton>
                     </Tooltip>
