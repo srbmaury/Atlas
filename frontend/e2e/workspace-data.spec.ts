@@ -41,7 +41,7 @@ test('restores a previous workspace and distinguishes saved data from API failur
     await expect(page.getByRole('heading', { name: 'Coastal Research' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Archive Review' })).toBeVisible();
 
-    const agentInput = page.getByRole('textbox', { name: 'Search agents' });
+    const agentInput = page.getByRole('searchbox', { name: 'Search agents' });
     await agentInput.focus();
     expect(await agentInput.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe('none');
     expect(await agentInput.evaluate((node) => getComputedStyle(node).boxShadow)).toBe('none');
