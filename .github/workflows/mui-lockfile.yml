@@ -20,12 +20,18 @@ jobs:
             - name: Resolve frontend dependencies
               working-directory: frontend
               run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-            - name: Commit lockfile if changed
+            - name: Install dependencies for formatting
+              working-directory: frontend
+              run: npm ci --ignore-scripts --no-audit --no-fund
+            - name: Format frontend migration
+              working-directory: frontend
+              run: npm run format
+            - name: Commit generated files if changed
               run: |
-                  if ! git diff --quiet -- frontend/package-lock.json; then
+                  if ! git diff --quiet -- frontend; then
                     git config user.name "github-actions[bot]"
                     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                    git add frontend/package-lock.json
-                    git commit -m "chore(frontend): synchronize MUI and Tailwind lockfile"
+                    git add frontend
+                    git commit -m "chore(frontend): synchronize lockfile and format redesigned components"
                     git push origin HEAD:${{ github.ref_name }}
                   fi
