@@ -168,97 +168,97 @@ export function HomeView({
                 <ResearchQuestionBox
                     ariaLabel="Ask a research question"
                     className="atlas-ref-composer"
-                        query={query}
-                        onQueryChange={onQueryChange}
-                        onRequestSubmit={onAsk}
-                        canSubmit={canSubmit}
-                        busy={busy}
-                        inputRef={prompt}
-                        inputLabel="Ask a research question"
-                        placeholder="Ask a research question..."
-                        maxRows={7}
-                        sourceSelector={sourcePicker}
-                        context={
-                            matchingAgents.length > 0 ? (
-                                <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
-                                    {matchingAgents.map((agent) => (
-                                        <Button
-                                            key={agent.id}
-                                            fullWidth
-                                            size="small"
-                                            role="option"
-                                            aria-selected={false}
-                                            sx={{ justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
-                                                prompt.current?.focus();
-                                            }}
-                                        >
-                                            {agent.name} · {agent.handle}
-                                        </Button>
-                                    ))}
-                                </Paper>
-                            ) : null
-                        }
-                        leadingActions={
-                            <>
-                                <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
-                                    <Paperclip size={16} />
-                                </button>
-                                <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not yet available in Atlas">
-                                    <Globe2 size={16} /> Web
+                    query={query}
+                    onQueryChange={onQueryChange}
+                    onRequestSubmit={onAsk}
+                    canSubmit={canSubmit}
+                    busy={busy}
+                    inputRef={prompt}
+                    inputLabel="Ask a research question"
+                    placeholder="Ask a research question..."
+                    maxRows={7}
+                    sourceSelector={sourcePicker}
+                    context={
+                        matchingAgents.length > 0 ? (
+                            <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
+                                {matchingAgents.map((agent) => (
+                                    <Button
+                                        key={agent.id}
+                                        fullWidth
+                                        size="small"
+                                        role="option"
+                                        aria-selected={false}
+                                        sx={{ justifyContent: 'flex-start' }}
+                                        onClick={() => {
+                                            onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                                            prompt.current?.focus();
+                                        }}
+                                    >
+                                        {agent.name} · {agent.handle}
+                                    </Button>
+                                ))}
+                            </Paper>
+                        ) : null
+                    }
+                    leadingActions={
+                        <>
+                            <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
+                                <Paperclip size={16} />
+                            </button>
+                            <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not yet available in Atlas">
+                                <Globe2 size={16} /> Web
+                            </span>
+                            <button
+                                className="atlas-ref-pill"
+                                type="button"
+                                aria-pressed={includeDocuments}
+                                title={`${readyCount} searchable documents`}
+                                onClick={() => onIncludeDocumentsChange(!includeDocuments)}
+                            >
+                                <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
+                            </button>
+                        </>
+                    }
+                    trailingActions={
+                        <>
+                            <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
+                                Auto
+                            </span>
+                            <IconButton
+                                aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
+                                disabled={busy || (!voice.supported && !voice.listening)}
+                                aria-pressed={voice.listening}
+                                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                                size="small"
+                            >
+                                {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
+                            </IconButton>
+                            <button className="atlas-ref-primary-button" type="submit" disabled={!canSubmit}>
+                                <span className="flex items-center gap-2">
+                                    <Sparkles size={16} /> Research
                                 </span>
-                                <button
-                                    className="atlas-ref-pill"
-                                    type="button"
-                                    aria-pressed={includeDocuments}
-                                    title={`${readyCount} searchable documents`}
-                                    onClick={() => onIncludeDocumentsChange(!includeDocuments)}
-                                >
-                                    <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
-                                </button>
-                            </>
-                        }
-                        trailingActions={
-                            <>
-                                <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
-                                    Auto
-                                </span>
-                                <IconButton
-                                    aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
-                                    disabled={busy || (!voice.supported && !voice.listening)}
-                                    aria-pressed={voice.listening}
-                                    onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
-                                    size="small"
-                                >
-                                    {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
-                                </IconButton>
-                                <button className="atlas-ref-primary-button" type="submit" disabled={!canSubmit}>
-                                    <span className="flex items-center gap-2">
-                                        <Sparkles size={16} /> Research
-                                    </span>
-                                </button>
-                            </>
-                        }
-                        footer={
-                            <>
-                                {(voice.listening || voice.error) && (
-                                    <Typography role={voice.error ? 'alert' : 'status'} variant="caption" color={voice.error ? 'error' : 'text.secondary'}>
-                                        {voice.error || 'Listening…'}
-                                    </Typography>
-                                )}
-                                {!hasAskSources && (
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                        Select a source or add a document to enable research.
-                                    </Typography>
-                                )}
-                                {!!sourceLabels.length && (
-                                    <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
-                                        {sourceLabels.join(' · ')}
-                                    </div>
-                                )}
-                            </>
-                        }
+                            </button>
+                        </>
+                    }
+                    footer={
+                        <>
+                            {(voice.listening || voice.error) && (
+                                <Typography role={voice.error ? 'alert' : 'status'} variant="caption" color={voice.error ? 'error' : 'text.secondary'}>
+                                    {voice.error || 'Listening…'}
+                                </Typography>
+                            )}
+                            {!hasAskSources && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                    Select a source or add a document to enable research.
+                                </Typography>
+                            )}
+                            {!!sourceLabels.length && (
+                                <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
+                                    {sourceLabels.join(' · ')}
+                                </div>
+                            )}
+                        </>
+                    }
                 />
                 {answerProgress && (
                     <div className="atlas-ref-progress-inline" role="status" aria-live="polite">
