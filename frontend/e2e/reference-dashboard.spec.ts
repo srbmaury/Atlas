@@ -40,7 +40,7 @@ test('reference research dashboard renders three columns and remains usable on a
 
     await page.locator('.atlas-ref-research-row').filter({ hasText: 'Renewable energy growth in Europe' }).click();
     await expect(page.getByRole('heading', { name: 'Research answer' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Open source 1' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Open source 1/ }).first()).toBeVisible();
 
     const sidebar = await page.locator('.atlas-reference-sidebar').boundingBox();
     const canvas = await page.locator('.atlas-ref-canvas').boundingBox();
@@ -51,7 +51,7 @@ test('reference research dashboard renders three columns and remains usable on a
     expect(insight!.x).toBeGreaterThanOrEqual(canvas!.x + canvas!.width - 2);
     await page.screenshot({ path: testInfo.outputPath('atlas-reference-desktop.png'), fullPage: true, animations: 'disabled' });
 
-    await page.getByRole('button', { name: 'Analyze a topic', exact: true }).click();
+    await page.getByRole('button', { name: /Analyze a topic/ }).click();
     await expect(page.getByRole('textbox', { name: 'Ask a research question' })).toHaveValue('Analyze the evidence, developments and implications of ');
 
     await page.setViewportSize({ width: 390, height: 844 });
