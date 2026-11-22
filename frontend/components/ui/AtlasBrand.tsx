@@ -2,7 +2,7 @@
 
 export function AtlasBrand({ size = 34 }: { size?: number }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Atlas" style={{ flexShrink: 0 }}>
+        <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Atlas" style={{ flexShrink: 0, width: size, height: size }}>
             <defs>
                 <linearGradient id="atlas-brand-purple" x1="0" y1="1" x2="1" y2="0">
                     <stop offset="0" stopColor="#4869fa" />

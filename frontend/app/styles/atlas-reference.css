@@ -119,6 +119,21 @@
     font-size: 12px;
     cursor: pointer;
 }
+.atlas-reference-sidebar .atlas-ref-recent .group > button:first-child {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    padding-inline: 6px;
+}
+.atlas-reference-sidebar .atlas-ref-recent .group > button:first-child span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.atlas-reference-sidebar .atlas-ref-recent .group > button:not(:first-child) {
+    flex-shrink: 0;
+}
 .atlas-reference-sidebar .atlas-ref-recent button:hover {
     background: #262e47;
     color: white;
@@ -209,7 +224,7 @@
     padding: 0 32px 38px;
 }
 .atlas-ref-hero {
-    min-height: 346px;
+    min-height: 380px;
     margin: 0 -32px;
     position: relative;
     text-align: center;
