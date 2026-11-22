@@ -196,7 +196,7 @@ export function WorkspaceSidebar({
                     </a>
                     <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
                         <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="rounded-full bg-[#5948c4] px-2 py-0.5 text-white">Workspace</span>
+                            <span className="atlas-ref-workspace-badge rounded-full px-2 py-0.5">Workspace</span>
                             <span>{readyCount} ready</span>
                         </div>
                         <div className="atlas-ref-storage-row mt-3 flex justify-between text-xs">
