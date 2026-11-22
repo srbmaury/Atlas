@@ -628,7 +628,6 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                             workspaceName={workspace?.name || 'Current workspace'}
                             onRefreshChats={() => void refreshWorkspaceLists()}
                             docs={docs}
-                            onChooseSources={() => setScopeOpen(true)}
                             themeButton={themeButton}
                             sourcePicker={
                                 <ResearchSourceSelector
