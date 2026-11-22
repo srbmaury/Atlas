@@ -69,6 +69,7 @@ export function WorkspaceSidebar({
     onSignOut,
 }: WorkspaceSidebarProps) {
     const settingsUrl = `/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`;
+    const duplicateNames = new Set(workspaces.map((item) => item.name).filter((name, index, names) => names.indexOf(name) !== index));
     const handleNavigate = (next: Tab) => {
         onNavigate(next);
         onClose();
@@ -130,23 +131,14 @@ export function WorkspaceSidebar({
                         type="button"
                         aria-current={workspace?.id === item.id ? 'true' : undefined}
                         aria-label={`Switch to ${item.name}`}
-                        title={
-                            workspaces.filter((candidate) => candidate.name === item.name).length > 1
-                                ? `${item.name} · ${item.id}`
-                                : item.name
-                        }
+                        title={item.name}
                         onClick={() => {
                             onSelectWorkspace?.(item.id);
                             onClose();
                         }}
                     >
                         <FolderClosed size={18} color={workspace?.id === item.id ? '#a174fb' : '#97a6c5'} />
-                        <span className="min-w-0 flex-1 truncate">
-                            {item.name}
-                            {workspaces.filter((candidate) => candidate.name === item.name).length > 1 && (
-                                <small className="atlas-ref-workspace-id"> · {item.id.slice(0, 5)}</small>
-                            )}
-                        </span>
+                        <span className="min-w-0 flex-1 truncate">{item.name}{duplicateNames.has(item.name) ? ` · ${item.id.slice(0, 5)}` : ''}</span>
                     </button>
                 ))}
                 <button className="atlas-ref-workspace" type="button" onClick={onWorkspaceSettings} title="Manage workspaces">
