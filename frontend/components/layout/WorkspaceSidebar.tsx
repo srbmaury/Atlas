@@ -150,7 +150,7 @@ export function WorkspaceSidebar({
                     Recent chats
                     <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}><RefreshCw size={14}/></button>
                 </div>
-                <div className="atlas-ref-recent" aria-label="Recent chats">
+                <div className="atlas-ref-recent" role="region" aria-label="Recent chats">
                     {chatsLoading && !chats.length ? <p role="status">Loading chats…</p> :
                      chatsFailed ? <p role="alert">Could not load chats. <button type="button" onClick={onRefreshChats}>Retry</button></p> :
                      chats.filter((chat) => !chat.archived).length
