@@ -125,11 +125,6 @@
     line-height: 1.6;
     font-size: 14px;
 }
-.atlas-v3 .composer-caption {
-    color: var(--sub);
-    opacity: 0.8;
-    font-size: 11px;
-}
 .atlas-v3 .research-evidence-rail {
     background: color-mix(in srgb, var(--wash) 45%, var(--panel));
     border-color: var(--outline);
@@ -470,15 +465,6 @@
 }
 
 @media (max-width: 600px) {
-    .atlas-v3 .home-dropzone {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-    }
-    .atlas-v3 .home-dropzone > .btn {
-        grid-column: 2;
-        justify-self: start;
-        margin-left: 0;
-    }
     .atlas-v3 .sources-overview > .heading-row {
         flex-direction: column;
         gap: 12px;
@@ -520,11 +506,6 @@
     .atlas-v3 .sidebar.open > .nav button {
         min-height: 40px;
         padding-block: 7px;
-    }
-    .atlas-v3 .sidebar.open > .sidebar-research {
-        min-height: 160px;
-        margin-top: 10px;
-        padding-top: 8px;
     }
 }
 
@@ -760,15 +741,6 @@
     .atlas-v3 .sidebar.open > .nav button svg {
         flex-shrink: 0;
     }
-    .atlas-v3 .sidebar.open > .sidebar-research {
-        min-height: 0;
-    }
-    .atlas-v3 .sidebar.open .sidebar-research-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-    }
     .atlas-v3 .sidebar.open .mobile-drawer-view-all {
         display: block;
         min-height: 44px;
@@ -783,10 +755,6 @@
         align-items: center;
         justify-content: space-between;
         gap: 6px;
-    }
-    .atlas-v3 .sidebar.open .sidebar-settings-entry {
-        margin: 0;
-        padding: 10px 4px;
     }
 }
 
@@ -810,14 +778,6 @@
     }
     .atlas-v3 .sources-overview > .heading-row {
         margin-bottom: 14px;
-    }
-    .atlas-v3 .integration-overview {
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .atlas-v3 .integration-overview h2 {
-        font-size: 17px;
     }
     .atlas-v3 .integration-overview .mobile-source-catalog,
     .atlas-v3 .library-intro .library-mobile-add {
@@ -857,36 +817,8 @@
     .atlas-v3 .library-workspace {
         padding: 10px;
     }
-
-    .atlas-v3 .library-workspace .document-table {
-        min-width: 0;
-    }
     .atlas-v3 .library-workspace .document-table :is(th, td):not(:first-child, :last-child) {
         display: none;
-    }
-    .atlas-v3 .library-workspace .document-table td:last-child {
-        display: table-cell;
-        width: 1%;
-        padding-inline: 4px;
-        text-align: end;
-    }
-    .atlas-v3 .library-workspace .document-name {
-        max-width: 100%;
-        text-align: start;
-    }
-    .atlas-v3 .library-workspace .document-mobile-meta {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 3px;
-        margin-top: 3px;
-        color: var(--muted);
-    }
-    .atlas-v3 .library-workspace .document-mobile-actions {
-        display: inline-grid;
-        place-items: center;
-        min-width: 44px;
-        min-height: 44px;
     }
     .atlas-v3 .library-workspace .row-actions[data-mobile-open='false'] {
         display: none;
@@ -894,34 +826,6 @@
     .atlas-v3 .library-workspace .row-actions .icon-button {
         min-width: 36px;
         min-height: 44px;
-    }
-
-    .atlas-v3 .home-hero-focused {
-        padding: 0 0 8px;
-        margin-bottom: 8px;
-    }
-    .atlas-v3 .home-hero-focused h1 {
-        font-size: 22px;
-        line-height: 1.2;
-    }
-    .atlas-v3 .home-hero-focused p {
-        display: none;
-    }
-    .atlas-v3 .home-prompt-panel {
-        padding: 12px;
-    }
-    .atlas-v3 .home-section-header {
-        margin: 16px 0 8px;
-    }
-    .atlas-v3 .home-activity-grid {
-        gap: 10px;
-    }
-    .atlas-v3 .home-activity-card {
-        padding: 10px;
-    }
-    .atlas-v3 .home-activity-list button {
-        min-height: 44px;
-        padding-block: 7px;
     }
 }
 
@@ -1008,23 +912,11 @@
     gap: 10px;
     margin-block: 0 12px;
 }
-.atlas-v3 .integration-empty {
-    color: var(--muted);
-}
-.atlas-v3 .integration-catalog {
-    margin-top: 20px;
-}
-.atlas-v3 .integration-catalog h2 {
-    margin-bottom: 10px;
-}
 .atlas-v3 .source-load-notice button {
     color: var(--brand);
     text-decoration: underline;
 }
 @media (max-width: 600px) {
-    .atlas-v3 .integration-catalog[data-catalog-open='false'] {
-        display: none;
-    }
 }
 
 @media (max-width: 600px) {
