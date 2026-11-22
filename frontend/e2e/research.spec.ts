@@ -626,7 +626,7 @@ test('mobile navigation closes after choosing a destination', async ({ page }) =
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Documents', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your documents', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Close navigation', exact: true })).toHaveCount(0);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     expect(overflow).toBe(false);
@@ -651,10 +651,10 @@ test('phone workspace pages expose compact source and document actions', async (
     await navigate('Documents');
     await expect(page.getByRole('searchbox', { name: 'Search documents' })).toBeVisible();
     await page.getByRole('button', { name: 'Actions for notes.md' }).click();
-    await expect(page.getByRole('link', { name: 'Download notes.md' })).toBeVisible();
-    await page.getByRole('button', { name: 'Actions for notes.md' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Download original' })).toHaveAttribute('href', /documents\\/d1\\/original/);
+    await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Upload files' })).toBeHidden();
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await page.getByRole('button', { name: 'Add knowledge', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Upload files' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add URL' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -664,7 +664,7 @@ test('Home keeps the primary research entry accessible on mobile', async ({ page
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
     await page.getByRole('button', { name: 'Overview', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Resume your research' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ideas are better with evidence.' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask Atlas' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
@@ -761,7 +761,9 @@ test('document processing failures expose context and retry', async ({ page }) =
     await page.reload();
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
     await expect(page.getByText('The PDF is password protected. Upload an unlocked copy.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Reindex failed.pdf' })).toBeVisible();
+    await page.getByRole('button', { name: 'Actions for failed.pdf' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Reindex document' })).toBeVisible();
+    await page.keyboard.press('Escape');
     await expect(page.getByText('Processing', { exact: true }).filter({ visible: true })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search documents' }).fill('absent');
     await expect(page.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
@@ -841,11 +843,13 @@ test('document actions preview, retry and remove a workspace file', async ({ pag
     await expect(preview).toContainText('Review the release checklist.');
     await preview.getByRole('button', { name: 'Close preview' }).click();
     const retry = page.waitForRequest((request) => request.url().endsWith('/documents/d1/retry') && request.method() === 'POST');
-    await page.getByRole('button', { name: 'Reindex notes.md', exact: true }).click();
+    await page.getByRole('button', { name: 'Actions for notes.md' }).click();
+    await page.getByRole('menuitem', { name: 'Reindex document' }).click();
     await retry;
     page.once('dialog', (dialog) => dialog.accept());
     const removed = page.waitForRequest((request) => request.url().endsWith('/documents/d1') && request.method() === 'DELETE');
-    await page.getByRole('button', { name: 'Delete notes.md', exact: true }).click();
+    await page.getByRole('button', { name: 'Actions for notes.md' }).click();
+    await page.getByRole('menuitem', { name: 'Delete document' }).click();
     await removed;
 });
 
@@ -908,7 +912,7 @@ test('web import reports success and clears its input', async ({ page }) => {
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name: 'Article', duplicate: false }) });
     });
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await page.getByRole('button', { name: 'Add knowledge', exact: true }).click();
     await page.getByLabel('Save public web page').fill('https://example.com/article');
     await page.getByRole('button', { name: 'Add URL', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Added Article to your library for indexing.' })).toBeVisible();
@@ -919,7 +923,7 @@ test('empty-library Add documents button keeps its padding on Home', async ({ pa
     await page.route('**/api/workspaces/w1/documents', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
     await page.reload();
     await page.getByRole('button', { name: 'Overview', exact: true }).click();
-    const button = page.locator('.home-card-empty').getByRole('button', { name: 'Add documents', exact: true });
+    const button = page.getByRole('button', { name: 'Add documents', exact: true });
     await expect(button).toBeVisible();
     const style = await button.evaluate((element) => {
         const value = getComputedStyle(element);
