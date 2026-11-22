@@ -37,6 +37,11 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('complementary', { name: 'Research insights' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('.atlas-ref-task')).toHaveCount(4);
+    await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Documents' })).toBeChecked();
+    await page.getByRole('button', { name: 'Connected Sources', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Choose search sources' })).toBeHidden();
 
     await page.locator('.atlas-ref-research-row').filter({ hasText: 'Renewable energy growth in Europe' }).click();
     await expect(page.getByRole('heading', { name: 'Research answer' })).toBeVisible();
