@@ -1,0 +1,60 @@
+name: Validate workspace data and input fixes
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+permissions:
+  contents: write
+concurrency:
+  group: atlas-data-ux-review
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Format changed frontend files
+        working-directory: frontend
+        run: npm run format
+      - name: Commit consistent formatting
+        shell: bash
+        run: |
+          git add frontend
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style(frontend): normalize chat and agent state fixes"
+            git pull --rebase origin design/mui-tailwind-frontend
+            git push origin HEAD:design/mui-tailwind-frontend
+          fi
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+      - name: Install browser test runner
+        working-directory: frontend
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Browser regression
+        working-directory: frontend
+        run: npx playwright test e2e/workspace-data.spec.ts e2e/reference-dashboard.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workspace-data-browser-review
+          path: frontend/test-results
+          retention-days: 2
