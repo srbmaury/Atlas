@@ -209,9 +209,6 @@ export function HomeView({
                     }
                     trailingActions={
                         <>
-                            <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
-                                Auto
-                            </span>
                             <IconButton
                                 aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
                                 disabled={busy || (!voice.supported && !voice.listening)}
