@@ -133,7 +133,15 @@ export function WorkspaceSidebar({
                 <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
                     <span>Recent chats</span>
                     <div className="atlas-ref-recent-actions">
-                        <button type="button" aria-label="All conversations" title="All conversations" onClick={() => { onOpenConversations(); onClose(); }}>
+                        <button
+                            type="button"
+                            aria-label="All conversations"
+                            title="All conversations"
+                            onClick={() => {
+                                onOpenConversations();
+                                onClose();
+                            }}
+                        >
                             <History size={14} />
                         </button>
                         <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
