@@ -732,6 +732,17 @@
         flex: 1;
     }
 }
+@media (max-width: 790px) and (max-height: 740px) {
+    .atlas-reference-sidebar .atlas-ref-usage {
+        display: none;
+    }
+    .atlas-reference-sidebar .atlas-ref-brand {
+        padding-bottom: 8px;
+    }
+    .atlas-reference-sidebar .atlas-ref-sidebar-label {
+        margin-top: 8px;
+    }
+}
 @media (prefers-reduced-motion: reduce) {
     .atlas-ref-task,
     .atlas-reference-root .sidebar.atlas-reference-sidebar {
