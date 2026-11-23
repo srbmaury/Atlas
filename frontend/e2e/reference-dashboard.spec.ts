@@ -62,7 +62,7 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(page.getByRole('tab', { name: 'Notes' })).toHaveCount(0);
     // Source scope is in the composer header, adjacent to the question rather than the action row.
     const sourceScope = page.locator('.atlas-ref-composer-source');
-    await expect(sourceScope.getByRole('button', { name: 'Connected Sources' })).toBeVisible();
+    await expect(sourceScope.getByRole('button', { name: 'Connected Sources', exact: true })).toBeVisible();
     const composerToolbar = await page.locator('.atlas-ref-composer-toolbar').boundingBox();
     const sourceScopeRect = await sourceScope.boundingBox();
     expect(composerToolbar && sourceScopeRect).toBeTruthy();
@@ -93,12 +93,12 @@ test('reference research dashboard renders three columns and remains usable on a
     await homeDocsChip.click();
     await expect(homeDocsChip).toHaveAttribute('aria-pressed', 'false');
     expect(await homeDocsChip.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(activeDocsColor);
-    await sourceScope.getByRole('button', { name: 'Connected Sources' }).click();
+    await sourceScope.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Documents' })).not.toBeChecked();
     await page.getByRole('checkbox', { name: 'Documents' }).check();
     await expect(homeDocsChip).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(() => homeDocsChip.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(activeDocsColor);
-    await sourceScope.getByRole('button', { name: 'Connected Sources' }).click();
+    await sourceScope.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     const homeField = page.getByRole('textbox', { name: 'Ask a research question' });
     await homeField.focus();
     expect(await homeField.evaluate((field) => getComputedStyle(field).outlineStyle)).toBe('none');
@@ -192,15 +192,15 @@ test('reference research dashboard renders three columns and remains usable on a
     await expect(chatDocsChip).toHaveAttribute('aria-pressed', 'true');
     await chatDocsChip.click();
     await expect(chatDocsChip).toHaveAttribute('aria-pressed', 'false');
-    await chatComposer.getByRole('button', { name: 'Connected Sources' }).click();
+    await chatComposer.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Documents' })).not.toBeChecked();
     await page.getByRole('checkbox', { name: 'Documents' }).check();
     await expect(chatDocsChip).toHaveAttribute('aria-pressed', 'true');
-    await chatComposer.getByRole('button', { name: 'Connected Sources' }).click();
+    await chatComposer.getByRole('button', { name: 'Connected Sources', exact: true }).click();
     await expect(chatComposer.locator('.atlas-ref-pill-disabled')).toHaveAttribute('aria-disabled', 'true');
     await expect(chatComposer.getByText('Your Docs')).toBeVisible();
     await expect(chatComposer.getByRole('button', { name: 'Send question' })).toBeVisible();
-    await expect(page.locator('.chat-workspace .atlas-question-box .atlas-ref-composer-source').getByRole('button', { name: 'Connected Sources' })).toBeVisible();
+    await expect(page.locator('.chat-workspace .atlas-question-box .atlas-ref-composer-source').getByRole('button', { name: 'Connected Sources', exact: true })).toBeVisible();
     const researchInput = page.getByRole('textbox', { name: 'Your question' });
     await researchInput.focus();
     expect(await researchInput.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none');
