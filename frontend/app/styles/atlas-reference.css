@@ -345,7 +345,7 @@
     gap: 7px;
     cursor: pointer;
 }
-.atlas-ref-composer .atlas-ref-pill:hover {
+.atlas-ref-composer .atlas-ref-pill:not(.atlas-ref-pill-disabled):hover {
     border-color: #a5a0fc;
     background: #f2f0ff;
 }
@@ -984,7 +984,7 @@
     border-color: var(--atlas-ref-line);
     color: var(--atlas-ref-ink);
 }
-:root[data-theme='dark'] .atlas-ref-composer .atlas-ref-pill:hover,
+:root[data-theme='dark'] .atlas-ref-composer .atlas-ref-pill:not(.atlas-ref-pill-disabled):hover,
 :root[data-theme='dark'] .atlas-ref-research-row:hover,
 :root[data-theme='dark'] .atlas-ref-source-row:hover,
 :root[data-theme='dark'] .atlas-ref-source-trigger:hover {
