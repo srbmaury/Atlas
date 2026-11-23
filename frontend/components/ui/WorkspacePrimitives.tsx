@@ -23,14 +23,6 @@ export function FileBadge({ name }: { name: string }) {
         </span>
     );
 }
-export function Status({ status }: { status: string }) {
-    return (
-        <span className={`status status-${status}`}>
-            {['queued', 'processing'].includes(status) ? <LoaderCircle className="spin" /> : status === 'ready' ? <Check /> : status === 'failed' ? <AlertCircle /> : null}
-            {status === 'ready' ? 'Ready' : status[0].toUpperCase() + status.slice(1)}
-        </span>
-    );
-}
 export function EmptyState({ icon, title, text, action }: { icon: ReactNode; title: string; text: string; action?: ReactNode }) {
     return (
         <div className="empty-state">
