@@ -838,7 +838,7 @@ test('workspace creation, settings deletion and sign out preserve the selected w
     await remove.click();
     await expect(page.getByText('Workspace deleted.', { exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Back to Atlas' }).click();
-    await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
+    await expect(page.getByRole('button', { name: 'Switch workspace', exact: true })).toContainText('Test workspace');
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Create your workspace', exact: true })).toBeVisible();
 });
@@ -965,7 +965,7 @@ test('workspace switcher stays compact and avatar opens account settings', async
     await page.getByRole('button', { name: 'Dark', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.getByRole('link', { name: 'Back to Atlas' }).click();
-    await expect(page.locator('.workspace-btn')).toContainText('Test workspace');
+    await expect(page.getByRole('button', { name: 'Switch workspace', exact: true })).toContainText('Test workspace');
 });
 
 test('settings fit a narrow screen and preserve workspace on return', async ({ page }) => {
