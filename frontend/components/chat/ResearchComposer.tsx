@@ -172,9 +172,6 @@ export function ResearchComposer({
             }
             trailingActions={
                 <>
-                    <span className="text-xs text-[var(--sub)]" title="Atlas uses your chosen sources">
-                        Auto
-                    </span>
                     <Tooltip title={voice.supported ? 'Voice input' : 'Voice input is unavailable'}>
                         <span>
                             <IconButton
