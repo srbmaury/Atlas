@@ -4,7 +4,6 @@ import { useRef, useState, type ReactNode } from 'react';
 import {
     ArrowRight,
     ArrowUpRight,
-    BookOpenText,
     Clock3,
     FileText,
     Globe2,
