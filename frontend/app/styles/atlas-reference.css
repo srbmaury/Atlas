@@ -664,6 +664,17 @@
     }
 }
 @media (max-width: 790px) {
+    .atlas-reference-root .topbar .mobile {
+        display: grid;
+    }
+    .atlas-reference-root .sidebar-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 19;
+        border: 0;
+        background: rgba(15, 18, 26, 0.45);
+    }
     .atlas-reference-root .main {
         margin-left: 0;
     }
