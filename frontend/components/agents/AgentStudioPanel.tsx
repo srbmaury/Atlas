@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Card, Chip, InputBase, Typography } from '@mui/material';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
     BookOpen,
     Bot,
@@ -11,44 +9,22 @@ import {
     Check,
     Copy,
     Search,
-    Clock3,
     Cloud,
     FileText,
     FolderOpen,
     Github,
-    History,
     Layers3,
-    LoaderCircle,
     Mail,
     MessageSquare,
     Plus,
     Settings2,
     Sparkles,
-    Square,
     X,
 } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
 type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
 type Agent = { id: string; name: string; instructions: string; output_format: string; source_config?: SourceConfig };
-type EvidenceNode = { id: string; type: string; name?: string; page?: number; excerpt?: string };
-type EvidenceGraph = { nodes: EvidenceNode[]; edges: { from: string; to: string; type: string }[] };
-type Run = {
-    id: string;
-    status: string;
-    question: string;
-    created?: number;
-    steps: { tool: string; source_count?: number; mode?: string; queries?: string[] }[];
-    result?: {
-        answer?: string;
-        error?: string;
-        mode?: string;
-        sources?: unknown[];
-        evidence_graph?: EvidenceGraph;
-        claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string };
-    };
-};
-
 const SOURCE_NAMES: Record<string, string> = {
     documents: 'Documents',
     gmail: 'Gmail',
@@ -94,7 +70,6 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
     const [agents, setAgents] = useState<Agent[]>([]);
     const [agentsLoadState, setAgentsLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
     const [selected, setSelected] = useState('');
-    const [selectedRun, setSelectedRun] = useState('');
     const [name, setName] = useState('');
     const [instructions, setInstructions] = useState('Find relevant evidence and cite sources.');
     const [outputFormat, setOutputFormat] = useState('detailed_notes');
@@ -106,13 +81,9 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
     const [documentIds, setDocumentIds] = useState<string[]>([]);
     const [includeGmail, setIncludeGmail] = useState(false);
     const [providers, setProviders] = useState<string[]>([]);
-    const [question, setQuestion] = useState('');
-    const [runs, setRuns] = useState<Run[]>([]);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
-    const [view, setView] = useState<'run' | 'history'>('run');
-    const [detailTab, setDetailTab] = useState<'answer' | 'evidence' | 'graph'>('answer');
 
     const loadAgents = useCallback(async () => {
         setAgentsLoadState('loading');
@@ -131,17 +102,6 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
         }
     }, [base]);
 
-    const loadRuns = useCallback(
-        async (id: string) => {
-            const response = await fetch(`${base}/${encodeURIComponent(id)}/runs`, { credentials: 'same-origin' });
-            if (!response.ok) throw new Error('Unable to load research runs.');
-            const items: Run[] = await response.json();
-            setRuns(items);
-            setSelectedRun((current) => (items.some((run) => run.id === current) ? current : items[0]?.id || ''));
-        },
-        [base],
-    );
-
     const loadSourceOptions = useCallback(async () => {
         setSourcesFailed(false);
         try {
@@ -159,19 +119,6 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
             void loadSourceOptions();
         }
     }, [workspaceId, loadAgents, loadSourceOptions]);
-
-    useEffect(() => {
-        if (!selected) {
-            setRuns([]);
-            setSelectedRun('');
-            return;
-        }
-        loadRuns(selected).catch((err) => setError(err.message));
-        const interval = setInterval(() => {
-            loadRuns(selected).catch((err) => setError(err.message));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [selected, loadRuns]);
 
     const missingSelectedDocuments = includeDocuments && documentScope === 'selected' && !documentIds.length;
 
@@ -198,95 +145,15 @@ export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }:
             const agent: Agent = await response.json();
             await loadAgents();
             setSelected(agent.id);
-            setSelectedRun('');
             setName('');
             setShowCreate(false);
             setEditing(false);
-            if (!editing) setRuns([]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not create agent.');
         } finally {
             setBusy(false);
         }
     }
-
-    function editAgent() {
-        if (!activeAgent) return;
-        setName(activeAgent.name);
-        setInstructions(activeAgent.instructions);
-        setOutputFormat(activeAgent.output_format || 'detailed_notes');
-        setIncludeDocuments(activeAgent.source_config?.include_documents ?? true);
-        setDocumentIds(activeAgent.source_config?.document_ids || []);
-        setDocumentScope(activeAgent.source_config?.document_ids?.length ? 'selected' : 'all');
-        setIncludeGmail(activeAgent.source_config?.include_gmail || false);
-        setProviders(activeAgent.source_config?.providers || []);
-        setEditing(true);
-        setShowCreate(true);
-    }
-
-    async function deleteAgent() {
-        if (!activeAgent || !window.confirm(`Delete ${activeAgent.name} and its research history?`)) return;
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(activeAgent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
-            if (!response.ok) throw new Error('Cancel active research runs before deleting this agent.');
-            setSelected('');
-            setRuns([]);
-            await loadAgents();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to delete agent.');
-        }
-    }
-
-    async function research() {
-        if (!selected || question.trim().length < 3) return;
-        setBusy(true);
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs`, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: question.trim() }),
-            });
-            if (!response.ok) {
-                const body = await response.json().catch(() => ({}));
-                throw new Error(typeof body.detail === 'string' ? body.detail : 'Unable to start research.');
-            }
-            const run: Run = await response.json();
-            setSelectedRun(run.id);
-            setView('run');
-            setDetailTab('answer');
-            await loadRuns(selected);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Research failed.');
-        } finally {
-            setBusy(false);
-        }
-    }
-
-    async function cancelRun(runId: string) {
-        if (!selected) return;
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs/${encodeURIComponent(runId)}/cancel`, {
-                method: 'POST',
-                credentials: 'same-origin',
-            });
-            if (!response.ok) throw new Error('Unable to cancel research.');
-            await loadRuns(selected);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Cancellation failed.');
-        }
-    }
-
-    const activeAgent = agents.find((agent) => agent.id === selected);
-    const activeRun = runs.find((run) => run.id === selectedRun);
-    const graph = activeRun?.result?.evidence_graph;
-    const documents = graph?.nodes.filter((node) => node.type === 'document') || [];
-    const passages = graph?.nodes.filter((node) => node.type !== 'document') || [];
-    const isRunning = (status: string) => status === 'queued' || status === 'processing';
-    const date = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '');
 
     const [agentSearch, setAgentSearch] = useState('');
     const [copiedHandle, setCopiedHandle] = useState('');
