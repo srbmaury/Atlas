@@ -193,7 +193,7 @@ export function HomeView({
                             <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
                                 <Paperclip size={16} />
                             </button>
-                            <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not yet available in Atlas">
+                            <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is not available yet. To research a webpage, import its URL in Library → Add knowledge.">
                                 <Globe2 size={16} /> Web
                             </span>
                             <button
