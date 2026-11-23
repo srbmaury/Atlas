@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { IconButton, Tooltip } from '@mui/material';
-import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, MessageSquare, PanelsTopLeft, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
+import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, History, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
@@ -134,7 +134,7 @@ export function WorkspaceSidebar({
                     <span>Recent chats</span>
                     <div className="atlas-ref-recent-actions">
                         <button type="button" aria-label="All conversations" title="All conversations" onClick={() => { onOpenConversations(); onClose(); }}>
-                            <PanelsTopLeft size={14} />
+                            <History size={14} />
                         </button>
                         <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
                             <RefreshCw size={14} />
