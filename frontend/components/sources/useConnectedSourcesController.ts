@@ -7,7 +7,6 @@ import type {
     DriveConnectionStatus,
     DriveSearchResponse,
     ExternalSourceProvider,
-    GmailMessage,
     GmailQuerySummary,
     GmailSearchResponse,
     GmailStatus,
