@@ -15,6 +15,14 @@ jobs:
       - name: Install frontend
         run: npm ci
         working-directory: frontend
+      - name: Format AgentStudioPanel for review
+        working-directory: frontend
+        shell: bash
+        run: |
+          npx prettier --write components/agents/AgentStudioPanel.tsx
+          echo -n 'FORMATTED_AGENT_STUDIO='
+          base64 -w0 components/agents/AgentStudioPanel.tsx
+          echo
       - name: TypeScript unused diagnostics
         working-directory: frontend
         shell: bash
