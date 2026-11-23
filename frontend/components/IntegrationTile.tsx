@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Box, Card, CardActionArea, CardContent, Chip, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, Chip, Typography } from '@mui/material';
 import type { SourceHealth } from '../lib/types';
 
 type Props = {
