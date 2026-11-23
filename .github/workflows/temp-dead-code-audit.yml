@@ -51,6 +51,13 @@ jobs:
           echo '### KNIP_ERR'
           head -20 /tmp/unused-knip.err
           echo '### KNIP_END'
+      - name: Python dead code candidates
+        shell: bash
+        run: |
+          python -m pip install --quiet vulture
+          echo '### VULTURE_BEGIN'
+          vulture backend ops evals --min-confidence 90 || true
+          echo '### VULTURE_END'
       - name: Python and CSS reachability
         shell: bash
         run: |
