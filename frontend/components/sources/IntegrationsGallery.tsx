@@ -1,4 +1,5 @@
 'use client';
+import { Box, Button, Chip, Typography } from '@mui/material';
 import { useState } from 'react';
 import { Mail, HardDrive, Github, NotebookPen, Hash, CalendarDays, ListTodo, Ticket, Cloud, Inbox, Building2 } from 'lucide-react';
 import { IntegrationTile } from '../IntegrationTile';
@@ -36,6 +37,11 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
     ] as const;
     const connectedProviders = providers.filter((provider) => provider[4]);
     const availableProviders = providers.filter((provider) => !provider[4]);
+    const gridColumns = {
+        display: 'grid',
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' },
+        gap: 2,
+    } as const;
     const tiles = (items: (typeof providers)[number][]) =>
         items.map(([id, name, description, Icon, connected, account]) => (
             <IntegrationTile
@@ -51,20 +57,34 @@ export function IntegrationsGallery({ gmailStatus, driveStatus, sourceStatuses, 
         ));
     return (
         <>
-            <div className="integration-overview">
-                <h2>Your connections</h2>
-                <span>{connectedProviders.length} connected</span>
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
+                    Your connections
+                </Typography>
+                <Chip size="small" color="success" label={`${connectedProviders.length} connected`} variant="outlined" />
                 {availableProviders.length > 0 && (
-                    <button type="button" className="btn primary mobile-source-catalog" aria-expanded={catalogOpen} aria-controls="atlas-provider-list" onClick={() => setCatalogOpen((open) => !open)}>
+                    <Button variant="outlined" size="small" className="md:hidden" aria-expanded={catalogOpen} aria-controls="atlas-provider-list" onClick={() => setCatalogOpen((open) => !open)}>
                         {catalogOpen ? 'Hide catalog' : 'Add a source'}
-                    </button>
+                    </Button>
                 )}
             </div>
-            {connectedProviders.length ? <div className="integrations-grid">{tiles(connectedProviders)}</div> : <p className="integration-empty">No sources connected.</p>}
+            {connectedProviders.length ? (
+                <Box className="integrations-grid" sx={gridColumns}>
+                    {tiles(connectedProviders)}
+                </Box>
+            ) : (
+                <Typography color="text.secondary" variant="body2" sx={{ py: 3 }}>
+                    No external sources are connected yet. Choose one below to get started.
+                </Typography>
+            )}
             {availableProviders.length > 0 && (
-                <section className="integration-catalog" id="atlas-provider-list" data-catalog-open={catalogOpen} aria-label="Available integrations">
-                    <h2>Available integrations</h2>
-                    <div className="integrations-grid">{tiles(availableProviders)}</div>
+                <section className={`mt-8 ${catalogOpen ? 'block' : 'hidden md:block'}`} id="atlas-provider-list" aria-label="Available integrations">
+                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+                        Explore integrations
+                    </Typography>
+                    <Box className="integrations-grid" sx={gridColumns}>
+                        {tiles(availableProviders)}
+                    </Box>
                 </section>
             )}
         </>

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { LoaderCircle, Check, AlertCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { fileExtension } from '../../utils/utils';
 
 const knownExtensions = new Set(['pdf', 'docx', 'doc', 'txt', 'md', 'csv', 'json', 'html', 'htm', 'xlsx', 'xls', 'pptx', 'ppt']);
@@ -20,14 +20,6 @@ export function FileBadge({ name }: { name: string }) {
     return (
         <span className={`file ${extension}`} aria-hidden="true">
             {extension === 'source' ? 'SRC' : extension.toUpperCase()}
-        </span>
-    );
-}
-export function Status({ status }: { status: string }) {
-    return (
-        <span className={`status status-${status}`}>
-            {['queued', 'processing'].includes(status) ? <LoaderCircle className="spin" /> : status === 'ready' ? <Check /> : status === 'failed' ? <AlertCircle /> : null}
-            {status === 'ready' ? 'Ready' : status[0].toUpperCase() + status.slice(1)}
         </span>
     );
 }

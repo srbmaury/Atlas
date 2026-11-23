@@ -1,6 +1,8 @@
 'use client';
+
 import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
-import { ArrowUpRight, LoaderCircle } from 'lucide-react';
+import { ArrowRight, LockKeyhole, Mail, Sparkles } from 'lucide-react';
+import { Button, CircularProgress, InputAdornment, Paper, TextField, Typography } from '@mui/material';
 import { api } from '../../lib/api';
 import { PublicFooter } from '../public/PublicFooter';
 import { AtlasMark } from '../ui/WorkspacePrimitives';
@@ -54,60 +56,106 @@ export function AuthView({ themeButton, register, email, password, error, notice
     const authMessage = authError || (forgot ? recoveryMessage : notice);
 
     return (
-        <div className="auth-page auth-page-with-footer">
-            <header>
-                <div className="brand-row">
+        <div className="flex min-h-screen flex-col bg-[var(--bg)]">
+            <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
+                <div className="flex items-center gap-2 text-lg font-extrabold">
                     <AtlasMark />
                     <span>Atlas</span>
                 </div>
                 {themeButton}
             </header>
-            <div className="auth-grid">
-                <form
-                    className="auth-form"
-                    onSubmit={(event) => {
-                        if (forgot) {
-                            void requestReset(event);
-                        } else {
-                            setGoogleError(false);
-                            onSubmit(event);
-                        }
-                    }}
-                >
-                    <h2>{forgot ? 'Reset your password' : register ? 'Create your workspace' : 'Welcome back'}</h2>
-                    <p>{forgot ? 'Enter your email to request a reset link.' : register ? 'Create an account to upload documents and start researching.' : 'Sign in to your research workspace.'}</p>
-                    <label>
-                        Email address
-                        <input type="email" autoComplete="email" required value={email} onChange={(e) => onEmailChange(e.target.value)} placeholder="you@company.com" />
-                    </label>
-                    {!forgot && (
-                        <label>
-                            Password
-                            <input
+            <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 items-center gap-8 px-6 py-10 lg:grid-cols-2 lg:gap-20">
+                <div className="max-w-xl">
+                    <Typography color="primary.main" sx={{ fontWeight: 800, letterSpacing: '.14em', fontSize: 12 }}>
+                        RESEARCH WITHOUT THE GUESSWORK
+                    </Typography>
+                    <Typography component="h1" variant="h2" sx={{ fontSize: { xs: 38, sm: 56, lg: 64 }, lineHeight: 1.15, mt: 2 }}>
+                        Build knowledge you can trust.
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 2.5, lineHeight: 1.9, maxWidth: 460 }}>
+                        Connect documents, compare perspectives, and explore source-backed answers in one focused workspace.
+                    </Typography>
+                    <div className="mt-9 flex items-center gap-2 text-sm font-semibold opacity-80">
+                        <Sparkles size={19} /> Every answer has a path back to its evidence.
+                    </div>
+                </div>
+                <Paper variant="outlined" sx={{ borderRadius: 4, p: { xs: 3, sm: 4 }, maxWidth: 500, width: '100%', mx: 'auto', boxShadow: 'none' }}>
+                    <form
+                        className="flex flex-col gap-5"
+                        onSubmit={(event) => {
+                            if (forgot) void requestReset(event);
+                            else {
+                                setGoogleError(false);
+                                onSubmit(event);
+                            }
+                        }}
+                    >
+                        <div>
+                            <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
+                                {forgot ? 'Reset your password' : register ? 'Create your workspace' : 'Welcome back'}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+                                {forgot ? 'We’ll send you a password reset link.' : register ? 'Set up your account and start your first investigation.' : 'Sign in to return to your research.'}
+                            </Typography>
+                        </div>
+                        <TextField
+                            label="Email address"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            fullWidth
+                            placeholder="you@company.com"
+                            value={email}
+                            onChange={(event) => onEmailChange(event.target.value)}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Mail size={18} />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                        />
+                        {!forgot && (
+                            <TextField
+                                label="Password"
                                 type="password"
                                 autoComplete={register ? 'new-password' : 'current-password'}
                                 required
-                                minLength={10}
-                                maxLength={200}
-                                value={password}
-                                onChange={(e) => onPasswordChange(e.target.value)}
+                                fullWidth
                                 placeholder="At least 10 characters"
+                                value={password}
+                                onChange={(event) => onPasswordChange(event.target.value)}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <LockKeyhole size={18} />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                    htmlInput: { minLength: 10, maxLength: 200 },
+                                }}
                             />
-                        </label>
-                    )}
-                    <button className="btn primary" disabled={busy || sending}>
-                        {busy || sending ? <LoaderCircle className="spin" /> : <ArrowUpRight />}
-                        {forgot ? 'Send reset link' : register ? 'Create account' : 'Sign in'}
-                    </button>
-                    {verifiedAuth && !forgot && (
-                        <a className="btn" href="/api/auth/google">
-                            Continue with Google
-                        </a>
-                    )}
-                    {verifiedAuth && !forgot && !register && (
-                        <div className="auth-switch">
-                            <button
-                                type="button"
+                        )}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            size="large"
+                            disabled={busy || sending}
+                            endIcon={busy || sending ? <CircularProgress color="inherit" size={17} /> : <ArrowRight size={18} />}
+                        >
+                            {forgot ? 'Send reset link' : register ? 'Create account' : 'Sign in'}
+                        </Button>
+                        {verifiedAuth && !forgot && (
+                            <Button component="a" href="/api/auth/google" variant="outlined" size="large">
+                                Continue with Google
+                            </Button>
+                        )}
+                        {verifiedAuth && !forgot && !register && (
+                            <Button
+                                size="small"
                                 onClick={() => {
                                     setRecoveryError('');
                                     setRecoveryMessage('');
@@ -115,25 +163,19 @@ export function AuthView({ themeButton, register, email, password, error, notice
                                 }}
                             >
                                 Forgot password?
-                            </button>
+                            </Button>
+                        )}
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <Typography variant="body2" color="text.secondary">
+                                {forgot ? 'Remembered your password?' : register ? 'Already have an account?' : 'New to Atlas?'}
+                            </Typography>
+                            <Button size="small" onClick={forgot ? () => setForgot(false) : onToggleMode}>
+                                {forgot ? 'Back to sign in' : register ? 'Sign in' : 'Create an account'}
+                            </Button>
                         </div>
-                    )}
-                    {forgot ? (
-                        <div className="auth-switch">
-                            <button type="button" onClick={() => setForgot(false)}>
-                                Back to sign in
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="auth-switch">
-                            {register ? 'Already have an account?' : 'New to Atlas?'}{' '}
-                            <button type="button" onClick={onToggleMode}>
-                                {register ? 'Sign in' : 'Create an account'}
-                            </button>
-                        </div>
-                    )}
-                </form>
-            </div>
+                    </form>
+                </Paper>
+            </main>
             {authMessage && <AuthToast key={`${forgot}:${Boolean(authError)}:${authMessage}`} error={Boolean(authError)} message={authMessage} />}
             <PublicFooter />
         </div>

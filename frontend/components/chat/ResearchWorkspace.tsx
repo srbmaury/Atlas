@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { Button, Chip, Typography } from '@mui/material';
 import { createPortal, flushSync } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,7 +24,7 @@ import {
     Menu,
     Ellipsis,
 } from 'lucide-react';
-import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
+import type { AgentMention, Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
 import { visibleEvidence, sourceDisplayName, sourceLocation, evidencePreview } from '../../lib/evidence';
@@ -38,7 +39,9 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 
 interface ResearchWorkspaceProps {
     workspaceId: string;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    sourceLabels: string[];
+    openingChat?: boolean;
+    mentionAgents?: AgentMention[];
     searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
     onOpenNavigation: () => void;
@@ -226,12 +229,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = visibleEvidence(latestAnswer);
     const evidenceOpen = evidence.length > 0 && !evidenceHidden;
-    const allSelected =
-        props.includeDocuments &&
-        (!props.gmailStatus?.connected || props.connectedGmail) &&
-        [...(props.driveStatus?.connected ? ['drive' as const] : []), ...props.sourceStatuses.filter((item) => item.connected).map((item) => item.provider)].every((provider) =>
-            props.connectedProviders.includes(provider),
-        );
 
     return (
         <section className="research-page" data-mobile-panel={mobilePanel}>
@@ -242,13 +239,15 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                     </article>,
                     document.body,
                 )}
-            <header className="focus-chat-header">
+            <header className="focus-chat-header border-b border-[var(--line)] bg-[var(--panel)]">
                 <button type="button" className="icon-button" aria-label="Open menu" onClick={props.onOpenNavigation}>
                     <Menu />
                 </button>
                 <div className="focus-chat-title">
-                    <h1>{props.title}</h1>
-                    <span>Ask Atlas</span>
+                    <Typography component="h1" variant="subtitle1" sx={{ fontWeight: 800 }} title={props.title}>
+                        {props.title}
+                    </Typography>
+                    <Chip label="Research" variant="outlined" color="primary" size="small" />
                 </div>
                 <details
                     ref={mobileActions}
@@ -288,26 +287,27 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
             </div>
             <div className="heading-row">
                 <div className="research-heading">
-                    <h1 title={props.title}>{props.title}</h1>
-                    <p className="subtitle">Answers grounded in your knowledge, with citations you can verify.</p>
+                    <Typography component="h1" variant="h5" title={props.title} sx={{ fontWeight: 800, lineHeight: 1.3 }}>
+                        {props.title}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                        Answers grounded in your knowledge, with citations you can verify.
+                    </Typography>
                 </div>
                 <div className="actions">
-                    <button className="btn" onClick={props.onToggleHistory}>
-                        <MessageSquare size={15} />
+                    <Button size="small" variant="outlined" startIcon={<MessageSquare size={15} />} onClick={props.onToggleHistory}>
                         {props.historyOpen ? 'Hide history' : 'History'}
-                    </button>
-                    <button className="btn hide-small" disabled={!props.canCopy} onClick={props.onCopy}>
-                        {props.copied ? <Check /> : <Copy />}
+                    </Button>
+                    <Button size="small" variant="outlined" className="hide-small" startIcon={props.copied ? <Check size={16} /> : <Copy size={16} />} disabled={!props.canCopy} onClick={props.onCopy}>
                         {props.copied ? 'Copied' : 'Copy chat'}
-                    </button>
+                    </Button>
                     <details ref={desktopExport} className="conversation-export">
                         <summary className="btn">Export</summary>
                         <div className="focus-chat-menu">{exportActions}</div>
                     </details>
-                    <button className="btn primary" aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
-                        <Plus />
-                        <span>New chat</span>
-                    </button>
+                    <Button size="small" variant="contained" startIcon={<Plus size={17} />} aria-label="New chat" disabled={props.busy} onClick={props.onNewChat}>
+                        New chat
+                    </Button>
                 </div>
             </div>
             {props.userMode !== 'ai' && (
@@ -414,6 +414,7 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         )}
                         <ConversationTranscript
+                            openingChat={props.openingChat}
                             searchPhrase={messageSearch}
                             focusedIndex={focusedIndex}
                             messages={props.messages}
@@ -439,35 +440,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                                 ))}
                             </div>
                         )}
-                        <div className="research-source-toolbar">
-                            <ResearchSourceSelector
-                                includeDocuments={props.includeDocuments}
-                                onIncludeDocuments={props.setIncludeDocuments}
-                                gmailStatus={props.gmailStatus}
-                                connectedGmail={props.connectedGmail}
-                                onIncludeGmail={props.setConnectedGmail}
-                                driveStatus={props.driveStatus}
-                                sourceStatuses={props.sourceStatuses}
-                                connectedProviders={props.connectedProviders}
-                                onSelectAll={(select) => {
-                                    props.setIncludeDocuments(select);
-                                    props.setConnectedGmail(select && !!props.gmailStatus?.connected);
-                                    props.setConnectedProviders(
-                                        select
-                                            ? RESEARCH_PROVIDERS.filter((provider) =>
-                                                  provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
-                                              )
-                                            : [],
-                                    );
-                                }}
-                                onToggleProvider={(provider, enabled) => props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))}
-                                onManage={props.onManageSources}
-                                onBrowseDocuments={props.onBrowseLibrary}
-                                selectedCount={props.selectedCount}
-                                sourceLoadFailed={props.sourceLoadFailed}
-                                onRetrySources={props.onRetrySources}
-                            />
-                        </div>
                         {props.connectedGmail && (
                             <div className="unified-gmail-scope">
                                 <label>
@@ -477,6 +449,42 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             </div>
                         )}
                         <ResearchComposer
+                            sourceSelector={
+                                <ResearchSourceSelector
+                                    compact
+                                    includeDocuments={props.includeDocuments}
+                                    onIncludeDocuments={props.setIncludeDocuments}
+                                    gmailStatus={props.gmailStatus}
+                                    connectedGmail={props.connectedGmail}
+                                    onIncludeGmail={props.setConnectedGmail}
+                                    driveStatus={props.driveStatus}
+                                    sourceStatuses={props.sourceStatuses}
+                                    connectedProviders={props.connectedProviders}
+                                    onSelectAll={(select) => {
+                                        props.setIncludeDocuments(select);
+                                        props.setConnectedGmail(select && !!props.gmailStatus?.connected);
+                                        props.setConnectedProviders(
+                                            select
+                                                ? RESEARCH_PROVIDERS.filter((provider) =>
+                                                      provider === 'drive' ? props.driveStatus?.connected : props.sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                                  )
+                                                : [],
+                                        );
+                                    }}
+                                    onToggleProvider={(provider, enabled) =>
+                                        props.setConnectedProviders((old) => (enabled ? [...new Set([...old, provider])] : old.filter((item) => item !== provider)))
+                                    }
+                                    onManage={props.onManageSources}
+                                    onBrowseDocuments={props.onBrowseLibrary}
+                                    selectedCount={props.selectedCount}
+                                    sourceLoadFailed={props.sourceLoadFailed}
+                                    onRetrySources={props.onRetrySources}
+                                />
+                            }
+                            includeDocuments={props.includeDocuments}
+                            onIncludeDocumentsChange={props.setIncludeDocuments}
+                            readyCount={props.readyCount}
+                            sourceLabels={props.sourceLabels}
                             mentionAgents={props.mentionAgents}
                             query={props.query}
                             onChange={props.setQuery}
@@ -495,9 +503,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
                             hasAskSources={props.hasAskSources}
                             hasMessages={!!props.messages.length}
                         />
-                        <p id="research-composer-help" className="caption composer-caption">
-                            {props.messages.length ? 'Follow-ups use this conversation’s context. ' : ''}Review supporting passages before relying on an answer.
-                        </p>
                     </div>
                     <aside id="atlas-evidence-panel" className="research-evidence-rail" aria-label="Supporting evidence" hidden={!evidenceOpen}>
                         <div className="evidence-width-controls" aria-label="Evidence panel width">

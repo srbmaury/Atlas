@@ -10,9 +10,9 @@
     --line2: #d9e2db;
     --hover: #f3f6f4;
     --pill: #f1f5f9;
-    --active: #eff6ff;
-    --brand: #2563eb;
-    --brandhover: #1d4ed8;
+    --active: #eaf2ec;
+    --brand: #245441;
+    --brandhover: #193f30;
     --brandtext: #fff;
     --user: #f1f5f9;
     --evidence: #f9fbf8;
@@ -24,19 +24,19 @@
     background: #fff;
 }
 .atlas-v3 .nav button.active {
-    background: #eff6ff;
-    color: #2563eb;
+    background: #eaf2ec;
+    color: #245441;
 }
 .atlas-v3 .btn.primary,
 .atlas-v3 .send,
 .home-send {
-    background: #2563eb;
+    background: #245441;
     color: #fff;
 }
 .atlas-v3 .btn.primary:hover,
 .atlas-v3 .send:hover,
 .home-send:hover {
-    background: #1d4ed8;
+    background: #193f30;
 }
 .gmail-integrated {
     margin-top: 26px;
@@ -72,9 +72,9 @@
     --muted: #64748b;
     --outline: #e2e8f0;
     --wash: #f8fafc;
-    --forest: #2563eb;
-    --forest-dark: #1d4ed8;
-    --mint: #eff6ff;
+    --forest: #245441;
+    --forest-dark: #193f30;
+    --mint: #eaf2ec;
     --bg: #ffffff;
     --sidebar: #f8fafc;
     --panel: #ffffff;
@@ -85,9 +85,9 @@
     --line2: #cbd5e1;
     --hover: #f1f5f9;
     --pill: #f1f5f9;
-    --active: #eff6ff;
-    --brand: #2563eb;
-    --brandhover: #1d4ed8;
+    --active: #eaf2ec;
+    --brand: #245441;
+    --brandhover: #193f30;
     --brandtext: #ffffff;
     --user: #f1f5f9;
     --evidence: #f8fafc;
@@ -98,9 +98,9 @@
     --muted: #adb4be;
     --outline: #3b4048;
     --wash: #202226;
-    --forest: #8ab4f8;
-    --forest-dark: #aecdfb;
-    --mint: #26364c;
+    --forest: #a1c7ae;
+    --forest-dark: #c0dbc8;
+    --mint: #263b30;
     --bg: #181a1d;
     --sidebar: #202226;
     --panel: #25282d;
@@ -111,9 +111,9 @@
     --line2: #505762;
     --hover: #30343b;
     --pill: #30343b;
-    --active: #26364c;
-    --brand: #8ab4f8;
-    --brandhover: #aecdfb;
+    --active: #263b30;
+    --brand: #a1c7ae;
+    --brandhover: #c0dbc8;
     --brandtext: #17212f;
     --user: #30343b;
     --evidence: #25282d;
@@ -138,20 +138,6 @@
 .atlas-v3 .send:hover,
 .home-send:hover {
     background: var(--brandhover);
-}
-.atlas-v3 .home-prompt-panel:focus-within {
-    outline: none;
-    box-shadow: 0 13px 50px #0f172a08;
-    border-color: var(--outline);
-}
-.atlas-v3 .home-prompt-panel textarea:focus,
-.atlas-v3 .home-prompt-panel textarea:focus-visible {
-    outline: none;
-    box-shadow: none;
-    border: 0;
-}
-.atlas-v3 .home-prompt-panel:has(textarea:focus-visible) {
-    border-color: #94a3b8;
 }
 .atlas-v3 .chat-workspace .thread:has(.research-welcome):not(:has(.user-message)):not(:has(.answer-row)) {
     overflow: visible;
@@ -248,11 +234,11 @@
     --ink: #0f172a;
     --muted: #64748b;
     --outline: #e2e8f0;
-    --brand: #2563eb;
-    --forest: #2563eb;
-    --forest-dark: #1d4ed8;
-    --mint: #eff6ff;
-    --active: #eff6ff;
+    --brand: #245441;
+    --forest: #245441;
+    --forest-dark: #193f30;
+    --mint: #eaf2ec;
+    --active: #eaf2ec;
     --hover: #f1f5f9;
     --evidence: #f8fafc;
     background: #ffffff;
@@ -274,13 +260,8 @@
 }
 .atlas-v3 .nav button.active {
     background: #eaf2ff;
-    color: #1d4ed8;
+    color: #193f30;
     font-weight: 650;
-}
-.atlas-v3 .home-hero {
-    background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.035);
 }
 .atlas-v3 .home-prompt-panel,
 .atlas-v3 .library-workspace,
@@ -318,13 +299,13 @@
 .atlas-v3 .btn.primary,
 .atlas-v3 .send,
 .atlas-v3 .home-send {
-    background: #2563eb;
+    background: #245441;
     color: #ffffff;
 }
 .atlas-v3 .btn.primary:hover,
 .atlas-v3 .send:hover,
 .atlas-v3 .home-send:hover {
-    background: #1d4ed8;
+    background: #193f30;
 }
 :root[data-theme='dark'] .atlas-v3 {
     --evidence: #25282d;
@@ -333,11 +314,11 @@
     --ink: var(--text);
     --muted: var(--sub);
     --outline: var(--line);
-    --brand: #8ab4f8;
+    --brand: #a1c7ae;
     --forest: var(--brand);
     --forest-dark: var(--brandhover);
-    --mint: #26364c;
-    --active: #26364c;
+    --mint: #263b30;
+    --active: #263b30;
     --hover: #30343b;
     background: var(--canvas);
 }
@@ -351,11 +332,6 @@
 :root[data-theme='dark'] .atlas-v3 .topbar {
     background: var(--sidebar);
     border-color: var(--outline);
-}
-:root[data-theme='dark'] .atlas-v3 .home-hero:not(.home-hero-focused) {
-    background: var(--panel);
-    border-color: var(--outline);
-    box-shadow: none;
 }
 :root[data-theme='dark'] .atlas-v3 .chat-workspace .answer,
 :root[data-theme='dark'] .atlas-v3 .chat-workspace .thread,

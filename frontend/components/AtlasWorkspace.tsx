@@ -1,6 +1,7 @@
 'use client';
 import { chatLoadSequence } from '../lib/chatLoadSequence';
 import Link from 'next/link';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import { bootWorkspace, refreshWorkspaceMetadata, createSessionActions } from './auth/sessionActions';
 import { refreshDocuments, createDocumentActions } from './documents/documentActions';
 import { createConversationActions } from './chat/conversationActions';
@@ -26,6 +27,7 @@ import '../app/rebuild.css';
 import { ResearchAnswer } from './chat/ResearchAnswer';
 import { EvidenceInspector } from './chat/EvidenceInspector';
 import { ResearchWorkspace } from './chat/ResearchWorkspace';
+import { ResearchSourceSelector } from './chat/ResearchSourceSelector';
 
 import { WorkspaceSearchDialog } from './layout/WorkspaceSearchDialog';
 import { WorkspaceManagerDialog } from './layout/WorkspaceManagerDialog';
@@ -40,12 +42,11 @@ import { HomeView } from './home/HomeView';
 import { AuthView } from './auth/AuthView';
 
 import { AtlasMark, FileBadge, EmptyState, Dialog } from './ui/WorkspacePrimitives';
-import { flushSync } from 'react-dom';
 
 import { prettyBytes } from '../utils/utils';
-import { PROVIDER_LABELS } from '../lib/providers';
+import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../lib/providers';
 
-export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { initialTab?: 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
+export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: { initialTab?: 'overview' | 'chat' | 'agents'; initialWorkspaceId?: string } = {}) {
     const { theme, toggleTheme } = useAtlasTheme();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -55,7 +56,14 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const [password, setPassword] = useState('');
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [workspaceId, setWorkspaceId] = useState('');
+    useEffect(() => {
+        if (user?.id && workspaceId && workspaces.some((item) => item.id === workspaceId)) {
+            localStorage.setItem(`atlas-last-workspace:${user.id}`, workspaceId);
+        }
+    }, [user?.id, workspaceId, workspaces]);
     const [docs, setDocs] = useState<Doc[]>([]);
+    const docsRef = useRef<Doc[]>([]);
+    docsRef.current = docs;
     const [tab, setTab] = useState<'overview' | 'documents' | 'chat' | 'sources' | 'agents'>(initialTab);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
@@ -105,13 +113,17 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setQuery('');
         setFilter('');
         setGlobalQuery('');
+        setOpeningChatId(null);
     }, [workspaceId]);
 
     const { gmailStatus, setGmailStatus, setGmailMessages, setGmailSelected, setGmailSummary, setGmailSummaryIds, setGmailMobileView, setGmailPreview } = gmailState;
 
     const [chats, setChats] = useState<ChatSummary[]>([]);
+    const [chatsLoading, setChatsLoading] = useState(false);
+    const [chatsFailed, setChatsFailed] = useState(false);
     const [busy, setBusy] = useState(false);
     const [answerProgress, setAnswerProgress] = useState('');
+    const [openingChatId, setOpeningChatId] = useState<string | null>(null);
     const askController = useRef<AbortController | null>(null);
     const [uploading, setUploading] = useState(false);
     const [webUrl, setWebUrl] = useState('');
@@ -141,9 +153,11 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     const { agentBusy, mentionAgents, handleAgentMention, stopAgent } = useAgentResearch({ workspaceId, userId: user?.id, tab, busy, scope, conversation, setChats, setQuery, setError });
 
     const themeButton = (
-        <button type="button" className="icon-button" aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={toggleTheme}>
-            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-        </button>
+        <Tooltip title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}>
+            <IconButton aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={toggleTheme} color="inherit">
+                {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
+            </IconButton>
+        </Tooltip>
     );
 
     const boot = useCallback(() => bootWorkspace({ setUser, setWorkspaces, setWorkspaceId, setLoading }), []);
@@ -158,11 +172,13 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setWorkspaceId(initialWorkspaceId);
     }, [initialWorkspaceId, workspaces]);
     const refresh = useCallback(() => refreshDocuments({ workspaceId, scope, setDocs, setSelected }), [workspaceId]);
+    const refreshWorkspaceLists = useCallback(() => refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setChatsLoading, setChatsFailed, setError }), [workspaceId]);
     useEffect(() => {
         chatLoadSequence.invalidate();
         setDocs([]);
         conversation.reset();
         setChats([]);
+        setChatsFailed(false);
         setSelected([]);
         setPreview(null);
         setSource(null);
@@ -176,13 +192,25 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setGmailStatus(null);
         setGmailMobileView('emails');
         setGmailPreview(null);
-        void refreshWorkspaceMetadata({ workspaceId, scope, setGmailStatus, setChats, setError });
+        void refreshWorkspaceLists();
         void refresh().catch((e) => setError(e.message));
-        const timer = setInterval(() => {
-            void refresh().catch((e) => setError(e.message));
-        }, 3000);
-        return () => clearInterval(timer);
-    }, [refresh]);
+        // Indexing needs prompt updates, but a settled library does not need a
+        // full workspace refresh every three seconds (especially in hidden tabs).
+        let timer: ReturnType<typeof setTimeout>;
+        let stopped = false;
+        const poll = async () => {
+            if (!document.hidden) await refresh().catch((error: Error) => setError(error.message));
+            if (!stopped) {
+                const indexing = docsRef.current.some((doc) => doc.status === 'queued' || doc.status === 'processing');
+                timer = setTimeout(poll, indexing ? 3000 : 15000);
+            }
+        };
+        timer = setTimeout(poll, docsRef.current.some((doc) => doc.status === 'queued' || doc.status === 'processing') ? 3000 : 15000);
+        return () => {
+            stopped = true;
+            clearTimeout(timer);
+        };
+    }, [refresh, refreshWorkspaceLists]);
     useEffect(() => {
         if (tab === 'chat' && messages.length > 0 && chatThread.current) chatThread.current.scrollTo({ top: chatThread.current.scrollHeight, behavior: 'smooth' });
     }, [messages.length, busy, tab]);
@@ -193,6 +221,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         if (busy || agentBusy) return;
         setSearchTarget(null);
         chatLoadSequence.invalidate();
+        setOpeningChatId(null);
         saveDraft();
         activeChat.current = null;
         setChatId(null);
@@ -210,10 +239,10 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     }
 
     function navigate(next: typeof tab) {
-        flushSync(() => {
-            setTab(next);
-            setSidebarOpen(false);
-        });
+        // React batches these updates; flushSync made every navigation render block the click.
+        setTab(next);
+        setSidebarOpen(false);
+        if (next === 'documents') void refresh().catch((error: Error) => setError(error.message));
     }
 
     const {
@@ -281,6 +310,8 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
     // Preserve original retrieval indices so [3] always opens source 3.
 
     const title = messages.find((m) => m.role === 'user')?.content || 'New research';
+    const latestAnswer = [...messages].reverse().find((message) => message.role === 'assistant' && message.result)?.result;
+    const latestQuestion = [...messages].reverse().find((message) => message.role === 'user')?.content;
     const initials = (user?.display_name || user?.email)?.slice(0, 2).toUpperCase() || 'A';
     const uploadedDocs = uploadSummary ? docs.filter((d) => uploadSummary.ids.includes(d.id)) : [];
     const uploadStatus = uploadSummary
@@ -391,14 +422,15 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         setError,
         setNotice,
         setBusy,
+        setOpeningChatId,
         setAnswerProgress,
         setCopied,
         navigate,
         newChat,
     });
 
-    function askWithAgent(question?: string, fromOverview = false) {
-        if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview);
+    function askWithAgent(question?: string, fromOverview = false, stayOnOverview = false) {
+        if (!handleAgentMention((question ?? query).trim())) void ask(question, fromOverview, stayOnOverview);
     }
 
     const { switchChat } = useConversationNavigation({
@@ -447,7 +479,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
         );
 
     return (
-        <div className={`app atlas-v3 ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`app atlas-v3 atlas-mui-workspace atlas-reference-root ${sidebarCollapsed ? 'collapsed' : ''}`} data-atlas-design="reference" data-atlas-screen={tab}>
             <input
                 ref={input}
                 type="file"
@@ -464,25 +496,26 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onClose={() => setSidebarOpen(false)}
                 onNewChat={() => newChat()}
                 busy={busy}
+                collapsed={sidebarCollapsed}
                 onCollapse={() => {
-                    setSidebarCollapsed(true);
+                    setSidebarCollapsed((collapsed) => !collapsed);
                     setSidebarOpen(false);
                 }}
                 onWorkspaceSettings={() => setNewWorkspace(true)}
                 workspace={workspace}
                 workspaceCount={workspaces.length}
-                tab={tab}
-                onNavigate={navigate}
                 chats={chats}
-                activeChatId={chatId}
+                chatsLoading={chatsLoading}
+                chatsFailed={chatsFailed}
+                onRefreshChats={() => void refreshWorkspaceLists()}
                 onOpenChat={(id) => void switchChat(id)}
-                onRenameChat={(item) => void renameChat(item)}
-                onDeleteChat={(item) => void deleteChat(item)}
-                onAllChats={() => {
+                onOpenConversations={() => {
                     navigate('chat');
                     setHistoryOpen(true);
                     void refreshChats();
                 }}
+                tab={tab}
+                onNavigate={navigate}
                 readyCount={ready.length}
                 storageLabel={storage ? prettyBytes(storage) : '0 KB'}
                 initials={initials}
@@ -491,26 +524,42 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                 onSignOut={() => void signOut()}
             />
             <main className="main">
-                <header className="topbar">
-                    <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
-                        <Menu />
-                    </button>
-                    <button className="icon-button expand-sidebar" aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)}>
-                        <PanelLeftOpen />
-                    </button>
-                    <button className="global-search" onClick={() => setSearchOpen(true)}>
-                        <Search />
-                        <span>Search documents or ask a question…</span>
-                        <kbd className="key">⌘ K</kbd>
-                    </button>
-                    <div className="top-actions">
-                        {themeButton}
-                        <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
-                            {initials}
-                        </Link>
-                    </div>
-                </header>
-                <div className={`content ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
+                {tab !== 'overview' && (
+                    <header className="topbar border-b border-[var(--line)] bg-[var(--panel)]">
+                        <button className="icon-button mobile" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+                            <Menu />
+                        </button>
+                        <button className="icon-button expand-sidebar" aria-label="Expand sidebar" onClick={() => setSidebarCollapsed(false)}>
+                            <PanelLeftOpen />
+                        </button>
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            onClick={() => setSearchOpen(true)}
+                            startIcon={<Search size={17} />}
+                            endIcon={<kbd className="key">⌘ K</kbd>}
+                            sx={{
+                                flex: '1 1 360px',
+                                maxWidth: 560,
+                                minWidth: 120,
+                                justifyContent: 'space-between',
+                                color: 'text.secondary',
+                                borderColor: 'divider',
+                                bgcolor: 'action.hover',
+                                '&:hover': { borderColor: 'primary.main' },
+                            }}
+                        >
+                            <span className="truncate">Search documents or ask a question…</span>
+                        </Button>
+                        <div className="top-actions">
+                            {themeButton}
+                            <Link className="initials" aria-label="Account settings" title="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspaceId)}`}>
+                                {initials}
+                            </Link>
+                        </div>
+                    </header>
+                )}
+                <div className={`content ${tab === 'overview' ? 'content-overview' : ''} ${tab === 'chat' || tab === 'agents' ? 'content-research' : ''}`}>
                     {error && (
                         <div className="feedback error" role="alert">
                             <AlertCircle />
@@ -569,22 +618,59 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                             mentionAgents={mentionAgents}
                             onQueryChange={setQuery}
                             onAsk={() => {
-                                navigate('chat');
-                                void askWithAgent(query, true);
+                                void askWithAgent(query, true, true);
                             }}
                             hasAskSources={hasAskSources || mentionAgents.length > 0}
                             sourceLabels={homeSourceLabels}
+                            includeDocuments={includeDocuments}
+                            onIncludeDocumentsChange={setIncludeDocuments}
                             busy={busy || agentBusy}
                             chats={chats}
+                            chatsLoading={chatsLoading}
+                            chatsFailed={chatsFailed}
+                            workspaceName={workspace?.name || 'Current workspace'}
+                            onRefreshChats={() => void refreshWorkspaceLists()}
                             docs={docs}
-                            onChooseSources={() => newChat(true)}
+                            themeButton={themeButton}
+                            sourcePicker={
+                                <ResearchSourceSelector
+                                    compact
+                                    includeDocuments={includeDocuments}
+                                    onIncludeDocuments={setIncludeDocuments}
+                                    gmailStatus={gmailStatus}
+                                    connectedGmail={connectedGmail}
+                                    onIncludeGmail={setConnectedGmail}
+                                    driveStatus={driveStatus}
+                                    sourceStatuses={sourceStatuses}
+                                    connectedProviders={connectedProviders}
+                                    onToggleProvider={(provider, enabled) =>
+                                        setConnectedProviders((current) => (enabled ? [...new Set([...current, provider])] : current.filter((item) => item !== provider)))
+                                    }
+                                    onSelectAll={(select) => {
+                                        setIncludeDocuments(select);
+                                        setConnectedGmail(select && !!gmailStatus?.connected);
+                                        setConnectedProviders(
+                                            select
+                                                ? RESEARCH_PROVIDERS.filter((provider) =>
+                                                      provider === 'drive' ? !!driveStatus?.connected : sourceStatuses.some((item) => item.provider === provider && item.connected),
+                                                  )
+                                                : [],
+                                        );
+                                    }}
+                                    onManage={() => navigate('sources')}
+                                    onBrowseDocuments={() => setScopeOpen(true)}
+                                    selectedCount={selected.length}
+                                    sourceLoadFailed={sourceLoadFailed}
+                                    onRetrySources={() => void refreshConnections()}
+                                />
+                            }
                             onOpenSources={() => navigate('sources')}
                             onOpenConversations={() => {
                                 navigate('chat');
                                 setHistoryOpen(true);
                                 void refreshChats();
                             }}
-                            onOpenConversation={(id) => void loadChat(id)}
+                            onOpenConversation={(id) => void loadChat(id, true)}
                             onStartChat={() => {
                                 newChat();
                                 navigate('chat');
@@ -603,11 +689,18 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                                 if (canEdit) input.current?.click();
                             }}
                             formatSize={prettyBytes}
+                            latestAnswer={openingChatId ? undefined : latestAnswer}
+                            latestQuestion={latestQuestion}
+                            answerProgress={openingChatId ? 'Opening conversation…' : busy || agentBusy ? answerProgress : ''}
+                            onOpenSource={openAnswerSource}
+                            onOpenMobileMenu={() => setSidebarOpen(true)}
                         />
                     )}
                     {workspaceId && tab === 'chat' && (
                         <ResearchWorkspace
+                            sourceLabels={homeSourceLabels}
                             workspaceId={workspaceId}
+                            openingChat={!!openingChatId}
                             searchTarget={searchTarget?.chatId === chatId ? searchTarget : null}
                             onOpenSource={openAnswerSource}
                             title={title}
@@ -686,6 +779,7 @@ export function AtlasWorkspace({ initialTab = 'chat', initialWorkspaceId }: { in
                         <AgentStudioPanel
                             key={workspaceId}
                             workspaceId={workspaceId}
+                            workspaceName={workspace?.name || 'Current workspace'}
                             canEdit={canEdit}
                             onUse={
                                 canEdit && !busy && !agentBusy

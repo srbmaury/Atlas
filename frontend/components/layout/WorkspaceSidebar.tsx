@@ -1,12 +1,15 @@
 'use client';
-import Link from 'next/link';
-import { ChevronDown, PanelLeftClose, Search, FileText, FolderOpen, Home as HomeIcon, MessageSquare, Clock3, LogOut, Settings2, Pencil, Trash2, Pin, Plus, X, Sparkles } from 'lucide-react';
-import type { ChatSummary, Workspace } from '../../lib/types';
-import { AtlasMark } from '../ui/WorkspacePrimitives';
-type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
 
+import Link from 'next/link';
+import { IconButton, Tooltip } from '@mui/material';
+import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, History, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
+import type { ChatSummary, Workspace } from '../../lib/types';
+import { AtlasBrand } from '../ui/AtlasBrand';
+
+type Tab = 'overview' | 'chat' | 'documents' | 'sources' | 'agents';
 interface WorkspaceSidebarProps {
     open: boolean;
+    collapsed: boolean;
     onCollapse: () => void;
     onClose: () => void;
     onNewChat: () => void;
@@ -14,14 +17,14 @@ interface WorkspaceSidebarProps {
     onWorkspaceSettings: () => void;
     workspace?: Workspace;
     workspaceCount: number;
+    chats: ChatSummary[];
+    chatsLoading: boolean;
+    chatsFailed: boolean;
+    onRefreshChats: () => void;
+    onOpenChat: (id: string) => void;
+    onOpenConversations: () => void;
     tab: Tab;
     onNavigate: (tab: Tab) => void;
-    chats: ChatSummary[];
-    activeChatId?: string | null;
-    onOpenChat: (id: string) => void;
-    onAllChats: () => void;
-    onRenameChat: (chat: ChatSummary) => void;
-    onDeleteChat: (chat: ChatSummary) => void;
     readyCount: number;
     storageLabel: string;
     initials: string;
@@ -29,8 +32,18 @@ interface WorkspaceSidebarProps {
     displayName?: string | null;
     onSignOut: () => void;
 }
+
+const mainNavigation = [
+    { id: 'overview', label: 'Research', icon: MessageSquare },
+    { id: 'documents', label: 'Library', icon: BookOpenText },
+    { id: 'sources', label: 'Connectors', icon: Plug },
+    { id: 'chat', label: 'Ask Atlas', icon: Sparkles },
+    { id: 'agents', label: 'Agent Studio', icon: FolderClosed },
+] as const;
+
 export function WorkspaceSidebar({
     open,
+    collapsed,
     onCollapse,
     onClose,
     onNewChat,
@@ -38,14 +51,14 @@ export function WorkspaceSidebar({
     onWorkspaceSettings,
     workspace,
     workspaceCount,
+    chats,
+    chatsLoading,
+    chatsFailed,
+    onRefreshChats,
+    onOpenChat,
+    onOpenConversations,
     tab,
     onNavigate,
-    chats,
-    activeChatId,
-    onOpenChat,
-    onAllChats,
-    onRenameChat,
-    onDeleteChat,
     readyCount,
     storageLabel,
     initials,
@@ -53,115 +66,152 @@ export function WorkspaceSidebar({
     displayName,
     onSignOut,
 }: WorkspaceSidebarProps) {
-    const now = new Date();
-    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const recent = chats.filter((chat) => !chat.archived).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updated - a.updated);
-    const groups = [
-        { label: 'Today', items: recent.filter((item) => (item.updated < 1e12 ? item.updated * 1000 : item.updated) >= dayStart) },
-        { label: 'Earlier', items: recent.filter((item) => (item.updated < 1e12 ? item.updated * 1000 : item.updated) < dayStart) },
-    ];
+    const settingsUrl = `/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`;
+    const handleNavigate = (next: Tab) => {
+        onNavigate(next);
+        onClose();
+    };
     return (
-        <aside className={`sidebar ${open ? 'open' : ''}`}>
-            <div className="brand-row">
-                <AtlasMark />
-                <span>Atlas</span>
-                <button className="sidebar-collapse" aria-label="Collapse sidebar" onClick={onCollapse}>
-                    <PanelLeftClose />
-                </button>
-                <button type="button" className="icon-button mobile-drawer-close" aria-label="Close sidebar" onClick={onClose}>
-                    <X />
-                </button>
-            </div>
-            <button aria-label="Switch workspace" className="workspace-btn" onClick={onWorkspaceSettings}>
-                <span className="ws-avatar">{workspace?.name[0]?.toUpperCase() || 'A'}</span>
-                <span>
-                    <strong>{workspace?.name || 'Choose workspace'}</strong>
-                    <small>
-                        {workspaceCount} workspace{workspaceCount === 1 ? '' : 's'}
-                    </small>
-                </span>
-                <ChevronDown />
-            </button>
-            <nav className="nav" aria-label="Main navigation">
-                {(
-                    [
-                        { id: 'overview', label: 'Overview', icon: HomeIcon },
-                        { id: 'chat', label: 'Ask Atlas', icon: MessageSquare },
-                        { id: 'documents', label: 'Documents', icon: FileText },
-                        { id: 'sources', label: 'Connected sources', icon: FolderOpen },
-                        { id: 'agents', label: 'Agents', icon: Sparkles },
-                    ] as const
-                ).map((item) => (
-                    <button key={item.id} className={tab === item.id ? 'active' : ''} title={item.label} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                    </button>
-                ))}
-            </nav>
-            <div className="sidebar-research" aria-label="Recent conversations">
-                <div className="sidebar-research-heading">
-                    <div className="section-label">RECENT RESEARCH</div>
-                    <button type="button" className="mobile-drawer-view-all" aria-label={`All conversations (${chats.length})`} onClick={onAllChats}>
-                        View all
-                    </button>
+        <aside className={`sidebar atlas-reference-sidebar ${open ? 'open' : ''}`} aria-label="Workspace sidebar">
+            <div className="atlas-ref-sidebar-body">
+                <div className="atlas-ref-brand">
+                    <AtlasBrand size={38} />
+                    <span>Atlas</span>
+                    <div className="atlas-ref-brand-actions">
+                        <Tooltip title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                            <IconButton className="sidebar-collapse" onClick={onCollapse} size="small" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} sx={{ color: '#aeb8d3' }}>
+                                <PanelLeftClose size={18} />
+                            </IconButton>
+                        </Tooltip>
+                        <IconButton className="atlas-ref-close-mobile" onClick={onClose} size="small" aria-label="Close sidebar" sx={{ color: '#cbd4ed' }}>
+                            <X size={19} />
+                        </IconButton>
+                    </div>
                 </div>
-                {groups.map(
-                    (group) =>
-                        group.items.length > 0 && (
-                            <div className="sidebar-chat-group" key={group.label}>
-                                <span className="sidebar-chat-date">{group.label}</span>
-                                {group.items.map((item) => (
-                                    <div className="sidebar-chat-row" key={item.id}>
-                                        <button
-                                            className={`workspace-stat ${activeChatId === item.id ? 'active' : ''}`}
-                                            aria-current={activeChatId === item.id ? 'true' : undefined}
-                                            onClick={() => onOpenChat(item.id)}
-                                            title={item.title}
-                                        >
-                                            {item.pinned ? <Pin /> : <MessageSquare />}
-                                            <span>{item.title}</span>
-                                        </button>
-                                        <div className="sidebar-chat-actions">
-                                            <button type="button" aria-label={`Rename ${item.title}`} title="Rename" onClick={() => onRenameChat(item)}>
-                                                <Pencil size={13} />
-                                            </button>
-                                            <button type="button" aria-label={`Delete ${item.title}`} title="Delete" onClick={() => onDeleteChat(item)}>
-                                                <Trash2 size={13} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ),
-                )}
-                <button className="workspace-stat sidebar-all-chats" onClick={onAllChats}>
-                    <Clock3 />
-                    <span>All conversations ({chats.length})</span>
+
+                <button className="atlas-ref-workspace-switcher" type="button" onClick={onWorkspaceSettings} aria-label="Switch workspace">
+                    <span className="atlas-ref-workspace-avatar">{workspace?.name?.charAt(0).toUpperCase() || 'A'}</span>
+                    <span className="atlas-ref-workspace-details">
+                        <strong>{workspace?.name || 'Choose workspace'}</strong>
+                        <small>
+                            {workspaceCount} workspace{workspaceCount === 1 ? '' : 's'}
+                        </small>
+                    </span>
+                    <ChevronDown size={17} aria-hidden="true" />
                 </button>
-            </div>
-            <div className="bottom">
-                <Link className="sidebar-settings-entry" href={`/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`}>
-                    <Settings2 size={16} />
-                    <span>Account & settings</span>
-                </Link>
-                <button type="button" className="btn primary mobile-drawer-new" disabled={busy} onClick={onNewChat}>
-                    <Plus size={16} /> New chat
-                </button>
-                <div className="usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
-                    <span>Storage</span>
-                    <strong>{storageLabel}</strong>
+
+                <nav className="atlas-ref-nav" aria-label="Main navigation">
+                    {mainNavigation.map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            type="button"
+                            className="atlas-ref-nav-item"
+                            data-active={tab === id}
+                            aria-current={tab === id ? 'page' : undefined}
+                            title={label}
+                            onClick={() => handleNavigate(id)}
+                        >
+                            <Icon size={19} />
+                            <span>{label}</span>
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        className="atlas-ref-nav-item"
+                        onClick={() => {
+                            onNewChat();
+                            onClose();
+                        }}
+                        disabled={busy}
+                        title="New chat"
+                    >
+                        <Plus size={19} />
+                        <span>New chat</span>
+                    </button>
+                </nav>
+
+                <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
+                    <span>Recent chats</span>
+                    <div className="atlas-ref-recent-actions">
+                        <button
+                            type="button"
+                            aria-label="All conversations"
+                            title="All conversations"
+                            onClick={() => {
+                                onOpenConversations();
+                                onClose();
+                            }}
+                        >
+                            <History size={14} />
+                        </button>
+                        <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
+                            <RefreshCw size={14} />
+                        </button>
+                    </div>
                 </div>
-                <div className="profile">
-                    <Link className="profile-settings-link" aria-label="Account settings" href={`/settings?workspaceId=${encodeURIComponent(workspace?.id || '')}`}>
-                        <span className="avatar">{initials}</span>
-                        <div>
-                            <strong>{displayName || email.split('@')[0]}</strong>
-                            <small>{email}</small>
+                <div className="atlas-ref-recent" role="region" aria-label="Recent chats">
+                    {chatsLoading && !chats.length ? (
+                        <p role="status">Loading chats…</p>
+                    ) : chatsFailed ? (
+                        <p role="alert">
+                            Could not load chats.{' '}
+                            <button type="button" onClick={onRefreshChats}>
+                                Retry
+                            </button>
+                        </p>
+                    ) : chats.filter((chat) => !chat.archived).length ? (
+                        chats
+                            .filter((chat) => !chat.archived)
+                            .slice(0, 8)
+                            .map((chat) => (
+                                <button
+                                    type="button"
+                                    key={chat.id}
+                                    title={chat.title}
+                                    onClick={() => {
+                                        onOpenChat(chat.id);
+                                        onClose();
+                                    }}
+                                >
+                                    <MessageSquare size={15} aria-hidden="true" />
+                                    <span>{chat.title}</span>
+                                </button>
+                            ))
+                    ) : (
+                        <p>No chats in this workspace</p>
+                    )}
+                </div>
+                <div className="atlas-ref-sidebar-bottom">
+                    <div className="atlas-ref-usage" title={`${readyCount} documents ready · ${storageLabel} stored`}>
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                            <span>Workspace storage</span>
+                            <span>{readyCount} ready</span>
                         </div>
+                        <div className="atlas-ref-storage-row mt-2 flex justify-between text-xs">
+                            <span>Documents</span>
+                            <span>{storageLabel}</span>
+                        </div>
+                    </div>
+                    <Link className="atlas-ref-sidebar-link" href={settingsUrl}>
+                        <Settings2 size={17} />
+                        <span>Settings</span>
                     </Link>
-                    <button className="icon-button" aria-label="Sign out" title="Sign out" onClick={onSignOut}>
-                        <LogOut />
-                    </button>
+                    <a className="atlas-ref-sidebar-link" href="https://github.com/srbmaury/Atlas#readme" target="_blank" rel="noopener noreferrer">
+                        <CircleHelp size={17} />
+                        <span>Help & Docs</span>
+                    </a>
+                    <div className="atlas-ref-profile">
+                        <span className="atlas-ref-profile-avatar">{initials}</span>
+                        <Link href={settingsUrl} className="min-w-0 flex-1 text-inherit no-underline" aria-label="Account settings">
+                            <span className="block truncate font-bold">{displayName || email.split('@')[0]}</span>
+                            <span className="block truncate text-[11px] text-[#a2aec9]">{email}</span>
+                        </Link>
+                        <Tooltip title="Sign out">
+                            <IconButton size="small" onClick={onSignOut} aria-label="Sign out" sx={{ color: '#aab6d2' }}>
+                                <LogOut size={17} />
+                            </IconButton>
+                        </Tooltip>
+                    </div>
                 </div>
             </div>
         </aside>

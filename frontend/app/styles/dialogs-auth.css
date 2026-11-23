@@ -1,4 +1,8 @@
 .dialog {
+    /* Tailwind preflight resets dialog's UA margin. Keep native modal centering. */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     padding: 25px;
     width: min(520px, calc(100vw - 30px));
     max-height: 85dvh;
@@ -122,6 +126,11 @@
     padding: 0 12px;
     border: 1px solid var(--line2);
     border-radius: 8px;
+}
+.modal-search:focus-within {
+    /* Single, subtle focus treatment on the field rather than a second input outline. */
+    border-color: var(--brand);
+    background: var(--hover);
 }
 .modal-search svg {
     color: var(--sub);
@@ -464,14 +473,8 @@
     .research-heading h1 {
         font-size: 25px;
     }
-    .workspace-stat {
-        padding-left: 8px;
-    }
 }
 @media (max-width: 930px) {
-    .sidebar-research {
-        display: none;
-    }
     .profile .avatar {
         display: none;
     }
@@ -519,9 +522,6 @@
     .sidebar .profile {
         justify-content: flex-start;
         padding: 14px 7px 0;
-    }
-    .sidebar .sidebar-research {
-        display: block;
     }
     .sidebar .nav button span {
         display: inline;
@@ -697,33 +697,8 @@
     .upload-area .btn {
         margin-left: 36px;
     }
-    .home-ask {
-        padding: 18px;
-    }
-    .home-ask-footer {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-    .home-intro h1 {
-        font-size: 27px;
-        line-height: 1.3;
-    }
     .library-bar {
         flex-wrap: wrap;
-    }
-    .document-search {
-        width: 100%;
-    }
-    .library-bar .document-search input {
-        width: 100%;
-        min-width: 0;
-    }
-    .document-table th,
-    .document-table td {
-        padding: 12px;
-    }
-    .document-name strong {
-        max-width: 220px;
     }
     .auth-page > header {
         padding: 23px;

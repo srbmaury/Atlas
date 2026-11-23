@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Repair unquoted Mermaid flowchart labels without changing diagram structure.
-export function normalizeMermaidFlowchart(input: string): string {
+function normalizeMermaidFlowchart(input: string): string {
     const text = input
         .trim()
         .replace(/^```(?:mermaid)?\s*\n/i, '')

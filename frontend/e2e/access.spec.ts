@@ -28,7 +28,7 @@ async function setup(page: Page, role: 'manager' | 'viewer') {
         if (path.endsWith('/sources/health')) return json({ checks: [] });
         return json([]);
     });
-    await page.goto('/');
+    await page.goto('/chat');
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     return changes;
 }
@@ -54,7 +54,7 @@ test('manager adds a member and explicitly shares a connection', async ({ page }
 
 test('viewer sees role guidance and has no document or member mutation controls', async ({ page }) => {
     await setup(page, 'viewer');
-    await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Library', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Add', exact: true })).toHaveCount(0);
     await expect(page.getByText('You have viewer access. Ask an editor or manager to add documents.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete notes.md', exact: true })).toHaveCount(0);

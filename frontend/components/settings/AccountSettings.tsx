@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { Alert, Button, FormControlLabel, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Building2, LoaderCircle, LogOut, Moon, Sun, UserRound, UsersRound } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -188,7 +189,9 @@ export function AccountSettings() {
             <main className="settings-main">
                 <header className="settings-heading">
                     <span className="eyebrow">YOUR ATLAS</span>
-                    <h1>{section === 'profile' ? 'Account' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}</h1>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>
+                        {section === 'profile' ? 'Account' : section === 'workspace' ? 'Workspace & members' : 'Organisations'}
+                    </Typography>
                     <p>
                         {section === 'profile'
                             ? 'Your profile, appearance, and session in one place.'
@@ -198,14 +201,14 @@ export function AccountSettings() {
                     </p>
                 </header>
                 {error && (
-                    <p className="feedback error" role="alert">
+                    <Alert severity="error" role="alert">
                         {error}
-                    </p>
+                    </Alert>
                 )}
                 {notice && (
-                    <p className="feedback" role="status">
+                    <Alert severity="success" role="status">
                         {notice}
-                    </p>
+                    </Alert>
                 )}
                 {section === 'profile' ? (
                     <>
@@ -239,21 +242,21 @@ export function AccountSettings() {
                                         if (!savingName) void saveProfile();
                                     }}
                                 >
-                                    <label>
-                                        Display name
-                                        <input
-                                            name="display_name"
-                                            autoComplete="name"
-                                            maxLength={100}
-                                            value={name}
-                                            disabled={savingName}
-                                            onChange={(event) => setName(event.target.value)}
-                                            placeholder={user.email.split('@')[0]}
-                                        />
-                                    </label>
-                                    <button className="btn" disabled={savingName || name.trim() === (user.display_name || '')}>
+                                    <TextField
+                                        name="display_name"
+                                        label="Display name"
+                                        autoComplete="name"
+                                        slotProps={{ htmlInput: { maxLength: 100 } }}
+                                        value={name}
+                                        disabled={savingName}
+                                        onChange={(event) => setName(event.target.value)}
+                                        placeholder={user.email.split('@')[0]}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <Button type="submit" variant="contained" disabled={savingName || name.trim() === (user.display_name || '')}>
                                         {savingName ? 'Saving…' : 'Save name'}
-                                    </button>
+                                    </Button>
                                 </form>
                             </section>
                         )}
@@ -267,36 +270,29 @@ export function AccountSettings() {
                                     <strong>Theme</strong>
                                     <p>Choose a light or dark interface.</p>
                                 </div>
-                                <div className="settings-segmented" role="group" aria-label="Color theme">
-                                    <button
-                                        type="button"
-                                        aria-pressed={theme === 'light'}
-                                        onClick={() => {
-                                            if (theme !== 'light') toggleTheme();
-                                        }}
-                                    >
-                                        <Sun size={15} /> Light
-                                    </button>
-                                    <button
-                                        type="button"
-                                        aria-pressed={theme === 'dark'}
-                                        onClick={() => {
-                                            if (theme !== 'dark') toggleTheme();
-                                        }}
-                                    >
-                                        <Moon size={15} /> Dark
-                                    </button>
-                                </div>
+                                <ToggleButtonGroup
+                                    size="small"
+                                    exclusive
+                                    aria-label="Color theme"
+                                    value={theme}
+                                    onChange={(_event, nextTheme: 'light' | 'dark' | null) => {
+                                        if (nextTheme && nextTheme !== theme) toggleTheme();
+                                    }}
+                                >
+                                    <ToggleButton value="light" aria-label="Light">
+                                        <Sun size={15} className="mr-2" /> Light
+                                    </ToggleButton>
+                                    <ToggleButton value="dark" aria-label="Dark">
+                                        <Moon size={15} className="mr-2" /> Dark
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
                             </div>
                             <div className="settings-setting-row">
                                 <div>
                                     <strong>Compact settings</strong>
                                     <p>Reduce spacing on this page.</p>
                                 </div>
-                                <label className="settings-switch">
-                                    <input type="checkbox" checked={compact} onChange={(e) => changeCompact(e.target.checked)} />
-                                    <span>Compact</span>
-                                </label>
+                                <FormControlLabel label="Compact" control={<Switch checked={compact} onChange={(event) => changeCompact(event.target.checked)} />} />
                             </div>
                         </section>
                         <section className="settings-card">
@@ -309,10 +305,9 @@ export function AccountSettings() {
                                     <strong>Signed in as {user.email}</strong>
                                     <p>Sign out of Atlas on this browser.</p>
                                 </div>
-                                <button type="button" className="btn" disabled={busy} onClick={() => void signOut()}>
-                                    <LogOut size={16} />
+                                <Button type="button" variant="outlined" startIcon={<LogOut size={16} />} disabled={busy} onClick={() => void signOut()}>
                                     {busy ? 'Signing out…' : 'Sign out'}
-                                </button>
+                                </Button>
                             </div>
                         </section>
                         <AccountDeletion

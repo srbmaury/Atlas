@@ -1,11 +1,17 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, FileText, FolderOpen, LoaderCircle, Mic, MicOff, Plus } from 'lucide-react';
+
+import { useRef, useState, type ReactNode } from 'react';
+import { FileText, FolderOpen, Globe2, Mic, MicOff, Paperclip, Sparkles } from 'lucide-react';
+import { Alert, Chip, CircularProgress, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
+import { ResearchQuestionBox } from './ResearchQuestionBox';
+import { AgentMentionSuggestions } from '../agents/AgentMentionSuggestions';
+import type { AgentMention } from '../../lib/types';
 
 interface ResearchComposerProps {
     query: string;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    sourceSelector: ReactNode;
+    mentionAgents?: AgentMention[];
     onChange: (q: string) => void;
     onSubmit: () => void;
     onUpload: () => void;
@@ -15,6 +21,10 @@ interface ResearchComposerProps {
     busy: boolean;
     hasAskSources: boolean;
     hasMessages: boolean;
+    includeDocuments: boolean;
+    onIncludeDocumentsChange: (enabled: boolean) => void;
+    readyCount: number;
+    sourceLabels: string[];
     selectedDocuments: { id: string; name: string }[];
     pendingDocuments: { id: string; name: string; status: string }[];
     onRemoveDocument: (id: string) => void;
@@ -25,6 +35,7 @@ interface ResearchComposerProps {
 
 export function ResearchComposer({
     query,
+    sourceSelector,
     mentionAgents = [],
     onChange,
     onSubmit,
@@ -35,6 +46,10 @@ export function ResearchComposer({
     busy,
     hasAskSources,
     hasMessages,
+    includeDocuments,
+    onIncludeDocumentsChange,
+    readyCount,
+    sourceLabels,
     selectedDocuments,
     pendingDocuments,
     onRemoveDocument,
@@ -43,168 +58,160 @@ export function ResearchComposer({
     onDismissUploadResult,
 }: ResearchComposerProps) {
     const voice = useVoiceInput();
-    const [addOpen, setAddOpen] = useState(false);
-    const addRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        if (!addOpen) return;
-        function dismiss(event: MouseEvent) {
-            if (addRef.current && !addRef.current.contains(event.target as Node)) setAddOpen(false);
-        }
-        function escape(event: KeyboardEvent) {
-            if (event.key === 'Escape') setAddOpen(false);
-        }
-        document.addEventListener('pointerdown', dismiss);
-        document.addEventListener('keydown', escape);
-        return () => {
-            document.removeEventListener('pointerdown', dismiss);
-            document.removeEventListener('keydown', escape);
-        };
-    }, [addOpen]);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+    const canSubmit = !busy && !!query.trim() && hasAskSources;
+    const mention = /(?:^|\s)@([a-z0-9-]*)$/i.exec(query);
+    const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
 
     function addTranscript(transcript: string) {
         onChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
     }
 
-    const mention = /(?:^|\s)@([a-z0-9-]*)$/i.exec(query);
-    const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
     return (
-        <form
-            className="composer research-composer-v2"
-            onSubmit={(e) => {
-                e.preventDefault();
-                onSubmit();
-            }}
-        >
-            {(selectedDocuments.length > 0 || pendingDocuments.length > 0 || uploadProgress || uploadResult) && (
-                <div className="composer-context" aria-label="Question context">
-                    {selectedDocuments.length > 0 && (
-                        <div className="composer-context-documents">
+        <ResearchQuestionBox
+            className="composer atlas-ref-composer research-composer-v2"
+            query={query}
+            onQueryChange={onChange}
+            onRequestSubmit={onSubmit}
+            canSubmit={canSubmit}
+            busy={busy}
+            inputRef={textareaRef}
+            inputLabel="Your question"
+            placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask across your sources…'}
+            maxRows={7}
+            sourceSelector={sourceSelector}
+            context={
+                <>
+                    {(selectedDocuments.length > 0 || pendingDocuments.length > 0) && (
+                        <div className="flex flex-wrap gap-1.5" aria-label="Question context">
                             {selectedDocuments.map((doc) => (
-                                <span className="composer-document-chip" key={doc.id}>
-                                    <FileText size={13} />
-                                    <span title={doc.name}>{doc.name}</span>
-                                    <button type="button" aria-label={`Remove ${doc.name} from question`} onClick={() => onRemoveDocument(doc.id)}>
-                                        ×
-                                    </button>
-                                </span>
+                                <Chip key={doc.id} size="small" icon={<FileText size={14} />} label={doc.name} title={doc.name} onDelete={() => onRemoveDocument(doc.id)} sx={{ maxWidth: 230 }} />
                             ))}
-                        </div>
-                    )}
-                    {pendingDocuments.length > 0 && (
-                        <div className="composer-context-documents">
                             {pendingDocuments.map((doc) => (
-                                <span className="composer-document-chip composer-document-pending" key={doc.id}>
-                                    <FileText size={13} />
-                                    <span title={doc.name}>{doc.name}</span>
-                                    <small>{doc.status === 'failed' ? 'Indexing failed' : doc.status === 'processing' ? 'Indexing…' : 'Queued'}</small>
-                                </span>
+                                <Chip
+                                    key={doc.id}
+                                    size="small"
+                                    variant="outlined"
+                                    color={doc.status === 'failed' ? 'error' : 'warning'}
+                                    icon={<FileText size={14} />}
+                                    label={`${doc.name} · ${doc.status === 'failed' ? 'Indexing failed' : doc.status === 'processing' ? 'Indexing…' : 'Queued'}`}
+                                    title={doc.name}
+                                    sx={{ maxWidth: 250 }}
+                                />
                             ))}
                         </div>
                     )}
                     {uploadProgress && (
-                        <div className="composer-upload-status" role="status">
-                            <LoaderCircle size={14} className="spin" />
-                            <span>{uploadProgress}</span>
-                        </div>
+                        <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ py: 0 }}>
+                            {uploadProgress}
+                        </Alert>
                     )}
                     {!uploadProgress && uploadResult && (
-                        <div className="composer-upload-status" role="status">
-                            <FileText size={14} />
-                            <span>{uploadResult}</span>
-                            <button type="button" aria-label="Dismiss upload status" onClick={onDismissUploadResult}>
-                                ×
-                            </button>
-                        </div>
+                        <Alert severity="success" onClose={onDismissUploadResult} sx={{ py: 0 }}>
+                            {uploadResult}
+                        </Alert>
                     )}
-                </div>
-            )}
-            <div className="composer-add-wrap" ref={addRef}>
-                <button className="icon-button composer-add-trigger" type="button" aria-label="Add context" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen((open) => !open)}>
-                    <Plus />
-                </button>
-                {addOpen && (
-                    <div className="composer-add-menu" role="menu" aria-label="Add context">
-                        <div className="composer-add-menu-title">Add to your question</div>
-                        <button
-                            type="button"
-                            role="menuitem"
+                    <AgentMentionSuggestions
+                        agents={matchingAgents}
+                        onSelect={(agent) => {
+                            onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                            textareaRef.current?.focus();
+                        }}
+                    />
+                </>
+            }
+            leadingActions={
+                <>
+                    <Tooltip title="Add documents">
+                        <IconButton
+                            className="atlas-ref-pill"
+                            aria-label="Add context"
+                            aria-haspopup="menu"
+                            aria-expanded={!!menuAnchor}
+                            onClick={(event) => setMenuAnchor(event.currentTarget)}
+                            size="small"
+                        >
+                            <Paperclip size={16} />
+                        </IconButton>
+                    </Tooltip>
+                    <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} slotProps={{ list: { 'aria-label': 'Add context' } }}>
+                        <MenuItem
                             disabled={!canUpload || uploading}
                             onClick={() => {
-                                setAddOpen(false);
+                                setMenuAnchor(null);
                                 onUpload();
                             }}
                         >
-                            <FileText size={17} />
-                            <span>
-                                <strong>Upload a document</strong>
-                                <small>{canUpload ? 'PDF, Word, text, and more' : 'Editor access required'}</small>
-                            </span>
-                        </button>
-                        <button
-                            type="button"
-                            role="menuitem"
+                            <FileText size={17} className="mr-3" />
+                            Upload a document
+                        </MenuItem>
+                        <MenuItem
                             onClick={() => {
-                                setAddOpen(false);
+                                setMenuAnchor(null);
                                 onBrowseLibrary();
                             }}
                         >
-                            <FolderOpen size={17} />
-                            <span>
-                                <strong>Choose from library</strong>
-                                <small>Select existing workspace documents</small>
-                            </span>
-                        </button>
-                    </div>
-                )}
-            </div>
-            {matchingAgents.length > 0 && (
-                <div className="agent-mention-menu" role="listbox" aria-label="Mention an agent">
-                    <span className="agent-mention-title">AGENT SUGGESTIONS</span>
-                    {matchingAgents.map((agent) => (
-                        <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
-                            <span>✦</span>
-                            <span>
-                                <strong>{agent.name}</strong>
-                                <small>{agent.handle}</small>
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            )}
-            <textarea
-                aria-label="Your question"
-                aria-describedby="research-composer-help"
-                placeholder={hasMessages ? 'Ask a follow-up question…' : 'Ask a question across your sources…'}
-                rows={1}
-                maxLength={4000}
-                value={query}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                        e.preventDefault();
-                        if (hasAskSources && !busy && query.trim()) onSubmit();
-                    }
-                }}
-            />
-            <button
-                className={`voice-input-button ${voice.listening ? 'is-listening' : ''}`}
-                type="button"
-                aria-label={voice.listening ? 'Stop voice input' : voice.supported ? 'Start voice input' : 'Voice input not supported in this browser'}
-                aria-pressed={voice.listening}
-                title={voice.supported ? 'Use voice input' : 'Voice input is not supported in this browser'}
-                disabled={busy}
-                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
-            >
-                {voice.listening ? <MicOff /> : <Mic />}
-            </button>
-            <button className="send" aria-label="Send question" disabled={busy || !query.trim() || !hasAskSources}>
-                {busy ? <LoaderCircle className="spin" /> : <ArrowUp />}
-            </button>
-            {(voice.listening || voice.error) && (
-                <span className="voice-input-status" role={voice.error ? 'alert' : 'status'}>
-                    {voice.error || 'Listening…'}
-                </span>
-            )}
-        </form>
+                            <FolderOpen size={17} className="mr-3" />
+                            Choose from library
+                        </MenuItem>
+                    </Menu>
+                    <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is unavailable; import webpages via Library → Add knowledge.">
+                        <Globe2 size={16} /> Web
+                    </span>
+                    <button
+                        type="button"
+                        className="atlas-ref-pill"
+                        aria-pressed={includeDocuments}
+                        title={`${readyCount} searchable documents`}
+                        onClick={() => onIncludeDocumentsChange(!includeDocuments)}
+                    >
+                        <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
+                    </button>
+                </>
+            }
+            trailingActions={
+                <>
+                    <Tooltip title={voice.supported ? 'Voice input' : 'Voice input is unavailable'}>
+                        <span>
+                            <IconButton
+                                aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
+                                aria-pressed={voice.listening}
+                                disabled={busy || (!voice.supported && !voice.listening)}
+                                onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                                size="small"
+                            >
+                                {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <button type="submit" aria-label="Send question" disabled={!canSubmit} className="atlas-ref-primary-button">
+                        <span className="flex items-center gap-2">
+                            {busy ? <CircularProgress size={18} color="inherit" /> : <Sparkles size={16} />}
+                            Research
+                        </span>
+                    </button>
+                </>
+            }
+            footer={
+                <>
+                    {(voice.listening || voice.error) && (
+                        <Typography variant="caption" role={voice.error ? 'alert' : 'status'} color={voice.error ? 'error' : 'text.secondary'}>
+                            {voice.error || 'Listening…'}
+                        </Typography>
+                    )}
+                    {!hasAskSources && (
+                        <Typography variant="caption" color="text.secondary">
+                            Select a source or add a document to enable research.
+                        </Typography>
+                    )}
+                    {!!sourceLabels.length && (
+                        <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
+                            {sourceLabels.join(' · ')}
+                        </div>
+                    )}
+                </>
+            }
+        />
     );
 }

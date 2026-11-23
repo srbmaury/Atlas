@@ -1,53 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import {
-    BookOpen,
-    Bot,
-    CalendarDays,
-    Check,
-    Copy,
-    Search,
-    Clock3,
-    Cloud,
-    FileText,
-    FolderOpen,
-    Github,
-    History,
-    Layers3,
-    LoaderCircle,
-    Mail,
-    MessageSquare,
-    Plus,
-    Settings2,
-    Sparkles,
-    Square,
-    X,
-} from 'lucide-react';
+import { Alert, Button, Card, Chip, InputBase, Typography } from '@mui/material';
+import { BookOpen, Bot, CalendarDays, Check, Copy, Search, Cloud, FileText, FolderOpen, Github, Layers3, Mail, MessageSquare, Plus, Settings2, Sparkles, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
 type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
 type Agent = { id: string; name: string; instructions: string; output_format: string; source_config?: SourceConfig };
-type EvidenceNode = { id: string; type: string; name?: string; page?: number; excerpt?: string };
-type EvidenceGraph = { nodes: EvidenceNode[]; edges: { from: string; to: string; type: string }[] };
-type Run = {
-    id: string;
-    status: string;
-    question: string;
-    created?: number;
-    steps: { tool: string; source_count?: number; mode?: string; queries?: string[] }[];
-    result?: {
-        answer?: string;
-        error?: string;
-        mode?: string;
-        sources?: unknown[];
-        evidence_graph?: EvidenceGraph;
-        claim_verification?: { verified: number; needs_review: number; unsupported: number; claims: { claim: string; status: string; source_ids: number[]; reason: string }[]; disclaimer: string };
-    };
-};
-
 const SOURCE_NAMES: Record<string, string> = {
     documents: 'Documents',
     gmail: 'Gmail',
@@ -88,11 +47,11 @@ function SourceIcon({ provider, size = 17 }: { provider: string; size?: number }
     }
 }
 
-export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId: string; canEdit: boolean; onUse?: (handle: string) => void }) {
+export function AgentStudioPanel({ workspaceId, workspaceName, canEdit, onUse }: { workspaceId: string; workspaceName: string; canEdit: boolean; onUse?: (handle: string) => void }) {
     const base = `/api/workspaces/${encodeURIComponent(workspaceId)}/agents`;
     const [agents, setAgents] = useState<Agent[]>([]);
+    const [agentsLoadState, setAgentsLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
     const [selected, setSelected] = useState('');
-    const [selectedRun, setSelectedRun] = useState('');
     const [name, setName] = useState('');
     const [instructions, setInstructions] = useState('Find relevant evidence and cite sources.');
     const [outputFormat, setOutputFormat] = useState('detailed_notes');
@@ -104,32 +63,26 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
     const [documentIds, setDocumentIds] = useState<string[]>([]);
     const [includeGmail, setIncludeGmail] = useState(false);
     const [providers, setProviders] = useState<string[]>([]);
-    const [question, setQuestion] = useState('');
-    const [runs, setRuns] = useState<Run[]>([]);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
-    const [view, setView] = useState<'run' | 'history'>('run');
-    const [detailTab, setDetailTab] = useState<'answer' | 'evidence' | 'graph'>('answer');
 
     const loadAgents = useCallback(async () => {
-        const response = await fetch(base, { credentials: 'same-origin' });
-        if (!response.ok) throw new Error('Unable to load agents.');
-        const items: Agent[] = await response.json();
-        setAgents(items);
-        setSelected((current) => current || items[0]?.id || '');
+        setAgentsLoadState('loading');
+        try {
+            const response = await fetch(base, { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) throw new Error(`Unable to load agents (HTTP ${response.status}).`);
+            const items: unknown = await response.json();
+            if (!Array.isArray(items)) throw new Error('The agents response was not a list.');
+            const loaded = items as Agent[];
+            setAgents(loaded);
+            setSelected((current) => (loaded.some((agent) => agent.id === current) ? current : loaded[0]?.id || ''));
+            setAgentsLoadState('ready');
+        } catch (error) {
+            setAgentsLoadState('error');
+            throw error;
+        }
     }, [base]);
-
-    const loadRuns = useCallback(
-        async (id: string) => {
-            const response = await fetch(`${base}/${encodeURIComponent(id)}/runs`, { credentials: 'same-origin' });
-            if (!response.ok) throw new Error('Unable to load research runs.');
-            const items: Run[] = await response.json();
-            setRuns(items);
-            setSelectedRun((current) => (items.some((run) => run.id === current) ? current : items[0]?.id || ''));
-        },
-        [base],
-    );
 
     const loadSourceOptions = useCallback(async () => {
         setSourcesFailed(false);
@@ -148,19 +101,6 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
             void loadSourceOptions();
         }
     }, [workspaceId, loadAgents, loadSourceOptions]);
-
-    useEffect(() => {
-        if (!selected) {
-            setRuns([]);
-            setSelectedRun('');
-            return;
-        }
-        loadRuns(selected).catch((err) => setError(err.message));
-        const interval = setInterval(() => {
-            loadRuns(selected).catch((err) => setError(err.message));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [selected, loadRuns]);
 
     const missingSelectedDocuments = includeDocuments && documentScope === 'selected' && !documentIds.length;
 
@@ -187,95 +127,15 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
             const agent: Agent = await response.json();
             await loadAgents();
             setSelected(agent.id);
-            setSelectedRun('');
             setName('');
             setShowCreate(false);
             setEditing(false);
-            if (!editing) setRuns([]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not create agent.');
         } finally {
             setBusy(false);
         }
     }
-
-    function editAgent() {
-        if (!activeAgent) return;
-        setName(activeAgent.name);
-        setInstructions(activeAgent.instructions);
-        setOutputFormat(activeAgent.output_format || 'detailed_notes');
-        setIncludeDocuments(activeAgent.source_config?.include_documents ?? true);
-        setDocumentIds(activeAgent.source_config?.document_ids || []);
-        setDocumentScope(activeAgent.source_config?.document_ids?.length ? 'selected' : 'all');
-        setIncludeGmail(activeAgent.source_config?.include_gmail || false);
-        setProviders(activeAgent.source_config?.providers || []);
-        setEditing(true);
-        setShowCreate(true);
-    }
-
-    async function deleteAgent() {
-        if (!activeAgent || !window.confirm(`Delete ${activeAgent.name} and its research history?`)) return;
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(activeAgent.id)}`, { method: 'DELETE', credentials: 'same-origin' });
-            if (!response.ok) throw new Error('Cancel active research runs before deleting this agent.');
-            setSelected('');
-            setRuns([]);
-            await loadAgents();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to delete agent.');
-        }
-    }
-
-    async function research() {
-        if (!selected || question.trim().length < 3) return;
-        setBusy(true);
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs`, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: question.trim() }),
-            });
-            if (!response.ok) {
-                const body = await response.json().catch(() => ({}));
-                throw new Error(typeof body.detail === 'string' ? body.detail : 'Unable to start research.');
-            }
-            const run: Run = await response.json();
-            setSelectedRun(run.id);
-            setView('run');
-            setDetailTab('answer');
-            await loadRuns(selected);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Research failed.');
-        } finally {
-            setBusy(false);
-        }
-    }
-
-    async function cancelRun(runId: string) {
-        if (!selected) return;
-        setError('');
-        try {
-            const response = await fetch(`${base}/${encodeURIComponent(selected)}/runs/${encodeURIComponent(runId)}/cancel`, {
-                method: 'POST',
-                credentials: 'same-origin',
-            });
-            if (!response.ok) throw new Error('Unable to cancel research.');
-            await loadRuns(selected);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Cancellation failed.');
-        }
-    }
-
-    const activeAgent = agents.find((agent) => agent.id === selected);
-    const activeRun = runs.find((run) => run.id === selectedRun);
-    const graph = activeRun?.result?.evidence_graph;
-    const documents = graph?.nodes.filter((node) => node.type === 'document') || [];
-    const passages = graph?.nodes.filter((node) => node.type !== 'document') || [];
-    const isRunning = (status: string) => status === 'queued' || status === 'processing';
-    const date = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '');
 
     const [agentSearch, setAgentSearch] = useState('');
     const [copiedHandle, setCopiedHandle] = useState('');
@@ -285,12 +145,18 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
         <div className={styles.studio}>
             <div className={styles.pageHead}>
                 <div>
-                    <h1>Agents</h1>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>
+                        Agents
+                    </Typography>
                     <p>Build focused research assistants, connect their knowledge, and invoke them anywhere with @mentions.</p>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                        Workspace: {workspaceName}
+                    </Typography>
                 </div>
                 {canEdit && (
-                    <button
-                        className={`${styles.button} ${styles.primary}`}
+                    <Button
+                        variant="contained"
+                        startIcon={<Plus size={17} />}
                         onClick={() => {
                             setEditing(false);
                             setName('');
@@ -304,31 +170,58 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                             setShowCreate(true);
                         }}
                     >
-                        <Plus size={17} /> Create agent
-                    </button>
+                        Create agent
+                    </Button>
                 )}
             </div>
             {error && (
-                <div role="alert" className={styles.error}>
+                <Alert severity="error" role="alert" className={styles.error}>
                     {error}
-                </div>
+                </Alert>
             )}
             <div className={styles.libraryTools}>
-                <label className={styles.librarySearch}>
+                <div className={styles.librarySearch} role="search">
                     <Search size={17} aria-hidden="true" />
-                    <input
-                        aria-label="Search agents"
-                        className={styles.input}
+                    <InputBase
+                        fullWidth
+                        type="search"
                         placeholder="Search agents by name or purpose..."
+                        inputProps={{ 'aria-label': 'Search agents' }}
                         value={agentSearch}
                         onChange={(event) => setAgentSearch(event.target.value)}
+                        sx={{ fontSize: 14, '& input': { outline: 'none !important', boxShadow: 'none !important' } }}
                     />
-                </label>
-                <span className={styles.libraryCount}>
-                    {filteredAgents.length} {filteredAgents.length === 1 ? 'agent' : 'agents'}
-                </span>
+                </div>
+                <Chip
+                    variant="outlined"
+                    label={
+                        agentsLoadState === 'loading'
+                            ? 'Loading agents…'
+                            : agentsLoadState === 'error'
+                              ? 'Agents unavailable'
+                              : `${filteredAgents.length} ${filteredAgents.length === 1 ? 'agent' : 'agents'}`
+                    }
+                />
+                <Button size="small" variant="text" onClick={() => void loadAgents().catch((err) => setError(err.message))} disabled={agentsLoadState === 'loading'}>
+                    Refresh
+                </Button>
             </div>
-            {filteredAgents.length ? (
+            {agentsLoadState === 'loading' && agents.length === 0 ? (
+                <div className={styles.libraryEmpty} role="status">
+                    <Bot size={26} aria-hidden="true" />
+                    <h2>Loading your research agents…</h2>
+                    <p>Checking {workspaceName} for saved agents.</p>
+                </div>
+            ) : agentsLoadState === 'error' && agents.length === 0 ? (
+                <div className={styles.libraryEmpty} role="alert">
+                    <Bot size={26} aria-hidden="true" />
+                    <h2>Couldn’t load research agents</h2>
+                    <p>The agent list for {workspaceName} could not be retrieved. Your existing agents may still be available.</p>
+                    <Button variant="outlined" onClick={() => void loadAgents().catch((err) => setError(err.message))}>
+                        Retry loading agents
+                    </Button>
+                </div>
+            ) : filteredAgents.length ? (
                 <div className={styles.libraryGrid}>
                     {filteredAgents.map((agent) => {
                         const scope = agent.source_config || {};
@@ -341,7 +234,7 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                                 .replace(/[^a-z0-9]+/g, '-')
                                 .replace(/^-|-$/g, '');
                         return (
-                            <article className={styles.libraryCard} key={agent.id}>
+                            <Card component="article" variant="outlined" className={styles.libraryCard} key={agent.id} sx={{ borderColor: 'divider', borderRadius: 3 }}>
                                 <div className={styles.libraryCardAccent} aria-hidden="true" />
                                 <div className={styles.libraryCardTitle}>
                                     <span className={styles.agentIcon}>
@@ -428,19 +321,21 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                                         </div>
                                     )}
                                 </div>
-                            </article>
+                            </Card>
                         );
                     })}
                 </div>
             ) : (
                 <div className={styles.libraryEmpty} role="status">
-                    <Bot size={28} aria-hidden="true" />
-                    <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents yet'}</h2>
+                    <span className={styles.libraryEmptyIcon}>
+                        <Bot size={24} aria-hidden="true" />
+                    </span>
+                    <h2>{agents.length ? 'No matching agents' : canEdit ? 'Build your first research agent' : 'No agents in this workspace'}</h2>
                     <p>
                         {agents.length
                             ? 'Try a different name or purpose to find an agent.'
                             : canEdit
-                              ? 'Choose trusted knowledge sources, define instructions, and use the agent directly in Chat.'
+                              ? `No agents were returned for ${workspaceName}. Connect trusted knowledge sources, define instructions, and use an agent in Chat.`
                               : 'An editor or manager can create one.'}
                     </p>
                     {agents.length ? (
@@ -448,9 +343,9 @@ export function AgentStudioPanel({ workspaceId, canEdit, onUse }: { workspaceId:
                             Clear search
                         </button>
                     ) : canEdit ? (
-                        <button className={styles.primaryButton} onClick={() => setShowCreate(true)}>
-                            <Plus size={16} /> Create agent
-                        </button>
+                        <Button variant="contained" startIcon={<Plus size={17} />} onClick={() => setShowCreate(true)}>
+                            Create agent
+                        </Button>
                     ) : null}
                 </div>
             )}

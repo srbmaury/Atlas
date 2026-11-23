@@ -24,12 +24,20 @@ a:focus-visible {
     outline: 2px solid #70a78c;
     outline-offset: 3px;
 }
-input:focus-visible,
-textarea:focus-visible,
+input:not(.MuiInputBase-input):focus-visible,
+textarea:not(.MuiInputBase-input):focus-visible,
 select:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
     border-color: #70a78c;
+}
+/* MUI already exposes field focus via its form control. The generic legacy
+   input focus box must never draw a rectangle around the composer textarea. */
+.atlas-v3 .research-composer-v2 .MuiInputBase-input:focus,
+.atlas-v3 .research-composer-v2 .MuiInputBase-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
 }
 input[type='checkbox'] {
     accent-color: var(--brand);
@@ -94,36 +102,6 @@ input[type='checkbox'] {
     width: 14px;
     height: 14px;
     color: var(--sub);
-}
-.sidebar-research {
-    border-top: 1px solid var(--line);
-    margin-top: 18px;
-    padding-top: 3px;
-}
-.workspace-stat {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    width: 100%;
-    padding: 9px 12px;
-    font-size: 11px;
-    color: var(--sub);
-    text-align: left;
-    border: 0;
-    background: none;
-    border-radius: 7px;
-}
-.workspace-stat:hover {
-    background: var(--hover);
-}
-.workspace-stat svg {
-    width: 15px;
-    height: 15px;
-}
-.workspace-stat span {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 .usage p {
     font-size: 10px;
@@ -356,11 +334,6 @@ input[type='checkbox'] {
     line-height: 1.6;
     min-height: 32px;
 }
-.composer-caption {
-    padding: 0 5px;
-    font-size: 10px;
-    line-height: 1.7;
-}
 .thinking {
     display: flex;
     align-items: center;
@@ -499,19 +472,6 @@ input[type='checkbox'] {
     width: 16px;
     height: 16px;
 }
-.home-ask {
-    background: var(--panel);
-}
-.home-ask textarea {
-    line-height: 1.6;
-    color: var(--text);
-}
-.home-ask-footer {
-    gap: 14px;
-}
-.home-ask-footer .caption {
-    font-size: 11px;
-}
 
 /* Conversation message search */
 .message-search-panel {
@@ -586,11 +546,6 @@ input[type='checkbox'] {
         min-width: 250px;
         max-width: min(55vw, 800px);
     }
-}
-.workspace-stat.active {
-    background: var(--active);
-    color: var(--text);
-    font-weight: 600;
 }
 
 /* Conversation action menus and organization */

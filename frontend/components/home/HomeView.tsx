@@ -1,22 +1,51 @@
 'use client';
-import { type ReactNode } from 'react';
-import { Sparkles, FileText, ArrowUpRight, LoaderCircle, ArrowUp, MessageSquare, ChevronRight, Upload, Mic, MicOff } from 'lucide-react';
-import type { Doc, ChatSummary } from '../../lib/types';
+
+import { useRef, useState, type ReactNode } from 'react';
+import {
+    ArrowRight,
+    ArrowUpRight,
+    Clock3,
+    FileText,
+    Globe2,
+    Menu,
+    MessageSquareText,
+    Mic,
+    MicOff,
+    Paperclip,
+    Sparkles,
+    TrendingUp,
+    Lightbulb,
+    LoaderCircle,
+    PanelRightOpen,
+    PanelRightClose,
+} from 'lucide-react';
+import { Button, IconButton, Typography } from '@mui/material';
+import type { AgentMention, Answer, ChatSummary, Doc, Source } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
-import { FileBadge } from '../ui/WorkspacePrimitives';
+import { AtlasBrand } from '../ui/AtlasBrand';
+import { AgentMentionSuggestions } from '../agents/AgentMentionSuggestions';
+import { AtlasReferencePanel } from './AtlasReferencePanel';
+import { ResearchQuestionBox } from '../chat/ResearchQuestionBox';
 
 interface HomeViewProps {
     canEdit?: boolean;
     query: string;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    mentionAgents?: AgentMention[];
     onQueryChange: (value: string) => void;
     onAsk: () => void;
     hasAskSources: boolean;
     sourceLabels: string[];
+    includeDocuments: boolean;
+    onIncludeDocumentsChange: (enabled: boolean) => void;
     busy: boolean;
     chats: ChatSummary[];
+    chatsLoading: boolean;
+    chatsFailed: boolean;
+    workspaceName: string;
+    onRefreshChats: () => void;
     docs: Doc[];
-    onChooseSources: () => void;
+    sourcePicker: ReactNode;
+    themeButton?: ReactNode;
     onOpenSources: () => void;
     onOpenConversations: () => void;
     onOpenConversation: (id: string) => void;
@@ -25,13 +54,25 @@ interface HomeViewProps {
     onInspectDocument: (doc: Doc) => void;
     uploadButton: ReactNode;
     dragging: boolean;
-    onDragging: (value: boolean) => void;
+    onDragging: (dragging: boolean) => void;
     onDrop: (files: FileList) => void;
     maxSizeMB: number;
     uploading: boolean;
     onBrowse: () => void;
     formatSize: (value: number) => string;
+    latestAnswer?: Answer;
+    latestQuestion?: string;
+    answerProgress?: string;
+    onOpenSource: (source: Source) => void;
+    onOpenMobileMenu: () => void;
 }
+
+const tasks = [
+    { title: 'Compare countries', description: 'Explore differences with evidence', prompt: 'Compare the key differences between ', icon: Globe2, color: '#5b50ed' },
+    { title: 'Summarize documents', description: 'Find insights in your files', prompt: 'Summarize the main findings in my documents about ', icon: FileText, color: '#7596e7' },
+    { title: 'Analyze a topic', description: 'Trends, causes and impacts', prompt: 'Analyze the evidence, developments and implications of ', icon: TrendingUp, color: '#a25ce3' },
+    { title: 'Create a research brief', description: 'A structured, cited overview', prompt: 'Create a concise research brief with citations about ', icon: Lightbulb, color: '#6955f5' },
+] as const;
 
 export function HomeView({
     canEdit = true,
@@ -41,10 +82,17 @@ export function HomeView({
     onAsk,
     hasAskSources,
     sourceLabels,
+    includeDocuments,
+    onIncludeDocumentsChange,
     busy,
     chats,
+    chatsLoading,
+    chatsFailed,
+    workspaceName,
+    onRefreshChats,
     docs,
-    onChooseSources,
+    sourcePicker,
+    themeButton,
     onOpenSources,
     onOpenConversations,
     onOpenConversation,
@@ -59,206 +107,270 @@ export function HomeView({
     uploading,
     onBrowse,
     formatSize,
+    latestAnswer,
+    latestQuestion,
+    answerProgress,
+    onOpenSource,
+    onOpenMobileMenu,
 }: HomeViewProps) {
     const voice = useVoiceInput();
-    const mention = /(?:^|\\s)@([a-z0-9-]*)$/i.exec(query);
+    const prompt = useRef<HTMLTextAreaElement>(null);
+    const canSubmit = !busy && Boolean(query.trim()) && hasAskSources;
+    const mention = /(?:^|\s)@([a-z0-9-]*)$/i.exec(query);
     const matchingAgents = mention ? mentionAgents.filter((agent) => agent.handle.slice(1).includes(mention[1].toLowerCase())).slice(0, 6) : [];
-    const selectedAgent = mentionAgents.find((agent) => query.toLowerCase().includes(agent.handle + ' '));
+    const recent = [...chats]
+        .filter((chat) => !chat.archived)
+        .sort((a, b) => b.updated - a.updated)
+        .slice(0, 4);
+    const recentDocs = docs.slice(0, 3);
+    const readyCount = docs.filter((doc) => doc.status === 'ready').length;
+    const [insightOpen, setInsightOpen] = useState(true);
 
-    function addTranscript(transcript: string) {
-        onQueryChange(query.trim() ? `${query.trim()} ${transcript}` : transcript);
+    function applyTask(value: string) {
+        onQueryChange(value);
+        prompt.current?.focus();
+    }
+
+    function addTranscript(value: string) {
+        onQueryChange(query.trim() ? `${query.trim()} ${value}` : value);
     }
 
     return (
-        <section className="atlas-home">
-            <div className="home-hero home-hero-focused">
-                <div className="home-hero-copy">
-                    <h1>Resume your research</h1>
-                    <p>Open recent work or start a question across your workspace.</p>
-                </div>
-            </div>
-            <div className="home-section-header">
-                <div>
-                    <h2>Your workspace</h2>
-                </div>
-                <button className="text-action" onClick={onOpenSources}>
-                    Connected sources <ArrowUpRight size={15} />
-                </button>
-            </div>
-            <div className="home-activity-grid">
-                <div className="home-activity-card">
-                    <div className="home-card-head">
-                        <div>
-                            <span className="home-card-icon">
-                                <MessageSquare size={18} />
-                            </span>
-                            <h3>Recent conversations</h3>
+        <div className={`atlas-ref-grid ${insightOpen ? '' : 'atlas-ref-insight-collapsed'}`}>
+            <div className="atlas-ref-canvas">
+                <section className="atlas-ref-hero" aria-labelledby="atlas-ref-hero-title">
+                    <IconButton
+                        className="atlas-ref-insight-toggle"
+                        aria-label={insightOpen ? 'Collapse research insights' : 'Expand research insights'}
+                        aria-expanded={insightOpen}
+                        aria-controls="atlas-reference-insights"
+                        onClick={() => setInsightOpen((open) => !open)}
+                        size="small"
+                        title={insightOpen ? 'Focus on research' : 'Show research insights'}
+                    >
+                        {insightOpen ? <PanelRightClose size={19} /> : <PanelRightOpen size={19} />}
+                    </IconButton>
+                    {themeButton && (
+                        <div className="atlas-ref-hero-theme" aria-label="Appearance">
+                            {themeButton}
                         </div>
-                        <button aria-label="Open conversations" onClick={onOpenConversations}>
-                            <ArrowUpRight size={18} />
-                        </button>
-                    </div>
-                    {chats.length ? (
-                        <div className="home-activity-list">
-                            {chats.slice(0, 4).map((item) => (
-                                <button key={item.id} onClick={() => onOpenConversation(item.id)}>
-                                    <span>
-                                        <strong>{item.title}</strong>
-                                        <small>{new Date(item.updated * 1000).toLocaleDateString()}</small>
-                                    </span>
-                                    <ChevronRight size={16} />
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="home-card-empty">
-                            <p>Every good question starts a conversation.</p>
-                            <button onClick={onStartChat}>
-                                Start researching <ArrowUpRight size={14} />
+                    )}
+                    <IconButton className="atlas-ref-mobile-menu" aria-label="Open menu" onClick={onOpenMobileMenu}>
+                        <Menu size={21} />
+                    </IconButton>
+                    <AtlasBrand size={53} />
+                    <h1 id="atlas-ref-hero-title">Your AI Research Workspace</h1>
+                    <p>
+                        Search your documents and connected sources —<br className="hidden sm:block" /> get reliable answers with citations.
+                    </p>
+                </section>
+
+                <ResearchQuestionBox
+                    ariaLabel="Ask a research question"
+                    className="atlas-ref-composer"
+                    query={query}
+                    onQueryChange={onQueryChange}
+                    onRequestSubmit={onAsk}
+                    canSubmit={canSubmit}
+                    busy={busy}
+                    inputRef={prompt}
+                    inputLabel="Ask a research question"
+                    placeholder="Ask a research question..."
+                    maxRows={7}
+                    sourceSelector={sourcePicker}
+                    context={
+                        <AgentMentionSuggestions
+                            agents={matchingAgents}
+                            onSelect={(agent) => {
+                                onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                                prompt.current?.focus();
+                            }}
+                        />
+                    }
+                    leadingActions={
+                        <>
+                            <button className="atlas-ref-pill" type="button" onClick={onBrowse} disabled={!canEdit || uploading} title="Attach a document">
+                                <Paperclip size={16} />
                             </button>
-                        </div>
-                    )}
-                </div>
-                <div className="home-activity-card">
-                    <div className="home-card-head">
-                        <div>
-                            <span className="home-card-icon">
-                                <FileText size={18} />
+                            <span className="atlas-ref-pill atlas-ref-pill-disabled" aria-disabled="true" title="Live web search is unavailable; import webpages via Library → Add knowledge.">
+                                <Globe2 size={16} /> Web
                             </span>
-                            <h3>Recent documents</h3>
-                        </div>
-                        <button aria-label="Open document library" onClick={onOpenDocuments}>
-                            <ArrowUpRight size={18} />
-                        </button>
-                    </div>
-                    {docs.length ? (
-                        <div className="home-activity-list">
-                            {docs.slice(0, 4).map((d) => (
-                                <button key={d.id} onClick={() => onInspectDocument(d)}>
-                                    <FileBadge name={d.name} />
-                                    <span>
-                                        <strong>{d.name}</strong>
-                                        <small>
-                                            {formatSize(d.size)} · {d.status === 'ready' ? 'Ready to explore' : d.status}
-                                        </small>
-                                    </span>
-                                    <ChevronRight size={16} />
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="home-card-empty">
-                            <p>Add a document to start building your knowledge.</p>
-                            {uploadButton}
-                        </div>
-                    )}
-                </div>
-            </div>
-            <div className="home-prompt-panel">
-                <div className="home-prompt-top">
-                    <Sparkles size={17} />
-                    <span>Ask Atlas</span>
-                    <span className="home-prompt-hint">Search your knowledge</span>
-                </div>
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        onAsk();
-                    }}
-                >
-                    {matchingAgents.length > 0 && (
-                        <div className="home-agent-mention-menu" role="listbox" aria-label="Mention an agent">
-                            <span className="agent-mention-title">AGENT SUGGESTIONS</span>
-                            {matchingAgents.map((agent) => (
-                                <button type="button" role="option" aria-selected={false} key={agent.id} onClick={() => onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '))}>
-                                    <span className="home-agent-suggestion-icon">
-                                        <Sparkles size={16} />
-                                    </span>
-                                    <span>
-                                        <strong>{agent.name}</strong>
-                                        <small>{agent.handle}</small>
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                    <textarea
-                        aria-label="Ask Atlas"
-                        placeholder="Ask a question about your workspace…"
-                        value={query}
-                        maxLength={4000}
-                        onChange={(e) => onQueryChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                                e.preventDefault();
-                                if (hasAskSources) onAsk();
-                            }
-                        }}
-                    />
-                    <div className="home-prompt-bottom">
-                        <div className="home-scope-summary">
-                            <FileText size={15} />
-                            <span aria-label="Sources included in this question">
-                                {selectedAgent
-                                    ? `${selectedAgent.name} · Uses agent-configured sources`
-                                    : `Selected for search: ${sourceLabels.length ? sourceLabels.join(' · ') : 'No sources selected'}`}
-                            </span>
-                            <span>·</span>{' '}
-                            <button type="button" onClick={onChooseSources}>
-                                Choose sources <ArrowUpRight size={13} />
-                            </button>
-                        </div>
-                        <div className="home-composer-actions">
                             <button
+                                className="atlas-ref-pill"
                                 type="button"
-                                className={`voice-input-button ${voice.listening ? 'is-listening' : ''}`}
-                                aria-label={voice.listening ? 'Stop voice input' : voice.supported ? 'Start voice input' : 'Voice input not supported in this browser'}
+                                aria-pressed={includeDocuments}
+                                title={`${readyCount} searchable documents`}
+                                onClick={() => onIncludeDocumentsChange(!includeDocuments)}
+                            >
+                                <FileText size={16} /> Your Docs <span className="opacity-60">{readyCount}</span>
+                            </button>
+                        </>
+                    }
+                    trailingActions={
+                        <>
+                            <IconButton
+                                aria-label={voice.listening ? 'Stop voice input' : 'Start voice input'}
+                                disabled={busy || (!voice.supported && !voice.listening)}
                                 aria-pressed={voice.listening}
-                                title={voice.supported ? 'Use voice input' : 'Voice input is not supported in this browser'}
-                                disabled={busy}
                                 onClick={() => (voice.listening ? voice.stopListening() : voice.startListening(addTranscript))}
+                                size="small"
                             >
                                 {voice.listening ? <MicOff size={17} /> : <Mic size={17} />}
+                            </IconButton>
+                            <button className="atlas-ref-primary-button" type="submit" disabled={!canSubmit}>
+                                <span className="flex items-center gap-2">
+                                    <Sparkles size={16} /> Research
+                                </span>
                             </button>
-                            <button className="home-send" aria-label="Ask Atlas" disabled={busy || !query.trim() || !hasAskSources}>
-                                {busy ? <LoaderCircle size={18} className="spin" /> : <ArrowUp size={18} />}
+                        </>
+                    }
+                    footer={
+                        <>
+                            {(voice.listening || voice.error) && (
+                                <Typography role={voice.error ? 'alert' : 'status'} variant="caption" color={voice.error ? 'error' : 'text.secondary'}>
+                                    {voice.error || 'Listening…'}
+                                </Typography>
+                            )}
+                            {!hasAskSources && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                    Select a source or add a document to enable research.
+                                </Typography>
+                            )}
+                            {!!sourceLabels.length && (
+                                <div className="mt-2 text-[11px] text-[var(--sub)]" aria-label="Active sources">
+                                    {sourceLabels.join(' · ')}
+                                </div>
+                            )}
+                        </>
+                    }
+                />
+                {answerProgress && (
+                    <div className="atlas-ref-progress-inline" role="status" aria-live="polite">
+                        <LoaderCircle size={16} className="spin" aria-hidden="true" />
+                        <span>{answerProgress}</span>
+                        {!insightOpen && (
+                            <button type="button" onClick={() => setInsightOpen(true)}>
+                                Show details
                             </button>
-                        </div>
+                        )}
                     </div>
-                    {(voice.listening || voice.error) && (
-                        <div className="voice-input-status" role={voice.error ? 'alert' : 'status'}>
-                            {voice.error || 'Listening…'}
+                )}
+
+                <section aria-labelledby="atlas-ref-tasks-heading">
+                    <div className="atlas-ref-section-heading">
+                        <strong id="atlas-ref-tasks-heading">Try a research task</strong>
+                    </div>
+                    <div className="atlas-ref-task-grid">
+                        {tasks.map(({ title, description, prompt: starter, icon: Icon, color }) => (
+                            <button className="atlas-ref-task" type="button" key={title} onClick={() => applyTask(starter)} disabled={busy}>
+                                <Icon size={24} color={color} aria-hidden="true" />
+                                <strong>{title}</strong>
+                                <small>{description}</small>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                <section aria-labelledby="atlas-ref-recent-heading">
+                    <div className="atlas-ref-section-heading">
+                        <strong id="atlas-ref-recent-heading">
+                            Recent research <small className="atlas-ref-workspace-caption">· {workspaceName}</small>
+                        </strong>
+                        <Button onClick={onOpenConversations} size="small" endIcon={<ArrowRight size={15} />}>
+                            View all
+                        </Button>
+                    </div>
+                    <div className="atlas-ref-research-list">
+                        {chatsLoading && !chats.length ? (
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="status">
+                                Loading saved conversations…
+                            </div>
+                        ) : chatsFailed ? (
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]" role="alert">
+                                Couldn’t load conversations.{' '}
+                                <Button size="small" onClick={onRefreshChats}>
+                                    Retry
+                                </Button>
+                            </div>
+                        ) : recent.length ? (
+                            recent.map((chat) => (
+                                <button key={chat.id} className="atlas-ref-research-row" type="button" onClick={() => onOpenConversation(chat.id)}>
+                                    <MessageSquareText size={17} color="#8d91b0" />
+                                    <span>{chat.title}</span>
+                                    {chat.pinned && <small>Pinned</small>}
+                                    <Clock3 size={14} color="#a0a7bf" />
+                                </button>
+                            ))
+                        ) : (
+                            <div className="px-5 py-7 text-sm text-[var(--sub)]">
+                                No research conversations in {workspaceName} yet.{' '}
+                                <Button size="small" onClick={onStartChat}>
+                                    Start a conversation
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                <section className="mt-8" aria-label="Recent library documents">
+                    <div className="atlas-ref-section-heading">
+                        <strong>Recent documents</strong>
+                        <Button size="small" onClick={onOpenDocuments} endIcon={<ArrowUpRight size={15} />}>
+                            Open library
+                        </Button>
+                    </div>
+                    <div className="atlas-ref-research-list">
+                        {recentDocs.length ? (
+                            recentDocs.map((doc) => (
+                                <button className="atlas-ref-research-row" key={doc.id} onClick={() => onInspectDocument(doc)}>
+                                    <FileText size={16} color="#8d91b0" />
+                                    <span>{doc.name}</span>
+                                    <small>{formatSize(doc.size)}</small>
+                                </button>
+                            ))
+                        ) : (
+                            <div className="px-5 py-6 text-sm text-[var(--sub)]">Upload a file to start your knowledge library. {canEdit && uploadButton}</div>
+                        )}
+                    </div>
+                </section>
+
+                {canEdit && (
+                    <section
+                        className="mt-6 rounded-xl border border-dashed border-[var(--line)] bg-[var(--panel)] p-4"
+                        aria-label="Drop documents to upload"
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            if (!uploading) onDragging(true);
+                        }}
+                        onDragLeave={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget as Node)) onDragging(false);
+                        }}
+                        onDrop={(event) => {
+                            event.preventDefault();
+                            onDragging(false);
+                            if (!uploading && event.dataTransfer.files.length) onDrop(event.dataTransfer.files);
+                        }}
+                        style={{ borderColor: dragging ? 'var(--atlas-ref-accent)' : undefined }}
+                    >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-xs text-[var(--sub)]">Drop research documents here · up to {maxSizeMB} MB per file</span>
+                            <Button variant="outlined" size="small" disabled={uploading} startIcon={<Paperclip size={15} />} onClick={onBrowse}>
+                                {uploading ? 'Uploading…' : 'Add files'}
+                            </Button>
                         </div>
-                    )}
-                    <p className="home-source-routing-note">Matching questions can also use a connected Calendar or GitHub automatically.</p>
-                </form>
+                    </section>
+                )}
             </div>
-            {canEdit && (
-                <div
-                    className={`home-dropzone ${dragging ? 'dragging' : ''}`}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        onDragging(true);
-                    }}
-                    onDragLeave={() => onDragging(false)}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        onDragging(false);
-                        onDrop(e.dataTransfer.files);
-                    }}
-                >
-                    <span className="home-drop-icon">
-                        <Upload size={20} />
-                    </span>
-                    <div>
-                        <strong>Upload documents</strong>
-                        <p>Drop PDF, DOCX, TXT, Markdown, CSV, JSON or HTML files. Up to {maxSizeMB} MB each.</p>
-                    </div>
-                    <button className="btn" disabled={uploading} onClick={onBrowse}>
-                        Choose files
-                    </button>
-                </div>
-            )}
-        </section>
+            <AtlasReferencePanel
+                answer={latestAnswer}
+                question={latestQuestion}
+                progress={answerProgress}
+                onOpenSource={onOpenSource}
+                onPrompt={applyTask}
+                onManageSources={onOpenSources}
+                onCollapse={() => setInsightOpen(false)}
+                hidden={!insightOpen}
+            />
+        </div>
     );
 }

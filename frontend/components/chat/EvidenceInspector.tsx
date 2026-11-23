@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Download } from 'lucide-react';
+import { Alert, Button, CircularProgress, Typography } from '@mui/material';
 import { api } from '../../lib/api';
 import { citedSentence, extractionWarning, sourceDisplayName, sourceLocation } from '../../lib/evidence';
 import { SOURCE_LABELS } from '../../lib/providers';
@@ -121,8 +122,12 @@ export function EvidenceInspector({
             <div className="drawer-header">
                 {source && <FileBadge name={sourceDisplayName(source)} />}
                 <div className="evidence-inspector-heading">
-                    <div className="caption">{source ? 'Evidence excerpt' : 'Document preview'}</div>
-                    <h2>{source ? sourceDisplayName(source) : preview?.document.name}</h2>
+                    <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, letterSpacing: '.12em' }}>
+                        {source ? 'Evidence excerpt' : 'Document preview'}
+                    </Typography>
+                    <Typography component="h2" variant="h5" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }}>
+                        {source ? sourceDisplayName(source) : preview?.document.name}
+                    </Typography>
                     <div className="evidence-source-meta">
                         <span>
                             {sourcePdf && pageCount
@@ -135,17 +140,32 @@ export function EvidenceInspector({
                     </div>
                     {pageNavigation && (
                         <nav className="evidence-page-navigation" aria-label="PDF page navigation">
-                            <button className="btn" type="button" aria-label="Previous PDF page" disabled={pageBusy || activePage <= 1} onClick={() => void fetchPdfPage(activePage - 1)}>
-                                <ArrowLeft />
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                type="button"
+                                startIcon={<ArrowLeft size={16} />}
+                                aria-label="Previous PDF page"
+                                disabled={pageBusy || activePage <= 1}
+                                onClick={() => void fetchPdfPage(activePage - 1)}
+                            >
                                 Previous page
-                            </button>
-                            <span aria-live="polite">
+                            </Button>
+                            <span aria-live="polite" className="flex items-center gap-2">
+                                {pageBusy && <CircularProgress size={14} aria-label="Loading PDF page" />}
                                 Page {activePage} of {pageCount}
                             </span>
-                            <button className="btn" type="button" aria-label="Next PDF page" disabled={pageBusy || activePage >= pageCount} onClick={() => void fetchPdfPage(activePage + 1)}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                type="button"
+                                endIcon={<ArrowRight size={16} />}
+                                aria-label="Next PDF page"
+                                disabled={pageBusy || activePage >= pageCount}
+                                onClick={() => void fetchPdfPage(activePage + 1)}
+                            >
                                 Next page
-                                <ArrowRight />
-                            </button>
+                            </Button>
                         </nav>
                     )}
                 </div>
@@ -153,7 +173,9 @@ export function EvidenceInspector({
             <div className="drawer-body">
                 {source ? (
                     <div className="evidence-inspector-passage">
-                        <p className="caption evidence-disclaimer">Retrieved passage · Check the original source for surrounding context.</p>
+                        <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+                            Retrieved passage · Check the original source for surrounding context.
+                        </Alert>
                         {passageWarning && (
                             <p className="extraction-warning" role="status">
                                 {passageWarning}
@@ -182,7 +204,7 @@ export function EvidenceInspector({
                 ) : (
                     preview && (
                         <>
-                            {preview.document.error && <p className="feedback error">{preview.document.error}</p>}
+                            {preview.document.error && <Alert severity="error">{preview.document.error}</Alert>}
                             {previewPdf && pageWarning && (
                                 <p className="extraction-warning" role="status">
                                     {pageWarning}
@@ -204,8 +226,9 @@ export function EvidenceInspector({
                             {!activeChunks.length && previewPdf && !pageBusy && <p className="evidence-empty">No indexed passages on this page.</p>}
                             {!preview.chunks.length && <p className="evidence-empty">No indexed passages yet.</p>}
                             {!previewPdf && preview.document.chunk_count > preview.chunks.length && (
-                                <button
-                                    className="btn"
+                                <Button
+                                    variant="outlined"
+                                    type="button"
                                     onClick={async () => {
                                         try {
                                             const next = await api<typeof preview>(`/workspaces/${workspaceId}/documents/${preview.document.id}/chunks?offset=${preview.chunks.length}`);
@@ -220,7 +243,7 @@ export function EvidenceInspector({
                                     }}
                                 >
                                     Load more passages
-                                </button>
+                                </Button>
                             )}
                         </>
                     )
@@ -228,19 +251,17 @@ export function EvidenceInspector({
             </div>
             <div className="drawer-footer">
                 {source?.url && openLabel ? (
-                    <a className="btn" href={source.url} target="_blank" rel="noopener noreferrer">
-                        <ArrowUpRight />
+                    <Button component="a" variant="outlined" href={source.url} target="_blank" rel="noopener noreferrer" startIcon={<ArrowUpRight size={16} />}>
                         {openLabel}
-                    </a>
+                    </Button>
                 ) : originalUrl ? (
-                    <a className="btn" href={originalUrl}>
-                        <Download />
+                    <Button component="a" variant="outlined" href={originalUrl} startIcon={<Download size={16} />}>
                         Download uploaded original
-                    </a>
+                    </Button>
                 ) : null}
-                <button className="btn" onClick={onClose}>
+                <Button type="button" variant="contained" onClick={onClose}>
                     Close
-                </button>
+                </Button>
             </div>
         </Dialog>
     );

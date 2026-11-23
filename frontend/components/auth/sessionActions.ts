@@ -42,7 +42,11 @@ export async function bootWorkspace({
         setUser(actor);
         setWorkspaces(list);
         const requested = new URLSearchParams(window.location.search).get('workspaceId');
-        setWorkspaceId(list.some((item) => item.id === requested) ? requested! : list[0]?.id || '');
+        const saved = localStorage.getItem(`atlas-last-workspace:${actor.id}`);
+        // Explicit deep links win; otherwise restore the last workspace that
+        // still belongs to this account instead of silently selecting the first.
+        const selected = [requested, saved].find((id) => id && list.some((item) => item.id === id));
+        setWorkspaceId(selected || list[0]?.id || '');
     } catch {
         setUser(null);
     } finally {
@@ -55,15 +59,21 @@ export async function refreshWorkspaceMetadata({
     scope,
     setGmailStatus,
     setChats,
+    setChatsLoading,
+    setChatsFailed,
     setError,
 }: {
     workspaceId: string;
     scope: RefObject<string>;
     setGmailStatus: (status: GmailStatus) => void;
     setChats: Setter<ChatSummary[]>;
+    setChatsLoading: Setter<boolean>;
+    setChatsFailed: Setter<boolean>;
     setError: Setter<string>;
 }) {
     if (!workspaceId) return;
+    setChatsLoading(true);
+    setChatsFailed(false);
     await Promise.all([
         api<GmailStatus>(`/gmail/status?workspaceId=${encodeURIComponent(workspaceId)}`)
             .then((status) => {
@@ -72,10 +82,17 @@ export async function refreshWorkspaceMetadata({
             .catch(() => undefined),
         api<ChatSummary[]>(`/workspaces/${workspaceId}/conversations`)
             .then((chats) => {
+                if (!Array.isArray(chats)) throw new Error('Invalid conversations response.');
                 if (scope.current === workspaceId) setChats(chats);
             })
             .catch((error) => {
-                if (scope.current === workspaceId) setError(error.message);
+                if (scope.current === workspaceId) {
+                    setChatsFailed(true);
+                    setError(`Couldn’t retrieve chats for this workspace: ${error.message}`);
+                }
+            })
+            .finally(() => {
+                if (scope.current === workspaceId) setChatsLoading(false);
             }),
     ]);
 }
