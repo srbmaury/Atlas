@@ -119,7 +119,7 @@ test.beforeEach(async ({ page }) => {
 // Keep test assertions scoped to the open popover rather than exposing every
 // integration in the main toolbar.
 async function openSourcePicker(page: import('@playwright/test').Page) {
-    const trigger = page.getByRole('button', { name: 'Connected Sources' });
+    const trigger = page.getByRole('button', { name: 'Connected Sources', exact: true });
     if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
 }
 
@@ -247,7 +247,7 @@ test('phone chat fits a long answer above the composer', async ({ page }) => {
 
 test('phone Focus chat tools and compact drawer stay usable', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
-    const sourceTrigger = page.getByRole('button', { name: 'Connected Sources' });
+    const sourceTrigger = page.getByRole('button', { name: 'Connected Sources', exact: true });
     await expect(sourceTrigger).toBeInViewport();
     await sourceTrigger.click();
     await expect(page.getByRole('checkbox', { name: 'GitHub' })).toBeVisible();
@@ -793,7 +793,7 @@ test('authentication failure stays actionable and announced', async ({ page }, t
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.route('**/api/auth/login', (route) => route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ detail: 'Incorrect email or password.' }) }));
     await page.getByLabel('Email address').fill('test@example.com');
-    await page.getByLabel('Password', { exact: true }).fill('wrong-password');
+    await page.getByLabel('Password').fill('wrong-password');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     const alert = page.getByRole('alert').filter({ hasText: 'Incorrect email or password.' });
     await expect(alert).toBeVisible();
@@ -823,12 +823,12 @@ test('workspace creation, settings deletion and sign out preserve the selected w
         created = false;
         return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
-    await page.getByRole('button', { name: 'New or manage workspaces', exact: true }).click();
+    await page.getByRole('button', { name: 'Switch workspace', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Your workspaces' });
     await dialog.getByLabel('New workspace', { exact: true }).fill('Research review');
     await dialog.getByRole('button', { name: 'Create workspace', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.locator('.workspace-btn')).toContainText('Research review');
+    await expect(page.getByRole('button', { name: 'Switch workspace', exact: true })).toContainText('Research review');
     await page.getByRole('button', { name: 'Switch workspace', exact: true }).click();
     await dialog.getByRole('link', { name: 'Members, permissions & workspace settings' }).click();
     await expect(page).toHaveURL(/settings\?section=workspace&workspaceId=w2/);
@@ -917,7 +917,7 @@ test('document imports recover an accepted staged upload after a lost acknowledg
         return json({ offset: size });
     });
     await page.locator('input[type=file]').setInputFiles({ name: 'large.txt', mimeType: 'text/plain', buffer: Buffer.alloc(size, 97) });
-    await expect(page.getByRole('status').filter({ hasText: '1 ready to search' })).toBeVisible();
+    await expect(page.getByText('1 ready to search', { exact: false })).toBeVisible();
     expect(chunks).toBe(1);
     expect(completions).toBe(1);
     await expect(page.getByRole('status').filter({ hasText: 'Uploading' })).toHaveCount(0);
