@@ -2,25 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Card, Chip, InputBase, Typography } from '@mui/material';
-import {
-    BookOpen,
-    Bot,
-    CalendarDays,
-    Check,
-    Copy,
-    Search,
-    Cloud,
-    FileText,
-    FolderOpen,
-    Github,
-    Layers3,
-    Mail,
-    MessageSquare,
-    Plus,
-    Settings2,
-    Sparkles,
-    X,
-} from 'lucide-react';
+import { BookOpen, Bot, CalendarDays, Check, Copy, Search, Cloud, FileText, FolderOpen, Github, Layers3, Mail, MessageSquare, Plus, Settings2, Sparkles, X } from 'lucide-react';
 import styles from '../../app/workspaces/[workspaceId]/agents/studio.module.css';
 
 type SourceConfig = { include_documents?: boolean; document_ids?: string[]; include_gmail?: boolean; providers?: string[] };
