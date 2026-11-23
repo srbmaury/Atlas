@@ -20,17 +20,18 @@ import {
     PanelRightOpen,
     PanelRightClose,
 } from 'lucide-react';
-import { Button, IconButton, Paper, Typography } from '@mui/material';
-import type { Answer, ChatSummary, Doc, Source } from '../../lib/types';
+import { Button, IconButton, Typography } from '@mui/material';
+import type { AgentMention, Answer, ChatSummary, Doc, Source } from '../../lib/types';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { AtlasBrand } from '../ui/AtlasBrand';
+import { AgentMentionSuggestions } from '../agents/AgentMentionSuggestions';
 import { AtlasReferencePanel } from './AtlasReferencePanel';
 import { ResearchQuestionBox } from '../chat/ResearchQuestionBox';
 
 interface HomeViewProps {
     canEdit?: boolean;
     query: string;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    mentionAgents?: AgentMention[];
     onQueryChange: (value: string) => void;
     onAsk: () => void;
     hasAskSources: boolean;
@@ -179,26 +180,13 @@ export function HomeView({
                     maxRows={7}
                     sourceSelector={sourcePicker}
                     context={
-                        matchingAgents.length > 0 ? (
-                            <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
-                                {matchingAgents.map((agent) => (
-                                    <Button
-                                        key={agent.id}
-                                        fullWidth
-                                        size="small"
-                                        role="option"
-                                        aria-selected={false}
-                                        sx={{ justifyContent: 'flex-start' }}
-                                        onClick={() => {
-                                            onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
-                                            prompt.current?.focus();
-                                        }}
-                                    >
-                                        {agent.name} · {agent.handle}
-                                    </Button>
-                                ))}
-                            </Paper>
-                        ) : null
+                        <AgentMentionSuggestions
+                            agents={matchingAgents}
+                            onSelect={(agent) => {
+                                onQueryChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                                prompt.current?.focus();
+                            }}
+                        />
                     }
                     leadingActions={
                         <>
