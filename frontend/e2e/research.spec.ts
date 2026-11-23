@@ -452,7 +452,7 @@ test('single and multiple selected providers are sent with the prompt', async ({
     await expect.poll(() => requests.length).toBe(1);
     expect(requests[0]).toMatchObject({ include_documents: false, providers: ['github'] });
 
-    await page.getByRole('button', { name: 'New chat', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'New chat', exact: true }).click();
     await openSourcePicker(page);
     await page.getByRole('checkbox', { name: 'Documents' }).uncheck();
     await openSourcePicker(page);
@@ -575,7 +575,7 @@ test('new chat resets source scope to documents only', async ({ page }) => {
     await page.getByRole('checkbox', { name: 'Documents' }).uncheck();
     await openSourcePicker(page);
     await page.getByRole('checkbox', { name: 'GitHub' }).check();
-    await page.getByRole('button', { name: 'New chat', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'New chat', exact: true }).click();
     await openSourcePicker(page);
     await expect(page.getByRole('checkbox', { name: 'Documents' })).toBeChecked();
     await openSourcePicker(page);
