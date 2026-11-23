@@ -679,10 +679,14 @@
         margin-left: 0;
     }
     .atlas-reference-root .sidebar.atlas-reference-sidebar {
+        visibility: hidden;
+        pointer-events: none;
         transform: translateX(-100%);
         transition: transform 0.18s ease;
     }
     .atlas-reference-root .sidebar.atlas-reference-sidebar.open {
+        visibility: visible;
+        pointer-events: auto;
         transform: translateX(0);
     }
     .atlas-reference-sidebar .atlas-ref-close-mobile {
