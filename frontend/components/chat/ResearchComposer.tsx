@@ -2,14 +2,16 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { FileText, FolderOpen, Globe2, Mic, MicOff, Paperclip, Sparkles } from 'lucide-react';
-import { Alert, Button, Chip, CircularProgress, IconButton, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Alert, Chip, CircularProgress, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { ResearchQuestionBox } from './ResearchQuestionBox';
+import { AgentMentionSuggestions } from '../agents/AgentMentionSuggestions';
+import type { AgentMention } from '../../lib/types';
 
 interface ResearchComposerProps {
     query: string;
     sourceSelector: ReactNode;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    mentionAgents?: AgentMention[];
     onChange: (q: string) => void;
     onSubmit: () => void;
     onUpload: () => void;
@@ -110,26 +112,13 @@ export function ResearchComposer({
                             {uploadResult}
                         </Alert>
                     )}
-                    {matchingAgents.length > 0 && (
-                        <Paper variant="outlined" role="listbox" aria-label="Mention an agent" sx={{ p: 1, mb: 1, borderRadius: 2 }}>
-                            {matchingAgents.map((agent) => (
-                                <Button
-                                    key={agent.id}
-                                    size="small"
-                                    fullWidth
-                                    role="option"
-                                    aria-selected={false}
-                                    onClick={() => {
-                                        onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
-                                        textareaRef.current?.focus();
-                                    }}
-                                    sx={{ display: 'flex', justifyContent: 'flex-start' }}
-                                >
-                                    {agent.name} · {agent.handle}
-                                </Button>
-                            ))}
-                        </Paper>
-                    )}
+                    <AgentMentionSuggestions
+                        agents={matchingAgents}
+                        onSelect={(agent) => {
+                            onChange(query.replace(/@[a-z0-9-]*$/i, agent.handle + ' '));
+                            textareaRef.current?.focus();
+                        }}
+                    />
                 </>
             }
             leadingActions={
