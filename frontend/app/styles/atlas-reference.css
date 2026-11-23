@@ -1171,6 +1171,24 @@
     gap: 8px;
     min-width: 0;
 }
+.atlas-question-box .atlas-ref-pill[aria-pressed='true'] {
+    background: var(--atlas-ref-accent-soft);
+    border-color: color-mix(in srgb, var(--atlas-ref-accent) 45%, var(--atlas-ref-line));
+    color: #4e3bb9;
+}
+.atlas-question-box .atlas-ref-pill[aria-pressed='true']:hover {
+    background: color-mix(in srgb, var(--atlas-ref-accent) 14%, var(--atlas-ref-surface));
+    border-color: var(--atlas-ref-accent);
+}
+:root[data-theme='dark'] .atlas-question-box .atlas-ref-pill[aria-pressed='true'] {
+    background: var(--atlas-ref-accent-soft);
+    border-color: color-mix(in srgb, var(--atlas-ref-accent) 45%, var(--atlas-ref-line));
+    color: var(--atlas-ref-accent);
+}
+:root[data-theme='dark'] .atlas-question-box .atlas-ref-pill[aria-pressed='true']:hover {
+    background: color-mix(in srgb, var(--atlas-ref-accent) 19%, var(--atlas-ref-surface));
+    border-color: var(--atlas-ref-accent);
+}
 .atlas-question-box .atlas-ref-pill-disabled {
     opacity: 0.55;
     cursor: not-allowed;
