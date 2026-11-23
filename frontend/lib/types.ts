@@ -120,10 +120,10 @@ export type SourceHealth = {
     error: string | null;
     checked_at: number;
 };
-export type SourceHealthEntry = SourceHealth & {
+type SourceHealthEntry = SourceHealth & {
     provider: ExternalSourceProvider;
 };
-export type SourceHealthCheck = SourceHealthEntry & {
+type SourceHealthCheck = SourceHealthEntry & {
     connected: boolean;
     account: string | null;
 };
