@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
         if (path === '/me') return json({ id: 'u1', email: 'test@example.com', mode: 'ai', max_file_bytes: 10485760 });
         if (path === '/workspaces') return json([{ id: 'w1', name: 'Test workspace', role: 'manager' }]);
         if (path === '/workspaces/w1/agents/sources') return json({ documents: [{ id: 'd1', name: 'notes.md' }], providers: [] });
-        if (path === '/workspaces/w1/agents') return json([{ id: 'a1', name: 'Research Analyst' }]);
+        if (path === '/workspaces/w1/agents') return json([{ id: 'a1', name: 'Research Analyst', instructions: 'Find relevant evidence and cite original sources before answering.' }]);
         if (path === '/workspaces/w1/documents') return json([{ id: 'd1', name: 'notes.md', size: 128, status: 'ready', pages: 1, chunk_count: 1 }]);
         if (path === '/gmail/status') return json({ connected: false, email: null, configured: false });
         if (path === '/drive/status') return json({ connected: false, account: null, configured: false });
@@ -152,6 +152,23 @@ test('agent cards can open a new chat with the mention filled in', async ({ page
     await page.getByRole('button', { name: 'Use in chat', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Your question' })).toHaveValue('@research-analyst ');
     await expect(page.getByRole('complementary', { name: 'Supporting evidence' })).toBeHidden();
+});
+
+test('agent mention suggestions show descriptions in both research composers', async ({ page }) => {
+    const chatQuestion = page.getByRole('textbox', { name: 'Your question' });
+    await chatQuestion.fill('@');
+    const suggestions = page.getByRole('listbox', { name: 'Mention an agent' });
+    await expect(suggestions.getByRole('option', { name: /Research Analyst/ })).toContainText('Find relevant evidence and cite original sources before answering.');
+    await suggestions.getByRole('option', { name: /Research Analyst/ }).click();
+    await expect(chatQuestion).toHaveValue('@research-analyst ');
+
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true }).click();
+    const homeQuestion = page.getByRole('textbox', { name: 'Ask a research question' });
+    await homeQuestion.fill('@');
+    const homeSuggestions = page.getByRole('listbox', { name: 'Mention an agent' });
+    await expect(homeSuggestions.getByRole('option', { name: /Research Analyst/ })).toContainText('Find relevant evidence and cite original sources before answering.');
+    await homeSuggestions.getByRole('option', { name: /Research Analyst/ }).click();
+    await expect(homeQuestion).toHaveValue('@research-analyst ');
 });
 
 test('stopping before agent startup supports retry when cancellation fails', async ({ page }) => {
