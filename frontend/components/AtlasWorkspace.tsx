@@ -509,6 +509,11 @@ export function AtlasWorkspace({ initialTab = 'overview', initialWorkspaceId }: 
                 chatsFailed={chatsFailed}
                 onRefreshChats={() => void refreshWorkspaceLists()}
                 onOpenChat={(id) => void switchChat(id)}
+                onOpenConversations={() => {
+                    navigate('chat');
+                    setHistoryOpen(true);
+                    void refreshChats();
+                }}
                 tab={tab}
                 onNavigate={navigate}
                 readyCount={ready.length}
