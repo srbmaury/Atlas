@@ -229,12 +229,6 @@ export function ResearchWorkspace(props: ResearchWorkspaceProps) {
     const latestAnswer = [...props.messages].reverse().find((message) => message.role !== 'user' && message.result)?.result;
     const evidence = visibleEvidence(latestAnswer);
     const evidenceOpen = evidence.length > 0 && !evidenceHidden;
-    const allSelected =
-        props.includeDocuments &&
-        (!props.gmailStatus?.connected || props.connectedGmail) &&
-        [...(props.driveStatus?.connected ? ['drive' as const] : []), ...props.sourceStatuses.filter((item) => item.connected).map((item) => item.provider)].every((provider) =>
-            props.connectedProviders.includes(provider),
-        );
 
     return (
         <section className="research-page" data-mobile-panel={mobilePanel}>
