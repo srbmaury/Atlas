@@ -1,4 +1,4 @@
-export const EXTERNAL_SOURCE_PROVIDERS = ['github', 'notion', 'slack', 'calendar', 'linear', 'jira', 'onedrive', 'outlook', 'sharepoint'] as const;
+const EXTERNAL_SOURCE_PROVIDERS = ['github', 'notion', 'slack', 'calendar', 'linear', 'jira', 'onedrive', 'outlook', 'sharepoint'] as const;
 
 export type ExternalSourceProvider = (typeof EXTERNAL_SOURCE_PROVIDERS)[number];
 
