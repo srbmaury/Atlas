@@ -1,0 +1,80 @@
+name: Temporary dead-code audit
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+    paths: [.github/workflows/temp-dead-code-audit.yml]
+jobs:
+  unused:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Install frontend
+        run: npm ci
+        working-directory: frontend
+      - name: TypeScript unused diagnostics
+        working-directory: frontend
+        shell: bash
+        run: |
+          set +e
+          npx tsc --noEmit --noUnusedLocals --noUnusedParameters --incremental false --pretty false > /tmp/unused-ts.log 2>&1
+          echo '### TS_UNUSED_BEGIN'
+          head -120 /tmp/unused-ts.log
+          echo '### TS_UNUSED_END'
+          exit 0
+      - name: Unused file and export analysis
+        working-directory: frontend
+        shell: bash
+        run: |
+          set +e
+          npx --yes knip --reporter json --no-progress > /tmp/unused-knip.json 2>/tmp/unused-knip.err
+          echo '### KNIP_BEGIN'
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='/tmp/unused-knip.json';
+          try {
+            const s=fs.readFileSync(p,'utf8').trim();
+            const j=JSON.parse(s.slice(s.indexOf('{')));
+            const out={
+              files:(j.files||[]).slice(0,110),
+              issues:Object.entries(j.issues||{}).map(([file,val])=>({file,issues:val})).slice(0,130),
+              unlisted:j.unlisted,
+              dependencies:j.dependencies,
+              unlistedBinaries:j.unlistedBinaries
+            };
+            console.log(JSON.stringify(out).slice(0,20000));
+          }catch(e){ console.log('Could not parse knip results:',String(e),fs.readFileSync(p,'utf8').slice(0,2500)); }
+          NODE
+          echo '### KNIP_ERR'
+          head -20 /tmp/unused-knip.err
+          echo '### KNIP_END'
+      - name: Python and CSS reachability
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,re,subprocess,collections,pathlib
+          def collect(branch):
+              files=subprocess.check_output(['git','ls-tree','-r','--name-only',branch],text=True).splitlines()
+              paths=[p for p in files if p.endswith(('.py','.ts','.tsx','.js','.jsx','.mjs','.css','.html','.md','.svg')) and not any(x in p for x in ['/node_modules/','/vendor/','package-lock'])]
+              def get(p):
+                  if branch=='HEAD':
+                      return pathlib.Path(p).read_text(errors='replace')
+                  x=subprocess.run(['git','show',branch+':'+p],capture_output=True,text=True)
+                  return x.stdout if x.returncode==0 else ''
+              return {p:get(p) for p in paths}
+          for ref in ('origin/main','HEAD'):
+              src=collect(ref)
+              code='\n'.join(v for p,v in src.items() if not p.endswith('.css'))
+              print('### REPO',ref,'files',len(src))
+              out=[]
+              for p,v in src.items():
+                  if not p.endswith('.css'): continue
+                  classes=set(re.findall(r'\.([a-zA-Z][\w-]+)',v))
+                  classes={x for x in classes if len(x)>4 and not x.startswith('Mui')}
+                  missing=[x for x in sorted(classes) if not re.search(r'(?<![\w-])'+re.escape(x)+r'(?![\w-])',code)]
+                  if missing:out.append({'file':p,'missing':len(missing),'examples':missing[:35]})
+              print('### CSS_UNUSED',out[:80])
+          PY
