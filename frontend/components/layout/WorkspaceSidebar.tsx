@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { IconButton, Tooltip } from '@mui/material';
-import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, MessageSquare, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
+import { BookOpenText, ChevronDown, CircleHelp, FolderClosed, LogOut, MessageSquare, PanelsTopLeft, PanelLeftClose, Plug, Plus, RefreshCw, Settings2, Sparkles, X } from 'lucide-react';
 import type { ChatSummary, Workspace } from '../../lib/types';
 import { AtlasBrand } from '../ui/AtlasBrand';
 
@@ -22,6 +22,7 @@ interface WorkspaceSidebarProps {
     chatsFailed: boolean;
     onRefreshChats: () => void;
     onOpenChat: (id: string) => void;
+    onOpenConversations: () => void;
     tab: Tab;
     onNavigate: (tab: Tab) => void;
     readyCount: number;
@@ -55,6 +56,7 @@ export function WorkspaceSidebar({
     chatsFailed,
     onRefreshChats,
     onOpenChat,
+    onOpenConversations,
     tab,
     onNavigate,
     readyCount,
@@ -129,10 +131,15 @@ export function WorkspaceSidebar({
                 </nav>
 
                 <div className="atlas-ref-sidebar-label atlas-ref-recent-title">
-                    Recent chats
-                    <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
-                        <RefreshCw size={14} />
-                    </button>
+                    <span>Recent chats</span>
+                    <div className="atlas-ref-recent-actions">
+                        <button type="button" aria-label="All conversations" title="All conversations" onClick={() => { onOpenConversations(); onClose(); }}>
+                            <PanelsTopLeft size={14} />
+                        </button>
+                        <button type="button" aria-label="Refresh recent chats" onClick={onRefreshChats} disabled={chatsLoading}>
+                            <RefreshCw size={14} />
+                        </button>
+                    </div>
                 </div>
                 <div className="atlas-ref-recent" role="region" aria-label="Recent chats">
                     {chatsLoading && !chats.length ? (
