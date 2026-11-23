@@ -1,0 +1,54 @@
+name: Temporary atlas CSS reference audit
+on:
+  push:
+    branches: [design/mui-tailwind-frontend]
+    paths: [.github/workflows/temp-atlas-css-audit.yml]
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci
+        working-directory: frontend
+      - name: Analyze selector references, duplicates and overrides
+        working-directory: frontend
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs'), path = require('path'), postcss = require('postcss');
+          function walk(dir, res = []) {
+            for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (['node_modules','.next','coverage','test-results'].includes(ent.name)) continue;
+              const p=path.join(dir,ent.name);
+              if(ent.isDirectory()) walk(p,res);
+              else if(/\.(tsx?|jsx?|mjs|js|html|md)$/.test(p)) res.push(p);
+            }
+            return res;
+          }
+          const codefiles=walk('.');
+          const code=codefiles.map(p=>fs.readFileSync(p,'utf8')).join('\n');
+          const css=fs.readFileSync('app/styles/atlas-reference.css','utf8');
+          const root=postcss.parse(css);
+          const counts = new Map(), selectors = [], unused = new Map(), props = [], empty = [];
+          root.walkRules(rule=>{
+            const scope=[]; for(let parent=rule.parent;parent&&parent.type!=='root';parent=parent.parent)if(parent.type==='atrule')scope.push('@'+parent.name+' '+parent.params);
+            const key=scope.reverse().join(' > ')+' | '+rule.selector.replace(/\s+/g,' ').trim();
+            const list=counts.get(key)||[];list.push(rule.source.start.line);counts.set(key,list);
+            const classname=[...new Set([...rule.selector.matchAll(/\.((?:atlas|research)-[a-zA-Z0-9_-]+)/g)].map(m=>m[1]))];
+            if(classname.length&&classname.every(c=>!code.includes(c))){
+              for(const c of classname){const data=unused.get(c)||[];data.push(rule.source.start.line);unused.set(c,data);}
+            }
+            const seen = new Map();rule.walkDecls(d=>{if(seen.has(d.prop))props.push({line:rule.source.start.line,sel:rule.selector,prop:d.prop,old:seen.get(d.prop),value:d.value});seen.set(d.prop,d.value)});
+            selectors.push({line:rule.source.start.line,scope:scope.join('/'),name:rule.selector,unused:classname.length&&classname.every(c=>!code.includes(c))});
+          });
+          root.walkAtRules(a=>{if(!a.nodes?.length)empty.push({line:a.source.start.line,name:a.name,params:a.params})});
+          console.log('CSS_AUDIT_FILE_COUNT',codefiles.length,'CSS_RULE_COUNT',selectors.length);
+          console.log('CSS_UNREFERENCED_CLASS',JSON.stringify(Object.fromEntries([...unused.entries()].sort((a,b)=>a[0].localeCompare(b[0])))));
+          console.log('CSS_DUPLICATE_SELECTORS',JSON.stringify([...counts.entries()].filter(([k,l])=>l.length>1).map(([key,lines])=>({key,lines}))));
+          console.log('CSS_DUPLICATE_DECLS',JSON.stringify(props));
+          console.log('CSS_EMPTY_ATRULES',JSON.stringify(empty));
+          console.log('CSS_RULES_CANDIDATE',JSON.stringify(selectors.filter(s=>s.unused).slice(0,140)));
+          NODE
