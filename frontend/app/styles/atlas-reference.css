@@ -805,9 +805,6 @@
     }
 }
 
-.atlas-ref-composer .research-source-picker {
-    position: relative;
-}
 .atlas-ref-composer .atlas-ref-source-trigger {
     border: 1px solid var(--atlas-ref-line);
     background: var(--atlas-ref-subtle);
@@ -835,8 +832,6 @@
     box-sizing: border-box;
 }
 
-.atlas-ref-composer .MuiInputBase-input:focus,
-.atlas-ref-composer .MuiInputBase-input:focus-visible,
 .atlas-v3 .MuiInputBase-input:focus,
 .atlas-v3 .MuiInputBase-input:focus-visible {
     outline: none;
