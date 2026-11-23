@@ -361,11 +361,11 @@ test('Gmail replaces sources gallery without stacking beneath it', async ({ page
 });
 
 test('All conversations opens the saved history panel', async ({ page }) => {
-    await page.getByRole('button', { name: /All conversations/ }).click();
+    await page.getByRole('button', { name: 'All conversations', exact: true }).click();
     await expect(page.locator('.chat-history')).toBeVisible();
     await expect(page.locator('.chat-history-title')).toHaveText('Earlier conversation');
-    await page.getByRole('button', { name: 'Research', exact: true }).click();
-    await page.getByRole('button', { name: 'Open conversations', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Research', exact: true }).click();
+    await page.getByRole('button', { name: 'View all', exact: true }).click();
     await expect(page.locator('.chat-history')).toBeVisible();
 });
 
