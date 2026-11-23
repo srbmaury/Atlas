@@ -37,13 +37,14 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    padding: 22px 14px 14px;
+    overflow: hidden;
+    padding: 16px 14px 12px;
 }
 .atlas-reference-sidebar .atlas-ref-brand {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 14px 24px;
+    padding: 0 12px 14px;
     color: var(--atlas-sidebar-fg);
     font-size: 23px;
     font-weight: 800;
@@ -54,11 +55,11 @@
 }
 .atlas-reference-sidebar .atlas-ref-nav {
     display: grid;
-    gap: 6px;
+    gap: 4px;
 }
 .atlas-reference-sidebar .atlas-ref-nav-item {
     width: 100%;
-    min-height: 45px;
+    min-height: 40px;
     color: var(--atlas-sidebar-muted);
     border: 0;
     background: transparent;
@@ -67,7 +68,7 @@
     align-items: center;
     gap: 13px;
     text-align: left;
-    padding: 11px 15px;
+    padding: 9px 13px;
     font-weight: 650;
     font-size: 13px;
     cursor: pointer;
@@ -82,7 +83,7 @@
     box-shadow: inset 3px 0 0 #9180ef;
 }
 .atlas-reference-sidebar .atlas-ref-sidebar-label {
-    margin: 22px 14px 10px;
+    margin: 13px 10px 8px;
     color: var(--atlas-sidebar-muted);
     font-size: 10px;
     font-weight: 800;
@@ -135,7 +136,7 @@
     font-size: 11px;
 }
 .atlas-reference-sidebar .atlas-ref-recent {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -976,6 +977,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+.atlas-reference-sidebar .atlas-ref-recent-actions {
+    display: flex;
+    align-items: center;
+    gap: 3px;
 }
 .atlas-reference-sidebar .atlas-ref-recent-title button {
     display: inline-flex;
