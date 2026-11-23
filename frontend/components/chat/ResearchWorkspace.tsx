@@ -24,7 +24,7 @@ import {
     Menu,
     Ellipsis,
 } from 'lucide-react';
-import type { Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
+import type { AgentMention, Answer, ChatSummary, ConnectedSourceStatus, GmailStatus, Message, ResearchProvider, Source } from '../../lib/types';
 import type { DriveConnectionStatus } from '../../lib/types';
 import { PROVIDER_LABELS, RESEARCH_PROVIDERS } from '../../lib/providers';
 import { visibleEvidence, sourceDisplayName, sourceLocation, evidencePreview } from '../../lib/evidence';
@@ -41,7 +41,7 @@ interface ResearchWorkspaceProps {
     workspaceId: string;
     sourceLabels: string[];
     openingChat?: boolean;
-    mentionAgents?: { id: string; name: string; handle: string }[];
+    mentionAgents?: AgentMention[];
     searchTarget?: { chatId: string; index: number; phrase: string; token: number } | null;
     title: string;
     onOpenNavigation: () => void;
