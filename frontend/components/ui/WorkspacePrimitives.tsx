@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { LoaderCircle, Check, AlertCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { fileExtension } from '../../utils/utils';
 
 const knownExtensions = new Set(['pdf', 'docx', 'doc', 'txt', 'md', 'csv', 'json', 'html', 'htm', 'xlsx', 'xls', 'pptx', 'ppt']);
