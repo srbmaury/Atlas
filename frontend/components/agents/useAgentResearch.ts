@@ -2,10 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { chatLoadSequence } from '../../lib/chatLoadSequence';
 import { persistConversation } from '../../lib/researchRequests';
-import type { ChatSummary, Source } from '../../lib/types';
+import type { AgentMention, ChatSummary, Source } from '../../lib/types';
 import type { useConversation } from '../chat/useConversation';
-
-type AgentMention = { id: string; name: string; handle: string };
 
 type ActiveAgentRun = {
     controller: AbortController;
@@ -72,13 +70,15 @@ export function useAgentResearch({ workspaceId, userId, tab, busy, scope, conver
         const controller = new AbortController();
         fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/agents`, { credentials: 'same-origin', signal: controller.signal })
             .then((response) => (response.ok ? response.json() : []))
-            .then((items: { id: string; name: string }[]) => {
+            .then((items: { id: string; name: string; instructions?: string }[]) => {
                 if (controller.signal.aborted) return;
                 setAgentList({
                     workspaceId,
                     userId,
                     agents: items.map((item) => ({
-                        ...item,
+                        id: item.id,
+                        name: item.name,
+                        description: item.instructions?.replace(/\s+/g, ' ').trim() || undefined,
                         handle:
                             '@' +
                             item.name
